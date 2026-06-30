@@ -1,9 +1,18 @@
 # ENGINEERING PRINCIPLES — PROJECT RIPPLE-CLONE
 
-**Revision:** 1.0.0  
+**Revision:** 1.1.0
 **Status:** IMMUTABLE — amendments require an explicit revision command to the Principal Architect  
 **Effective:** 2026-06-28  
+**Last Amended:** 2026-06-29 — Phase 2 review finding H6
 **Scope:** All Swift files in the Main App target and Widget Extension target
+
+---
+
+## Revision History
+
+**1.1.0 (2026-06-29)** — Phase 2 code review (finding H6) identified that this document referenced a type, `DailyAggregator`, that does not exist in the actual Phase 2 implementation. The closest analog — and the type that grew out of the original critique-session vocabulary — is the pair of free functions `aggregateByDay` (primary attribution only, used by `HeatmapDataProvider`) and `aggregateByDayWithGrace` (adds DST grace-window credits, used by `StreakCalculator`). All seven references across §2.1, §3.2, §5.1, §5.2, and §8.1 are updated accordingly. This amendment is purely a naming correction — no testing, performance, or review-checklist requirement was weakened or removed.
+
+**1.0.0 (2026-06-28)** — Initial document.
 
 ---
 
@@ -93,7 +102,7 @@ Each `@Model` type occupies exactly one file. Extensions to that model may live 
 | SwiftUI Views | `[Noun]View` or `[Adj][Noun]View` | `HeatmapGridView`, `StatsPanel` |
 | Intents | `[Verb][Noun]Intent` | `LogHabitIntent` |
 | AppEntity types | `[Noun]Entity` | `HabitBoardEntity` |
-| Actors | `[Noun][Role]` | `DailyAggregator`, `HeatmapDataProvider` |
+| Actors | `[Noun][Role]` | `aggregateByDayWithGrace` (free function), `HeatmapDataProvider` |
 | Error enums | `[Domain]Error` | `PersistenceError`, `SyncError` |
 | Value types (analytics) | `[Domain][Role]` | `DayCell`, `DayTotal`, `StreakResult` |
 
@@ -135,7 +144,7 @@ Test function names follow the pattern `test[Subject]_[Condition]_[ExpectedOutco
 
 ```swift
 func testStreakCalculator_DSTFallBack_DoesNotBreakStreak() { ... }
-func testDailyAggregator_EmptyLogs_ReturnsEmptyArray() { ... }
+func testAggregateByDayWithGrace_EmptyLogs_ReturnsEmptyArray() { ... }
 ```
 
 ### 2.4 Prohibited
@@ -154,7 +163,7 @@ The following are banned regardless of context: `Manager`, `Helper`, `Utils`, `M
 
 `@MainActor` is applied to all `@Observable` types whose properties are read in a SwiftUI `View.body`. This is non-negotiable: a `@MainActor`-isolated observable type guarantees that state reads and writes occur on the same actor, preventing data races without explicit synchronization.
 
-Background computation types (`DailyAggregator`, the `buildDayGrid` free function) are `actor`-isolated or `nonisolated async` functions that execute on the cooperative thread pool.
+Background computation types (`aggregateByDayWithGrace`, `aggregateByDay`, the `buildDayGrid` free function) are `actor`-isolated or `nonisolated async` functions that execute on the cooperative thread pool.
 
 `ModelContext` is never captured in a closure, passed as a parameter to an `actor` method, or used off the main actor. Model objects fetched on the main actor stay on the main actor. If background work requires data from the model, the caller extracts a value-type snapshot before the actor hop.
 
@@ -271,13 +280,13 @@ These are hard limits enforced by CI and manual Instruments profiling. They are 
 | Main thread synchronous work per call | < 1ms | Instruments: Time Profiler |
 | Widget timeline generation (end-to-end) | < 200ms | Instruments: Time Profiler |
 | Peak RSS (heatmap + chart visible) | < 100MB | Instruments: Allocations |
-| `DailyAggregator` on 10,000 `LogEntry` records | < 50ms | `XCTestCase.measure {}` |
+| `aggregateByDayWithGrace` on 10,000 `LogEntry` records | < 50ms | `XCTestCase.measure {}` |
 
 ### 5.2 Enforcement Rules
 
-Any PR touching `HeatmapGridView`, `DailyAggregator`, `buildDayGrid`, or `ModelContainerFactory` must include a Time Profiler screenshot in the PR description. PRs without it are returned without review.
+Any PR touching `HeatmapGridView`, `aggregateByDay`, `aggregateByDayWithGrace`, `buildDayGrid`, or `ModelContainerFactory` must include a Time Profiler screenshot in the PR description. PRs without it are returned without review.
 
-`DailyAggregator` has a `XCTestCase.measure {}` performance test seeded with 10,000 synthetic `LogEntry` records. This test runs in CI. A sustained 10% regression over the established baseline fails the build.
+`aggregateByDayWithGrace` has a `XCTestCase.measure {}` performance test seeded with 10,000 synthetic `LogEntry` records. This test runs in CI. A sustained 10% regression over the established baseline fails the build. `aggregateByDay` (the lighter, primary-attribution-only path used by `HeatmapDataProvider`) should be measured separately — its budget is tighter, since it omits the grace-window pass entirely.
 
 `HeatmapCell` body must not: parse a `String` into a `Color`, allocate a new `Array`, create a `Task`, or call any method that accesses `modelContext`.
 
@@ -435,7 +444,7 @@ CheckInButton()
 
 `StreakCalculator` — all public methods fully covered. The DST date set listed in §8.3 is mandatory, not optional. A `StreakCalculatorTests` file that does not cover DST transitions is incomplete.
 
-`DailyAggregator` — unit tested with synthetic `[LogEntry]` arrays. Boundary conditions required: empty array, single entry, two entries on the same calendar day, entry exactly at midnight, entry during a DST transition hour.
+`aggregateByDay` and `aggregateByDayWithGrace` (the lighter primary-attribution-only path and the full grace-window path respectively — see ADR-006) — unit tested with synthetic `[LogSnapshot]` arrays. Boundary conditions required: empty array, single entry, two entries on the same calendar day, entry exactly at midnight, entry during a DST transition hour. `StreakCalculator.calculate` additionally requires a `referenceDate` parameter injected explicitly in every test — never relying on the system clock at test-run time — to make the four mandatory DST dates below deterministic and repeatable.
 
 `buildDayGrid` free function — snapshot test: given a deterministic `[LogEntry]` input, assert the output `[DayCell]` array matches a recorded fixture. This test guards against color math regressions.
 
@@ -449,7 +458,7 @@ CheckInButton()
 
 **Performance — enforced in CI:**
 
-`DailyAggregator` is measured with a `SeededModelContainer` containing 10,000 `LogEntry` records spread across two `HabitBoard` objects over three years. The `XCTestCase.measure {}` baseline is established on first successful CI run and stored in the repository. A 10% sustained regression fails the build.
+`aggregateByDayWithGrace` is measured with a `SeededModelContainer` containing 10,000 `LogEntry` records spread across two `HabitBoard` objects over three years. The `XCTestCase.measure {}` baseline is established on first successful CI run and stored in the repository. A 10% sustained regression fails the build.
 
 ### 8.2 What Is Not Unit Tested
 

@@ -75,8 +75,7 @@ LOCA/
 │       ├── Date+Calendar.swift        # DST-aware day boundary helpers
 │       ├── ColorPalette.swift         # Indexed colour system (ADR-002)
 │       └── Double+Clamp.swift         # Heatmap intensity clamping
-├── Analytics/                         # ⊕ Shared — Phase 2
-│   ├── DailyAggregator.swift
+├── Analytics/                         # ⊕ Shared — Phase 2 ✅
 │   ├── StreakCalculator.swift
 │   └── HeatmapDataProvider.swift
 ├── Features/                          # Main App only
@@ -107,7 +106,7 @@ Docs/
 |-------|------|--------|
 | 0 | Project Scaffolding | ⏳ Pending |
 | **1** | **Data Layer** | **✅ Complete — reviewed, bugs fixed** |
-| 2 | Analytics Engine | ⏳ Pending |
+| **2** | **Compute Layer** | **✅ Complete — reviewed, all High findings fixed** |
 | 3 | Navigation Shell | ⏳ Pending |
 | 4 | Dashboard | ⏳ Pending |
 | 5 | Heatmap & Detail | ⏳ Pending |
@@ -124,6 +123,12 @@ Docs/
 Phase 1 delivered the complete SwiftData schema, persistence factory, and shared utility extensions. It was reviewed by an Apple Frameworks-level critique session that identified 14 findings across 4 severity levels. All Critical (3) and High (5) findings were resolved before merge.
 
 See the full report: [`Docs/Reports/Phase1-DataLayer.md`](Docs/Reports/Phase1-DataLayer.md)
+
+## Phase 2 Summary
+
+Phase 2 delivered the pure compute layer — `StreakCalculator` and `HeatmapDataProvider` — with zero dependency on SwiftUI, WidgetKit, App Intents, or `ModelContext`. A second Apple Frameworks-level review identified 14 findings across 3 severity levels (zero Critical). All 6 High findings were resolved, including a floating-point epsilon bug in goal-completion checks, a future-dated-entry streak-suppression bug, and a performance fix splitting the aggregation kernel so the heatmap no longer pays for DST grace-window computation it never uses.
+
+See the full report: [`Docs/Reports/Phase2-ComputeLayer.md`](Docs/Reports/Phase2-ComputeLayer.md)
 
 ---
 
