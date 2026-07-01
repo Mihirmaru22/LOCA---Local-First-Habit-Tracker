@@ -267,6 +267,30 @@ extension HabitBoard {
             throw PersistenceError.saveFailed(underlying: error)
         }
     }
+
+    // MARK: Active Board Predicate (Phase 3 — closes Phase 1 review finding M1)
+    //
+    // `archivedAt == nil` is the single most important query invariant in this
+    // model: it's the line between what the user sees and what they deleted.
+    // Left as an ad-hoc predicate written independently at every @Query call site,
+    // it is guaranteed to be forgotten at least once. Phase 3's HabitSidebarView
+    // is the first presentation-layer query against HabitBoard, making this the
+    // correct point to introduce the canonical predicate — before a second or
+    // third call site exists to drift out of sync with it.
+
+    /// The canonical predicate for fetching non-archived ("active") boards.
+    ///
+    /// Every `@Query` that lists `HabitBoard`s for presentation **must** use this
+    /// predicate rather than an ad-hoc `archivedAt == nil` expression written at
+    /// the call site:
+    ///
+    /// ```swift
+    /// @Query(filter: HabitBoard.activePredicate, sort: \HabitBoard.createdAt)
+    /// private var activeBoards: [HabitBoard]
+    /// ```
+    static var activePredicate: Predicate<HabitBoard> {
+        #Predicate<HabitBoard> { $0.archivedAt == nil }
+    }
 }
 
 // MARK: - Streak Cache

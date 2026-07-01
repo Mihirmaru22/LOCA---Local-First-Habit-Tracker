@@ -50,6 +50,8 @@ The device SQLite store is the source of truth. CloudKit is a background sync la
 | [ADR-003](Docs/ADR/ADR-003-boardid-denorm.md) | `boardID: UUID` denormalized on `LogEntry` | Works around SwiftData iOS 17 relationship keypath predicate bug |
 | [ADR-004](Docs/ADR/ADR-004-target-membership.md) | Xcode target membership over local SPM package | Avoids `@Model` schema visibility issues and Preview resolution degradation |
 | [ADR-005](Docs/ADR/ADR-005-actor-isolated-provider.md) | Actor-isolated `HeatmapDataProvider` | Keeps 365-day aggregation off the main thread |
+| [ADR-006](Docs/ADR/ADR-006-unified-navigationsplitview.md) | Single `NavigationSplitView` for all platforms | `NavigationSplitView`'s adaptive collapsing handles iPhone/iPad/Mac in one code path — no parallel `NavigationStack` tree |
+| [ADR-007](Docs/ADR/ADR-007-selection-state-id-not-reference.md) | Selection state holds `HabitBoard.id`, not a live reference | Avoids stale-reference risk from CloudKit merges or archival while selected |
 
 ### Shared Target Files
 Files in `LOCA/Core/` (Models, Persistence, Extensions) and `LOCA/Intents/` are added to **both** the Main App target and the Widget Extension target via Xcode target membership — one file on disk, two compile targets.
@@ -79,9 +81,12 @@ LOCA/
 │   ├── StreakCalculator.swift
 │   └── HeatmapDataProvider.swift
 ├── Features/                          # Main App only
-│   ├── Navigation/
+│   ├── Navigation/                    # Phase 3 ✅
+│   │   ├── RootNavigationView.swift
+│   │   └── HabitSidebarView.swift
+│   ├── HabitDetail/                    # Phase 3 ✅ (placeholder only)
+│   │   └── HabitDetailView.swift
 │   ├── Dashboard/
-│   ├── HabitDetail/
 │   ├── CheckIn/
 │   └── HabitCreation/
 ├── Haptics/                           # Main App only
@@ -104,17 +109,30 @@ Docs/
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 0 | Project Scaffolding | ⏳ Pending |
+| 0 | Project Scaffolding | ⏳ Deferred — next, after Phase 3 approval, before Phase 4 |
 | **1** | **Data Layer** | **✅ Complete — reviewed, bugs fixed** |
 | **2** | **Compute Layer** | **✅ Complete — reviewed, all High findings fixed** |
-| 3 | Navigation Shell | ⏳ Pending |
-| 4 | Dashboard | ⏳ Pending |
+| **3** | **Navigation Shell** | **✅ Complete — reviewed, all High findings + M1 fixed** |
+| 4 | Dashboard | ⏳ Pending — blocked on Phase 0 |
 | 5 | Heatmap & Detail | ⏳ Pending |
 | 6 | Check-In Flow | ⏳ Pending |
 | 7 | Habit Management | ⏳ Pending |
 | 8 | App Intents | ⏳ Pending |
 | 9 | WidgetKit | ⏳ Pending |
 | 10 | QA & Polish | ⏳ Pending |
+
+**Why Phase 0 runs out of numeric order:** Phases 1–3 were intentionally developed
+and validated entirely against `ModelContainerFactory.makeInMemoryContainer()` via
+SwiftUI Previews — a deliberate choice that let the data layer, compute layer, and
+navigation shell be built and reviewed for architectural correctness before any
+Xcode project, entitlement, or app entry point existed. That substitution is valid
+for everything reviewable in a Preview canvas, but not for Phase 4 (Dashboard),
+which must be reviewed as a running app. Phase 0 is scheduled immediately after
+Phase 3's approval — closing the scaffolding gap in one deliberate step, right
+before it becomes load-bearing — rather than upfront, where it would have added
+Xcode-project ceremony to phases that never needed it to be correctly built and
+reviewed. See [`Docs/Phase0-ProjectScaffolding.md`](Docs/Phase0-ProjectScaffolding.md)
+for full scope.
 
 ---
 
@@ -129,6 +147,12 @@ See the full report: [`Docs/Reports/Phase1-DataLayer.md`](Docs/Reports/Phase1-Da
 Phase 2 delivered the pure compute layer — `StreakCalculator` and `HeatmapDataProvider` — with zero dependency on SwiftUI, WidgetKit, App Intents, or `ModelContext`. A second Apple Frameworks-level review identified 14 findings across 3 severity levels (zero Critical). All 6 High findings were resolved, including a floating-point epsilon bug in goal-completion checks, a future-dated-entry streak-suppression bug, and a performance fix splitting the aggregation kernel so the heatmap no longer pays for DST grace-window computation it never uses.
 
 See the full report: [`Docs/Reports/Phase2-ComputeLayer.md`](Docs/Reports/Phase2-ComputeLayer.md)
+
+## Phase 3 Summary
+
+Phase 3 delivered the navigation shell — a single `NavigationSplitView` adapting across iPhone, iPad, and Mac, a selectable sidebar of active habits, and a placeholder detail column for Phase 5 to build inside. A Correctness/Engineering/Experience review identified 10 findings (zero Critical). All 3 High findings were resolved — missing native sidebar styling, a non-idiomatic empty-state pattern embedded inside a selectable list, and missing auto-selection on iPad/Mac split-view layouts — plus one Medium finding (contradictory empty-state copy on first run) folded into the same fix pass since it was cheap and Phase-3-owned.
+
+See the full report: [`Docs/Reports/Phase3-NavigationShell.md`](Docs/Reports/Phase3-NavigationShell.md)
 
 ---
 
