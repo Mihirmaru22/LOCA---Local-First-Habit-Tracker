@@ -1,14 +1,16 @@
 # ENGINEERING PRINCIPLES — PROJECT RIPPLE-CLONE
 
-**Revision:** 1.1.0
+**Revision:** 1.2.0
 **Status:** IMMUTABLE — amendments require an explicit revision command to the Principal Architect  
 **Effective:** 2026-06-28  
-**Last Amended:** 2026-06-29 — Phase 2 review finding H6
+**Last Amended:** 2026-07-01 — Phase 0 identifier migration
 **Scope:** All Swift files in the Main App target and Widget Extension target
 
 ---
 
 ## Revision History
+
+**1.2.0 (2026-07-01)** — Phase 0 (Project Scaffolding) migrated internal identifiers from the original project working-title placeholders (`com.yourdomain.rippleclone` / `group.com.yourdomain.ripples`) to LOCA's naming convention. The logger subsystem example in §4.4 is updated accordingly. This amendment is purely a naming correction, matching the same scope discipline as the 1.1.0 amendment — no testing, performance, or review-checklist requirement was weakened, removed, or added.
 
 **1.1.0 (2026-06-29)** — Phase 2 code review (finding H6) identified that this document referenced a type, `DailyAggregator`, that does not exist in the actual Phase 2 implementation. The closest analog — and the type that grew out of the original critique-session vocabulary — is the pair of free functions `aggregateByDay` (primary attribution only, used by `HeatmapDataProvider`) and `aggregateByDayWithGrace` (adds DST grace-window credits, used by `StreakCalculator`). All seven references across §2.1, §3.2, §5.1, §5.2, and §8.1 are updated accordingly. This amendment is purely a naming correction — no testing, performance, or review-checklist requirement was weakened or removed.
 
@@ -249,14 +251,14 @@ enum PersistenceError: LocalizedError {
 `Logger` from the `os` framework is the only logging mechanism. `print()` does not appear in any file. CI lint rejects it.
 
 ```swift
-private let logger = Logger(subsystem: "com.company.rippleclone", category: "Persistence")
+private let logger = Logger(subsystem: "com.mihirmaru.loca", category: "Persistence")
 
 // Usage
 logger.error("ModelContext save failed: \(error.localizedDescription, privacy: .public)")
 logger.debug("Heatmap built: \(cells.count) cells in \(elapsed)ms")
 ```
 
-Subsystem: `com.company.rippleclone`. Category matches the module: `"Persistence"`, `"Analytics"`, `"Widget"`, `"Intents"`, `"CheckIn"`.
+Subsystem: `com.mihirmaru.loca`. Category matches the module: `"Persistence"`, `"Analytics"`, `"Widget"`, `"Intents"`, `"CheckIn"`, `"CloudKitSync"`.
 
 CloudKit sync errors observed from `NSPersistentCloudKitContainerEvent` are logged at `.error` level and never surfaced to the user as alerts. Sync is silent.
 

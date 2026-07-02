@@ -9,7 +9,7 @@ import os
 /// This type is a pure namespace of static factory methods — it is never instantiated.
 ///
 /// ## Single Call Site Rule
-/// `makeSharedContainer()` is called **exactly once**, in `RippleCloneApp.swift`.
+/// `makeSharedContainer()` is called **exactly once**, in `LOCAApp.swift`.
 /// No other file in the Main App target holds a reference to the `ModelContainer`
 /// or invokes this factory. Views access the model context exclusively via
 /// `@Environment(\.modelContext)` and `@Query`.
@@ -31,12 +31,16 @@ enum ModelContainerFactory {
     /// The App Group identifier shared between the Main App and Widget Extension.
     ///
     /// **Must** match the App Group entitlement in both targets verbatim.
-    /// Replace `yourdomain` with the project's actual reverse-DNS team identifier
-    /// before the first CloudKit sync in any environment.
-    static let appGroupIdentifier = "group.com.yourdomain.ripples"
+    /// Migrated from the original project working-title placeholder
+    /// (`group.com.yourdomain.ripples`) to LOCA's identifier convention in Phase 0.
+    /// Confirm this matches your registered Apple Developer Team's actual App Group
+    /// before the first CloudKit sync in any environment — `com.mihirmaru.loca` is
+    /// a structurally correct placeholder derived from this project's GitHub
+    /// identity, not a verified, registered identifier.
+    static let appGroupIdentifier = "group.com.mihirmaru.loca"
 
     private static let logger = Logger(
-        subsystem: "com.yourdomain.rippleclone",
+        subsystem: "com.mihirmaru.loca",
         category: "Persistence"
     )
 
@@ -53,10 +57,10 @@ enum ModelContainerFactory {
     /// `cloudKitDatabase: .automatic` binds to the first iCloud container declared
     /// in the target's entitlements. Before production release, confirm this resolves
     /// to the intended CloudKit container identifier. If explicit binding is required,
-    /// replace `.automatic` with `.private("iCloud.com.yourdomain.rippleclone")`.
+    /// replace `.automatic` with `.private("iCloud.com.mihirmaru.loca")`.
     ///
     /// This method is the single call site for production container construction.
-    /// It must only be called from `RippleCloneApp.swift` in the Main App and from
+    /// It must only be called from `LOCAApp.swift` in the Main App and from
     /// `TimelineProvider` in the Widget Extension.
     ///
     /// - Returns: A fully configured `ModelContainer` using the shared App Group store.

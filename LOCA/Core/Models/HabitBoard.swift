@@ -107,8 +107,9 @@ final class HabitBoard {
     // `needsStreakRecalculation` is the invalidation hook for this scenario.
     //
     // Set to `true` by the `NSPersistentCloudKitContainerEvent` observer in
-    // `RippleCloneApp` whenever a bulk import event may have delivered LogEntry
-    // records that the incremental `updateStreak(using:)` path did not process.
+    // `LOCAApp` (via `CloudKitSyncCoordinator`, Phase 0) whenever a bulk import
+    // event may have delivered LogEntry records that the incremental
+    // `updateStreak(using:)` path did not process.
     //
     // Read and cleared to `false` by `StreakCalculator` (Phase 2) after it
     // completes a full historical recalculation and saves the correct values.

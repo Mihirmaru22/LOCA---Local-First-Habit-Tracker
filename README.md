@@ -62,9 +62,9 @@ Files in `LOCA/Core/` (Models, Persistence, Extensions) and `LOCA/Intents/` are 
 
 ```
 LOCA/
-├── App/
-│   ├── LOCAApp.swift                  # ModelContainer init, App Group URL, CloudKit observer
-│   └── ContentView.swift              # Platform-adaptive entry point
+├── App/                                # Phase 0 ✅
+│   └── LOCAApp.swift                   # @main entry point, single ModelContainerFactory call site
+│   └── CloudKitSyncCoordinator.swift   # NSPersistentCloudKitContainerEvent observer
 ├── Core/                              # ⊕ Shared: Main App + Widget Extension
 │   ├── Models/
 │   │   ├── HabitBoard.swift           # @Model — primary habit entity
@@ -109,11 +109,11 @@ Docs/
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 0 | Project Scaffolding | ⏳ Deferred — next, after Phase 3 approval, before Phase 4 |
+| 0 | Project Scaffolding | ✅ Complete — reviewed, H1 fixed |
 | **1** | **Data Layer** | **✅ Complete — reviewed, bugs fixed** |
 | **2** | **Compute Layer** | **✅ Complete — reviewed, all High findings fixed** |
 | **3** | **Navigation Shell** | **✅ Complete — reviewed, all High findings + M1 fixed** |
-| 4 | Dashboard | ⏳ Pending — blocked on Phase 0 |
+| 4 | Dashboard | ⏳ Ready to begin |
 | 5 | Heatmap & Detail | ⏳ Pending |
 | 6 | Check-In Flow | ⏳ Pending |
 | 7 | Habit Management | ⏳ Pending |
@@ -121,18 +121,20 @@ Docs/
 | 9 | WidgetKit | ⏳ Pending |
 | 10 | QA & Polish | ⏳ Pending |
 
-**Why Phase 0 runs out of numeric order:** Phases 1–3 were intentionally developed
-and validated entirely against `ModelContainerFactory.makeInMemoryContainer()` via
-SwiftUI Previews — a deliberate choice that let the data layer, compute layer, and
-navigation shell be built and reviewed for architectural correctness before any
-Xcode project, entitlement, or app entry point existed. That substitution is valid
-for everything reviewable in a Preview canvas, but not for Phase 4 (Dashboard),
-which must be reviewed as a running app. Phase 0 is scheduled immediately after
-Phase 3's approval — closing the scaffolding gap in one deliberate step, right
-before it becomes load-bearing — rather than upfront, where it would have added
-Xcode-project ceremony to phases that never needed it to be correctly built and
-reviewed. See [`Docs/Phase0-ProjectScaffolding.md`](Docs/Phase0-ProjectScaffolding.md)
-for full scope.
+**Phase 0 executed after Phase 3's approval, before Phase 4**, exactly as scheduled:
+Phases 1–3 were deliberately built and reviewed entirely against
+`ModelContainerFactory.makeInMemoryContainer()` via SwiftUI Previews, deferring
+Xcode-project and entitlement ceremony until it was actually load-bearing. See
+[`Docs/Phase0-ProjectScaffolding.md`](Docs/Phase0-ProjectScaffolding.md) for the
+full scope and rationale, and
+[`Docs/Reports/Phase0-ProjectScaffolding.md`](Docs/Reports/Phase0-ProjectScaffolding.md)
+for the completed phase report.
+
+## Phase 0 Summary
+
+Phase 0 delivered runtime integration: `LOCAApp.swift` (the `@main` entry point, single `ModelContainerFactory.makeSharedContainer()` call site), `CloudKitSyncCoordinator.swift` (observes `NSPersistentCloudKitContainerEvent`, flags active boards for streak recalculation after CloudKit imports), App Group/CloudKit entitlements, and migration of every internal identifier from the project's original working-title placeholders to LOCA's naming convention. A review focused on app lifecycle, actor isolation, and Apple platform conventions found one High finding — a per-window `.task` binding an app-scoped coordinator, which macOS's default "New Window" command would have duplicated — resolved with an idempotency guard.
+
+See the full report: [`Docs/Reports/Phase0-ProjectScaffolding.md`](Docs/Reports/Phase0-ProjectScaffolding.md)
 
 ---
 
