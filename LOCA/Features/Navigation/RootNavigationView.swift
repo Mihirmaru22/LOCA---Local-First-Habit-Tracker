@@ -36,7 +36,12 @@ struct RootNavigationView: View {
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
-            HabitSidebarView(boards: activeBoards, selection: $selectedBoardID)
+            // DashboardView (Phase 4) replaces HabitSidebarView (Phase 3) here —
+            // see ADR-008. Same boards/selection signature; only the row content
+            // changed, from HabitSidebarRow to the richer HabitCardView. Selection
+            // mechanics (ADR-007), the @Query above, and autoSelectFirstBoardIfNeeded
+            // below are unmodified by this swap.
+            DashboardView(boards: activeBoards, selection: $selectedBoardID)
         } detail: {
             if let board = selectedBoard {
                 HabitDetailView(board: board)

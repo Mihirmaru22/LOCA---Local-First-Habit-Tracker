@@ -113,8 +113,8 @@ Docs/
 | **1** | **Data Layer** | **✅ Complete — reviewed, bugs fixed** |
 | **2** | **Compute Layer** | **✅ Complete — reviewed, all High findings fixed** |
 | **3** | **Navigation Shell** | **✅ Complete — reviewed, all High findings + M1 fixed** |
-| 4 | Dashboard | ⏳ Ready to begin |
-| 5 | Heatmap & Detail | ⏳ Pending |
+| **4** | **Dashboard** | **✅ Complete — reviewed, M1 + M2 fixed** |
+| 5 | Heatmap & Detail | ⏳ Ready to begin |
 | 6 | Check-In Flow | ⏳ Pending |
 | 7 | Habit Management | ⏳ Pending |
 | 8 | App Intents | ⏳ Pending |
@@ -155,6 +155,10 @@ See the full report: [`Docs/Reports/Phase2-ComputeLayer.md`](Docs/Reports/Phase2
 Phase 3 delivered the navigation shell — a single `NavigationSplitView` adapting across iPhone, iPad, and Mac, a selectable sidebar of active habits, and a placeholder detail column for Phase 5 to build inside. A Correctness/Engineering/Experience review identified 10 findings (zero Critical). All 3 High findings were resolved — missing native sidebar styling, a non-idiomatic empty-state pattern embedded inside a selectable list, and missing auto-selection on iPad/Mac split-view layouts — plus one Medium finding (contradictory empty-state copy on first run) folded into the same fix pass since it was cheap and Phase-3-owned.
 
 See the full report: [`Docs/Reports/Phase3-NavigationShell.md`](Docs/Reports/Phase3-NavigationShell.md)
+
+## Phase 4 Summary
+
+Phase 4 delivered the Dashboard: `DashboardView`/`HabitCardView` replace `HabitSidebarView`/`HabitSidebarRow` as `NavigationSplitView`'s sidebar content (ADR-008), displaying per-habit streak, best-streak, today's progress (via a native `Gauge`), and daily target — all from cached values or a simple filter over already-loaded logs, with zero new `StreakCalculator`/`HeatmapDataProvider` calls. Review found two Medium findings, both fixed: a redundant double computation of today's total per render, and an unclamped progress value that could go out of `Gauge`'s valid range on corrupted data. `HabitSidebarView.swift` remains in the repo, now unused, pending an explicit decision to remove it.
 
 ---
 
