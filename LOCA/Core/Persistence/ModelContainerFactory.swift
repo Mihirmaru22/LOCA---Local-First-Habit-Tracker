@@ -94,6 +94,89 @@ enum ModelContainerFactory {
         }
     }
 
+    // MARK: - Local Development Container
+
+    // MARK: Development Configuration (ADR-009)
+    //
+    // Persistent on-disk, but with NO groupContainer and NO cloudKitDatabase —
+    // requires neither an App Group entitlement nor a CloudKit container
+    // entitlement, both of which cannot be provisioned under a Personal Team.
+    // Distinct from makeInMemoryContainer(): that method is for tests/Previews
+    // and deliberately wipes data every launch. This method persists to the
+    // app's own sandboxed Application Support directory (the SwiftData default
+    // when groupContainer: is omitted), so a local development build behaves
+    // like a real, continuously-used app across multiple launches — the whole
+    // point of having a working development build in the first place.
+
+    /// Creates a persistent, on-disk `ModelContainer` with no App Group and no
+    /// CloudKit backing.
+    ///
+    /// Used only by `makeConfiguredContainer()` when `LOCAL_DEVELOPMENT` is set.
+    /// Never call this directly from `LOCAApp` or anywhere else — the whole
+    /// point of `makeConfiguredContainer()` existing is that callers never need
+    /// to know which container variant they're getting.
+    ///
+    /// - Returns: A `ModelContainer` backed by local storage only.
+    /// - Throws: `PersistenceError.containerInitFailed` on schema/migration failure.
+    static func makeLocalContainer() throws -> ModelContainer {
+        let schema = Schema(RippleSchemaV1.models)
+        let configuration = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: false,
+            cloudKitDatabase: .none
+        )
+        do {
+            let container = try ModelContainer(
+                for: schema,
+                migrationPlan: RippleMigrationPlan.self,
+                configurations: [configuration]
+            )
+            logger.info("Local development ModelContainer initialised (no App Group, no CloudKit).")
+            return container
+        } catch {
+            logger.error(
+                "Local development ModelContainer init failed: \(error.localizedDescription, privacy: .public)"
+            )
+            throw PersistenceError.containerInitFailed(underlying: error)
+        }
+    }
+
+    // MARK: - Configured Container (Single Switch Point)
+
+    // MARK: The Only #if In This File (ADR-009)
+    //
+    // This is the sole compile-time branch between production (App Group +
+    // CloudKit) and local development (neither) anywhere in the codebase.
+    // LOCA_LOCAL_DEVELOPMENT is a custom Active Compilation Condition set only
+    // on the Debug configuration's build settings — deliberately NOT the
+    // built-in DEBUG flag, since "is this an optimized build" and "does this
+    // build have real entitlements" are orthogonal questions. A team member
+    // with a paid account building in Debug mode should still be able to
+    // exercise real CloudKit sync; hardcoding this to DEBUG would prevent that.
+    //
+    // To re-enable production configuration once a paid account is available:
+    // remove LOCAL_DEVELOPMENT from the Debug configuration's
+    // SWIFT_ACTIVE_COMPILATION_CONDITIONS build setting. Zero code changes.
+
+    /// The single entry point every caller should use. Resolves to
+    /// `makeSharedContainer()` (production: App Group + CloudKit) or
+    /// `makeLocalContainer()` (local development: neither) based on the
+    /// `LOCAL_DEVELOPMENT` compilation condition — never based on the identity
+    /// of the caller.
+    ///
+    /// `LOCAApp.swift` is the only caller. Its own logic is identical
+    /// regardless of which branch resolves here.
+    ///
+    /// - Returns: A `ModelContainer` appropriate for the current build configuration.
+    /// - Throws: Whatever the resolved factory method throws.
+    static func makeConfiguredContainer() throws -> ModelContainer {
+        #if LOCAL_DEVELOPMENT
+        return try makeLocalContainer()
+        #else
+        return try makeSharedContainer()
+        #endif
+    }
+
     // MARK: - In-Memory Container
 
     /// Creates an in-memory `ModelContainer` for use in `XCTest` suites and SwiftUI Previews.

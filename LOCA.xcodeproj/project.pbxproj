@@ -7,84 +7,84 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		D0B00566E8814C0CB51BC78F /* LOCAApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D192A594A8C7476FB79AD5E5 /* LOCAApp.swift */; };
-		543E2651A7D04872B7256D2B /* CloudKitSyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65B497D08B9147ADADB27C16 /* CloudKitSyncCoordinator.swift */; };
-		07B5246B49C842A8A0A62CF7 /* HabitBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BF5771AA42C46C99A1FDF4A /* HabitBoard.swift */; };
-		6708C45BD26D4DDA9B003E51 /* HabitBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BF5771AA42C46C99A1FDF4A /* HabitBoard.swift */; };
-		7BE779D499F24D46B1254E5B /* LogEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = E15B7894B47B4FE1ACE7581A /* LogEntry.swift */; };
-		853B614ADBAC417BA7C0A9CE /* LogEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = E15B7894B47B4FE1ACE7581A /* LogEntry.swift */; };
-		7D9ECE8B113E4D4BB3610AF1 /* VersionedSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC04D693C900473E8FA19CE1 /* VersionedSchema.swift */; };
-		084662FABCF84D5A8E53B2C4 /* VersionedSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC04D693C900473E8FA19CE1 /* VersionedSchema.swift */; };
-		7CC1669A03F14A558D09384E /* ModelContainerFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = F40D958DBFBA4950AEB913FC /* ModelContainerFactory.swift */; };
-		5A5ACB7F0A784A2CBFF9D9CF /* ModelContainerFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = F40D958DBFBA4950AEB913FC /* ModelContainerFactory.swift */; };
-		EB52B758ACA84DBDB1566792 /* PersistenceError.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADBAB22BBFE84BF580BA03B3 /* PersistenceError.swift */; };
-		38645F7D6C684FFFACD5E496 /* PersistenceError.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADBAB22BBFE84BF580BA03B3 /* PersistenceError.swift */; };
-		5640D4B568234435919FDCF4 /* Date+Calendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BB68499CB6448B8BE71954D /* Date+Calendar.swift */; };
-		6E8FC2CEAD804E3E92D3EBAE /* Date+Calendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BB68499CB6448B8BE71954D /* Date+Calendar.swift */; };
-		E222858FFA964D6593594B86 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BD689F965048AD9F635B9E /* ColorPalette.swift */; };
-		E1C6622EE4FA44BDB5DD4C92 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BD689F965048AD9F635B9E /* ColorPalette.swift */; };
-		126EF2884387457D80005C82 /* Double+Clamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 533441C3B0D242FC81D21297 /* Double+Clamp.swift */; };
-		9B0B1471D4964328BF5C3A98 /* Double+Clamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 533441C3B0D242FC81D21297 /* Double+Clamp.swift */; };
-		24DDCF8761464846A9989F3B /* StreakCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 569946FBC8E24492A8D304BE /* StreakCalculator.swift */; };
-		1853D74F8EB3432186AD990F /* StreakCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 569946FBC8E24492A8D304BE /* StreakCalculator.swift */; };
-		B6726D6BD86F4C2E820CF24A /* HeatmapDataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 309E5C93DAFF4135A33021FD /* HeatmapDataProvider.swift */; };
-		956E141345C647A8BE20DDFB /* HeatmapDataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 309E5C93DAFF4135A33021FD /* HeatmapDataProvider.swift */; };
-		7FC6446FF5B84985BD3C6390 /* RootNavigationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C03E4B17D64A07BC01578B /* RootNavigationView.swift */; };
-		FFF68479B1644F64962ADCFD /* HabitSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07A9BBF4AC5E43B1A3DADA15 /* HabitSidebarView.swift */; };
-		EA0D56E615AC4F63AF0DA126 /* HabitDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC3A045851EC4EE3BBDF8B6F /* HabitDetailView.swift */; };
-		1A5DA6E1EE06422CAA1E4D99 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5ADB7F89AE441F3A722EE25 /* DashboardView.swift */; };
-		227F4775AD1D4B77984D7176 /* HabitCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F402BD63AAD74207AB57E2FF /* HabitCardView.swift */; };
-		B66E568496AC4DB38F7AAF09 /* LOCAWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA51C54E147F4B919C3D627B /* LOCAWidgetBundle.swift */; };
-		13581C3ECF074086AD44E990 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8A9C51BF56E64079B43886F6 /* Assets.xcassets */; };
-		77A3FD304B2B4F3EA2F6C8A8 /* LOCAWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F575AFC973294ACE86454DD1 /* LOCAWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		44DB446688DB48F782CB4A1B /* LOCAApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B661DE6C9B24E3D843FB850 /* LOCAApp.swift */; };
+		0BA7188D9FF141CB9CC49687 /* CloudKitSyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4842C8648B7401D8EFE6340 /* CloudKitSyncCoordinator.swift */; };
+		D341F3FB501C4A689C3DAC98 /* HabitBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B3F4C66EDB24D078C2B2AF2 /* HabitBoard.swift */; };
+		80AEF7B77263431BAE191426 /* HabitBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B3F4C66EDB24D078C2B2AF2 /* HabitBoard.swift */; };
+		29A941CEBE164FF4A34E4B47 /* LogEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = E576183BE7E347EB9843C9BF /* LogEntry.swift */; };
+		7BEF8846AEBF485D981EE912 /* LogEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = E576183BE7E347EB9843C9BF /* LogEntry.swift */; };
+		569938A4D05D49F1BE4EB3B0 /* VersionedSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0F969CA4EF44ABE95278CFC /* VersionedSchema.swift */; };
+		62F9CE1A23164331A3E22338 /* VersionedSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0F969CA4EF44ABE95278CFC /* VersionedSchema.swift */; };
+		8B7BC5652DD04613969D3EA5 /* ModelContainerFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31E298A378C54834B09BA445 /* ModelContainerFactory.swift */; };
+		2639B184FE9C473CA43C5198 /* ModelContainerFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31E298A378C54834B09BA445 /* ModelContainerFactory.swift */; };
+		B2FD5F34DB864DCAB392E98C /* PersistenceError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7543B061EF654017A232CD3D /* PersistenceError.swift */; };
+		0AE35E6A72D74E69860CF0F9 /* PersistenceError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7543B061EF654017A232CD3D /* PersistenceError.swift */; };
+		A117149FF4A946D8938DC447 /* Date+Calendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BD9C2CC887147519D793BFF /* Date+Calendar.swift */; };
+		77E80A04DCA14C5EAA91E953 /* Date+Calendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BD9C2CC887147519D793BFF /* Date+Calendar.swift */; };
+		AB206523344E4C7184FFF348 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A2CFC96B094EC29DDABCCF /* ColorPalette.swift */; };
+		339AB5A031ED4DB6B0F18B92 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A2CFC96B094EC29DDABCCF /* ColorPalette.swift */; };
+		0DF920A91DBE48F89C85FC02 /* Double+Clamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1209CD3DA1924EF5833EBA9C /* Double+Clamp.swift */; };
+		3C2C1875D8DE4F2E9C7900A4 /* Double+Clamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1209CD3DA1924EF5833EBA9C /* Double+Clamp.swift */; };
+		C42184440B0349C2BF5BF351 /* StreakCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B00E104E5A41FBA7AF29CE /* StreakCalculator.swift */; };
+		924E6FD251024C699D517BA8 /* StreakCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B00E104E5A41FBA7AF29CE /* StreakCalculator.swift */; };
+		3B7001DDBDCA405BB0271BE3 /* HeatmapDataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837E73A07CEA4764A317B241 /* HeatmapDataProvider.swift */; };
+		CA251282DFB0463EB2A0FEC2 /* HeatmapDataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837E73A07CEA4764A317B241 /* HeatmapDataProvider.swift */; };
+		EF9592F35FA9403A92497BC0 /* RootNavigationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C58C6EAC62442D3A967C0F5 /* RootNavigationView.swift */; };
+		A313B9055EC9412D9CAFAA41 /* HabitSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B8A714F6CC44437A795494A /* HabitSidebarView.swift */; };
+		732FE124E13346CCAF39F275 /* HabitDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B377DBE0C651492E94B24D32 /* HabitDetailView.swift */; };
+		67CCC1B7AB2B4BEABA798A6F /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7441C76872C4EE9B7FCFE28 /* DashboardView.swift */; };
+		14BA8BDA9AB2403AA411DC6F /* HabitCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10474F8C67C4F878B04847B /* HabitCardView.swift */; };
+		45323EE20BDB45B4BE567809 /* LOCAWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7FB6B324BB24E61945D817B /* LOCAWidgetBundle.swift */; };
+		98E3A84D3ADA481F89E979C9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 033FA98DA16E4923BA9330CF /* Assets.xcassets */; };
+		80E98C55B8A948A79494D7C4 /* LOCAWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 5E2FC85826E54532BCBC1A3F /* LOCAWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		D192A594A8C7476FB79AD5E5 /* LOCAApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LOCAApp.swift"; sourceTree = "<group>"; };
-		65B497D08B9147ADADB27C16 /* CloudKitSyncCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CloudKitSyncCoordinator.swift"; sourceTree = "<group>"; };
-		1BF5771AA42C46C99A1FDF4A /* HabitBoard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitBoard.swift"; sourceTree = "<group>"; };
-		E15B7894B47B4FE1ACE7581A /* LogEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LogEntry.swift"; sourceTree = "<group>"; };
-		FC04D693C900473E8FA19CE1 /* VersionedSchema.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VersionedSchema.swift"; sourceTree = "<group>"; };
-		F40D958DBFBA4950AEB913FC /* ModelContainerFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ModelContainerFactory.swift"; sourceTree = "<group>"; };
-		ADBAB22BBFE84BF580BA03B3 /* PersistenceError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PersistenceError.swift"; sourceTree = "<group>"; };
-		0BB68499CB6448B8BE71954D /* Date+Calendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Calendar.swift"; sourceTree = "<group>"; };
-		51BD689F965048AD9F635B9E /* ColorPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ColorPalette.swift"; sourceTree = "<group>"; };
-		533441C3B0D242FC81D21297 /* Double+Clamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Double+Clamp.swift"; sourceTree = "<group>"; };
-		569946FBC8E24492A8D304BE /* StreakCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StreakCalculator.swift"; sourceTree = "<group>"; };
-		309E5C93DAFF4135A33021FD /* HeatmapDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HeatmapDataProvider.swift"; sourceTree = "<group>"; };
-		A1C03E4B17D64A07BC01578B /* RootNavigationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RootNavigationView.swift"; sourceTree = "<group>"; };
-		07A9BBF4AC5E43B1A3DADA15 /* HabitSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitSidebarView.swift"; sourceTree = "<group>"; };
-		DC3A045851EC4EE3BBDF8B6F /* HabitDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitDetailView.swift"; sourceTree = "<group>"; };
-		C5ADB7F89AE441F3A722EE25 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DashboardView.swift"; sourceTree = "<group>"; };
-		F402BD63AAD74207AB57E2FF /* HabitCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitCardView.swift"; sourceTree = "<group>"; };
-		CA51C54E147F4B919C3D627B /* LOCAWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LOCAWidgetBundle.swift"; sourceTree = "<group>"; };
-		BA05021260E341A7A1FC3604 /* LOCA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LOCA.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		F575AFC973294ACE86454DD1 /* LOCAWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LOCAWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		8A9C51BF56E64079B43886F6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		9E376849553C4A91A25D9095 /* LOCA.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LOCA.entitlements; sourceTree = "<group>"; };
-		8F0AD98FEBC64DB3B26AB207 /* LOCAWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LOCAWidget.entitlements; sourceTree = "<group>"; };
-		50DF0BE50BAB43A6889F9784 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		0B661DE6C9B24E3D843FB850 /* LOCAApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LOCAApp.swift"; sourceTree = "<group>"; };
+		A4842C8648B7401D8EFE6340 /* CloudKitSyncCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CloudKitSyncCoordinator.swift"; sourceTree = "<group>"; };
+		3B3F4C66EDB24D078C2B2AF2 /* HabitBoard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitBoard.swift"; sourceTree = "<group>"; };
+		E576183BE7E347EB9843C9BF /* LogEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LogEntry.swift"; sourceTree = "<group>"; };
+		A0F969CA4EF44ABE95278CFC /* VersionedSchema.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VersionedSchema.swift"; sourceTree = "<group>"; };
+		31E298A378C54834B09BA445 /* ModelContainerFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ModelContainerFactory.swift"; sourceTree = "<group>"; };
+		7543B061EF654017A232CD3D /* PersistenceError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PersistenceError.swift"; sourceTree = "<group>"; };
+		8BD9C2CC887147519D793BFF /* Date+Calendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Calendar.swift"; sourceTree = "<group>"; };
+		D1A2CFC96B094EC29DDABCCF /* ColorPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ColorPalette.swift"; sourceTree = "<group>"; };
+		1209CD3DA1924EF5833EBA9C /* Double+Clamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Double+Clamp.swift"; sourceTree = "<group>"; };
+		A9B00E104E5A41FBA7AF29CE /* StreakCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StreakCalculator.swift"; sourceTree = "<group>"; };
+		837E73A07CEA4764A317B241 /* HeatmapDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HeatmapDataProvider.swift"; sourceTree = "<group>"; };
+		6C58C6EAC62442D3A967C0F5 /* RootNavigationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RootNavigationView.swift"; sourceTree = "<group>"; };
+		3B8A714F6CC44437A795494A /* HabitSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitSidebarView.swift"; sourceTree = "<group>"; };
+		B377DBE0C651492E94B24D32 /* HabitDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitDetailView.swift"; sourceTree = "<group>"; };
+		E7441C76872C4EE9B7FCFE28 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DashboardView.swift"; sourceTree = "<group>"; };
+		B10474F8C67C4F878B04847B /* HabitCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitCardView.swift"; sourceTree = "<group>"; };
+		E7FB6B324BB24E61945D817B /* LOCAWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LOCAWidgetBundle.swift"; sourceTree = "<group>"; };
+		4AEC64F807B143B5A89F3CF7 /* LOCA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LOCA.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5E2FC85826E54532BCBC1A3F /* LOCAWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LOCAWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		033FA98DA16E4923BA9330CF /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		27D56809301E4CB6A8FEA542 /* LOCA.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LOCA.entitlements; sourceTree = "<group>"; };
+		01ED588650534F0B802B6307 /* LOCAWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LOCAWidget.entitlements; sourceTree = "<group>"; };
+		600C95D9070C45E380004C14 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXContainerItemProxy section */
-		24218A533479450AAF50E8B2 /* PBXContainerItemProxy */ = {
+		AFAA1E6D69E94D3CB984125A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 244BC9197C9A4B61BC59B557 /* Project object */;
+			containerPortal = 89306EB8B2F44F7F8E6D2248 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 5592BD1A08E14C1282B8E5E2;
+			remoteGlobalIDString = DC0CEBFFD759477CBD311322;
 			remoteInfo = LOCAWidgetExtension;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		9035F6E4890D4F1A879A568B /* Frameworks */ = {
+		6BC9CC49D429411896477D92 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		6A5006194742497DA2B17771 /* Frameworks */ = {
+		35512F3520C44FD6A2C092CA /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -94,13 +94,13 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		BECB1076BA554C6DA0C83D44 /* Embed Foundation Extensions */ = {
+		D7F4C13A92C3448AB43BFCD5 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				77A3FD304B2B4F3EA2F6C8A8 /* LOCAWidgetExtension.appex in Embed Foundation Extensions */,
+				80E98C55B8A948A79494D7C4 /* LOCAWidgetExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -108,169 +108,169 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXGroup section */
-		02311C7173E542568A01CC30 /* Analytics */ = {
+		7D1B30ACF222440A9D019D4A /* Analytics */ = {
 			isa = PBXGroup;
 			children = (
-				569946FBC8E24492A8D304BE /* StreakCalculator.swift */,
-				309E5C93DAFF4135A33021FD /* HeatmapDataProvider.swift */,
+				A9B00E104E5A41FBA7AF29CE /* StreakCalculator.swift */,
+				837E73A07CEA4764A317B241 /* HeatmapDataProvider.swift */,
 			);
 			path = "Analytics";
 			sourceTree = "<group>";
 		};
-		F4F1967F63154944880ED1E9 /* App */ = {
+		044BC40862654B429EFCAC45 /* App */ = {
 			isa = PBXGroup;
 			children = (
-				D192A594A8C7476FB79AD5E5 /* LOCAApp.swift */,
-				65B497D08B9147ADADB27C16 /* CloudKitSyncCoordinator.swift */,
+				0B661DE6C9B24E3D843FB850 /* LOCAApp.swift */,
+				A4842C8648B7401D8EFE6340 /* CloudKitSyncCoordinator.swift */,
 			);
 			path = "App";
 			sourceTree = "<group>";
 		};
-		24BDFC51EE054F57823516F8 /* Extensions */ = {
+		D53980BCAC354F3B9F77FC19 /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
-				0BB68499CB6448B8BE71954D /* Date+Calendar.swift */,
-				51BD689F965048AD9F635B9E /* ColorPalette.swift */,
-				533441C3B0D242FC81D21297 /* Double+Clamp.swift */,
+				8BD9C2CC887147519D793BFF /* Date+Calendar.swift */,
+				D1A2CFC96B094EC29DDABCCF /* ColorPalette.swift */,
+				1209CD3DA1924EF5833EBA9C /* Double+Clamp.swift */,
 			);
 			path = "Extensions";
 			sourceTree = "<group>";
 		};
-		59E66877C1B94A06856D0295 /* Models */ = {
+		F49461C157B64394ABEC665C /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				1BF5771AA42C46C99A1FDF4A /* HabitBoard.swift */,
-				E15B7894B47B4FE1ACE7581A /* LogEntry.swift */,
-				FC04D693C900473E8FA19CE1 /* VersionedSchema.swift */,
+				3B3F4C66EDB24D078C2B2AF2 /* HabitBoard.swift */,
+				E576183BE7E347EB9843C9BF /* LogEntry.swift */,
+				A0F969CA4EF44ABE95278CFC /* VersionedSchema.swift */,
 			);
 			path = "Models";
 			sourceTree = "<group>";
 		};
-		EA17B234A6944D978E6DBBC6 /* Persistence */ = {
+		3966BFA6C655410885A86FA7 /* Persistence */ = {
 			isa = PBXGroup;
 			children = (
-				F40D958DBFBA4950AEB913FC /* ModelContainerFactory.swift */,
-				ADBAB22BBFE84BF580BA03B3 /* PersistenceError.swift */,
+				31E298A378C54834B09BA445 /* ModelContainerFactory.swift */,
+				7543B061EF654017A232CD3D /* PersistenceError.swift */,
 			);
 			path = "Persistence";
 			sourceTree = "<group>";
 		};
-		66259B48986A4F20B773AECE /* Dashboard */ = {
+		EF90A3C7B9554AFEB60D5314 /* Dashboard */ = {
 			isa = PBXGroup;
 			children = (
-				C5ADB7F89AE441F3A722EE25 /* DashboardView.swift */,
-				F402BD63AAD74207AB57E2FF /* HabitCardView.swift */,
+				E7441C76872C4EE9B7FCFE28 /* DashboardView.swift */,
+				B10474F8C67C4F878B04847B /* HabitCardView.swift */,
 			);
 			path = "Dashboard";
 			sourceTree = "<group>";
 		};
-		EFD6155F95874AC690105419 /* HabitDetail */ = {
+		5C2AC16E93C049259240AEB5 /* HabitDetail */ = {
 			isa = PBXGroup;
 			children = (
-				DC3A045851EC4EE3BBDF8B6F /* HabitDetailView.swift */,
+				B377DBE0C651492E94B24D32 /* HabitDetailView.swift */,
 			);
 			path = "HabitDetail";
 			sourceTree = "<group>";
 		};
-		AFA8F5901A9643588068426D /* Navigation */ = {
+		58A1CD062DF447EB9440EAF3 /* Navigation */ = {
 			isa = PBXGroup;
 			children = (
-				A1C03E4B17D64A07BC01578B /* RootNavigationView.swift */,
-				07A9BBF4AC5E43B1A3DADA15 /* HabitSidebarView.swift */,
+				6C58C6EAC62442D3A967C0F5 /* RootNavigationView.swift */,
+				3B8A714F6CC44437A795494A /* HabitSidebarView.swift */,
 			);
 			path = "Navigation";
 			sourceTree = "<group>";
 		};
-		161A506B8EBE426EBF927F79 /* Core */ = {
+		D9369A2423754ADF8993A5E9 /* Core */ = {
 			isa = PBXGroup;
 			children = (
-				24BDFC51EE054F57823516F8 /* Extensions */,
-				59E66877C1B94A06856D0295 /* Models */,
-				EA17B234A6944D978E6DBBC6 /* Persistence */,
+				D53980BCAC354F3B9F77FC19 /* Extensions */,
+				F49461C157B64394ABEC665C /* Models */,
+				3966BFA6C655410885A86FA7 /* Persistence */,
 			);
 			path = "Core";
 			sourceTree = "<group>";
 		};
-		8BABE5D2374549B1AB607E28 /* Features */ = {
+		56924518980E4B2C80F2E1BC /* Features */ = {
 			isa = PBXGroup;
 			children = (
-				66259B48986A4F20B773AECE /* Dashboard */,
-				EFD6155F95874AC690105419 /* HabitDetail */,
-				AFA8F5901A9643588068426D /* Navigation */,
+				EF90A3C7B9554AFEB60D5314 /* Dashboard */,
+				5C2AC16E93C049259240AEB5 /* HabitDetail */,
+				58A1CD062DF447EB9440EAF3 /* Navigation */,
 			);
 			path = "Features";
 			sourceTree = "<group>";
 		};
-		6219FB58FD0545589C9B1627 /* LOCA */ = {
+		BA67EA2A165046F58BB6EFA5 /* LOCA */ = {
 			isa = PBXGroup;
 			children = (
-				02311C7173E542568A01CC30 /* Analytics */,
-				F4F1967F63154944880ED1E9 /* App */,
-				161A506B8EBE426EBF927F79 /* Core */,
-				8BABE5D2374549B1AB607E28 /* Features */,
-				8A9C51BF56E64079B43886F6 /* Assets.xcassets */,
-				9E376849553C4A91A25D9095 /* LOCA.entitlements */,
+				7D1B30ACF222440A9D019D4A /* Analytics */,
+				044BC40862654B429EFCAC45 /* App */,
+				D9369A2423754ADF8993A5E9 /* Core */,
+				56924518980E4B2C80F2E1BC /* Features */,
+				033FA98DA16E4923BA9330CF /* Assets.xcassets */,
+				27D56809301E4CB6A8FEA542 /* LOCA.entitlements */,
 			);
 			path = LOCA;
 			sourceTree = "<group>";
 		};
-		0B05EA3F23F6463C871B100B /* LOCAWidget */ = {
+		343CA83D22A24386A9100CAD /* LOCAWidget */ = {
 			isa = PBXGroup;
 			children = (
-				CA51C54E147F4B919C3D627B /* LOCAWidgetBundle.swift */,
-				8F0AD98FEBC64DB3B26AB207 /* LOCAWidget.entitlements */,
-				50DF0BE50BAB43A6889F9784 /* Info.plist */,
+				E7FB6B324BB24E61945D817B /* LOCAWidgetBundle.swift */,
+				01ED588650534F0B802B6307 /* LOCAWidget.entitlements */,
+				600C95D9070C45E380004C14 /* Info.plist */,
 			);
 			path = LOCAWidget;
 			sourceTree = "<group>";
 		};
-		73B468698A0A41FD80862E55 /* Products */ = {
+		6C87E76D4AB140DBA784444F /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				BA05021260E341A7A1FC3604 /* LOCA.app */,
-				F575AFC973294ACE86454DD1 /* LOCAWidgetExtension.appex */,
+				4AEC64F807B143B5A89F3CF7 /* LOCA.app */,
+				5E2FC85826E54532BCBC1A3F /* LOCAWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		12B9BED1BE7F4AF8BF5609C1 = {
+		3E427936A4F14A86904CB1F8 = {
 			isa = PBXGroup;
 			children = (
-				6219FB58FD0545589C9B1627 /* LOCA */,
-				0B05EA3F23F6463C871B100B /* LOCAWidget */,
-				73B468698A0A41FD80862E55 /* Products */,
+				BA67EA2A165046F58BB6EFA5 /* LOCA */,
+				343CA83D22A24386A9100CAD /* LOCAWidget */,
+				6C87E76D4AB140DBA784444F /* Products */,
 			);
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		3DBA74ABA75944C0951650CA /* LOCA */ = {
+		EE723FEECA39441AAAC0E102 /* LOCA */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 7BF2193B099744A882271288 /* Build configuration list for PBXNativeTarget "LOCA" */;
+			buildConfigurationList = 1BB9D39158064764879EE9B9 /* Build configuration list for PBXNativeTarget "LOCA" */;
 			buildPhases = (
-				471CA3E7A25A437699577BFD /* Sources */,
-				9035F6E4890D4F1A879A568B /* Frameworks */,
-				1513424757A04D16B75943D4 /* Resources */,
-				BECB1076BA554C6DA0C83D44 /* Embed Foundation Extensions */,
+				E6B4479D1E4C4952966CF02F /* Sources */,
+				6BC9CC49D429411896477D92 /* Frameworks */,
+				6CACB7D982D544D2B059438C /* Resources */,
+				D7F4C13A92C3448AB43BFCD5 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				23DDEDE0313B43D3A94687F7 /* PBXTargetDependency */,
+				6DA9FD42F1544EAE95280464 /* PBXTargetDependency */,
 			);
 			name = LOCA;
 			productName = LOCA;
-			productReference = BA05021260E341A7A1FC3604 /* LOCA.app */;
+			productReference = 4AEC64F807B143B5A89F3CF7 /* LOCA.app */;
 			productType = "com.apple.product-type.application";
 		};
-		5592BD1A08E14C1282B8E5E2 /* LOCAWidgetExtension */ = {
+		DC0CEBFFD759477CBD311322 /* LOCAWidgetExtension */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A071EF0CD8724DE8A160E515 /* Build configuration list for PBXNativeTarget "LOCAWidgetExtension" */;
+			buildConfigurationList = 34E61C98AE6243C3BCBC68B3 /* Build configuration list for PBXNativeTarget "LOCAWidgetExtension" */;
 			buildPhases = (
-				A6FBD9D405084159AC63C00E /* Sources */,
-				6A5006194742497DA2B17771 /* Frameworks */,
-				171905485D5C4341A60A26A4 /* Resources */,
+				E2FB13F626D2466D91A6701A /* Sources */,
+				35512F3520C44FD6A2C092CA /* Frameworks */,
+				93053BF6068A43928E4956CA /* Resources */,
 			);
 			buildRules = (
 			);
@@ -278,28 +278,44 @@
 			);
 			name = LOCAWidgetExtension;
 			productName = LOCAWidgetExtension;
-			productReference = F575AFC973294ACE86454DD1 /* LOCAWidgetExtension.appex */;
+			productReference = 5E2FC85826E54532BCBC1A3F /* LOCAWidgetExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		244BC9197C9A4B61BC59B557 /* Project object */ = {
+		89306EB8B2F44F7F8E6D2248 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1620;
 				LastUpgradeCheck = 1620;
 				TargetAttributes = {
-					3DBA74ABA75944C0951650CA = {
+					EE723FEECA39441AAAC0E102 = {
 						CreatedOnToolsVersion = 16.2;
+						SystemCapabilities = {
+							com.apple.ApplicationGroups.iOS = {
+								enabled = 1;
+							};
+							com.apple.iCloud = {
+								enabled = 1;
+							};
+						};
 					};
-					5592BD1A08E14C1282B8E5E2 = {
+					DC0CEBFFD759477CBD311322 = {
 						CreatedOnToolsVersion = 16.2;
+						SystemCapabilities = {
+							com.apple.ApplicationGroups.iOS = {
+								enabled = 1;
+							};
+							com.apple.iCloud = {
+								enabled = 1;
+							};
+						};
 					};
 				};
 			};
-			buildConfigurationList = E3DDA55A600E40C6B26C168A /* Build configuration list for PBXProject "LOCA" */;
+			buildConfigurationList = 844C1A547F4F466F9888DF15 /* Build configuration list for PBXProject "LOCA" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -307,27 +323,27 @@
 				en,
 				Base,
 			);
-			mainGroup = 12B9BED1BE7F4AF8BF5609C1;
-			productRefGroup = 73B468698A0A41FD80862E55 /* Products */;
+			mainGroup = 3E427936A4F14A86904CB1F8;
+			productRefGroup = 6C87E76D4AB140DBA784444F /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				3DBA74ABA75944C0951650CA /* LOCA */,
-				5592BD1A08E14C1282B8E5E2 /* LOCAWidgetExtension */,
+				EE723FEECA39441AAAC0E102 /* LOCA */,
+				DC0CEBFFD759477CBD311322 /* LOCAWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		1513424757A04D16B75943D4 /* Resources */ = {
+		6CACB7D982D544D2B059438C /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				13581C3ECF074086AD44E990 /* Assets.xcassets in Resources */,
+				98E3A84D3ADA481F89E979C9 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		171905485D5C4341A60A26A4 /* Resources */ = {
+		93053BF6068A43928E4956CA /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -337,52 +353,52 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		471CA3E7A25A437699577BFD /* Sources */ = {
+		E6B4479D1E4C4952966CF02F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D0B00566E8814C0CB51BC78F /* LOCAApp.swift in Sources */,
-				543E2651A7D04872B7256D2B /* CloudKitSyncCoordinator.swift in Sources */,
-				07B5246B49C842A8A0A62CF7 /* HabitBoard.swift in Sources */,
-				7BE779D499F24D46B1254E5B /* LogEntry.swift in Sources */,
-				7D9ECE8B113E4D4BB3610AF1 /* VersionedSchema.swift in Sources */,
-				7CC1669A03F14A558D09384E /* ModelContainerFactory.swift in Sources */,
-				EB52B758ACA84DBDB1566792 /* PersistenceError.swift in Sources */,
-				5640D4B568234435919FDCF4 /* Date+Calendar.swift in Sources */,
-				E222858FFA964D6593594B86 /* ColorPalette.swift in Sources */,
-				126EF2884387457D80005C82 /* Double+Clamp.swift in Sources */,
-				24DDCF8761464846A9989F3B /* StreakCalculator.swift in Sources */,
-				B6726D6BD86F4C2E820CF24A /* HeatmapDataProvider.swift in Sources */,
-				7FC6446FF5B84985BD3C6390 /* RootNavigationView.swift in Sources */,
-				FFF68479B1644F64962ADCFD /* HabitSidebarView.swift in Sources */,
-				EA0D56E615AC4F63AF0DA126 /* HabitDetailView.swift in Sources */,
-				1A5DA6E1EE06422CAA1E4D99 /* DashboardView.swift in Sources */,
-				227F4775AD1D4B77984D7176 /* HabitCardView.swift in Sources */,
+				44DB446688DB48F782CB4A1B /* LOCAApp.swift in Sources */,
+				0BA7188D9FF141CB9CC49687 /* CloudKitSyncCoordinator.swift in Sources */,
+				D341F3FB501C4A689C3DAC98 /* HabitBoard.swift in Sources */,
+				29A941CEBE164FF4A34E4B47 /* LogEntry.swift in Sources */,
+				569938A4D05D49F1BE4EB3B0 /* VersionedSchema.swift in Sources */,
+				8B7BC5652DD04613969D3EA5 /* ModelContainerFactory.swift in Sources */,
+				B2FD5F34DB864DCAB392E98C /* PersistenceError.swift in Sources */,
+				A117149FF4A946D8938DC447 /* Date+Calendar.swift in Sources */,
+				AB206523344E4C7184FFF348 /* ColorPalette.swift in Sources */,
+				0DF920A91DBE48F89C85FC02 /* Double+Clamp.swift in Sources */,
+				C42184440B0349C2BF5BF351 /* StreakCalculator.swift in Sources */,
+				3B7001DDBDCA405BB0271BE3 /* HeatmapDataProvider.swift in Sources */,
+				EF9592F35FA9403A92497BC0 /* RootNavigationView.swift in Sources */,
+				A313B9055EC9412D9CAFAA41 /* HabitSidebarView.swift in Sources */,
+				732FE124E13346CCAF39F275 /* HabitDetailView.swift in Sources */,
+				67CCC1B7AB2B4BEABA798A6F /* DashboardView.swift in Sources */,
+				14BA8BDA9AB2403AA411DC6F /* HabitCardView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A6FBD9D405084159AC63C00E /* Sources */ = {
+		E2FB13F626D2466D91A6701A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6708C45BD26D4DDA9B003E51 /* HabitBoard.swift in Sources */,
-				853B614ADBAC417BA7C0A9CE /* LogEntry.swift in Sources */,
-				084662FABCF84D5A8E53B2C4 /* VersionedSchema.swift in Sources */,
-				5A5ACB7F0A784A2CBFF9D9CF /* ModelContainerFactory.swift in Sources */,
-				38645F7D6C684FFFACD5E496 /* PersistenceError.swift in Sources */,
-				6E8FC2CEAD804E3E92D3EBAE /* Date+Calendar.swift in Sources */,
-				E1C6622EE4FA44BDB5DD4C92 /* ColorPalette.swift in Sources */,
-				9B0B1471D4964328BF5C3A98 /* Double+Clamp.swift in Sources */,
-				1853D74F8EB3432186AD990F /* StreakCalculator.swift in Sources */,
-				956E141345C647A8BE20DDFB /* HeatmapDataProvider.swift in Sources */,
-				B66E568496AC4DB38F7AAF09 /* LOCAWidgetBundle.swift in Sources */,
+				80AEF7B77263431BAE191426 /* HabitBoard.swift in Sources */,
+				7BEF8846AEBF485D981EE912 /* LogEntry.swift in Sources */,
+				62F9CE1A23164331A3E22338 /* VersionedSchema.swift in Sources */,
+				2639B184FE9C473CA43C5198 /* ModelContainerFactory.swift in Sources */,
+				0AE35E6A72D74E69860CF0F9 /* PersistenceError.swift in Sources */,
+				77E80A04DCA14C5EAA91E953 /* Date+Calendar.swift in Sources */,
+				339AB5A031ED4DB6B0F18B92 /* ColorPalette.swift in Sources */,
+				3C2C1875D8DE4F2E9C7900A4 /* Double+Clamp.swift in Sources */,
+				924E6FD251024C699D517BA8 /* StreakCalculator.swift in Sources */,
+				CA251282DFB0463EB2A0FEC2 /* HeatmapDataProvider.swift in Sources */,
+				45323EE20BDB45B4BE567809 /* LOCAWidgetBundle.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		621D0DFCDE8D4A6AB0869589 /* Debug */ = {
+		8B98554C28894D49816BD51F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 
@@ -419,7 +435,7 @@
 			};
 			name = Debug;
 		};
-		06AB3FF14BD2408C8A7ADCC0 /* Release */ = {
+		A36C56776D324AFCA8D95C60 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 
@@ -449,12 +465,13 @@
 			};
 			name = Release;
 		};
-		9425CF6CF76D44E1B74A1A24 /* Debug */ = {
+		9BB0D8D1713D4084AC503DD6 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = LOCA/LOCA.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -469,7 +486,7 @@
 			};
 			name = Debug;
 		};
-		16CD868166AD4AFA9358E2DF /* Release */ = {
+		0B883C77E51C4ED296B371E5 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -489,10 +506,11 @@
 			};
 			name = Release;
 		};
-		BD3CF7C5DCAB44F09496CFEC /* Debug */ = {
+		F9DC47CCF24247FEA41ECE7E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = LOCAWidget/LOCAWidget.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -507,7 +525,7 @@
 			};
 			name = Debug;
 		};
-		EFEB3397D3304C1A99EB3D2C /* Release */ = {
+		458C00E302D34D30BD3AA81E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = LOCAWidget/LOCAWidget.entitlements;
@@ -528,29 +546,29 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		E3DDA55A600E40C6B26C168A /* Build configuration list for PBXProject "LOCA" */ = {
+		844C1A547F4F466F9888DF15 /* Build configuration list for PBXProject "LOCA" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				621D0DFCDE8D4A6AB0869589 /* Debug */,
-				06AB3FF14BD2408C8A7ADCC0 /* Release */,
+				8B98554C28894D49816BD51F /* Debug */,
+				A36C56776D324AFCA8D95C60 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		7BF2193B099744A882271288 /* Build configuration list for PBXNativeTarget "LOCA" */ = {
+		1BB9D39158064764879EE9B9 /* Build configuration list for PBXNativeTarget "LOCA" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				9425CF6CF76D44E1B74A1A24 /* Debug */,
-				16CD868166AD4AFA9358E2DF /* Release */,
+				9BB0D8D1713D4084AC503DD6 /* Debug */,
+				0B883C77E51C4ED296B371E5 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A071EF0CD8724DE8A160E515 /* Build configuration list for PBXNativeTarget "LOCAWidgetExtension" */ = {
+		34E61C98AE6243C3BCBC68B3 /* Build configuration list for PBXNativeTarget "LOCAWidgetExtension" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				BD3CF7C5DCAB44F09496CFEC /* Debug */,
-				EFEB3397D3304C1A99EB3D2C /* Release */,
+				F9DC47CCF24247FEA41ECE7E /* Debug */,
+				458C00E302D34D30BD3AA81E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -558,13 +576,13 @@
 /* End XCConfigurationList section */
 
 /* Begin PBXTargetDependency section */
-		23DDEDE0313B43D3A94687F7 /* PBXTargetDependency */ = {
+		6DA9FD42F1544EAE95280464 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 5592BD1A08E14C1282B8E5E2 /* LOCAWidgetExtension */;
-			targetProxy = 24218A533479450AAF50E8B2 /* PBXContainerItemProxy */;
+			target = DC0CEBFFD759477CBD311322 /* LOCAWidgetExtension */;
+			targetProxy = AFAA1E6D69E94D3CB984125A /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 	};
-	rootObject = 244BC9197C9A4B61BC59B557 /* Project object */;
+	rootObject = 89306EB8B2F44F7F8E6D2248 /* Project object */;
 }

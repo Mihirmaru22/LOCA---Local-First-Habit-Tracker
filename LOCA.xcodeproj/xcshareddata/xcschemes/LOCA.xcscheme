@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "3DBA74ABA75944C0951650CA"
+               BlueprintIdentifier = "EE723FEECA39441AAAC0E102"
                BuildableName = "LOCA.app"
                BlueprintName = "LOCA"
                ReferencedContainer = "container:LOCA.xcodeproj">
@@ -28,7 +28,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "5592BD1A08E14C1282B8E5E2"
+               BlueprintIdentifier = "DC0CEBFFD759477CBD311322"
                BuildableName = "LOCAWidgetExtension.appex"
                BlueprintName = "LOCAWidgetExtension"
                ReferencedContainer = "container:LOCA.xcodeproj">
@@ -58,7 +58,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "3DBA74ABA75944C0951650CA"
+            BlueprintIdentifier = "EE723FEECA39441AAAC0E102"
             BuildableName = "LOCA.app"
             BlueprintName = "LOCA"
             ReferencedContainer = "container:LOCA.xcodeproj">
@@ -75,7 +75,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "3DBA74ABA75944C0951650CA"
+            BlueprintIdentifier = "EE723FEECA39441AAAC0E102"
             BuildableName = "LOCA.app"
             BlueprintName = "LOCA"
             ReferencedContainer = "container:LOCA.xcodeproj">

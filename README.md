@@ -114,7 +114,7 @@ Docs/
 | **2** | **Compute Layer** | **✅ Complete — reviewed, all High findings fixed** |
 | **3** | **Navigation Shell** | **✅ Complete — reviewed, all High findings + M1 fixed** |
 | **4** | **Dashboard** | **✅ Complete — reviewed, M1 + M2 fixed** |
-| 5 | Heatmap & Detail | ⏳ Ready to begin |
+| 5 | Heatmap & Detail | 🔄 5.1 + 5.2 built (pending formal review) |
 | 6 | Check-In Flow | ⏳ Pending |
 | 7 | Habit Management | ⏳ Pending |
 | 8 | App Intents | ⏳ Pending |
@@ -159,6 +159,12 @@ See the full report: [`Docs/Reports/Phase3-NavigationShell.md`](Docs/Reports/Pha
 ## Phase 4 Summary
 
 Phase 4 delivered the Dashboard: `DashboardView`/`HabitCardView` replace `HabitSidebarView`/`HabitSidebarRow` as `NavigationSplitView`'s sidebar content (ADR-008), displaying per-habit streak, best-streak, today's progress (via a native `Gauge`), and daily target — all from cached values or a simple filter over already-loaded logs, with zero new `StreakCalculator`/`HeatmapDataProvider` calls. Review found two Medium findings, both fixed: a redundant double computation of today's total per render, and an unclamped progress value that could go out of `Gauge`'s valid range on corrupted data. `HabitSidebarView.swift` remains in the repo, now unused, pending an explicit decision to remove it.
+
+## Integration Milestone — Project Realization + Phase 5.1/5.2 + Xcode Validation
+
+Everything since the Project Realization push, bundled as one milestone per an explicit process change: a real, runnable `.xcodeproj` (two multiplatform targets, dependency graph, entitlements) was validated directly against real Xcode build output rather than static review alone. Fixes landed in response to actual Xcode errors: a missing `PBXTargetDependency` (parallel-build ordering risk), missing `SystemCapabilities` metadata, an explicit `CODE_SIGN_IDENTITY`, and — the significant one — separate Debug-only entitlements (`LOCA-Debug.entitlements`, `LOCAWidget-Debug.entitlements`, both empty of App Group/CloudKit) paired with a new `LOCAL_DEVELOPMENT` compile-time switch (ADR-009) in `ModelContainerFactory`, so the app can build and run under a Personal Team without touching the production CloudKit/App Group architecture at all — Release remains provably byte-identical to before. Phase 5.1 (`HabitDetailView` foundation) and 5.2 (`HeatmapView`, consuming `HeatmapDataProvider`/`ColorPalette` exactly as designed) are both built but have not yet been through their own formal review — that happens next, independent of this infrastructure work.
+
+**Workflow change from here forward:** one Xcode build → one classified fix → one push → repeat. No batching, no speculative fixes ahead of real compiler output.
 
 ---
 

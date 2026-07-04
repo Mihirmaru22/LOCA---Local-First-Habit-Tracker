@@ -7,15 +7,20 @@ import SwiftData
 ///
 /// ## Single Call Site Rule
 ///
-/// This is the **only** call site for `ModelContainerFactory.makeSharedContainer()`
+/// This is the **only** call site for `ModelContainerFactory.makeConfiguredContainer()`
 /// in the Main App target (`ModelContainerFactory`'s own documented contract). No
 /// other file constructs or holds a production `ModelContainer`. Views access data
 /// exclusively via `@Environment(\.modelContext)` and `@Query`, injected here via
 /// `.modelContainer(container)`.
 ///
+/// `makeConfiguredContainer()` resolves to either production (App Group + CloudKit)
+/// or local development (neither) storage depending on the `LOCAL_DEVELOPMENT`
+/// compilation condition — see ADR-009. This file is deliberately unaware of which
+/// one it received; its own logic is identical either way.
+///
 /// ## Failure Handling
 ///
-/// `makeSharedContainer()` throws. Container construction happens once, eagerly, in
+/// `makeConfiguredContainer()` throws. Container construction happens once, eagerly, in
 /// `init()`. On failure, `container` is `nil` and the app shows `ContainerUnavailableView`
 /// instead of crashing — consistent with this project's established "never `try!`"
 /// discipline (Phase 1 finding M4, first applied at Phase 3's Preview call sites,
@@ -45,7 +50,11 @@ struct LOCAApp: App {
 
     init() {
         do {
-            let container = try ModelContainerFactory.makeSharedContainer()
+            // makeConfiguredContainer() is the single centralized switch point
+            // between production (App Group + CloudKit) and local development
+            // (neither) — see ADR-009 and ModelContainerFactory's own doc
+            // comment. LOCAApp does not know or care which one it gets.
+            let container = try ModelContainerFactory.makeConfiguredContainer()
             self.container = container
             self.cloudKitCoordinator = CloudKitSyncCoordinator(container: container)
         } catch {
@@ -78,7 +87,7 @@ struct LOCAApp: App {
 
 // MARK: - ContainerUnavailableView
 
-/// Shown in place of the app's content when `ModelContainerFactory.makeSharedContainer()`
+/// Shown in place of the app's content when `ModelContainerFactory.makeConfiguredContainer()`
 /// fails during launch.
 ///
 /// Private to this file: exactly one call site, no reuse, no platform-conditional
