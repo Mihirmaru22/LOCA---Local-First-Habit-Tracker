@@ -96,15 +96,16 @@ final class LogEntry {
     /// `HabitBoard` record during first-install or post-conflict sync. The entry's
     /// `boardID` remains valid and the relationship resolves once the board record arrives.
     ///
-    /// `@Relationship` is declared explicitly on both sides of the `HabitBoard ↔ LogEntry`
-    /// relationship rather than relying on SwiftData's single-sided inverse inference.
-    /// iOS 17.0–17.2 has documented issues with inferred inverses in specific conditions
-    /// (out-of-order CloudKit delivery, cold launches, post-migration loads). Explicit
-    /// declaration on both sides eliminates this class of failure. (H2)
-    ///
-    /// The `inverse:` keypath mirrors the declaration on `HabitBoard.logs`:
-    /// `@Relationship(deleteRule: .nullify, inverse: \LogEntry.board)`.
-    @Relationship(inverse: \HabitBoard.logs)
+    /// No `@Relationship` attribute on this side. SwiftData's bidirectional relationship
+    /// model requires `inverse:` to be declared on exactly **one** side of a relationship
+    /// pair — `HabitBoard.logs` is that side (`@Relationship(deleteRule: .nullify,
+    /// inverse: \LogEntry.board)`). A prior revision declared `inverse:` on both sides,
+    /// each pointing at the other — a genuine circular dependency during macro expansion
+    /// (resolving `HabitBoard.logs`'s macro required resolving `LogEntry.board`'s type,
+    /// whose own macro required resolving `HabitBoard.logs` in turn), which the compiler
+    /// correctly rejected. This plain, attribute-free declaration is the correct pattern:
+    /// SwiftData resolves this property as the inverse counterpart via `HabitBoard.logs`'s
+    /// keypath, with no separate declaration needed here.
     var board: HabitBoard? = nil
 
     // MARK: - Initialiser
