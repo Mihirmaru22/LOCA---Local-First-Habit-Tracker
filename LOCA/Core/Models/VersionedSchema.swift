@@ -24,7 +24,7 @@ import SwiftData
 /// Never modify `RippleSchemaV1` after the first production release.
 enum RippleSchemaV1: VersionedSchema {
 
-    static var versionIdentifier = Schema.Version(1, 0, 0)
+    static let versionIdentifier = Schema.Version(1, 0, 0)
 
     /// Every `@Model` type that participates in the schema.
     ///
