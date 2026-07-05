@@ -77,7 +77,7 @@ final class CloudKitSyncCoordinator {
 
     // MARK: - Observation Loop
 
-    // MARK: NSPersistentCloudKitContainerEvent Bridging
+    // MARK: NSPersistentCloudKitContainer.Event Bridging
     //
     // NotificationCenter.default.notifications(named:) returns an AsyncSequence —
     // the Foundation-provided bridge from the legacy notification-callback API to
@@ -92,7 +92,7 @@ final class CloudKitSyncCoordinator {
     // already cooperatively stops yielding once the consuming Task is cancelled —
     // the check costs nothing and removes any ambiguity about compliance.
 
-    /// Begins observing `NSPersistentCloudKitContainerEvent` notifications.
+    /// Begins observing `NSPersistentCloudKitContainer.Event` notifications.
     ///
     /// Idempotent — a second call while already observing is a no-op (Phase 0
     /// review finding H1). Runs until the calling `Task` is cancelled — intended
@@ -116,7 +116,7 @@ final class CloudKitSyncCoordinator {
 
             guard let event = notification.userInfo?[
                 NSPersistentCloudKitContainer.eventNotificationUserInfoKey
-            ] as? NSPersistentCloudKitContainerEvent else {
+            ] as? NSPersistentCloudKitContainer.Event else {
                 continue
             }
 
@@ -136,11 +136,11 @@ final class CloudKitSyncCoordinator {
     // may have delivered LogEntry records").
     //
     // Per Engineering Principles §4.4: "CloudKit sync errors observed from
-    // NSPersistentCloudKitContainerEvent are logged at .error level and never
+    // NSPersistentCloudKitContainer.Event are logged at .error level and never
     // surfaced to the user as alerts. Sync is silent." No UI-facing error path
     // exists here by design.
 
-    private func handle(_ event: NSPersistentCloudKitContainerEvent) {
+    private func handle(_ event: NSPersistentCloudKitContainer.Event) {
         guard event.succeeded else {
             logger.error(
                 "CloudKit sync event failed: \(event.error?.localizedDescription ?? "unknown error", privacy: .public)"
@@ -150,7 +150,7 @@ final class CloudKitSyncCoordinator {
 
         guard event.type == .import else { return }
 
-        // Any state update triggered by an NSPersistentCloudKitContainerEvent is
+        // Any state update triggered by an NSPersistentCloudKitContainer.Event is
         // wrapped in withAnimation(nil) — Engineering Principles §3.4. A bulk
         // remote import must not drive SwiftUI layout recalculations mid-animation.
         withAnimation(nil) {
@@ -214,7 +214,7 @@ extension Notification.Name {
     /// active boards for streak recalculation following a CloudKit import.
     ///
     /// Per Engineering Principles §3.4, views never observe
-    /// `NSPersistentCloudKitContainerEvent` directly — they observe this notification
+    /// `NSPersistentCloudKitContainer.Event` directly — they observe this notification
     /// instead, if they need to react to a completed import (e.g. to trigger an
     /// immediate `StreakCalculator` pass rather than waiting for next display).
     /// No current view observes this notification; it exists as the documented
