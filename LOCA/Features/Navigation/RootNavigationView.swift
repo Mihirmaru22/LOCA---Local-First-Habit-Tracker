@@ -140,21 +140,43 @@ private struct EmptyDetailPlaceholderView: View {
 
 // MARK: - Preview
 
+// MARK: Preview Fixture Setup (root-cause fix)
+//
+// #Preview's macro-synthesized closure applies a ViewBuilder-style transform
+// to every statement inside it. Declarations and function calls pass through,
+// but a bare property assignment (e.g. `running.currentStreak = 5`) is an
+// expression evaluating to Void — the transform attempts to treat it as a
+// buildExpression argument, which requires View conformance, producing
+// "Type '()' cannot conform to View." The real issue wasn't that one line:
+// it's that imperative fixture setup doesn't belong inside a View-building
+// closure at all. Extracting it into this plain function removes it from the
+// ViewBuilder transform entirely — ordinary Swift functions have no such
+// restriction. Called once, synchronously, before the Preview closure ever
+// starts building a view; no .task/.onAppear needed, since this is static
+// fixture data with no reason to introduce async timing into a Preview.
+
+private func makeSeededPreviewContainer() -> ModelContainer? {
+    guard let container = try? ModelContainerFactory.makeInMemoryContainer() else {
+        return nil
+    }
+    let context = container.mainContext
+
+    let running = HabitBoard(name: "Running", metricType: HabitBoard.MetricType.quantitative.rawValue,
+                              targetValue: 3.0, unitLabel: "mi", colorIndex: 0)
+    running.currentStreak = 5
+    let reading = HabitBoard(name: "Reading", colorIndex: 2)
+    reading.currentStreak = 12
+    let meditate = HabitBoard(name: "Meditate", colorIndex: 5)
+
+    context.insert(running)
+    context.insert(reading)
+    context.insert(meditate)
+
+    return container
+}
+
 #Preview {
-    if let container = try? ModelContainerFactory.makeInMemoryContainer() {
-        let context = container.mainContext
-
-        let running = HabitBoard(name: "Running", metricType: HabitBoard.MetricType.quantitative.rawValue,
-                                  targetValue: 3.0, unitLabel: "mi", colorIndex: 0)
-        running.currentStreak = 5
-        let reading = HabitBoard(name: "Reading", colorIndex: 2)
-        reading.currentStreak = 12
-        let meditate = HabitBoard(name: "Meditate", colorIndex: 5)
-
-        context.insert(running)
-        context.insert(reading)
-        context.insert(meditate)
-
+    if let container = makeSeededPreviewContainer() {
         RootNavigationView()
             .modelContainer(container)
     } else {
