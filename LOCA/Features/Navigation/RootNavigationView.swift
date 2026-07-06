@@ -155,6 +155,7 @@ private struct EmptyDetailPlaceholderView: View {
 // starts building a view; no .task/.onAppear needed, since this is static
 // fixture data with no reason to introduce async timing into a Preview.
 
+@MainActor
 private func makeSeededPreviewContainer() -> ModelContainer? {
     guard let container = try? ModelContainerFactory.makeInMemoryContainer() else {
         return nil
