@@ -85,6 +85,13 @@ struct HeatmapView: View {
                     }
                     .padding(.vertical, 2)
                 }
+                // Opens showing today, not 365 days in the past. A calendar
+                // heatmap's primary value is "how am I doing lately" — every
+                // reference convention this feature is modeled on (GitHub's
+                // contribution graph, Screen Time) opens at the present,
+                // requiring the user to scroll backward into history, not
+                // forward from it.
+                .defaultScrollAnchor(.trailing)
             }
         }
         .task(id: board.logs?.count ?? 0) {
@@ -116,6 +123,11 @@ struct HeatmapView: View {
             windowDays: windowDays,
             calendar: .current
         )
+        // .task(id:) cancels the prior task when id changes, but
+        // buildDayGrid doesn't check Task.isCancelled internally — without
+        // this guard, an older, still-in-flight computation could complete
+        // after a newer one and overwrite its result with stale data.
+        guard !Task.isCancelled else { return }
         cells = result
         isLoading = false
     }
@@ -177,7 +189,17 @@ private struct HeatmapCellView: View {
 
 // MARK: - Preview
 
-#Preview {
+// MARK: Preview Fixture Setup
+//
+// Same fix applied to RootNavigationView.swift's Preview: #Preview's
+// macro-synthesized closure applies a ViewBuilder-style transform to every
+// statement inside it, and a bare assignment (board.logs = logs) is a
+// Void-evaluating expression the transform can't accept. Extracting fixture
+// setup into a plain, non-ViewBuilder function removes the restriction
+// entirely.
+
+@MainActor
+private func makeSeededPreviewBoard() -> HabitBoard {
     let board = HabitBoard(name: "Running", metricType: HabitBoard.MetricType.quantitative.rawValue,
                             targetValue: 5.0, unitLabel: "mi", colorIndex: 0)
     var logs: [LogEntry] = []
@@ -187,9 +209,12 @@ private struct HeatmapCellView: View {
         logs.append(LogEntry(timestamp: date, value: Double.random(in: 1...6), boardID: board.id, board: board))
     }
     board.logs = logs
+    return board
+}
 
-    return ScrollView {
-        HeatmapView(board: board)
+#Preview {
+    ScrollView {
+        HeatmapView(board: makeSeededPreviewBoard())
             .padding()
     }
 }

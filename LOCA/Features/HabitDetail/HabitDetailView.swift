@@ -73,7 +73,7 @@ struct HabitDetailView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
     }
 
     // MARK: - History Section (Phase 5.2 will replace the placeholder content)
@@ -90,7 +90,7 @@ struct HabitDetailView: View {
                 ContentUnavailableView {
                     Label("No History Yet", systemImage: "square.grid.3x3")
                 } description: {
-                    Text("Check in on this habit to start building your history.")
+                    Text("History for this habit will appear here once you start logging it.")
                 }
                 .frame(maxWidth: .infinity)
                 .frame(minHeight: Layout.placeholderMinHeight)
