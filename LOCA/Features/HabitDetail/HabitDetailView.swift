@@ -29,11 +29,25 @@ struct HabitDetailView: View {
             VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
                 headerSection
                 historySection
+                if hasAnyLogs {
+                    analyticsSection
+                }
             }
             .padding(.horizontal, Layout.horizontalPadding)
             .padding(.vertical, Layout.sectionSpacing)
         }
         .navigationTitle(board.name)
+    }
+
+    // MARK: - Analytics Section (Phase 5.3)
+    //
+    // Gated on hasAnyLogs — the same property historySection already uses.
+    // No new empty-state needed: a board with zero logs has nothing
+    // meaningful to summarize, and showing "0%, 0, —" stat cards would be
+    // noise rather than useful information.
+
+    private var analyticsSection: some View {
+        AnalyticsCardsView(board: board)
     }
 
     // MARK: - Header Section
