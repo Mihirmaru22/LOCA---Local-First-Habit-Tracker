@@ -57,6 +57,16 @@ struct LOCAApp: App {
             let container = try ModelContainerFactory.makeConfiguredContainer()
             self.container = container
             self.cloudKitCoordinator = CloudKitSyncCoordinator(container: container)
+
+            // DEBUG-only: seeds minimal sample data so HabitDetailView,
+            // HeatmapView, and AnalyticsCardsView can be exercised before
+            // Phase 7's New Habit form exists. No-op if real data already
+            // exists. Entirely absent from Release — DebugSeeder itself is
+            // #if DEBUG-gated, so this call site must be too, or Release
+            // would fail to compile against a symbol that doesn't exist there.
+            #if DEBUG
+            DebugSeeder.seedIfNeeded(context: container.mainContext)
+            #endif
         } catch {
             // ModelContainerFactory has already logged the underlying error.
             // Nothing further to do here except fail visibly via ContainerUnavailableView
