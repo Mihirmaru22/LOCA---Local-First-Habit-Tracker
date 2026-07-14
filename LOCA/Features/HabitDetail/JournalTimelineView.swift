@@ -177,7 +177,7 @@ struct JournalTimelineView: View {
 
 // MARK: - Row
 
-private struct JournalEntryRow: View {
+struct JournalEntryRow: View {
 
     let entry: LogEntry
     let board: HabitBoard
