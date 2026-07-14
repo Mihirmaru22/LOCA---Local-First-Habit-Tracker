@@ -5,153 +5,215 @@ import SwiftData
 
 /// Detail container for a selected habit.
 ///
-/// Phase 5.1 scope: layout, section structure, and empty states only — no
-/// heatmap grid (Phase 5.2). The header section reuses the exact streak/target
-/// display logic established in Phase 4's `HabitCardView` (no new computation),
-/// scaled up for a full-screen detail context. The history section distinguishes
-/// two genuinely different empty states: a board with zero log entries ("No
-/// History Yet") versus a board with logs but no grid to show them in yet
-/// ("Heatmap Coming Soon") — these are not the same state and should not share
-/// the same message.
+/// ## Layout Architecture (Phase 5.5 — Integration)
 ///
-/// Phase 5.4 addition: `journalSection` embedded below `analyticsSection`,
-/// gated on the same `hasAnyLogs` guard. `JournalTimelineView` owns its own
-/// `@Query` against `LogEntry` — `HabitDetailView` passes `board` only.
+/// Phase 5.1 used a `ScrollView { VStack { } }` shell that was correct for phases
+/// that only embedded pure SwiftUI views. Phase 5.4's addition of `JournalTimelineView`
+/// (which is itself a `List`) introduced a `List`-inside-`ScrollView` composition:
+/// `List` has no intrinsic height, collapses to zero inside a `ScrollView`, and
+/// renders the journal section as invisible on device.
+///
+/// The fix is to promote the root container to `List` with `Section`s — the exact
+/// structure Apple uses in Health, Fitness, and Screen Time detail views. Each Phase 5.x
+/// subview becomes a section or group of sections rather than a VStack child:
+///
+/// ```
+/// List (.insetGrouped)
+///   Section               ← header (board name, streak, target)
+///   Section "History"     ← HeatmapView or empty-state label
+///   Section               ← AnalyticsCardsView     } gated on !logs.isEmpty
+///   Section "Today"       ← journal entries        }
+///   Section "Yesterday"   ← journal entries        }
+///   ...                                             }
+/// ```
+///
+/// ## @Query Ownership (Phase 5.5)
+///
+/// `HabitDetailView` now owns a `@Query` on `LogEntry` filtered by `boardID`
+/// (ADR-003 — not `board?.id`, which returns empty on iOS 17). This replaces
+/// `!(board.logs ?? []).isEmpty` (a lazy-relationship read) for gating sections,
+/// and provides the data for inlined journal sections without a nested view with
+/// its own `List`. The query is timestamp-descending, matching journal display order.
+///
+/// `HeatmapView` and `AnalyticsCardsView` continue to manage their own `@State`
+/// and `.task(id:)` triggers independently — this query does not replace their
+/// internal data paths, only the gating logic and journal section data.
 struct HabitDetailView: View {
 
     let board: HabitBoard
 
+    @Environment(\.modelContext) private var modelContext
+
+    /// ADR-003: filter on the denormalized `boardID` scalar.
+    /// Sorted descending for journal display; HeatmapView and AnalyticsCardsView
+    /// manage their own data paths and are not driven by this query.
+    @Query private var logs: [LogEntry]
+
     private enum Layout {
-        static let sectionSpacing: CGFloat = 24
-        static let headerSpacing: CGFloat = 8
         static let colorDotSize: CGFloat = 16
         static let horizontalPadding: CGFloat = 16
-        static let placeholderMinHeight: CGFloat = 200
     }
 
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
-                headerSection
-                historySection
-                if hasAnyLogs {
-                    analyticsSection
-                    journalSection
-                }
-            }
-            .padding(.horizontal, Layout.horizontalPadding)
-            .padding(.vertical, Layout.sectionSpacing)
-        }
-        .navigationTitle(board.name)
-    }
-
-    // MARK: - Analytics Section (Phase 5.3)
-    //
-    // Gated on hasAnyLogs — the same property historySection already uses.
-    // No new empty-state needed: a board with zero logs has nothing
-    // meaningful to summarize, and showing "0%, 0, —" stat cards would be
-    // noise rather than useful information.
-
-    private var analyticsSection: some View {
-        AnalyticsCardsView(board: board)
-    }
-
-    // MARK: - Journal Section (Phase 5.4)
-    //
-    // Also gated on hasAnyLogs: a board with no entries has no journal to display.
-    // JournalTimelineView shows its own ContentUnavailableView if the @Query
-    // returns empty results after the gate passes (e.g., all entries deleted
-    // within the session before the board relationship flushes).
-
-    private var journalSection: some View {
-        VStack(alignment: .leading, spacing: Layout.headerSpacing) {
-            Text("Journal")
-                .font(.title3.bold())
-                .accessibilityAddTraits(.isHeader)
-            JournalTimelineView(board: board)
-        }
-    }
-
-    // MARK: - Header Section
-
-    // MARK: Accessibility: .contain, not .ignore (contrast with HabitCardView)
-    //
-    // HabitCardView (Phase 4) uses .accessibilityElement(children: .ignore) plus
-    // a single synthesized label because it is compact List row content — one
-    // collapsed announcement is the efficient choice for scanning a sidebar list.
-    // This header sits in a full-screen scrolling detail context instead, where
-    // VoiceOver users benefit from swiping through name, streak, best streak, and
-    // target as distinct but grouped elements rather than one dense sentence.
-    // .contain preserves that granularity while still reading the group as a
-    // single coherent unit when swiped past.
-
-    private var headerSection: some View {
-        VStack(alignment: .leading, spacing: Layout.headerSpacing) {
-            HStack(spacing: 10) {
-                Circle()
-                    .fill(ColorPalette[board.colorIndex])
-                    .frame(width: Layout.colorDotSize, height: Layout.colorDotSize)
-                Text(board.name)
-                    .font(.title2.bold())
-            }
-
-            Label(streakText, systemImage: "flame.fill")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-            if board.longestStreak > board.currentStreak {
-                Label(bestStreakText, systemImage: "trophy.fill")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-            }
-
-            Text(targetText)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .accessibilityElement(children: .contain)
-    }
-
-    // MARK: - History Section (Phase 5.2 replaced the placeholder)
-
-    private var historySection: some View {
-        VStack(alignment: .leading, spacing: Layout.headerSpacing) {
-            Text("History")
-                .font(.title3.bold())
-                .accessibilityAddTraits(.isHeader)
-
-            if hasAnyLogs {
-                HeatmapView(board: board)
-            } else {
-                ContentUnavailableView {
-                    Label("No History Yet", systemImage: "square.grid.3x3")
-                } description: {
-                    Text("History for this habit will appear here once you start logging it.")
-                }
-                .frame(maxWidth: .infinity)
-                .frame(minHeight: Layout.placeholderMinHeight)
-            }
-        }
+    init(board: HabitBoard) {
+        self.board = board
+        let boardID = board.id
+        _logs = Query(
+            filter: #Predicate<LogEntry> { $0.boardID == boardID },
+            sort: [SortDescriptor(\.timestamp, order: .reverse)]
+        )
     }
 
     // MARK: - Derived State
 
-    /// `true` if this board has at least one log entry, regardless of when it
-    /// was recorded. Distinguishes the two history-section empty states above.
-    /// A single boolean check over an already-loaded relationship — not a new
-    /// compute algorithm.
-    private var hasAnyLogs: Bool {
-        !(board.logs ?? []).isEmpty
+    private var hasLogs: Bool { !logs.isEmpty }
+
+    /// Day-grouped journal sections derived from the @Query result.
+    /// Recomputed whenever `logs` changes (SwiftData @Query drives updates).
+    private var journalSections: [JournalDaySection] {
+        JournalGrouping.groupByDay(logs)
+    }
+
+    // MARK: - Body
+
+    var body: some View {
+        List {
+            headerSection
+            historySection
+            if hasLogs {
+                analyticsSection
+                journalSections_
+            }
+        }
+        .listStyle(.insetGrouped)
+        .navigationTitle(board.name)
+    }
+
+    // MARK: - Header Section
+
+    // MARK: Accessibility: .contain, not .ignore
+    //
+    // HabitCardView (Phase 4) uses .accessibilityElement(children: .ignore) plus
+    // a single synthesized label — the right call for a compact selectable List row.
+    // This header is in a full-screen scrolling context; VoiceOver users benefit from
+    // swiping through name, streak, best streak, and target as distinct grouped elements.
+    // .contain preserves granularity while reading the group as a coherent unit.
+
+    @ViewBuilder
+    private var headerSection: some View {
+        Section {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 10) {
+                    Circle()
+                        .fill(ColorPalette[board.colorIndex])
+                        .frame(width: Layout.colorDotSize, height: Layout.colorDotSize)
+                    Text(board.name)
+                        .font(.title2.bold())
+                }
+
+                Label(streakText, systemImage: "flame.fill")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                if board.longestStreak > board.currentStreak {
+                    Label(bestStreakText, systemImage: "trophy.fill")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+
+                Text(targetText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .accessibilityElement(children: .contain)
+        }
+    }
+
+    // MARK: - History Section (Phase 5.2)
+
+    @ViewBuilder
+    private var historySection: some View {
+        Section("History") {
+            if hasLogs {
+                HeatmapView(board: board)
+                    // Edge-to-edge insets: the heatmap's horizontal ScrollView needs
+                    // full-width access. The default List row insets (16 pt each side)
+                    // would clip the scrollable grid area.
+                    .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                    .listRowSeparator(.hidden)
+            } else {
+                Label(
+                    "Log \(board.name) to start building your history.",
+                    systemImage: "square.grid.3x3"
+                )
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    // MARK: - Analytics Section (Phase 5.3)
+    //
+    // Gated on hasLogs. A board with zero entries has nothing meaningful to
+    // summarize; "0%, 0, —" stat cards would be noise rather than information.
+    // Not a Section with a header — consistent with Health app's unlabeled
+    // stat-card blocks.
+
+    @ViewBuilder
+    private var analyticsSection: some View {
+        Section {
+            AnalyticsCardsView(board: board)
+                .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                .listRowSeparator(.hidden)
+        }
+    }
+
+    // MARK: - Journal Sections (Phase 5.4)
+    //
+    // One Section per calendar day. `JournalGrouping.groupByDay` is called on the
+    // already-sorted @Query result — no additional sort, no off-main-thread work.
+    // `JournalEntryRow` is defined in JournalTimelineView.swift (internal access).
+    // Swipe-to-delete works natively in a List context (not possible in LazyVStack,
+    // which is why the root container is a List rather than a ScrollView).
+    //
+    // After deleting all entries for a day, that Section disappears automatically
+    // because `journalSections` recomputes from `logs` (@Query updates reactively).
+    // After deleting all entries, `hasLogs` becomes false and this entire block hides.
+
+    @ViewBuilder
+    private var journalSections_: some View {
+        ForEach(journalSections) { daySection in
+            Section {
+                ForEach(daySection.entries) { entry in
+                    JournalEntryRow(entry: entry, board: board)
+                        .swipeActions(edge: .trailing) {
+                            Button(role: .destructive) {
+                                delete(entry)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                }
+            } header: {
+                Text(JournalGrouping.headerTitle(for: daySection.dayStart))
+            }
+        }
+    }
+
+    // MARK: - Delete
+
+    /// Hard-deletes a `LogEntry`. Exempt from the append-only check-in path constraint
+    /// (ADR-001 exemption for LogEntry) — this is a deliberate user action.
+    private func delete(_ entry: LogEntry) {
+        modelContext.delete(entry)
+        try? modelContext.save()
     }
 
     // MARK: - Display Text
     //
-    // Mirrors HabitCardView's (Phase 4) streakText/bestStreakText/targetText
-    // exactly — same source data, same phrasing, same "Best" visibility rule
-    // (shown only when it differs from current). Intentionally duplicated rather
-    // than extracted into a shared helper: Phase 4 was approved without that
-    // extraction being requested, and this phase's scope is layout/foundation,
-    // not a refactor of Phase 4's approved architecture.
+    // Mirrors HabitCardView (Phase 4) exactly — same source data, same phrasing,
+    // same "Best" visibility rule (shown only when it exceeds current).
+    // Intentionally not extracted to a shared helper: Phase 4 was approved without
+    // that extraction, and this is not a Phase 5.5 scope item.
 
     private var streakText: String {
         board.currentStreak == 1 ? "1 day streak" : "\(board.currentStreak) day streak"
@@ -174,10 +236,6 @@ struct HabitDetailView: View {
 }
 
 // MARK: - Preview
-
-// JournalTimelineView (embedded in Phase 5.4) uses @Query, which requires a
-// ModelContainer in the environment. All previews below use in-memory containers
-// via @MainActor helper functions per the established preview helper pattern.
 
 @MainActor
 private func makeDetailWithHistoryContainer() -> (ModelContainer, HabitBoard) {
