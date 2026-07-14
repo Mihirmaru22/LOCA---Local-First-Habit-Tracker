@@ -1,3 +1,4 @@
+---
 // !$*UTF8*$!
 {
 	archiveVersion = 1;
@@ -35,6 +36,7 @@
 		E8A397AD3E3F43468E8BFF20 /* HabitDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EA3DF789134654984688CB /* HabitDetailView.swift */; };
 		FB7C2613B33C4BAAB22BB911 /* HeatmapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CE91B0C5D88414094E4DD05 /* HeatmapView.swift */; };
 		4EF82DD478E641C081644338 /* AnalyticsCardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4AC62C281824C358828EBED /* AnalyticsCardsView.swift */; };
+		37DA6E005EE84382B6E2B538 /* JournalTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CEB70E6A1F742B4A1F35A2F /* JournalTimelineView.swift */; };
 		42A8AE7D0252462CA1F5A2D2 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA23BF1816F44D92873A3FCD /* DashboardView.swift */; };
 		B45CB1ED59D240ED8D9DA386 /* HabitCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA2BCF72800F4D06A36251AA /* HabitCardView.swift */; };
 		1FB4B394E7334ADAAD65666E /* LOCAWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0F928C59F0243A385862E33 /* LOCAWidgetBundle.swift */; };
@@ -61,6 +63,7 @@
 		75EA3DF789134654984688CB /* HabitDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitDetailView.swift"; sourceTree = "<group>"; };
 		4CE91B0C5D88414094E4DD05 /* HeatmapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HeatmapView.swift"; sourceTree = "<group>"; };
 		A4AC62C281824C358828EBED /* AnalyticsCardsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AnalyticsCardsView.swift"; sourceTree = "<group>"; };
+		2CEB70E6A1F742B4A1F35A2F /* JournalTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "JournalTimelineView.swift"; sourceTree = "<group>"; };
 		CA23BF1816F44D92873A3FCD /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DashboardView.swift"; sourceTree = "<group>"; };
 		FA2BCF72800F4D06A36251AA /* HabitCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitCardView.swift"; sourceTree = "<group>"; };
 		E0F928C59F0243A385862E33 /* LOCAWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LOCAWidgetBundle.swift"; sourceTree = "<group>"; };
@@ -179,6 +182,7 @@
 				75EA3DF789134654984688CB /* HabitDetailView.swift */,
 				4CE91B0C5D88414094E4DD05 /* HeatmapView.swift */,
 				A4AC62C281824C358828EBED /* AnalyticsCardsView.swift */,
+				2CEB70E6A1F742B4A1F35A2F /* JournalTimelineView.swift */,
 			);
 			path = "HabitDetail";
 			sourceTree = "<group>";
@@ -388,6 +392,7 @@
 				E8A397AD3E3F43468E8BFF20 /* HabitDetailView.swift in Sources */,
 				FB7C2613B33C4BAAB22BB911 /* HeatmapView.swift in Sources */,
 				4EF82DD478E641C081644338 /* AnalyticsCardsView.swift in Sources */,
+				37DA6E005EE84382B6E2B538 /* JournalTimelineView.swift in Sources */,
 				42A8AE7D0252462CA1F5A2D2 /* DashboardView.swift in Sources */,
 				B45CB1ED59D240ED8D9DA386 /* HabitCardView.swift in Sources */,
 			);
