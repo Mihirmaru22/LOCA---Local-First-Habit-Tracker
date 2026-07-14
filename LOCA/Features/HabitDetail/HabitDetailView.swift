@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 // MARK: - HabitDetailView
 
@@ -12,6 +13,10 @@ import SwiftUI
 /// History Yet") versus a board with logs but no grid to show them in yet
 /// ("Heatmap Coming Soon") — these are not the same state and should not share
 /// the same message.
+///
+/// Phase 5.4 addition: `journalSection` embedded below `analyticsSection`,
+/// gated on the same `hasAnyLogs` guard. `JournalTimelineView` owns its own
+/// `@Query` against `LogEntry` — `HabitDetailView` passes `board` only.
 struct HabitDetailView: View {
 
     let board: HabitBoard
@@ -31,6 +36,7 @@ struct HabitDetailView: View {
                 historySection
                 if hasAnyLogs {
                     analyticsSection
+                    journalSection
                 }
             }
             .padding(.horizontal, Layout.horizontalPadding)
@@ -50,9 +56,25 @@ struct HabitDetailView: View {
         AnalyticsCardsView(board: board)
     }
 
+    // MARK: - Journal Section (Phase 5.4)
+    //
+    // Also gated on hasAnyLogs: a board with no entries has no journal to display.
+    // JournalTimelineView shows its own ContentUnavailableView if the @Query
+    // returns empty results after the gate passes (e.g., all entries deleted
+    // within the session before the board relationship flushes).
+
+    private var journalSection: some View {
+        VStack(alignment: .leading, spacing: Layout.headerSpacing) {
+            Text("Journal")
+                .font(.title3.bold())
+                .accessibilityAddTraits(.isHeader)
+            JournalTimelineView(board: board)
+        }
+    }
+
     // MARK: - Header Section
 
-    // MARK: Accessibility: .combine, not .ignore (contrast with HabitCardView)
+    // MARK: Accessibility: .contain, not .ignore (contrast with HabitCardView)
     //
     // HabitCardView (Phase 4) uses .accessibilityElement(children: .ignore) plus
     // a single synthesized label because it is compact List row content — one
@@ -60,7 +82,7 @@ struct HabitDetailView: View {
     // This header sits in a full-screen scrolling detail context instead, where
     // VoiceOver users benefit from swiping through name, streak, best streak, and
     // target as distinct but grouped elements rather than one dense sentence.
-    // .combine preserves that granularity while still reading the group as a
+    // .contain preserves that granularity while still reading the group as a
     // single coherent unit when swiped past.
 
     private var headerSection: some View {
@@ -90,7 +112,7 @@ struct HabitDetailView: View {
         .accessibilityElement(children: .contain)
     }
 
-    // MARK: - History Section (Phase 5.2 will replace the placeholder content)
+    // MARK: - History Section (Phase 5.2 replaced the placeholder)
 
     private var historySection: some View {
         VStack(alignment: .leading, spacing: Layout.headerSpacing) {
@@ -153,22 +175,68 @@ struct HabitDetailView: View {
 
 // MARK: - Preview
 
-#Preview("With History") {
-    let board = HabitBoard(name: "Running", metricType: HabitBoard.MetricType.quantitative.rawValue,
-                            targetValue: 5.0, unitLabel: "mi", colorIndex: 0)
+// JournalTimelineView (embedded in Phase 5.4) uses @Query, which requires a
+// ModelContainer in the environment. All previews below use in-memory containers
+// via @MainActor helper functions per the established preview helper pattern.
+
+@MainActor
+private func makeDetailWithHistoryContainer() -> (ModelContainer, HabitBoard) {
+    let schema = Schema([HabitBoard.self, LogEntry.self])
+    let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: schema, configurations: [config])
+
+    let board = HabitBoard(
+        name: "Running",
+        metricType: HabitBoard.MetricType.quantitative.rawValue,
+        targetValue: 5.0,
+        unitLabel: "mi",
+        colorIndex: 0
+    )
     board.currentStreak = 5
     board.longestStreak = 12
-    board.logs = [LogEntry(value: 3.0, boardID: board.id, board: board)]
+    container.mainContext.insert(board)
 
+    let calendar = Calendar.current
+    let notes: [String?] = ["Felt great today.", nil, "Rain but worth it.", nil, "Easy 3 miles."]
+    for (offset, note) in notes.enumerated() {
+        guard let day = calendar.date(byAdding: .day, value: -offset, to: .now) else { continue }
+        let entry = LogEntry(
+            timestamp: day,
+            value: Double.random(in: 2...6),
+            note: note,
+            boardID: board.id,
+            board: board
+        )
+        container.mainContext.insert(entry)
+    }
+
+    try? container.mainContext.save()
+    return (container, board)
+}
+
+@MainActor
+private func makeDetailNoHistoryContainer() -> (ModelContainer, HabitBoard) {
+    let schema = Schema([HabitBoard.self, LogEntry.self])
+    let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: schema, configurations: [config])
+    let board = HabitBoard(name: "Meditate", colorIndex: 5)
+    container.mainContext.insert(board)
+    try? container.mainContext.save()
+    return (container, board)
+}
+
+#Preview("With History") {
+    let (container, board) = makeDetailWithHistoryContainer()
     return NavigationStack {
         HabitDetailView(board: board)
     }
+    .modelContainer(container)
 }
 
 #Preview("No History") {
-    let board = HabitBoard(name: "Meditate", colorIndex: 5)
-
+    let (container, board) = makeDetailNoHistoryContainer()
     return NavigationStack {
         HabitDetailView(board: board)
     }
+    .modelContainer(container)
 }
