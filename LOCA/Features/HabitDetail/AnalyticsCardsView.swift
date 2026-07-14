@@ -160,8 +160,12 @@ private struct StatCard: View {
                 .font(.system(size: CardsLayout.iconSize))
                 .foregroundStyle(tint)
 
+            // Engineering Principles §3: SF Pro Rounded for numbers in the
+            // analytics dashboard. .title3.bold() produces the default
+            // design variant; .system(.title3, design: .rounded, weight: .bold)
+            // applies the Rounded variant explicitly. Phase 5.5 fix (E1).
             Text(value)
-                .font(.title3.bold())
+                .font(.system(.title3, design: .rounded, weight: .bold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
 
