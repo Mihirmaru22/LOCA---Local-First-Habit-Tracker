@@ -1,221 +1,178 @@
 # LOCA — Local-First Habit Tracker
 
-A high-performance, multiplatform habit tracking app for iOS 17+ and macOS 14+.  
-Built with SwiftData, CloudKit, WidgetKit, and App Intents. No custom backend. No REST APIs.
+A high-performance, local-first multiplatform habit tracker for iOS 17+ and macOS 14+. Inspired by Ripples. Built with SwiftUI, SwiftData, and CloudKit — no custom backend, no REST APIs.
 
 ---
 
-## What Is LOCA?
+## Philosophy
 
-LOCA is a local-first habit tracker where the device is the primary server. All data lives in a shared SwiftData store on-device, syncing silently and asynchronously via CloudKit. The UI never waits for a network response.
-
-The core visual interface is a calendar heatmap — a grid of the last 100–365 days rendered as small coloured squares whose intensity encodes daily completion relative to each habit's target.
-
----
-
-## Platform Targets
-
-| Platform | Minimum Version |
-|----------|----------------|
-| iOS      | 17.0+          |
-| macOS    | 14.0+          |
+**The device is the server.** All data lives locally in a SQLite store managed by SwiftData. CloudKit acts as a silent, asynchronous sync layer. The UI never awaits a network response to update.
 
 ---
 
 ## Tech Stack
 
 | Layer | Technology |
-|-------|-----------|
-| UI | SwiftUI |
-| Data | SwiftData (`NSPersistentCloudKitContainer`) |
-| Sync | CloudKit (silent, asynchronous, local-first) |
-| Widgets | WidgetKit (`AppIntentConfiguration`) |
-| Siri / Shortcuts | App Intents |
-| Concurrency | Swift 6 strict mode (`async/await`, actors) |
-| Persistence sharing | App Group (`group.com.yourdomain.ripples`) |
+|---|---|
+| UI | SwiftUI (view-driven state, no thick MVVM) |
+| Data | SwiftData + NSPersistentCloudKitContainer |
+| Sync | CloudKit (silent background sync) |
+| Widgets | WidgetKit + AppIntentConfiguration |
+| Shortcuts | App Intents |
+| Platforms | iOS 17+, macOS 14+ |
+| Language | Swift 6 (strict concurrency) |
+| Shared Store | App Group SQLite via ModelContainerFactory |
 
 ---
 
-## Architecture
-
-### Local-First Paradigm
-The device SQLite store is the source of truth. CloudKit is a background sync layer — not a primary data source. All writes complete instantly and locally; sync happens asynchronously without blocking the UI.
-
-### Key Architectural Decisions
-
-| ADR | Decision | Rationale |
-|-----|---------|-----------|
-| [ADR-001](Docs/ADR/ADR-001-soft-delete.md) | Soft delete via `archivedAt: Date?` | CloudKit does not guarantee deletion order; cascade deletes produce orphaned records |
-| [ADR-002](Docs/ADR/ADR-002-colorindex.md) | `colorIndex: Int` over `colorHex: String` | Eliminates hex parse cost in the heatmap's 365-cell render path |
-| [ADR-003](Docs/ADR/ADR-003-boardid-denorm.md) | `boardID: UUID` denormalized on `LogEntry` | Works around SwiftData iOS 17 relationship keypath predicate bug |
-| [ADR-004](Docs/ADR/ADR-004-target-membership.md) | Xcode target membership over local SPM package | Avoids `@Model` schema visibility issues and Preview resolution degradation |
-| [ADR-005](Docs/ADR/ADR-005-actor-isolated-provider.md) | Actor-isolated `HeatmapDataProvider` | Keeps 365-day aggregation off the main thread |
-| [ADR-006](Docs/ADR/ADR-006-unified-navigationsplitview.md) | Single `NavigationSplitView` for all platforms | `NavigationSplitView`'s adaptive collapsing handles iPhone/iPad/Mac in one code path — no parallel `NavigationStack` tree |
-| [ADR-007](Docs/ADR/ADR-007-selection-state-id-not-reference.md) | Selection state holds `HabitBoard.id`, not a live reference | Avoids stale-reference risk from CloudKit merges or archival while selected |
-
-### Shared Target Files
-Files in `LOCA/Core/` (Models, Persistence, Extensions) and `LOCA/Intents/` are added to **both** the Main App target and the Widget Extension target via Xcode target membership — one file on disk, two compile targets.
-
----
-
-## Project Structure
+## Architecture Overview
 
 ```
 LOCA/
-├── App/                                # Phase 0 ✅
-│   └── LOCAApp.swift                   # @main entry point, single ModelContainerFactory call site
-│   └── CloudKitSyncCoordinator.swift   # NSPersistentCloudKitContainerEvent observer
-├── Core/                              # ⊕ Shared: Main App + Widget Extension
-│   ├── Models/
-│   │   ├── HabitBoard.swift           # @Model — primary habit entity
-│   │   ├── LogEntry.swift             # @Model — append-only log record
-│   │   └── VersionedSchema.swift      # SchemaV1 + MigrationPlan
-│   ├── Persistence/
-│   │   ├── ModelContainerFactory.swift # App Group + CloudKit container factory
-│   │   └── PersistenceError.swift     # Domain error type
-│   └── Extensions/
-│       ├── Date+Calendar.swift        # DST-aware day boundary helpers
-│       ├── ColorPalette.swift         # Indexed colour system (ADR-002)
-│       └── Double+Clamp.swift         # Heatmap intensity clamping
-├── Analytics/                         # ⊕ Shared — Phase 2 ✅
-│   ├── StreakCalculator.swift
-│   └── HeatmapDataProvider.swift
-├── Features/                          # Main App only
-│   ├── Navigation/                    # Phase 3 ✅
-│   │   ├── RootNavigationView.swift
-│   │   └── HabitSidebarView.swift
-│   ├── HabitDetail/                    # Phase 3 ✅ (placeholder only)
-│   │   └── HabitDetailView.swift
-│   ├── Dashboard/
-│   ├── CheckIn/
-│   └── HabitCreation/
-├── Haptics/                           # Main App only
-│   └── HapticEngine.swift
-└── Intents/                           # ⊕ Shared: Main App + Widget Extension — Phase 8
-    ├── HabitBoardEntity.swift
-    ├── LogHabitIntent.swift
-    └── AppShortcutsProvider.swift
-
-LOCAWidget/                            # Widget Extension Target — Phase 9
-Docs/
-├── ENGINEERING_PRINCIPLES.md
-├── ADR/
-└── Reports/
+├── App/                        # Entry point, CloudKit coordinator, widget refresh
+├── Core/
+│   ├── Models/                 # HabitBoard, LogEntry (@Model, CloudKit-safe)
+│   ├── Persistence/            # ModelContainerFactory, DebugSeeder
+│   ├── Analytics/              # HeatmapDataProvider, StreakCalculator
+│   └── Extensions/             # ColorPalette, Animation springs, Date helpers
+├── Features/
+│   ├── Dashboard/              # HabitCardView, DashboardView
+│   ├── HabitDetail/            # HabitDetailView, HeatmapView, AnalyticsCardsView, JournalTimelineView
+│   ├── CheckIn/                # CheckInButton (Phase 6.1), CheckInSheet (Phase 6.2)
+│   └── Navigation/             # RootNavigationView, HabitSidebarView
+└── Docs/
+    ├── ENGINEERING_PRINCIPLES.md
+    └── ADRs/                   # ADR-001 through ADR-010+
 ```
+
+### CloudKit Schema Constraints
+All `@Model` types follow strict CloudKit compatibility rules:
+- **No `@Attribute(.unique)`** — CloudKit forbids uniqueness constraints
+- **All properties have defaults or are optional** — no non-optional properties without a default
+- **All relationships are optional** — `[LogEntry]?`, `HabitBoard?`
+- **Denormalized `boardID: UUID`** on `LogEntry` — enables safe `#Predicate` filtering (ADR-003)
+
+---
+
+## Data Model
+
+### HabitBoard
+Represents a single tracked habit (e.g., "Running", "Meditate").
+
+| Property | Type | Notes |
+|---|---|---|
+| `id` | `UUID` | Primary identity |
+| `name` | `String` | Display name |
+| `metricType` | `Int` | `0` = binary, `1` = quantitative |
+| `targetValue` | `Double?` | Daily goal (`1.0` for binary) |
+| `unitLabel` | `String?` | e.g., `"mi"`, `"mins"` |
+| `colorIndex` | `Int` | Index into `ColorPalette` |
+| `currentStreak` | `Int` | Cached, updated on every check-in |
+| `longestStreak` | `Int` | Cached, updated on every check-in |
+| `logs` | `[LogEntry]?` | Cascade-delete relationship |
+
+### LogEntry
+A single check-in event.
+
+| Property | Type | Notes |
+|---|---|---|
+| `id` | `UUID` | Primary identity |
+| `timestamp` | `Date` | Exact time of check-in |
+| `value` | `Double` | `1.0` for binary; measured amount for quantitative |
+| `note` | `String?` | Optional journal entry |
+| `boardID` | `UUID` | Denormalized — enables safe `#Predicate` (ADR-003) |
+| `board` | `HabitBoard?` | Inverse relationship |
 
 ---
 
 ## Implementation Roadmap
 
-| Phase | Name | Status |
-|-------|------|--------|
-| 0 | Project Scaffolding | ✅ Complete — reviewed, H1 fixed |
-| **1** | **Data Layer** | **✅ Complete — reviewed, bugs fixed** |
-| **2** | **Compute Layer** | **✅ Complete — reviewed, all High findings fixed** |
-| **3** | **Navigation Shell** | **✅ Complete — reviewed, all High findings + M1 fixed** |
-| **4** | **Dashboard** | **✅ Complete — reviewed, M1 + M2 fixed** |
-| 5 | Heatmap & Detail | 🔄 5.1 + 5.2 built (pending formal review) |
-| 6 | Check-In Flow | ⏳ Pending |
-| 7 | Habit Management | ⏳ Pending |
-| 8 | App Intents | ⏳ Pending |
-| 9 | WidgetKit | ⏳ Pending |
-| 10 | QA & Polish | ⏳ Pending |
+| Phase | Scope | Status |
+|---|---|---|
+| **Phase 0** | Project scaffolding, engineering principles, ADRs, naming conventions | ✅ Complete |
+| **Phase 1** | Data layer — `HabitBoard`, `LogEntry`, `ModelContainerFactory`, CloudKit compliance | ✅ Complete |
+| **Phase 2** | Compute layer — `HeatmapDataProvider`, `StreakCalculator`, `LogSnapshot` | ✅ Complete |
+| **Phase 3** | Navigation shell — `RootNavigationView`, `HabitSidebarView`, iOS/macOS split | ✅ Complete |
+| **Phase 4** | Dashboard — `DashboardView`, `HabitCardView`, streak display | ✅ Complete |
+| **Phase 5** | Heatmap & detail — `HabitDetailView` (List-based), `HeatmapView`, `AnalyticsCardsView`, `JournalTimelineView` | ✅ Complete |
+| **Phase 6** | Check-in flow — `CheckInButton`, `CheckInSheet`, `WidgetRefreshCoordinator` | 🔄 In Progress |
+| **Phase 7** | Habit management — create, edit, delete `HabitBoard` | ⏳ Planned |
+| **Phase 8** | App Intents — `LogHabitIntent`, Siri/Shortcuts integration | ⏳ Planned |
+| **Phase 9** | WidgetKit — interactive home screen widgets with heatmap and check-in button | ⏳ Planned |
+| **Phase 10** | QA & polish — accessibility audit, performance profiling, final review | ⏳ Planned |
 
-**Phase 0 executed after Phase 3's approval, before Phase 4**, exactly as scheduled:
-Phases 1–3 were deliberately built and reviewed entirely against
-`ModelContainerFactory.makeInMemoryContainer()` via SwiftUI Previews, deferring
-Xcode-project and entitlement ceremony until it was actually load-bearing. See
-[`Docs/Phase0-ProjectScaffolding.md`](Docs/Phase0-ProjectScaffolding.md) for the
-full scope and rationale, and
-[`Docs/Reports/Phase0-ProjectScaffolding.md`](Docs/Reports/Phase0-ProjectScaffolding.md)
-for the completed phase report.
+### Phase 6 Detail
 
-## Phase 0 Summary
-
-Phase 0 delivered runtime integration: `LOCAApp.swift` (the `@main` entry point, single `ModelContainerFactory.makeSharedContainer()` call site), `CloudKitSyncCoordinator.swift` (observes `NSPersistentCloudKitContainerEvent`, flags active boards for streak recalculation after CloudKit imports), App Group/CloudKit entitlements, and migration of every internal identifier from the project's original working-title placeholders to LOCA's naming convention. A review focused on app lifecycle, actor isolation, and Apple platform conventions found one High finding — a per-window `.task` binding an app-scoped coordinator, which macOS's default "New Window" command would have duplicated — resolved with an idempotency guard.
-
-See the full report: [`Docs/Reports/Phase0-ProjectScaffolding.md`](Docs/Reports/Phase0-ProjectScaffolding.md)
+| Subphase | Scope | Status |
+|---|---|---|
+| **6.1** | `Animation+Extensions`, `WidgetRefreshCoordinator`, `CheckInButton` (binary path), `HabitDetailView` integration | ✅ Pushed — awaiting runtime validation |
+| **6.2** | `CheckInSheet` (quantitative value + note entry), `CheckInButton` quantitative branch | ⏳ Pending 6.1 validation |
 
 ---
 
-## Phase 1 Summary
+## Key Architectural Decisions
 
-Phase 1 delivered the complete SwiftData schema, persistence factory, and shared utility extensions. It was reviewed by an Apple Frameworks-level critique session that identified 14 findings across 4 severity levels. All Critical (3) and High (5) findings were resolved before merge.
+| ADR | Decision |
+|---|---|
+| ADR-001 | Append-only `LogEntry` at check-in path; user-initiated delete exempted |
+| ADR-002 | `ColorPalette` indexed array instead of per-board hex strings (CloudKit safe) |
+| ADR-003 | Denormalized `boardID` on `LogEntry` for `#Predicate` safety on iOS 17 |
+| ADR-004 | App Group shared `ModelContainer`; widget/main app target membership rules |
+| ADR-009 | `#if LOCAL_DEVELOPMENT` compile-time switch for personal team builds |
+| ADR-010 | Analytics window (30 days) independent from heatmap window (365 days) |
 
-See the full report: [`Docs/Reports/Phase1-DataLayer.md`](Docs/Reports/Phase1-DataLayer.md)
-
-## Phase 2 Summary
-
-Phase 2 delivered the pure compute layer — `StreakCalculator` and `HeatmapDataProvider` — with zero dependency on SwiftUI, WidgetKit, App Intents, or `ModelContext`. A second Apple Frameworks-level review identified 14 findings across 3 severity levels (zero Critical). All 6 High findings were resolved, including a floating-point epsilon bug in goal-completion checks, a future-dated-entry streak-suppression bug, and a performance fix splitting the aggregation kernel so the heatmap no longer pays for DST grace-window computation it never uses.
-
-See the full report: [`Docs/Reports/Phase2-ComputeLayer.md`](Docs/Reports/Phase2-ComputeLayer.md)
-
-## Phase 3 Summary
-
-Phase 3 delivered the navigation shell — a single `NavigationSplitView` adapting across iPhone, iPad, and Mac, a selectable sidebar of active habits, and a placeholder detail column for Phase 5 to build inside. A Correctness/Engineering/Experience review identified 10 findings (zero Critical). All 3 High findings were resolved — missing native sidebar styling, a non-idiomatic empty-state pattern embedded inside a selectable list, and missing auto-selection on iPad/Mac split-view layouts — plus one Medium finding (contradictory empty-state copy on first run) folded into the same fix pass since it was cheap and Phase-3-owned.
-
-See the full report: [`Docs/Reports/Phase3-NavigationShell.md`](Docs/Reports/Phase3-NavigationShell.md)
-
-## Phase 4 Summary
-
-Phase 4 delivered the Dashboard: `DashboardView`/`HabitCardView` replace `HabitSidebarView`/`HabitSidebarRow` as `NavigationSplitView`'s sidebar content (ADR-008), displaying per-habit streak, best-streak, today's progress (via a native `Gauge`), and daily target — all from cached values or a simple filter over already-loaded logs, with zero new `StreakCalculator`/`HeatmapDataProvider` calls. Review found two Medium findings, both fixed: a redundant double computation of today's total per render, and an unclamped progress value that could go out of `Gauge`'s valid range on corrupted data. `HabitSidebarView.swift` remains in the repo, now unused, pending an explicit decision to remove it.
-
-## Integration Milestone — Project Realization + Phase 5.1/5.2 + Xcode Validation
-
-Everything since the Project Realization push, bundled as one milestone per an explicit process change: a real, runnable `.xcodeproj` (two multiplatform targets, dependency graph, entitlements) was validated directly against real Xcode build output rather than static review alone. Fixes landed in response to actual Xcode errors: a missing `PBXTargetDependency` (parallel-build ordering risk), missing `SystemCapabilities` metadata, an explicit `CODE_SIGN_IDENTITY`, and — the significant one — separate Debug-only entitlements (`LOCA-Debug.entitlements`, `LOCAWidget-Debug.entitlements`, both empty of App Group/CloudKit) paired with a new `LOCAL_DEVELOPMENT` compile-time switch (ADR-009) in `ModelContainerFactory`, so the app can build and run under a Personal Team without touching the production CloudKit/App Group architecture at all — Release remains provably byte-identical to before. Phase 5.1 (`HabitDetailView` foundation) and 5.2 (`HeatmapView`, consuming `HeatmapDataProvider`/`ColorPalette` exactly as designed) are both built but have not yet been through their own formal review — that happens next, independent of this infrastructure work.
-
-**Workflow change from here forward:** one Xcode build → one classified fix → one push → repeat. No batching, no speculative fixes ahead of real compiler output.
-
----
-
-## Setup
-
-### Prerequisites
-- Xcode 16 or later
-- Apple Developer account with iCloud capability
-- App Group identifier configured on both targets
-
-### Configuration
-Before building, update the following in `ModelContainerFactory.swift`:
-```swift
-static let appGroupIdentifier = "group.com.yourdomain.ripples"  // ← your App Group
-```
-
-And in your CloudKit entitlement, confirm the container identifier matches `cloudKitDatabase: .automatic` in `ModelContainerFactory.makeSharedContainer()`.
-
-### Build Targets
-- **LOCA** — Main App (iOS + macOS)
-- **LOCAWidget** — Widget Extension
+Full ADR index in `Docs/ADRs/`.
 
 ---
 
 ## Engineering Standards
 
-All code is governed by [`Docs/ENGINEERING_PRINCIPLES.md`](Docs/ENGINEERING_PRINCIPLES.md), which covers Swift 6 style, naming conventions, concurrency rules, performance budgets, accessibility requirements, animation standards, testing strategy, documentation expectations, and the PR review checklist.
+All implementation follows `Docs/ENGINEERING_PRINCIPLES.md`. Key rules:
 
-Key hard limits:
-- Heatmap render (365 cells): < 16ms
-- App launch to first frame: < 400ms
-- Widget timeline generation: < 200ms
-- Main thread synchronous work: < 1ms per call
-
----
-
-## Performance Budgets
-
-| Metric | Budget |
-|--------|--------|
-| App launch → first frame | < 400ms |
-| Heatmap grid render (365 cells) | < 16ms |
-| Single `@Query` result set | ≤ 10,000 records |
-| Main thread synchronous work | < 1ms |
-| Widget timeline generation | < 200ms |
-| Peak RSS (heatmap + chart) | < 100MB |
+- **One-build → one-root-cause-fix**: each compiler error gets its own isolated fix
+- **No `@Attribute(.unique)`**: CloudKit hard constraint
+- **No unbounded `@Query` on `LogEntry`**: all predicates must include a date-range bound (§5.2)
+- **`#Predicate` uses `boardID`, not `board?.id`**: iOS 17 SwiftData limitation (ADR-003)
+- **SF Pro Rounded** for all numeric values in analytics (§3)
+- **`Animation.rippleConfirm`** for all check-in press interactions (§7.1)
+- **`UIImpactFeedbackGenerator(style: .rigid)`** on log confirmation, gated on `#if canImport(UIKit)` (§7.2)
+- **`accessibilityReduceMotion`** respected at every animation site (§6.3)
+- **Preview helper pattern**: all `#Preview` fixture setup in `@MainActor` helper functions
 
 ---
 
-## Licence
+## Build Configuration
 
-Copyright 2025 Mihirmaru22
+### Standard Build
+Requires an active Apple Developer account with CloudKit and App Group entitlements configured.
 
-Licensed under the [Apache License, Version 2.0](LICENSE).
+### Local Development Build
+Set the `LOCAL_DEVELOPMENT` Swift compiler flag to bypass CloudKit and App Group entitlements for personal team / simulator builds (ADR-009):
+
+```
+Build Settings → Swift Compiler — Custom Flags → Active Compilation Conditions → LOCAL_DEVELOPMENT
+```
+
+The `ModelContainerFactory` switches to an in-memory or App Group-less container automatically when this flag is active.
+
+---
+
+## Project Structure Rules
+
+- All new Swift files must be registered in `LOCA.xcodeproj/project.pbxproj` before commit
+- Run the **Xcode Project Verification Checklist** after every pbxproj modification
+- Widget Extension target membership: `Core/Extensions/*`, `Core/Models/*`, `Core/Analytics/*`, `Core/Persistence/ModelContainerFactory.swift` only — never `Features/*` or `App/*`
+
+---
+
+## Local Development
+
+```bash
+git clone https://github.com/Mihirmaru22/LOCA---Local-First-Habit-Tracker.git
+cd LOCA---Local-First-Habit-Tracker
+open LOCA.xcodeproj
+```
+
+Select the `LOCA` scheme, set `LOCAL_DEVELOPMENT` flag if needed, build and run on simulator or device.
+
+The `DebugSeeder` populates two boards ("Meditate" binary, "Running" quantitative) with 90 days of sample data on first launch in debug builds.
