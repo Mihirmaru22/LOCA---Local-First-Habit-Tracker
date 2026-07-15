@@ -27,6 +27,7 @@
 		052F419EE842417885F32906 /* Animation+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35FC423A6DF845B191C059CB /* Animation+Extensions.swift */; };
 		5A83AE55776345929CB34BF7 /* WidgetRefreshCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2805490003546CEAA6A8872 /* WidgetRefreshCoordinator.swift */; };
 		021213EDB5E14A9A81A44CC0 /* CheckInButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B49F0935A1CA4625B075C54A /* CheckInButton.swift */; };
+		9B3E3DC62CB647289A7363CF /* CheckInSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 764B712936BB4BEFBA74F28A /* CheckInSheet.swift */; };
 		7146E82590C741108AF373D7 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A18185A6B14A16B58268EB /* ColorPalette.swift */; };
 		21F090B2CE8B4E3FB9E4F6C6 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A18185A6B14A16B58268EB /* ColorPalette.swift */; };
 		EA67B446FFD340ECBF1E9F6D /* Double+Clamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13289E001E014999A9EFB063 /* Double+Clamp.swift */; };
@@ -61,6 +62,7 @@
 		35FC423A6DF845B191C059CB /* Animation+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Animation+Extensions.swift"; sourceTree = "<group>"; };
 		F2805490003546CEAA6A8872 /* WidgetRefreshCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WidgetRefreshCoordinator.swift"; sourceTree = "<group>"; };
 		B49F0935A1CA4625B075C54A /* CheckInButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CheckInButton.swift"; sourceTree = "<group>"; };
+		764B712936BB4BEFBA74F28A /* CheckInSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CheckInSheet.swift"; sourceTree = "<group>"; };
 		D5A18185A6B14A16B58268EB /* ColorPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ColorPalette.swift"; sourceTree = "<group>"; };
 		13289E001E014999A9EFB063 /* Double+Clamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Double+Clamp.swift"; sourceTree = "<group>"; };
 		A23A644233DD4BE6AAD23539 /* StreakCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StreakCalculator.swift"; sourceTree = "<group>"; };
@@ -200,6 +202,7 @@
 			isa = PBXGroup;
 			children = (
 				B49F0935A1CA4625B075C54A /* CheckInButton.swift */,
+				764B712936BB4BEFBA74F28A /* CheckInSheet.swift */,
 			);
 			path = "CheckIn";
 			sourceTree = "<group>";
@@ -416,6 +419,7 @@
 				5A16ED2F33C94E529C637EF7 /* Animation+Extensions.swift in Sources */,
 				5A83AE55776345929CB34BF7 /* WidgetRefreshCoordinator.swift in Sources */,
 				021213EDB5E14A9A81A44CC0 /* CheckInButton.swift in Sources */,
+				9B3E3DC62CB647289A7363CF /* CheckInSheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
