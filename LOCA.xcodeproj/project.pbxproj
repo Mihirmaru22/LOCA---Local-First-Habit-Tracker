@@ -23,6 +23,10 @@
 		A97E09E4062B4BEFAE3D7418 /* DebugSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E8D37FD0EAC4BBB8192F147 /* DebugSeeder.swift */; };
 		44693FCE5D424FE2907A1040 /* Date+Calendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CF2B6B9240E460892583CEC /* Date+Calendar.swift */; };
 		C5AF61424E02410ABAB998C1 /* Date+Calendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CF2B6B9240E460892583CEC /* Date+Calendar.swift */; };
+		5A16ED2F33C94E529C637EF7 /* Animation+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35FC423A6DF845B191C059CB /* Animation+Extensions.swift */; };
+		052F419EE842417885F32906 /* Animation+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35FC423A6DF845B191C059CB /* Animation+Extensions.swift */; };
+		5A83AE55776345929CB34BF7 /* WidgetRefreshCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2805490003546CEAA6A8872 /* WidgetRefreshCoordinator.swift */; };
+		021213EDB5E14A9A81A44CC0 /* CheckInButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B49F0935A1CA4625B075C54A /* CheckInButton.swift */; };
 		7146E82590C741108AF373D7 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A18185A6B14A16B58268EB /* ColorPalette.swift */; };
 		21F090B2CE8B4E3FB9E4F6C6 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A18185A6B14A16B58268EB /* ColorPalette.swift */; };
 		EA67B446FFD340ECBF1E9F6D /* Double+Clamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13289E001E014999A9EFB063 /* Double+Clamp.swift */; };
@@ -54,6 +58,9 @@
 		007029E177424E23BA4737C3 /* PersistenceError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PersistenceError.swift"; sourceTree = "<group>"; };
 		2E8D37FD0EAC4BBB8192F147 /* DebugSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DebugSeeder.swift"; sourceTree = "<group>"; };
 		8CF2B6B9240E460892583CEC /* Date+Calendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Calendar.swift"; sourceTree = "<group>"; };
+		35FC423A6DF845B191C059CB /* Animation+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Animation+Extensions.swift"; sourceTree = "<group>"; };
+		F2805490003546CEAA6A8872 /* WidgetRefreshCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WidgetRefreshCoordinator.swift"; sourceTree = "<group>"; };
+		B49F0935A1CA4625B075C54A /* CheckInButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CheckInButton.swift"; sourceTree = "<group>"; };
 		D5A18185A6B14A16B58268EB /* ColorPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ColorPalette.swift"; sourceTree = "<group>"; };
 		13289E001E014999A9EFB063 /* Double+Clamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Double+Clamp.swift"; sourceTree = "<group>"; };
 		A23A644233DD4BE6AAD23539 /* StreakCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StreakCalculator.swift"; sourceTree = "<group>"; };
@@ -133,6 +140,7 @@
 			children = (
 				80DC4E439C544786958675F7 /* LOCAApp.swift */,
 				1F4E506745484B71A76301BD /* CloudKitSyncCoordinator.swift */,
+				F2805490003546CEAA6A8872 /* WidgetRefreshCoordinator.swift */,
 			);
 			path = "App";
 			sourceTree = "<group>";
@@ -142,6 +150,7 @@
 			children = (
 				8CF2B6B9240E460892583CEC /* Date+Calendar.swift */,
 				D5A18185A6B14A16B58268EB /* ColorPalette.swift */,
+				35FC423A6DF845B191C059CB /* Animation+Extensions.swift */,
 				13289E001E014999A9EFB063 /* Double+Clamp.swift */,
 			);
 			path = "Extensions";
@@ -187,6 +196,14 @@
 			path = "HabitDetail";
 			sourceTree = "<group>";
 		};
+		CA8A63A8BFBE4180B6E680DC /* CheckIn */ = {
+			isa = PBXGroup;
+			children = (
+				B49F0935A1CA4625B075C54A /* CheckInButton.swift */,
+			);
+			path = "CheckIn";
+			sourceTree = "<group>";
+		};
 		D49D3753CE3740DB99C3CD3B /* Navigation */ = {
 			isa = PBXGroup;
 			children = (
@@ -211,6 +228,7 @@
 			children = (
 				C98301DF1FB24E4484DAFE03 /* Dashboard */,
 				707B3ADA96F94C6090385589 /* HabitDetail */,
+				CA8A63A8BFBE4180B6E680DC /* CheckIn */,
 				D49D3753CE3740DB99C3CD3B /* Navigation */,
 			);
 			path = "Features";
@@ -395,6 +413,9 @@
 				37DA6E005EE84382B6E2B538 /* JournalTimelineView.swift in Sources */,
 				42A8AE7D0252462CA1F5A2D2 /* DashboardView.swift in Sources */,
 				B45CB1ED59D240ED8D9DA386 /* HabitCardView.swift in Sources */,
+				5A16ED2F33C94E529C637EF7 /* Animation+Extensions.swift in Sources */,
+				5A83AE55776345929CB34BF7 /* WidgetRefreshCoordinator.swift in Sources */,
+				021213EDB5E14A9A81A44CC0 /* CheckInButton.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -413,6 +434,7 @@
 				412B7DDF630D4B369E475DD2 /* StreakCalculator.swift in Sources */,
 				C24B1432A5A9499083D59C9B /* HeatmapDataProvider.swift in Sources */,
 				1FB4B394E7334ADAAD65666E /* LOCAWidgetBundle.swift in Sources */,
+				052F419EE842417885F32906 /* Animation+Extensions.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
