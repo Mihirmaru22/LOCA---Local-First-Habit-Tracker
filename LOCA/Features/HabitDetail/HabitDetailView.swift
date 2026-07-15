@@ -38,6 +38,13 @@ import SwiftData
 /// `HeatmapView` and `AnalyticsCardsView` continue to manage their own `@State`
 /// and `.task(id:)` triggers independently — this query does not replace their
 /// internal data paths, only the gating logic and journal section data.
+///
+/// ## Check-In Integration (Phase 6.1)
+///
+/// `CheckInButton` is attached via `.safeAreaInset(edge: .bottom)`, which pushes
+/// `List` content up and stays above the home indicator. The button manages its
+/// own `@Query` on today's entries and `ModelContext` — `HabitDetailView` passes
+/// only `board` to it.
 struct HabitDetailView: View {
 
     let board: HabitBoard
@@ -86,6 +93,20 @@ struct HabitDetailView: View {
         }
         .listStyle(.insetGrouped)
         .navigationTitle(board.name)
+        // Phase 6.1: CheckInButton attaches as a sticky bottom element via
+        // .safeAreaInset. This modifier pushes List content up so nothing is
+        // hidden behind the button, and the button stays above the home indicator.
+        //
+        // CheckInButton returns EmptyView for quantitative habits in Phase 6.1
+        // (explicit scope gate). EmptyView has zero intrinsic height, so the
+        // .safeAreaInset has no visual effect for quantitative boards until
+        // Phase 6.2 replaces it with the sheet-presenting button.
+        .safeAreaInset(edge: .bottom) {
+            CheckInButton(board: board)
+                .padding(.horizontal)
+                .padding(.vertical, 12)
+                .background(.thinMaterial)
+        }
     }
 
     // MARK: - Header Section
@@ -298,3 +319,4 @@ private func makeDetailNoHistoryContainer() -> (ModelContainer, HabitBoard) {
     }
     .modelContainer(container)
 }
+
