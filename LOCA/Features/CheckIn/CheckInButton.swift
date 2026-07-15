@@ -3,10 +3,7 @@
 //  LOCA
 //
 //  Phase 6.1 — Binary Check-In Path
-//
-//  Phase 6.2 extends this file with the quantitative check-in path (value
-//  entry sheet). The `case .quantitative: EmptyView()` branch below is an
-//  explicit Phase 6.1 scope gate, not a placeholder.
+//  Phase 6.2 — Quantitative Check-In Path (extended)
 //
 
 import SwiftUI
@@ -32,8 +29,13 @@ import os
 /// a "Done Today" completed state and is disabled.
 ///
 /// ## Quantitative Path (Phase 6.2)
-/// A tap opens `CheckInSheet` for value and optional note entry. Implemented
-/// in Phase 6.2 — currently returns `EmptyView` (scope gate, not a stub).
+/// A tap presents `CheckInSheet` as a `.sheet`. The sheet handles value
+/// entry, optional note, validation, persistence, haptic, and widget reload.
+/// The button label reflects today's running total vs target:
+/// - No entries: "Check In"
+/// - Partial progress: "2.3 / 5.0 mi"
+/// - Goal met: "3.5 mi · Goal Met" (button remains active — multiple entries
+///   per day are allowed for quantitative habits)
 ///
 /// ## Animation
 /// Uses `Animation.rippleConfirm` (Engineering Principles §7.1) via the
@@ -41,19 +43,24 @@ import os
 /// `@Environment(\.accessibilityReduceMotion)`.
 ///
 /// ## Haptics
-/// `UIImpactFeedbackGenerator(style: .rigid)` fired after a successful
-/// `modelContext.save()` — at the moment of log confirmation, not at
-/// animation completion (Engineering Principles §7.2).
-/// Gated on `#if canImport(UIKit)` for macOS compatibility.
+/// Binary: `UIImpactFeedbackGenerator(style: .rigid)` fired after a successful
+/// `modelContext.save()`. Quantitative: fired inside `CheckInSheet` after save.
+/// Both gated on `#if canImport(UIKit)` for macOS compatibility.
 struct CheckInButton: View {
 
     let board: HabitBoard
 
     @Environment(\.modelContext) private var modelContext
+
+    // Binary error state — quantitative errors are handled inside CheckInSheet.
     @State private var showSaveError = false
 
+    // Quantitative sheet presentation state.
+    @State private var showingSheet = false
+
     /// ADR-003 compliant, date-bounded query on today's log entries.
-    /// Populated at init time with Calendar.current day boundaries.
+    /// Shared by both binary and quantitative paths for `todaysTotal`
+    /// and `isCompletedToday` computation.
     @Query private var todaysLogs: [LogEntry]
 
     private let logger = Logger(subsystem: "com.mihirmaru.loca", category: "CheckIn")
@@ -68,8 +75,7 @@ struct CheckInButton: View {
         let todayStart = calendar.startOfDay(for: Date())
 
         // Defensive fallback: 86,400 seconds is a safe approximation of
-        // "tomorrow" if calendar arithmetic fails — which is not expected
-        // under any supported timezone but prevents a crash if it occurs.
+        // "tomorrow" if calendar arithmetic fails.
         let tomorrowStart = calendar.date(byAdding: .day, value: 1, to: todayStart)
             ?? Date(timeIntervalSinceNow: 86_400)
 
@@ -92,7 +98,9 @@ struct CheckInButton: View {
     }
 
     /// True when today's cumulative total meets or exceeds the board's
-    /// effective target. Drives the button's completed/disabled state.
+    /// effective target.
+    /// - Binary: disables the button once met.
+    /// - Quantitative: changes button label only; button stays active.
     private var isCompletedToday: Bool {
         todaysTotal >= board.effectiveTarget
     }
@@ -105,11 +113,7 @@ struct CheckInButton: View {
             case .binary:
                 binaryButton
             case .quantitative:
-                // Phase 6.2: quantitative check-in via CheckInSheet.
-                // EmptyView produces zero height in the .safeAreaInset
-                // container — no visual bar rendered for quantitative boards
-                // until Phase 6.2.
-                EmptyView()
+                quantitativeButton
             }
         }
         .alert("Couldn't Save Check-In", isPresented: $showSaveError) {
@@ -119,7 +123,7 @@ struct CheckInButton: View {
         }
     }
 
-    // MARK: - Binary Button
+    // MARK: - Binary Button (Phase 6.1)
 
     @ViewBuilder
     private var binaryButton: some View {
@@ -136,7 +140,6 @@ struct CheckInButton: View {
             tint: ColorPalette[board.colorIndex]
         ))
         .disabled(isCompletedToday)
-        // Engineering Principles §6.1: label + hint + value required.
         .accessibilityLabel("Check in \(board.name)")
         .accessibilityHint(
             isCompletedToday
@@ -147,23 +150,61 @@ struct CheckInButton: View {
         .accessibilityAddTraits(isCompletedToday ? [.isButton, .isSelected] : .isButton)
     }
 
-    // MARK: - Check-In Action (Binary)
+    // MARK: - Quantitative Button (Phase 6.2)
 
-    // MARK: Check-In Sequence
+    // MARK: Always Active
     //
-    // Order is deliberate:
-    //   1. insert(entry)        — relationship established in-memory
-    //   2. updateStreak(using:) — reads self.logs (includes new entry via in-memory
-    //                             relationship update) and mutates cached streak
-    //   3. save()               — persists both the new entry and streak mutation
-    //   4. haptic               — fires at the moment of confirmed persistence,
-    //                             not at animation completion (EP §7.2)
-    //   5. scheduleReload()     — debounced widget invalidation
+    // Quantitative habits allow multiple entries per day (e.g., 3 mi in the
+    // morning, 2 mi in the evening). The button is never disabled — only its
+    // label and visual state change when the daily goal is reached.
+    // `.disabled()` is intentionally absent here; compare with binaryButton
+    // which gates `.disabled(isCompletedToday)`.
+
+    @ViewBuilder
+    private var quantitativeButton: some View {
+        Button {
+            showingSheet = true
+        } label: {
+            Label(quantitativeLabel, systemImage: quantitativeIcon)
+        }
+        .buttonStyle(CheckInButtonStyle(
+            isCompleted: isCompletedToday,
+            tint: ColorPalette[board.colorIndex]
+        ))
+        .sheet(isPresented: $showingSheet) {
+            CheckInSheet(board: board)
+        }
+        .accessibilityLabel("Check in \(board.name)")
+        .accessibilityHint("Opens value entry for \(board.name)")
+        .accessibilityValue(quantitativeLabel)
+    }
+
+    // MARK: Quantitative Label Computation
     //
-    // On save failure: `modelContext.rollback()` discards both the inserted
-    // entry and the streak mutation atomically. This is safe here because
-    // check-in is the only mutation in flight from this button — no other
-    // pending changes exist on this context at this call site.
+    // Three display states:
+    //   1. No entries today     → "Check In" (same as binary pre-log CTA)
+    //   2. Progress, goal unmet → "2.3 / 5.0 mi"
+    //   3. Goal met             → "3.5 mi · Goal Met" (encouraging, not blocking)
+
+    private var quantitativeLabel: String {
+        guard !todaysLogs.isEmpty else { return "Check In" }
+
+        let totalStr = todaysTotal.formatted(.number.precision(.fractionLength(0...2)))
+        let unit = board.unitLabel.map { " \($0)" } ?? ""
+
+        if isCompletedToday {
+            return "\(totalStr)\(unit) · Goal Met"
+        }
+
+        let targetStr = board.effectiveTarget.formatted(.number.precision(.fractionLength(0...1)))
+        return "\(totalStr) / \(targetStr)\(unit)"
+    }
+
+    private var quantitativeIcon: String {
+        isCompletedToday ? "checkmark.circle.fill" : "plus.circle"
+    }
+
+    // MARK: - Binary Check-In Action (Phase 6.1)
 
     private func logBinaryEntry() {
         let entry = LogEntry(
@@ -183,22 +224,12 @@ struct CheckInButton: View {
             logger.error(
                 "Binary check-in save failed for board '\(board.name, privacy: .public)': \(error.localizedDescription, privacy: .public)"
             )
-            // Roll back both the inserted entry and the streak mutation.
-            // `rollback()` is safe here: check-in is the only mutation in
-            // flight at this call site.
             modelContext.rollback()
             showSaveError = true
         }
     }
 
     // MARK: - Haptics
-
-    // MARK: UIKit Import Boundary (Engineering Principles §1.1)
-    //
-    // UIKit is imported only at API-level call sites. `UIImpactFeedbackGenerator`
-    // is one of two permitted UIKit entry points (the other being
-    // `UIApplication.shared.open`). All UIKit usage is gated on
-    // `#if canImport(UIKit)` for macOS compatibility.
 
     private func triggerConfirmationHaptic() {
         #if canImport(UIKit)
@@ -209,19 +240,15 @@ struct CheckInButton: View {
 
 // MARK: - CheckInButtonStyle
 
-/// A custom `ButtonStyle` that applies the canonical check-in press animation
-/// and adapts its visual appearance based on completion state.
+/// Applies the canonical check-in press animation and adapts visual appearance
+/// based on completion state.
 ///
-/// Visual states:
 /// - **Normal**: board-color filled pill, white label.
 /// - **Completed**: board-color tinted (15% opacity) pill, board-color label.
-///   Combined with `.disabled(true)` on the button — the completed visual
-///   conveys state without a grey "disabled" appearance.
 ///
-/// Animation: `Animation.rippleConfirm` (response 0.3, dampingFraction 0.5)
-/// with scale `0.94` on press, per Engineering Principles §7 and §7.2.
-/// Falls back to `.linear(duration: 0.1)` when `accessibilityReduceMotion`
-/// is enabled.
+/// For binary habits, `.disabled(true)` is applied externally alongside the
+/// completed visual. For quantitative habits, the completed visual appears
+/// without disabling — communicating "goal met but still tappable."
 private struct CheckInButtonStyle: ButtonStyle {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -234,8 +261,6 @@ private struct CheckInButtonStyle: ButtonStyle {
             .font(.headline)
             .foregroundStyle(isCompleted ? tint : .white)
             .frame(maxWidth: .infinity)
-            // .vertical: 16 pt → total height ~50 pt, well above 44 pt minimum
-            // tap target (Engineering Principles §6.1).
             .padding(.vertical, 16)
             .background(
                 isCompleted ? tint.opacity(0.15) : tint,
@@ -243,10 +268,6 @@ private struct CheckInButtonStyle: ButtonStyle {
             )
             .scaleEffect(configuration.isPressed ? 0.94 : 1.0)
             .animation(
-                // Engineering Principles §6.3 + §7.1:
-                // Reduce Motion → .linear(0.1); otherwise → .rippleConfirm.
-                // Scale effect is not removed entirely (it conveys press feedback
-                // even for reduce-motion users), only made imperceptibly quick.
                 reduceMotion ? .linear(duration: 0.1) : .rippleConfirm,
                 value: configuration.isPressed
             )
@@ -260,7 +281,6 @@ private func makeBinaryCheckInContainer() -> (ModelContainer, HabitBoard) {
     let schema = Schema([HabitBoard.self, LogEntry.self])
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
     let container = try! ModelContainer(for: schema, configurations: [config])
-
     let board = HabitBoard(name: "Meditate", colorIndex: 5)
     container.mainContext.insert(board)
     try? container.mainContext.save()
@@ -272,27 +292,56 @@ private func makeBinaryCompletedContainer() -> (ModelContainer, HabitBoard) {
     let schema = Schema([HabitBoard.self, LogEntry.self])
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
     let container = try! ModelContainer(for: schema, configurations: [config])
-
     let board = HabitBoard(name: "Meditate", colorIndex: 5)
     container.mainContext.insert(board)
-
-    // Pre-insert a today entry so the button renders in the completed state
     let entry = LogEntry(value: 1.0, boardID: board.id, board: board)
     container.mainContext.insert(entry)
     try? container.mainContext.save()
     return (container, board)
 }
 
-#Preview("Not Yet Logged") {
-    let (container, board) = makeBinaryCheckInContainer()
-    return CheckInButton(board: board)
-        .padding()
-        .modelContainer(container)
+@MainActor
+private func makeQuantitativeCheckInContainer(todayTotal: Double = 0) -> (ModelContainer, HabitBoard) {
+    let schema = Schema([HabitBoard.self, LogEntry.self])
+    let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: schema, configurations: [config])
+    let board = HabitBoard(
+        name: "Running",
+        metricType: HabitBoard.MetricType.quantitative.rawValue,
+        targetValue: 5.0,
+        unitLabel: "mi",
+        colorIndex: 0
+    )
+    container.mainContext.insert(board)
+    if todayTotal > 0 {
+        let entry = LogEntry(value: todayTotal, boardID: board.id, board: board)
+        container.mainContext.insert(entry)
+    }
+    try? container.mainContext.save()
+    return (container, board)
 }
 
-#Preview("Done Today") {
+#Preview("Binary — Not Yet Logged") {
+    let (container, board) = makeBinaryCheckInContainer()
+    return CheckInButton(board: board).padding().modelContainer(container)
+}
+
+#Preview("Binary — Done Today") {
     let (container, board) = makeBinaryCompletedContainer()
-    return CheckInButton(board: board)
-        .padding()
-        .modelContainer(container)
+    return CheckInButton(board: board).padding().modelContainer(container)
+}
+
+#Preview("Quantitative — No Entries") {
+    let (container, board) = makeQuantitativeCheckInContainer()
+    return CheckInButton(board: board).padding().modelContainer(container)
+}
+
+#Preview("Quantitative — In Progress (2.3 mi)") {
+    let (container, board) = makeQuantitativeCheckInContainer(todayTotal: 2.3)
+    return CheckInButton(board: board).padding().modelContainer(container)
+}
+
+#Preview("Quantitative — Goal Met (6.1 mi)") {
+    let (container, board) = makeQuantitativeCheckInContainer(todayTotal: 6.1)
+    return CheckInButton(board: board).padding().modelContainer(container)
 }
