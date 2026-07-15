@@ -28,6 +28,9 @@
 		5A83AE55776345929CB34BF7 /* WidgetRefreshCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2805490003546CEAA6A8872 /* WidgetRefreshCoordinator.swift */; };
 		021213EDB5E14A9A81A44CC0 /* CheckInButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B49F0935A1CA4625B075C54A /* CheckInButton.swift */; };
 		9B3E3DC62CB647289A7363CF /* CheckInSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 764B712936BB4BEFBA74F28A /* CheckInSheet.swift */; };
+		28F5EB6811FC33FB01EC2F9D /* HabitBoardEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = D61E8A43B9C46C5F8DB68C17 /* HabitBoardEntity.swift */; };
+		E8F19F01F9AC07C3B4690A1F /* LogHabitIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F232FDAB6A6A9C3C9779C7B /* LogHabitIntent.swift */; };
+		4AA1CD25606B82324EBBAB89 /* LOCAShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F386776E75E86F3F6312296 /* LOCAShortcuts.swift */; };
 		7146E82590C741108AF373D7 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A18185A6B14A16B58268EB /* ColorPalette.swift */; };
 		21F090B2CE8B4E3FB9E4F6C6 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A18185A6B14A16B58268EB /* ColorPalette.swift */; };
 		EA67B446FFD340ECBF1E9F6D /* Double+Clamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13289E001E014999A9EFB063 /* Double+Clamp.swift */; };
@@ -63,6 +66,9 @@
 		F2805490003546CEAA6A8872 /* WidgetRefreshCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WidgetRefreshCoordinator.swift"; sourceTree = "<group>"; };
 		B49F0935A1CA4625B075C54A /* CheckInButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CheckInButton.swift"; sourceTree = "<group>"; };
 		764B712936BB4BEFBA74F28A /* CheckInSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CheckInSheet.swift"; sourceTree = "<group>"; };
+		D61E8A43B9C46C5F8DB68C17 /* HabitBoardEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitBoardEntity.swift"; sourceTree = "<group>"; };
+		3F232FDAB6A6A9C3C9779C7B /* LogHabitIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LogHabitIntent.swift"; sourceTree = "<group>"; };
+		0F386776E75E86F3F6312296 /* LOCAShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LOCAShortcuts.swift"; sourceTree = "<group>"; };
 		D5A18185A6B14A16B58268EB /* ColorPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ColorPalette.swift"; sourceTree = "<group>"; };
 		13289E001E014999A9EFB063 /* Double+Clamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Double+Clamp.swift"; sourceTree = "<group>"; };
 		A23A644233DD4BE6AAD23539 /* StreakCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StreakCalculator.swift"; sourceTree = "<group>"; };
@@ -237,6 +243,16 @@
 			path = "Features";
 			sourceTree = "<group>";
 		};
+		290F3589AC546636B8368877 /* Intents */ = {
+			isa = PBXGroup;
+			children = (
+				D61E8A43B9C46C5F8DB68C17 /* HabitBoardEntity.swift */,
+				3F232FDAB6A6A9C3C9779C7B /* LogHabitIntent.swift */,
+				0F386776E75E86F3F6312296 /* LOCAShortcuts.swift */,
+			);
+			path = "Intents";
+			sourceTree = "<group>";
+		};
 		92A8F67860144A0591B6FE2B /* LOCA */ = {
 			isa = PBXGroup;
 			children = (
@@ -244,6 +260,7 @@
 				6F74932D21B24EAEAD2C0AF6 /* App */,
 				7217A5FC0D2E4084AA1CCF76 /* Core */,
 				EC014690E49B49D88F75E7F7 /* Features */,
+				290F3589AC546636B8368877 /* Intents */,
 				F0A5A06DC0E2402C8577EA8C /* Assets.xcassets */,
 				600C76F38C034B3080621640 /* LOCA.entitlements */,
 				F8AFCF832C514794A3DE0448 /* LOCA-Debug.entitlements */,
@@ -420,6 +437,9 @@
 				5A83AE55776345929CB34BF7 /* WidgetRefreshCoordinator.swift in Sources */,
 				021213EDB5E14A9A81A44CC0 /* CheckInButton.swift in Sources */,
 				9B3E3DC62CB647289A7363CF /* CheckInSheet.swift in Sources */,
+				28F5EB6811FC33FB01EC2F9D /* HabitBoardEntity.swift in Sources */,
+				E8F19F01F9AC07C3B4690A1F /* LogHabitIntent.swift in Sources */,
+				4AA1CD25606B82324EBBAB89 /* LOCAShortcuts.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
