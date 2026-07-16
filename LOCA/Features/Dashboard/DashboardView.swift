@@ -1,4 +1,6 @@
 import SwiftUI
+import SwiftData
+import os
 
 // MARK: - DashboardView
 
@@ -16,7 +18,18 @@ struct DashboardView: View {
     let boards: [HabitBoard]
     @Binding var selection: UUID?
 
+    @Environment(\.modelContext) private var modelContext
+
     @State private var showingCreateSheet = false
+
+    /// The board awaiting delete confirmation (Phase 7.2). Non-nil presents the
+    /// confirmation alert; the actual removal is a soft-delete via `archive(in:)`.
+    @State private var boardPendingDeletion: HabitBoard?
+
+    /// Presents the failure alert if the archive save throws.
+    @State private var showArchiveError = false
+
+    private let logger = Logger(subsystem: "com.mihirmaru.loca", category: "HabitManagement")
 
     var body: some View {
         Group {
@@ -27,6 +40,13 @@ struct DashboardView: View {
                     ForEach(boards, id: \.id) { board in
                         HabitCardView(board: board)
                             .tag(board.id)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button(role: .destructive) {
+                                    boardPendingDeletion = board
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
                     }
                 }
                 .listStyle(.sidebar)
@@ -45,6 +65,49 @@ struct DashboardView: View {
         }
         .sheet(isPresented: $showingCreateSheet) {
             HabitFormView(mode: .create)
+        }
+        .alert(
+            "Delete \(boardPendingDeletion?.name ?? "Habit")?",
+            isPresented: deletionConfirmationPresented,
+            presenting: boardPendingDeletion
+        ) { board in
+            Button("Delete", role: .destructive) { archive(board) }
+            Button("Cancel", role: .cancel) { boardPendingDeletion = nil }
+        } message: { _ in
+            Text("This removes it from your habits. Your logged entries are kept, not deleted.")
+        }
+        .alert("Couldn't Delete Habit", isPresented: $showArchiveError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("The habit couldn't be removed. Please try again.")
+        }
+    }
+
+    // MARK: - Deletion (soft-delete via archive, ADR-001)
+
+    /// Binding that keeps the confirmation alert presented while a board is
+    /// pending and clears the pending board when the alert is dismissed.
+    private var deletionConfirmationPresented: Binding<Bool> {
+        Binding(
+            get: { boardPendingDeletion != nil },
+            set: { presented in if !presented { boardPendingDeletion = nil } }
+        )
+    }
+
+    /// Soft-deletes a board per ADR-001 — sets `archivedAt` and saves via the
+    /// model's canonical `archive(in:)`, which rolls back on failure. The board
+    /// leaves the active `@Query` reactively; its `LogEntry` history is retained
+    /// (the relationship is `.nullify`, never `.cascade`). If the archived board
+    /// was selected, selection is cleared so the detail column doesn't strand.
+    private func archive(_ board: HabitBoard) {
+        defer { boardPendingDeletion = nil }
+        do {
+            try board.archive(in: modelContext)
+            if selection == board.id { selection = nil }
+            logger.debug("Board archived: '\(board.name, privacy: .public)'.")
+        } catch {
+            logger.error("Board archive failed: \(error.localizedDescription, privacy: .public)")
+            showArchiveError = true
         }
     }
 }

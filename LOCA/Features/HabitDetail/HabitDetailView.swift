@@ -51,6 +51,10 @@ struct HabitDetailView: View {
 
     @Environment(\.modelContext) private var modelContext
 
+    /// Drives the edit form sheet (Phase 7.2). The form is presented in
+    /// `.edit(board)` mode and mutates the board in place on save.
+    @State private var showingEditSheet = false
+
     /// ADR-003: filter on the denormalized `boardID` scalar.
     /// Sorted descending for journal display; HeatmapView and AnalyticsCardsView
     /// manage their own data paths and are not driven by this query.
@@ -106,6 +110,14 @@ struct HabitDetailView: View {
                 .padding(.horizontal)
                 .padding(.vertical, 12)
                 .background(.thinMaterial)
+        }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button("Edit") { showingEditSheet = true }
+            }
+        }
+        .sheet(isPresented: $showingEditSheet) {
+            HabitFormView(mode: .edit(board))
         }
     }
 
