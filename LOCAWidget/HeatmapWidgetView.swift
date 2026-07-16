@@ -10,6 +10,7 @@
 
 import WidgetKit
 import SwiftUI
+import AppIntents
 
 // MARK: - HeatmapWidgetView
 
@@ -35,10 +36,59 @@ struct HeatmapWidgetView: View {
             header(for: board)
             heatmap(for: board)
             Spacer(minLength: 0)
-            Text(todayText(for: board))
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            HStack(spacing: 8) {
+                Text(todayText(for: board))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                Spacer(minLength: 4)
+                checkInButton(for: board)
+            }
+        }
+    }
+
+    // MARK: Check-In Button (Phase 9.2)
+
+    /// Interactive check-in. Invokes the existing `LogHabitIntent` — no
+    /// duplicated write logic. Widgets cannot request input, so a quantitative
+    /// tap logs one full goal (`effectiveTarget`); a binary tap logs `1.0`.
+    @ViewBuilder
+    private func checkInButton(for board: HeatmapEntry.BoardSnapshot) -> some View {
+        Button(intent: logIntent(for: board)) {
+            Label(buttonTitle(for: board), systemImage: "plus.circle.fill")
+                .font(.caption.weight(.semibold))
                 .lineLimit(1)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(ColorPalette[board.colorIndex])
+    }
+
+    /// Builds a `LogHabitIntent` pre-filled for a widget tap. Binary leaves
+    /// `amount` nil (the intent logs `1.0`); quantitative sets `amount` to the
+    /// goal so the intent completes without a value prompt.
+    private func logIntent(for board: HeatmapEntry.BoardSnapshot) -> LogHabitIntent {
+        let intent = LogHabitIntent()
+        intent.board = HabitBoardEntity(
+            id: board.id,
+            name: board.name,
+            metricType: board.metric.rawValue,
+            unitLabel: board.unitLabel,
+            effectiveTarget: board.effectiveTarget
+        )
+        if board.metric == .quantitative {
+            intent.amount = board.effectiveTarget
+        }
+        return intent
+    }
+
+    private func buttonTitle(for board: HeatmapEntry.BoardSnapshot) -> String {
+        switch board.metric {
+        case .binary:
+            return "Check in"
+        case .quantitative:
+            let goal = board.effectiveTarget.formatted(.number.precision(.fractionLength(0...1)))
+            let unit = board.unitLabel.flatMap { $0.isEmpty ? nil : " \($0)" } ?? ""
+            return "Log \(goal)\(unit)"
         }
     }
 

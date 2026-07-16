@@ -54,6 +54,8 @@
 		8A54E5327864A78633B1273E /* HeatmapProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A29659CB228E8097357CADE /* HeatmapProvider.swift */; };
 		39E6C7226EBD1E6144C4B5F0 /* HeatmapWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2CD94489A034908FA22613E /* HeatmapWidgetView.swift */; };
 		271E0C3C3B456E4E33894ADE /* HabitBoardEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = D61E8A43B9C46C5F8DB68C17 /* HabitBoardEntity.swift */; };
+		31FEB59889D5EE21963C1D9A /* LogHabitIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F232FDAB6A6A9C3C9779C7B /* LogHabitIntent.swift */; };
+		F18CA204FECB9D1C102ECADE /* WidgetRefreshCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2805490003546CEAA6A8872 /* WidgetRefreshCoordinator.swift */; };
 		FAA57F5EE1684524A7E69EF1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F0A5A06DC0E2402C8577EA8C /* Assets.xcassets */; };
 		86608D948B254C87BB866DEF /* LOCAWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BB8CDE96C66C4C29B7CBC6BD /* LOCAWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
@@ -491,6 +493,8 @@
 				8A54E5327864A78633B1273E /* HeatmapProvider.swift in Sources */,
 				39E6C7226EBD1E6144C4B5F0 /* HeatmapWidgetView.swift in Sources */,
 				271E0C3C3B456E4E33894ADE /* HabitBoardEntity.swift in Sources */,
+				31FEB59889D5EE21963C1D9A /* LogHabitIntent.swift in Sources */,
+				F18CA204FECB9D1C102ECADE /* WidgetRefreshCoordinator.swift in Sources */,
 				052F419EE842417885F32906 /* Animation+Extensions.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
