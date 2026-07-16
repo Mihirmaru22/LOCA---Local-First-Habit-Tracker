@@ -79,7 +79,7 @@ struct CheckInSheet: View {
                 noteSection
             }
             .navigationTitle("Log \(board.name)")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitleDisplay()
             .toolbar { toolbarContent }
             .onAppear { valueFieldFocused = true }
             .alert("Couldn't Save Check-In", isPresented: $showSaveError) {
@@ -103,7 +103,7 @@ struct CheckInSheet: View {
         Section {
             HStack(alignment: .center, spacing: 8) {
                 TextField("0", text: $valueText)
-                    .keyboardType(.decimalPad)
+                    .decimalKeyboard()
                     .focused($valueFieldFocused)
                     .font(.system(.title2, design: .rounded, weight: .semibold))
                     .foregroundStyle(parsedValue != nil ? ColorPalette[board.colorIndex] : .primary)

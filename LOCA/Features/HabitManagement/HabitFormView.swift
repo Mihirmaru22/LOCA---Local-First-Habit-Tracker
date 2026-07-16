@@ -94,7 +94,7 @@ struct HabitFormView: View {
                 colorSection
             }
             .navigationTitle(navigationTitle)
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitleDisplay()
             .toolbar { toolbarContent }
             .onAppear { if isCreate { nameFocused = true } }
             .animation(reduceMotion ? nil : .rippleSettle, value: draft.metric)
@@ -151,7 +151,7 @@ struct HabitFormView: View {
         Section {
             HStack(spacing: 8) {
                 TextField("0", text: $draft.targetText)
-                    .keyboardType(.decimalPad)
+                    .decimalKeyboard()
                     .font(.system(.body, design: .rounded))
                     .foregroundStyle(draft.parsedTarget != nil ? .primary : .secondary)
                     .accessibilityLabel("Daily goal amount")

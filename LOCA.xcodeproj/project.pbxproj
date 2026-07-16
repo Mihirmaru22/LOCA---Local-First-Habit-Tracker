@@ -23,6 +23,7 @@
 		44693FCE5D424FE2907A1040 /* Date+Calendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CF2B6B9240E460892583CEC /* Date+Calendar.swift */; };
 		C5AF61424E02410ABAB998C1 /* Date+Calendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CF2B6B9240E460892583CEC /* Date+Calendar.swift */; };
 		5A16ED2F33C94E529C637EF7 /* Animation+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35FC423A6DF845B191C059CB /* Animation+Extensions.swift */; };
+		CD444AE42731F450C8BB84C3 /* View+PlatformAdaptations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10298EDBEB3995D68C76C212 /* View+PlatformAdaptations.swift */; };
 		052F419EE842417885F32906 /* Animation+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35FC423A6DF845B191C059CB /* Animation+Extensions.swift */; };
 		5A83AE55776345929CB34BF7 /* WidgetRefreshCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2805490003546CEAA6A8872 /* WidgetRefreshCoordinator.swift */; };
 		021213EDB5E14A9A81A44CC0 /* CheckInButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B49F0935A1CA4625B075C54A /* CheckInButton.swift */; };
@@ -64,6 +65,7 @@
 		2E8D37FD0EAC4BBB8192F147 /* DebugSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DebugSeeder.swift"; sourceTree = "<group>"; };
 		8CF2B6B9240E460892583CEC /* Date+Calendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Calendar.swift"; sourceTree = "<group>"; };
 		35FC423A6DF845B191C059CB /* Animation+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Animation+Extensions.swift"; sourceTree = "<group>"; };
+		10298EDBEB3995D68C76C212 /* View+PlatformAdaptations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+PlatformAdaptations.swift"; sourceTree = "<group>"; };
 		F2805490003546CEAA6A8872 /* WidgetRefreshCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WidgetRefreshCoordinator.swift"; sourceTree = "<group>"; };
 		B49F0935A1CA4625B075C54A /* CheckInButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CheckInButton.swift"; sourceTree = "<group>"; };
 		764B712936BB4BEFBA74F28A /* CheckInSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CheckInSheet.swift"; sourceTree = "<group>"; };
@@ -162,6 +164,7 @@
 				8CF2B6B9240E460892583CEC /* Date+Calendar.swift */,
 				D5A18185A6B14A16B58268EB /* ColorPalette.swift */,
 				35FC423A6DF845B191C059CB /* Animation+Extensions.swift */,
+				10298EDBEB3995D68C76C212 /* View+PlatformAdaptations.swift */,
 				13289E001E014999A9EFB063 /* Double+Clamp.swift */,
 			);
 			path = "Extensions";
@@ -455,6 +458,7 @@
 				4AA1CD25606B82324EBBAB89 /* LOCAShortcuts.swift in Sources */,
 				3AAE3C8D090CD30BEAB0975C /* HabitBoardDraft.swift in Sources */,
 				BF8EEE2C96C910A5E0C5C8EB /* HabitFormView.swift in Sources */,
+				CD444AE42731F450C8BB84C3 /* View+PlatformAdaptations.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

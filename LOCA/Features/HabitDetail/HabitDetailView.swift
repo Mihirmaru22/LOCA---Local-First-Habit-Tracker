@@ -95,7 +95,7 @@ struct HabitDetailView: View {
                 journalSections_
             }
         }
-        .listStyle(.insetGrouped)
+        .groupedInsetList()
         .navigationTitle(board.name)
         // Phase 6.1: CheckInButton attaches as a sticky bottom element via
         // .safeAreaInset. This modifier pushes List content up so nothing is
