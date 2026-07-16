@@ -50,6 +50,10 @@
 		42A8AE7D0252462CA1F5A2D2 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA23BF1816F44D92873A3FCD /* DashboardView.swift */; };
 		B45CB1ED59D240ED8D9DA386 /* HabitCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA2BCF72800F4D06A36251AA /* HabitCardView.swift */; };
 		1FB4B394E7334ADAAD65666E /* LOCAWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0F928C59F0243A385862E33 /* LOCAWidgetBundle.swift */; };
+		D45B6400C4A988DB2D499E0E /* HeatmapWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98EC7081C1B9D172E1DB63DC /* HeatmapWidget.swift */; };
+		8A54E5327864A78633B1273E /* HeatmapProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A29659CB228E8097357CADE /* HeatmapProvider.swift */; };
+		39E6C7226EBD1E6144C4B5F0 /* HeatmapWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2CD94489A034908FA22613E /* HeatmapWidgetView.swift */; };
+		271E0C3C3B456E4E33894ADE /* HabitBoardEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = D61E8A43B9C46C5F8DB68C17 /* HabitBoardEntity.swift */; };
 		FAA57F5EE1684524A7E69EF1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F0A5A06DC0E2402C8577EA8C /* Assets.xcassets */; };
 		86608D948B254C87BB866DEF /* LOCAWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BB8CDE96C66C4C29B7CBC6BD /* LOCAWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
@@ -87,6 +91,9 @@
 		CA23BF1816F44D92873A3FCD /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DashboardView.swift"; sourceTree = "<group>"; };
 		FA2BCF72800F4D06A36251AA /* HabitCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitCardView.swift"; sourceTree = "<group>"; };
 		E0F928C59F0243A385862E33 /* LOCAWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LOCAWidgetBundle.swift"; sourceTree = "<group>"; };
+		98EC7081C1B9D172E1DB63DC /* HeatmapWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HeatmapWidget.swift"; sourceTree = "<group>"; };
+		5A29659CB228E8097357CADE /* HeatmapProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HeatmapProvider.swift"; sourceTree = "<group>"; };
+		B2CD94489A034908FA22613E /* HeatmapWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HeatmapWidgetView.swift"; sourceTree = "<group>"; };
 		B23613967AF94542A106EAAA /* LOCA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LOCA.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BB8CDE96C66C4C29B7CBC6BD /* LOCAWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LOCAWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		F0A5A06DC0E2402C8577EA8C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -288,6 +295,9 @@
 			isa = PBXGroup;
 			children = (
 				E0F928C59F0243A385862E33 /* LOCAWidgetBundle.swift */,
+				98EC7081C1B9D172E1DB63DC /* HeatmapWidget.swift */,
+				5A29659CB228E8097357CADE /* HeatmapProvider.swift */,
+				B2CD94489A034908FA22613E /* HeatmapWidgetView.swift */,
 				F014D8500214470FA09E8D5D /* LOCAWidget.entitlements */,
 				0BA21E06F27743599B0781EF /* LOCAWidget-Debug.entitlements */,
 				BF9D4A71D1F241B0A7075378 /* Info.plist */,
@@ -477,6 +487,10 @@
 				412B7DDF630D4B369E475DD2 /* StreakCalculator.swift in Sources */,
 				C24B1432A5A9499083D59C9B /* HeatmapDataProvider.swift in Sources */,
 				1FB4B394E7334ADAAD65666E /* LOCAWidgetBundle.swift in Sources */,
+				D45B6400C4A988DB2D499E0E /* HeatmapWidget.swift in Sources */,
+				8A54E5327864A78633B1273E /* HeatmapProvider.swift in Sources */,
+				39E6C7226EBD1E6144C4B5F0 /* HeatmapWidgetView.swift in Sources */,
+				271E0C3C3B456E4E33894ADE /* HabitBoardEntity.swift in Sources */,
 				052F419EE842417885F32906 /* Animation+Extensions.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
