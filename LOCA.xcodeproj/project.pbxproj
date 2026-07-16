@@ -31,6 +31,8 @@
 		28F5EB6811FC33FB01EC2F9D /* HabitBoardEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = D61E8A43B9C46C5F8DB68C17 /* HabitBoardEntity.swift */; };
 		E8F19F01F9AC07C3B4690A1F /* LogHabitIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F232FDAB6A6A9C3C9779C7B /* LogHabitIntent.swift */; };
 		4AA1CD25606B82324EBBAB89 /* LOCAShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F386776E75E86F3F6312296 /* LOCAShortcuts.swift */; };
+		3AAE3C8D090CD30BEAB0975C /* HabitBoardDraft.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA7ECE49E75530F4636DA3CA /* HabitBoardDraft.swift */; };
+		BF8EEE2C96C910A5E0C5C8EB /* HabitFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D51B7D82991FFC42BE1EFA3C /* HabitFormView.swift */; };
 		7146E82590C741108AF373D7 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A18185A6B14A16B58268EB /* ColorPalette.swift */; };
 		21F090B2CE8B4E3FB9E4F6C6 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A18185A6B14A16B58268EB /* ColorPalette.swift */; };
 		EA67B446FFD340ECBF1E9F6D /* Double+Clamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13289E001E014999A9EFB063 /* Double+Clamp.swift */; };
@@ -69,6 +71,8 @@
 		D61E8A43B9C46C5F8DB68C17 /* HabitBoardEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitBoardEntity.swift"; sourceTree = "<group>"; };
 		3F232FDAB6A6A9C3C9779C7B /* LogHabitIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LogHabitIntent.swift"; sourceTree = "<group>"; };
 		0F386776E75E86F3F6312296 /* LOCAShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LOCAShortcuts.swift"; sourceTree = "<group>"; };
+		BA7ECE49E75530F4636DA3CA /* HabitBoardDraft.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitBoardDraft.swift"; sourceTree = "<group>"; };
+		D51B7D82991FFC42BE1EFA3C /* HabitFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitFormView.swift"; sourceTree = "<group>"; };
 		D5A18185A6B14A16B58268EB /* ColorPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ColorPalette.swift"; sourceTree = "<group>"; };
 		13289E001E014999A9EFB063 /* Double+Clamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Double+Clamp.swift"; sourceTree = "<group>"; };
 		A23A644233DD4BE6AAD23539 /* StreakCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StreakCalculator.swift"; sourceTree = "<group>"; };
@@ -232,12 +236,22 @@
 			path = "Core";
 			sourceTree = "<group>";
 		};
+		B325876734E272C06C77D326 /* HabitManagement */ = {
+			isa = PBXGroup;
+			children = (
+				BA7ECE49E75530F4636DA3CA /* HabitBoardDraft.swift */,
+				D51B7D82991FFC42BE1EFA3C /* HabitFormView.swift */,
+			);
+			path = "HabitManagement";
+			sourceTree = "<group>";
+		};
 		EC014690E49B49D88F75E7F7 /* Features */ = {
 			isa = PBXGroup;
 			children = (
 				C98301DF1FB24E4484DAFE03 /* Dashboard */,
 				707B3ADA96F94C6090385589 /* HabitDetail */,
 				CA8A63A8BFBE4180B6E680DC /* CheckIn */,
+				B325876734E272C06C77D326 /* HabitManagement */,
 				D49D3753CE3740DB99C3CD3B /* Navigation */,
 			);
 			path = "Features";
@@ -440,6 +454,8 @@
 				28F5EB6811FC33FB01EC2F9D /* HabitBoardEntity.swift in Sources */,
 				E8F19F01F9AC07C3B4690A1F /* LogHabitIntent.swift in Sources */,
 				4AA1CD25606B82324EBBAB89 /* LOCAShortcuts.swift in Sources */,
+				3AAE3C8D090CD30BEAB0975C /* HabitBoardDraft.swift in Sources */,
+				BF8EEE2C96C910A5E0C5C8EB /* HabitFormView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

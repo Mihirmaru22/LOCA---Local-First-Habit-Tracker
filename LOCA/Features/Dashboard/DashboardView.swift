@@ -16,6 +16,8 @@ struct DashboardView: View {
     let boards: [HabitBoard]
     @Binding var selection: UUID?
 
+    @State private var showingCreateSheet = false
+
     var body: some View {
         Group {
             if boards.isEmpty {
@@ -31,6 +33,19 @@ struct DashboardView: View {
             }
         }
         .navigationTitle("Habits")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    showingCreateSheet = true
+                } label: {
+                    Label("New Habit", systemImage: "plus")
+                }
+                .accessibilityLabel("New Habit")
+            }
+        }
+        .sheet(isPresented: $showingCreateSheet) {
+            HabitFormView(mode: .create)
+        }
     }
 }
 
