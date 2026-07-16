@@ -95,7 +95,7 @@ struct HabitBoardEntity: AppEntity {
 
     /// The query backing parameter resolution, suggestions, and Siri name
     /// matching for this entity.
-    static var defaultQuery = HabitBoardEntityQuery()
+    static let defaultQuery = HabitBoardEntityQuery()
 
     /// Per-instance display used in the picker row and Siri confirmations.
     ///

@@ -57,16 +57,16 @@ struct LogHabitIntent: AppIntent {
 
     // MARK: Metadata
 
-    static var title: LocalizedStringResource = "Log Habit"
+    static let title: LocalizedStringResource = "Log Habit"
 
-    static var description = IntentDescription(
+    static let description = IntentDescription(
         "Logs a check-in for one of your habits.",
         categoryName: "Tracking"
     )
 
     /// Silent logging — the intent completes without foregrounding the app,
     /// consistent with the local-first "UI never awaits" principle.
-    static var openAppWhenRun: Bool = false
+    static let openAppWhenRun: Bool = false
 
     // MARK: Parameters
 
