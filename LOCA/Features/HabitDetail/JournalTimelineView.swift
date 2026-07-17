@@ -218,7 +218,7 @@ struct JournalEntryRow: View {
     private var valueIndicator: some View {
         if isBinary {
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 22, weight: .semibold))
+                .font(.title2.weight(.semibold))
                 .foregroundStyle(ColorPalette[board.colorIndex])
         } else {
             VStack(alignment: .leading, spacing: 1) {

@@ -110,7 +110,7 @@ private struct StatCard: View {
     var body: some View {
         VStack(alignment: .center, spacing: 6) {
             Image(systemName: icon)
-                .font(.system(size: 16, weight: .semibold))
+                .font(.title3.weight(.semibold))
                 .foregroundStyle(tint)
 
             Text(value)

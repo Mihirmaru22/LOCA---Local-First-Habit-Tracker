@@ -9,12 +9,7 @@ import SwiftUI
 ///              [Today progress (tinted on completion)]
 ///              [🔥 N-day streak · Best: Nd]
 ///
-/// The ring sits flush-left beside the text block; no Spacer between them —
-/// the ring IS the left anchor, text grows rightward. This eliminates the
-/// gap-between-ring-and-text complaint.
-///
-/// All data logic (todaysTotal, progressFraction, accessibilityLabelText) is
-/// preserved exactly from Phase 4 — only the visual presentation changed.
+/// All data logic preserved from Phase 4. Visual presentation only.
 struct HabitCardView: View {
 
     let board: HabitBoard
@@ -22,7 +17,6 @@ struct HabitCardView: View {
     private enum Layout {
         static let ringSize: CGFloat  = 42
         static let dotSize:  CGFloat  = 7
-        static let innerFont: CGFloat = 10
     }
 
     var body: some View {
@@ -32,34 +26,34 @@ struct HabitCardView: View {
 
         HStack(alignment: .center, spacing: 12) {
 
-            // MARK: Progress ring (left anchor)
+            // Progress ring (left anchor)
             ringView(fraction: fraction, accent: accent)
 
-            // MARK: Text block
+            // Text block
             VStack(alignment: .leading, spacing: 1) {
 
                 // Primary — name
                 Text(board.name)
-                    .font(.system(.subheadline, design: .default, weight: .semibold))
+                    .font(.subheadline.weight(.semibold))
                     .lineLimit(1)
 
                 // Secondary — today's progress
                 Text(todayProgressText(total: total, fraction: fraction))
-                    .font(.system(size: 12))
+                    .font(.caption)
                     .foregroundStyle(fraction >= 1 ? accent : .secondary)
                     .lineLimit(1)
 
                 // Tertiary — streak
                 HStack(spacing: 3) {
                     Image(systemName: "flame.fill")
-                        .font(.system(size: 9, weight: .semibold))
+                        .font(.caption.weight(.semibold))
                         .foregroundStyle(.orange)
                     Text(streakText)
-                        .font(.system(size: 11))
+                        .font(.caption2)
                         .foregroundStyle(.secondary)
                     if board.longestStreak > board.currentStreak {
                         Text("· Best: \(board.longestStreak)d")
-                            .font(.system(size: 11))
+                            .font(.caption2)
                             .foregroundStyle(.tertiary)
                     }
                 }
@@ -83,11 +77,11 @@ struct HabitCardView: View {
             switch board.metric {
             case .binary:
                 Image(systemName: fraction >= 1 ? "checkmark" : "")
-                    .font(.system(size: Layout.innerFont, weight: .bold))
+                    .font(.body.bold())
                     .foregroundStyle(accent)
             case .quantitative:
                 Text(percentLabel(for: fraction))
-                    .font(.system(size: Layout.innerFont, weight: .bold, design: .rounded))
+                    .font(.caption.weight(.bold).design(.rounded))
                     .foregroundStyle(accent)
             }
         }
@@ -98,23 +92,7 @@ struct HabitCardView: View {
         "\(Int((fraction * 100).rounded()))%"
     }
 
-    // MARK: - Today Progress Text
-
-    private func todayProgressText(total: Double, fraction: Double) -> String {
-        switch board.metric {
-        case .binary:
-            return fraction >= 1 ? "Done today" : targetText
-        case .quantitative:
-            let unit    = board.unitLabel.flatMap { $0.isEmpty ? nil : " \($0)" } ?? ""
-            let doneStr = total.formatted(.number.precision(.fractionLength(0...1)))
-            let goalStr = board.effectiveTarget.formatted(.number.precision(.fractionLength(0...1)))
-            return fraction >= 1
-                ? "\(doneStr)\(unit) · Goal met ✓"
-                : "\(doneStr) / \(goalStr)\(unit)"
-        }
-    }
-
-    // MARK: - Data Logic (unchanged from Phase 4)
+    // MARK: Data Logic (unchanged from Phase 4)
 
     private var todaysTotal: Double {
         (board.logs ?? [])
@@ -128,6 +106,20 @@ struct HabitCardView: View {
 
     private var streakText: String {
         board.currentStreak == 1 ? "1 day streak" : "\(board.currentStreak) day streak"
+    }
+
+    private func todayProgressText(total: Double, fraction: Double) -> String {
+        switch board.metric {
+        case .binary:
+            return fraction >= 1 ? "Done today" : targetText
+        case .quantitative:
+            let unit    = board.unitLabel.flatMap { $0.isEmpty ? nil : " \($0)" } ?? ""
+            let doneStr = total.formatted(.number.precision(.fractionLength(0...1)))
+            let goalStr = board.effectiveTarget.formatted(.number.precision(.fractionLength(0...1)))
+            return fraction >= 1
+                ? "\(doneStr)\(unit) · Goal met ✓"
+                : "\(doneStr) / \(goalStr)\(unit)"
+        }
     }
 
     private var targetText: String {

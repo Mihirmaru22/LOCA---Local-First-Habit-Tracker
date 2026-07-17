@@ -294,7 +294,7 @@ private struct ColorSwatch: View {
             .overlay {
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.body.weight(.bold))
                         .foregroundStyle(.white)
                 }
             }

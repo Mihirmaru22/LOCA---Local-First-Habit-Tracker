@@ -8,6 +8,7 @@ struct HabitDetailView: View {
     let board: HabitBoard
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showingEditSheet = false
 
     @Query private var logs: [LogEntry]
@@ -37,7 +38,10 @@ struct HabitDetailView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 16)
                     .padding(.bottom, 20)
-                    .animation(.rippleSettle, value: todaysTotal)
+                    .animation(
+                        reduceMotion ? .linear(duration: 0.1) : .rippleSettle,
+                        value: todaysTotal
+                    )
 
                 Divider().padding(.horizontal, 20)
 
@@ -128,12 +132,12 @@ struct HabitDetailView: View {
         case .binary:
             if fraction >= 1 {
                 Image(systemName: "checkmark")
-                    .font(.system(size: 18, weight: .bold))
+                    .font(.title.weight(.bold))
                     .foregroundStyle(accent)
             }
         case .quantitative:
             Text("\(Int((fraction * 100).rounded()))%")
-                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .font(.title3.weight(.bold).design(.rounded))
                 .foregroundStyle(accent)
         }
     }
