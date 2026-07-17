@@ -176,3 +176,65 @@ open LOCA.xcodeproj
 Select the `LOCA` scheme, set `LOCAL_DEVELOPMENT` flag if needed, build and run on simulator or device.
 
 The `DebugSeeder` populates two boards ("Meditate" binary, "Running" quantitative) with 90 days of sample data on first launch in debug builds.
+
+---
+
+## Testing & QA
+
+### Manual Test Checklist
+- Create binary and quantitative habits with different units and colors
+- Log check-ins via dashboard button and detail view
+- Verify heatmap updates immediately after check-in
+- Inspect Analytics dashboard (30-day rate, totals, averages)
+- Test widget: add to home screen, edit habit selection, tap check-in button
+- Test Shortcuts: open Shortcuts app → add "Log Habit" action from LOCA
+- Test Siri: "Log Running in LOCA" (voice check-in)
+- Verify cross-platform: run on iOS and macOS, check layout responsiveness
+
+### Widget Testing (iOS 18+)
+1. Add LOCA Habit Heatmap widget to Home Screen
+2. Edit widget → select different habits
+3. Tap the check-in button in the widget
+4. Verify the app's dashboard reflects the widget check-in
+5. Restart the device (on beta builds, widgets sometimes need a reboot to register)
+
+### Accessibility Testing
+- **Dynamic Type:** Settings → Accessibility → Display & Text Size → Larger Accessibility Sizes. All UI should remain readable at maximum scale.
+- **VoiceOver:** Settings → Accessibility → VoiceOver → On. Navigate the entire app using swipe and double-tap.
+- **Reduce Motion:** Settings → Accessibility → Motion → Reduce Motion → On. Animations should disable gracefully.
+- **Keyboard Navigation:** Use Tab to navigate focus; Space/Return to activate buttons. All interactive elements should be reachable.
+
+### Performance Profiling
+Use Xcode Instruments to profile typical flows:
+- Launch time: from app icon tap to dashboard visible (~1–2 seconds on device)
+- Check-in flow: from button tap to confirmation (~100ms)
+- Detail page load: from tap to heatmap rendered (~200ms)
+- Memory: monitor heap growth during long check-in sessions; expect ~50–80 MB baseline
+
+---
+
+## Troubleshooting
+
+**Widget missing from gallery:** Long-press Home Screen → **+** → search "LOCA". If still absent, restart the device (required on beta OS builds).
+
+**Keyboard dismissal:** Tap the "Done" button in the keyboard toolbar or tap outside the sheet.
+
+**Heatmap empty on detail:** Pull to refresh or close and reopen the detail view. If persistent, verify the app has network access for CloudKit sync.
+
+**CloudKit sync inactive:** Verify you're signed into iCloud via Settings → [Your Name] → iCloud. Sync is automatic; monitor in app logs.
+
+**Check-in appears in widget but not in app:** This is normal — widget caches its state. The app will reflect the entry on next refresh or at midnight rollover.
+
+---
+
+## Versioning
+
+The app uses semantic versioning: `MAJOR.MINOR.PATCH`. This is configured in the app target's Build Settings under Product Version and Bundle Version (iOS/macOS Info.plist).
+
+Current version: 1.0.0 (Feature-complete. App Intents, Widget, and cross-platform support stable.)
+
+---
+
+## License
+
+Copyright © 2024 Mihir Maru. All rights reserved.
