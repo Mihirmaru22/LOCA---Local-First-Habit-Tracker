@@ -3,10 +3,9 @@ import SwiftUI
 // MARK: - Layout Constants
 
 private enum CardLayout {
-    static let colorDotSize: CGFloat = 12
-    static let gaugeSize: CGFloat = 44
-    static let verticalSpacing: CGFloat = 6
-    static let horizontalSpacing: CGFloat = 12
+    static let colorDotSize: CGFloat = 8
+    static let gaugeSize: CGFloat = 32       // down from 44 — less dominant
+    static let ringStrokeWidth: CGFloat = 3  // used for the manual ring fallback
 }
 
 // MARK: - HabitCardView
@@ -25,67 +24,104 @@ struct HabitCardView: View {
 
     var body: some View {
         // Computed exactly once per body evaluation (Phase 4 review finding M1).
-        // Previously, progressFraction and todayStatusText each independently
-        // triggered the full todaysTotal filter+reduce over board.logs — two
-        // O(n) passes per render instead of one. Both now read from this single
-        // local value.
         let total = todaysTotal
         let fraction = progressFraction(for: total)
+        let accent = ColorPalette[board.colorIndex]
 
-        HStack(alignment: .center, spacing: CardLayout.horizontalSpacing) {
-            VStack(alignment: .leading, spacing: CardLayout.verticalSpacing) {
-                HStack(spacing: 8) {
+        HStack(alignment: .center, spacing: 10) {
+
+            // MARK: Left — identity + supporting info
+            VStack(alignment: .leading, spacing: 2) {
+
+                // Tier 1 — Name (primary)
+                HStack(spacing: 6) {
                     Circle()
-                        .fill(ColorPalette[board.colorIndex])
-                        .frame(width: CardLayout.colorDotSize, height: CardLayout.colorDotSize)
+                        .fill(accent)
+                        .frame(width: CardLayout.colorDotSize,
+                               height: CardLayout.colorDotSize)
                     Text(board.name)
-                        .font(.headline)
+                        .font(.system(.subheadline, weight: .semibold))
+                        .lineLimit(1)
                 }
 
-                Label(streakText, systemImage: "flame.fill")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-
-                // Shown only when it differs from the current streak — avoids
-                // redundant "5 day streak / Best: 5 days" when they're equal,
-                // and correctly hidden for a habit that has never been completed
-                // (0 > 0 is false).
-                if board.longestStreak > board.currentStreak {
-                    Label(bestStreakText, systemImage: "trophy.fill")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                }
-
-                Text(targetText)
+                // Tier 2 — Today's progress (secondary)
+                Text(todayProgressText(total: total, fraction: fraction))
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(fraction >= 1 ? accent : .secondary)
+                    .lineLimit(1)
+
+                // Tier 3 — Streak + best (supporting)
+                HStack(spacing: 4) {
+                    Image(systemName: "flame.fill")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.orange.opacity(0.8))
+                    Text(streakText)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    if board.longestStreak > board.currentStreak {
+                        Text("· Best: \(board.longestStreak)d")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
             }
 
-            Spacer(minLength: 8)
+            Spacer(minLength: 4)
 
-            // .accessoryCircularCapacity is a native SwiftUI Gauge style
-            // (iOS 16+/macOS 13+), not a custom chart — distinct from the
-            // Swift Charts-based visualization explicitly out of scope this phase.
+            // MARK: Right — progress indicator
+            // Binary: filled/empty checkmark circle (no "–").
+            // Quantitative: circular capacity gauge with % label.
+            progressIndicator(fraction: fraction, accent: accent)
+        }
+        .padding(.vertical, 6)
+        // Single collapsed VoiceOver element per Engineering Principles §6.4.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityLabelText(total: total, fraction: fraction))
+    }
+
+    // MARK: Progress Indicator
+
+    @ViewBuilder
+    private func progressIndicator(fraction: Double, accent: Color) -> some View {
+        switch board.metric {
+        case .binary:
+            // A filled or empty check circle — intentional and readable at 32 pt.
+            Image(systemName: fraction >= 1 ? "checkmark.circle.fill" : "circle")
+                .font(.system(size: CardLayout.gaugeSize * 0.7, weight: .light))
+                .foregroundStyle(fraction >= 1 ? accent : .quaternary)
+
+        case .quantitative:
             Gauge(value: fraction) {
                 EmptyView()
             } currentValueLabel: {
-                Text(gaugeLabel(for: fraction))
-                    .font(.caption2)
-                    .fontWeight(.semibold)
+                Text(percentText(for: fraction))
+                    .font(.system(size: 9, weight: .semibold, design: .rounded))
             }
             .gaugeStyle(.accessoryCircularCapacity)
-            .tint(ColorPalette[board.colorIndex])
+            .tint(accent)
             .frame(width: CardLayout.gaugeSize, height: CardLayout.gaugeSize)
         }
-        .padding(.vertical, 4)
-        // Single collapsed VoiceOver element per Engineering Principles §6.4's
-        // documented HabitCardView pattern: "[Habit name], [currentStreak] day
-        // streak, [today status]". The Gauge's own default accessibility
-        // representation is suppressed by children: .ignore in favor of this
-        // unified label, avoiding double-announcement — same pattern established
-        // for HabitSidebarRow in Phase 3.
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityLabelText(total: total, fraction: fraction))
+    }
+
+    // MARK: - Display Text (new hierarchy-aware helpers)
+
+    /// Tier 2 text: today's progress in context. For binary, "Done today" or
+    /// the goal text. For quantitative, "X / Y unit" with "· Goal met" appended.
+    private func todayProgressText(total: Double, fraction: Double) -> String {
+        switch board.metric {
+        case .binary:
+            return fraction >= 1.0 ? "Done today" : targetText
+        case .quantitative:
+            let unit = board.unitLabel.flatMap { $0.isEmpty ? nil : " \($0)" } ?? ""
+            let doneStr = total.formatted(.number.precision(.fractionLength(0...1)))
+            let goalStr = board.effectiveTarget.formatted(.number.precision(.fractionLength(0...1)))
+            let met = fraction >= 1.0 ? " · Goal met" : ""
+            return "\(doneStr) / \(goalStr)\(unit)\(met)"
+        }
+    }
+
+    private func percentText(for fraction: Double) -> String {
+        "\(Int((fraction * 100).rounded()))%"
     }
 
     // MARK: - Today's Progress (Presentation-Layer Only)

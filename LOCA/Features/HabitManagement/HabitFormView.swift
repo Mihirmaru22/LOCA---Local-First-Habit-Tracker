@@ -94,7 +94,6 @@ struct HabitFormView: View {
                 colorSection
             }
             .navigationTitle(navigationTitle)
-            .formStyle(.grouped)
             .inlineNavigationTitleDisplay()
             .toolbar { toolbarContent }
             .onAppear { if isCreate { nameFocused = true } }
@@ -114,6 +113,7 @@ struct HabitFormView: View {
         Section {
             TextField("Habit name", text: $draft.name)
                 .focused($nameFocused)
+                .multilineTextAlignment(.leading)
                 .accessibilityLabel("Habit name")
         } header: {
             Text("Name")
@@ -154,6 +154,7 @@ struct HabitFormView: View {
                 TextField("0", text: $draft.targetText)
                     .decimalKeyboard()
                     .font(.system(.body, design: .rounded))
+                    .multilineTextAlignment(.leading)
                     .foregroundStyle(draft.parsedTarget != nil ? .primary : .secondary)
                     .frame(maxWidth: 160)
                     .accessibilityLabel("Daily goal amount")
@@ -162,6 +163,7 @@ struct HabitFormView: View {
 
                 TextField("unit", text: $draft.unitLabel)
                     .frame(maxWidth: 120)
+                    .multilineTextAlignment(.leading)
                     .foregroundStyle(.secondary)
                     .accessibilityLabel("Unit")
                     .accessibilityHint("Optional, e.g. mi or mins")
