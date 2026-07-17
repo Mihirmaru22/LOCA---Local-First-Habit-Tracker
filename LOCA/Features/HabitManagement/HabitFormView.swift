@@ -94,6 +94,7 @@ struct HabitFormView: View {
                 colorSection
             }
             .navigationTitle(navigationTitle)
+            .formStyle(.grouped)
             .inlineNavigationTitleDisplay()
             .toolbar { toolbarContent }
             .onAppear { if isCreate { nameFocused = true } }
@@ -154,6 +155,7 @@ struct HabitFormView: View {
                     .decimalKeyboard()
                     .font(.system(.body, design: .rounded))
                     .foregroundStyle(draft.parsedTarget != nil ? .primary : .secondary)
+                    .frame(maxWidth: 160)
                     .accessibilityLabel("Daily goal amount")
 
                 Divider()
@@ -163,6 +165,8 @@ struct HabitFormView: View {
                     .foregroundStyle(.secondary)
                     .accessibilityLabel("Unit")
                     .accessibilityHint("Optional, e.g. mi or mins")
+
+                Spacer(minLength: 0)
             }
         } header: {
             Text("Daily Goal")

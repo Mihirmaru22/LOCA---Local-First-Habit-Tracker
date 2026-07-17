@@ -42,6 +42,7 @@ struct RootNavigationView: View {
             // mechanics (ADR-007), the @Query above, and autoSelectFirstBoardIfNeeded
             // below are unmodified by this swap.
             DashboardView(boards: activeBoards, selection: $selectedBoardID)
+                .navigationSplitViewColumnWidth(min: 280, ideal: 320)
         } detail: {
             if let board = selectedBoard {
                 HabitDetailView(board: board)

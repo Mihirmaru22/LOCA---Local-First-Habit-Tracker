@@ -13,8 +13,9 @@ Performance & Accessibility · **10.4** Release Readiness.
 | ID | Sev | Area | Description | Status | Routes to |
 |----|-----|------|-------------|--------|-----------|
 | D-01 | High | Widget / macOS | LOCA widget does not appear in the macOS widget gallery though the extension is embedded. Diagnostic `StaticConfiguration` widget pushed to bisect App-Intents-metadata vs extension registration. | Under diagnosis | 10.1 |
-| D-02 | Low | macOS / Form | New Habit sheet goal field renders stretched full-width on macOS. | Open | 10.2 |
-| D-03 | Med | macOS / Sidebar | Habit cards truncate meaningful text ("Goal:…", "Chec…") in the narrow split-view sidebar. | Open | 10.2 |
+| D-02 | Low | macOS / Form | New Habit sheet goal field renders stretched full-width on macOS. | Fixed (10.2 P1: .formStyle(.grouped) + constrained goal field) | 10.2 |
+| D-03 | Med | macOS / Sidebar | Habit cards truncate meaningful text in the narrow split-view sidebar. | Fixed (10.2 P1: sidebar min width 280) | 10.2 |
+| D-04 | Low | Widget | Widget shows an empty "skeleton" in the gallery/pre-load. | Fixed (10.2 P1: representative placeholder + preview sample) | 10.2 |
 
 Severity: **Critical** (crash/data loss) · **High** (feature broken) · **Med**
 (degraded) · **Low** (cosmetic). Only genuine defects are fixed in 10.1;

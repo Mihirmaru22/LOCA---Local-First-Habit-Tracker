@@ -71,13 +71,19 @@ struct HeatmapProvider: AppIntentTimelineProvider {
     // MARK: Placeholder
 
     func placeholder(in context: Context) -> HeatmapEntry {
-        HeatmapEntry(date: Date(), board: nil, cells: [])
+        HeatmapEntry(date: Date(), board: Self.sampleBoard, cells: Self.sampleCells())
     }
 
     // MARK: Snapshot / Timeline
 
     func snapshot(for configuration: SelectHabitIntent, in context: Context) async -> HeatmapEntry {
-        await makeEntry(configuredBoardID: configuration.board?.id)
+        // The widget gallery previews via `snapshot` with `isPreview == true`.
+        // Show a representative sample there so the tile reads as populated
+        // rather than an empty skeleton, without touching the store.
+        if context.isPreview {
+            return HeatmapEntry(date: Date(), board: Self.sampleBoard, cells: Self.sampleCells())
+        }
+        return await makeEntry(configuredBoardID: configuration.board?.id)
     }
 
     func timeline(for configuration: SelectHabitIntent, in context: Context) async -> Timeline<HeatmapEntry> {
@@ -158,6 +164,41 @@ struct HeatmapProvider: AppIntentTimelineProvider {
             return HeatmapEntry(date: Date(), board: fetched.snapshotFields, cells: cells)
         } catch {
             return HeatmapEntry(date: Date(), board: nil, cells: [])
+        }
+    }
+
+    // MARK: Sample (placeholder / gallery preview only — never persisted)
+
+    /// A representative board for the redacted placeholder and gallery preview.
+    private static var sampleBoard: HeatmapEntry.BoardSnapshot {
+        HeatmapEntry.BoardSnapshot(
+            id: UUID(),
+            name: "Running",
+            colorIndex: 0,
+            metric: .quantitative,
+            unitLabel: "mi",
+            effectiveTarget: 5,
+            currentStreak: 4,
+            todayTotal: 3
+        )
+    }
+
+    /// A deterministic, lived-in-looking grid so the preview isn't empty.
+    private static func sampleCells() -> [DayCell] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        return (0 ..< windowDays).map { index in
+            let offset = windowDays - 1 - index            // oldest → newest
+            let date = calendar.date(byAdding: .day, value: -offset, to: today) ?? today
+            let seed = (offset * 41) % 7
+            let intensity = seed >= 4 ? 0.0 : Double(seed + 1) / 4.0
+            return DayCell(
+                date: date,
+                total: intensity * 5,
+                intensity: min(1.0, intensity),
+                isToday: offset == 0,
+                hasEntry: intensity > 0
+            )
         }
     }
 }
