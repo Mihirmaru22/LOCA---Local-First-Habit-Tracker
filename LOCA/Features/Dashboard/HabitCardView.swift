@@ -68,6 +68,7 @@ struct HabitCardView: View {
             Spacer(minLength: 0)
         }
         .padding(.vertical, 8)
+        .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityLabelText(total: total, fraction: fraction))
     }

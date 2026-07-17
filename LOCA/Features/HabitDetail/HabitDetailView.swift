@@ -37,6 +37,7 @@ struct HabitDetailView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 16)
                     .padding(.bottom, 20)
+                    .animation(.rippleSettle, value: todaysTotal)
 
                 Divider().padding(.horizontal, 20)
 

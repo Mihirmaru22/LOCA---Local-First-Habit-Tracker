@@ -25,6 +25,8 @@ struct ArcProgressView: View {
     let color: Color
     let size: CGFloat
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     private var strokeWidth: CGFloat { size * 0.15 }
     private var clamped: Double { max(0, min(1, fraction)) }
 
@@ -61,7 +63,7 @@ struct ArcProgressView: View {
             )
         }
         .frame(width: size, height: size)
-        .animation(.spring(response: 0.4, dampingFraction: 0.75), value: clamped)
+        .animation(reduceMotion ? .linear(duration: 0.1) : .rippleConfirm, value: clamped)
         .accessibilityHidden(true)  // parent provides the accessibility label
     }
 }
