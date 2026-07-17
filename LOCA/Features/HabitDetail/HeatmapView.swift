@@ -85,18 +85,28 @@ struct HeatmapView: View {
                     }
                     .padding(.vertical, 2)
                 }
-                // Opens showing today, not 365 days in the past. A calendar
-                // heatmap's primary value is "how am I doing lately" — every
-                // reference convention this feature is modeled on (GitHub's
-                // contribution graph, Screen Time) opens at the present,
-                // requiring the user to scroll backward into history, not
-                // forward from it.
                 .defaultScrollAnchor(.trailing)
+                // On macOS, the outer List's scroll gesture handler can consume
+                // horizontal trackpad events before the inner ScrollView sees them.
+                // Adding a simultaneous DragGesture gives the inner ScrollView
+                // priority for horizontal swipes without blocking List's vertical
+                // scroll (they run in parallel).
+                .simultaneousGesture(DragGesture(minimumDistance: 0))
             }
         }
-        .task(id: board.logs?.count ?? 0) {
+        .task(id: taskID) {
             await rebuildGrid()
         }
+    }
+
+    /// A stable task identifier that changes whenever logs are added/removed.
+    /// Uses `board.logs?.count` but falls back to timestamp-based triggers via
+    /// `board.id` so the task always fires at least once on appearance, even
+    /// if the lazy relationship hasn't loaded yet. The double-trigger (once with
+    /// nil count, once when the relationship loads) is intentional and safe:
+    /// `rebuildGrid` is idempotent and `Task.isCancelled` guards stale writes.
+    private var taskID: some Hashable {
+        "\(board.id)-\(board.logs?.count ?? -1)"
     }
 
     private var gridHeight: CGFloat {
@@ -116,6 +126,7 @@ struct HeatmapView: View {
     // ModelContext or the @Model objects directly.
 
     private func rebuildGrid() async {
+        isLoading = true
         let snapshots = (board.logs ?? []).map(LogSnapshot.init(from:))
         let result = await HeatmapDataProvider.buildDayGrid(
             snapshots: snapshots,

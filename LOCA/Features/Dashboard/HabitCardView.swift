@@ -1,149 +1,119 @@
 import SwiftUI
 
-// MARK: - Layout Constants
-
-private enum CardLayout {
-    static let colorDotSize: CGFloat = 8
-    static let gaugeSize: CGFloat = 32       // down from 44 — less dominant
-    static let ringStrokeWidth: CGFloat = 3  // used for the manual ring fallback
-}
-
 // MARK: - HabitCardView
 
-/// A single dashboard row: habit identity, streak history, and today's progress
-/// toward its daily target.
+/// A compact, Fitness-inspired dashboard row.
 ///
-/// All values displayed here are either cached stored properties from `HabitBoard`
-/// (`currentStreak`, `longestStreak`, `effectiveTarget`) or a simple filter+sum over
-/// `board.logs` for today's total — no `StreakCalculator` or `HeatmapDataProvider`
-/// call occurs in this view. See the algorithm note on `todaysTotal` below for why
-/// that boundary is deliberate, not an oversight.
+/// Layout anatomy:
+///   [ArcRing]  [Name (bold)]
+///              [Today progress (tinted on completion)]
+///              [🔥 N-day streak · Best: Nd]
+///
+/// The ring sits flush-left beside the text block; no Spacer between them —
+/// the ring IS the left anchor, text grows rightward. This eliminates the
+/// gap-between-ring-and-text complaint.
+///
+/// All data logic (todaysTotal, progressFraction, accessibilityLabelText) is
+/// preserved exactly from Phase 4 — only the visual presentation changed.
 struct HabitCardView: View {
 
     let board: HabitBoard
 
+    private enum Layout {
+        static let ringSize: CGFloat  = 42
+        static let dotSize:  CGFloat  = 7
+        static let innerFont: CGFloat = 10
+    }
+
     var body: some View {
-        // Computed exactly once per body evaluation (Phase 4 review finding M1).
-        let total = todaysTotal
+        let total    = todaysTotal
         let fraction = progressFraction(for: total)
-        let accent = ColorPalette[board.colorIndex]
+        let accent   = ColorPalette[board.colorIndex]
 
-        HStack(alignment: .center, spacing: 10) {
+        HStack(alignment: .center, spacing: 12) {
 
-            // MARK: Left — identity + supporting info
-            VStack(alignment: .leading, spacing: 2) {
+            // MARK: Progress ring (left anchor)
+            ringView(fraction: fraction, accent: accent)
 
-                // Tier 1 — Name (primary)
-                HStack(spacing: 6) {
-                    Circle()
-                        .fill(accent)
-                        .frame(width: CardLayout.colorDotSize,
-                               height: CardLayout.colorDotSize)
-                    Text(board.name)
-                        .font(.system(.subheadline, weight: .semibold))
-                        .lineLimit(1)
-                }
+            // MARK: Text block
+            VStack(alignment: .leading, spacing: 1) {
 
-                // Tier 2 — Today's progress (secondary)
+                // Primary — name
+                Text(board.name)
+                    .font(.system(.subheadline, design: .default, weight: .semibold))
+                    .lineLimit(1)
+
+                // Secondary — today's progress
                 Text(todayProgressText(total: total, fraction: fraction))
-                    .font(.caption)
+                    .font(.system(size: 12))
                     .foregroundStyle(fraction >= 1 ? accent : .secondary)
                     .lineLimit(1)
 
-                // Tier 3 — Streak + best (supporting)
-                HStack(spacing: 4) {
+                // Tertiary — streak
+                HStack(spacing: 3) {
                     Image(systemName: "flame.fill")
-                        .font(.system(size: 9))
-                        .foregroundStyle(.orange.opacity(0.8))
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(.orange)
                     Text(streakText)
-                        .font(.caption2)
+                        .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                     if board.longestStreak > board.currentStreak {
                         Text("· Best: \(board.longestStreak)d")
-                            .font(.caption2)
+                            .font(.system(size: 11))
                             .foregroundStyle(.tertiary)
                     }
                 }
             }
 
-            Spacer(minLength: 4)
-
-            // MARK: Right — progress indicator
-            // Binary: filled/empty checkmark circle (no "–").
-            // Quantitative: circular capacity gauge with % label.
-            progressIndicator(fraction: fraction, accent: accent)
+            Spacer(minLength: 0)
         }
-        .padding(.vertical, 6)
-        // Single collapsed VoiceOver element per Engineering Principles §6.4.
+        .padding(.vertical, 8)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityLabelText(total: total, fraction: fraction))
     }
 
-    // MARK: Progress Indicator
+    // MARK: Ring
 
     @ViewBuilder
-    private func progressIndicator(fraction: Double, accent: Color) -> some View {
-        switch board.metric {
-        case .binary:
-            // A filled or empty check circle — intentional and readable at 32 pt.
-            Image(systemName: fraction >= 1 ? "checkmark.circle.fill" : "circle")
-                .font(.system(size: CardLayout.gaugeSize * 0.7, weight: .light))
-                .foregroundStyle(fraction >= 1 ? accent : Color.primary.opacity(0.15))
+    private func ringView(fraction: Double, accent: Color) -> some View {
+        ZStack {
+            ArcProgressView(fraction: fraction, color: accent, size: Layout.ringSize)
 
-        case .quantitative:
-            Gauge(value: fraction) {
-                EmptyView()
-            } currentValueLabel: {
-                Text(percentText(for: fraction))
-                    .font(.system(size: 9, weight: .semibold, design: .rounded))
+            switch board.metric {
+            case .binary:
+                Image(systemName: fraction >= 1 ? "checkmark" : "")
+                    .font(.system(size: Layout.innerFont, weight: .bold))
+                    .foregroundStyle(accent)
+            case .quantitative:
+                Text(percentLabel(for: fraction))
+                    .font(.system(size: Layout.innerFont, weight: .bold, design: .rounded))
+                    .foregroundStyle(accent)
             }
-            .gaugeStyle(.accessoryCircularCapacity)
-            .tint(accent)
-            .frame(width: CardLayout.gaugeSize, height: CardLayout.gaugeSize)
         }
+        .frame(width: Layout.ringSize, height: Layout.ringSize)
     }
 
-    // MARK: - Display Text (new hierarchy-aware helpers)
-
-    /// Tier 2 text: today's progress in context. For binary, "Done today" or
-    /// the goal text. For quantitative, "X / Y unit" with "· Goal met" appended.
-    private func todayProgressText(total: Double, fraction: Double) -> String {
-        switch board.metric {
-        case .binary:
-            return fraction >= 1.0 ? "Done today" : targetText
-        case .quantitative:
-            let unit = board.unitLabel.flatMap { $0.isEmpty ? nil : " \($0)" } ?? ""
-            let doneStr = total.formatted(.number.precision(.fractionLength(0...1)))
-            let goalStr = board.effectiveTarget.formatted(.number.precision(.fractionLength(0...1)))
-            let met = fraction >= 1.0 ? " · Goal met" : ""
-            return "\(doneStr) / \(goalStr)\(unit)\(met)"
-        }
-    }
-
-    private func percentText(for fraction: Double) -> String {
+    private func percentLabel(for fraction: Double) -> String {
         "\(Int((fraction * 100).rounded()))%"
     }
 
-    // MARK: - Today's Progress (Presentation-Layer Only)
+    // MARK: - Today Progress Text
 
-    // MARK: Why This Is Not a HeatmapDataProvider Call
-    //
-    // HeatmapDataProvider.buildDayGrid performs a full aggregateByDay pass across
-    // a board's ENTIRE log history to build a multi-day grid — calling it with
-    // windowDays: 1 would still pay that full-history aggregation cost just to
-    // extract a single day's total. For a board with years of history, that is
-    // real, avoidable work repeated on every dashboard render, directly contrary
-    // to this phase's performance mandate.
-    //
-    // Filtering board.logs — an already-loaded, in-memory relationship — to
-    // today's entries via the existing Date.isToday(using:) helper (Phase 1's
-    // Date+Calendar extension) is O(n) over one board's own logs, computed
-    // synchronously with no async Task, loading state, or Swift 6 concurrency
-    // surface required. It introduces zero new date/DST logic: all of it
-    // delegates to the already-reviewed, already-DST-correct Calendar primitive
-    // Date.isToday wraps. This is presentation-layer arithmetic over
-    // already-computed stored values (LogEntry.value), not a new compute
-    // algorithm in the StreakCalculator/HeatmapDataProvider sense.
+    private func todayProgressText(total: Double, fraction: Double) -> String {
+        switch board.metric {
+        case .binary:
+            return fraction >= 1 ? "Done today" : targetText
+        case .quantitative:
+            let unit    = board.unitLabel.flatMap { $0.isEmpty ? nil : " \($0)" } ?? ""
+            let doneStr = total.formatted(.number.precision(.fractionLength(0...1)))
+            let goalStr = board.effectiveTarget.formatted(.number.precision(.fractionLength(0...1)))
+            return fraction >= 1
+                ? "\(doneStr)\(unit) · Goal met ✓"
+                : "\(doneStr) / \(goalStr)\(unit)"
+        }
+    }
+
+    // MARK: - Data Logic (unchanged from Phase 4)
 
     private var todaysTotal: Double {
         (board.logs ?? [])
@@ -151,60 +121,32 @@ struct HabitCardView: View {
             .reduce(0.0) { $0 + $1.value }
     }
 
-    // MARK: Bounds Clamping (Phase 4 review finding M2)
-    //
-    // Previously only min(1.0, ...) — upper bound only. LogEntry.value has no
-    // model-level constraint preventing a negative value (no code path currently
-    // produces one, but nothing structurally prevents a corrupted or malicious
-    // CloudKit-synced record from carrying one either). An unclamped negative
-    // fraction would pass an out-of-bounds value to Gauge (whose default range
-    // is 0...1), producing undefined rendering, and gaugeLabel would show a
-    // nonsensical negative percentage. Clamping both bounds matches the same
-    // defensive posture already applied to corrupted CloudKit data elsewhere
-    // (HabitBoard.effectiveTarget's guard against a non-positive target).
-
     private func progressFraction(for total: Double) -> Double {
         max(0.0, min(1.0, total / board.effectiveTarget))
     }
-
-    // MARK: - Display Text
 
     private var streakText: String {
         board.currentStreak == 1 ? "1 day streak" : "\(board.currentStreak) day streak"
     }
 
-    private var bestStreakText: String {
-        "Best: \(board.longestStreak) days"
-    }
-
     private var targetText: String {
         switch board.metric {
-        case .binary:
-            return "Check off daily"
+        case .binary:      return "Check off daily"
         case .quantitative:
-            let unit = board.unitLabel ?? ""
+            let unit   = board.unitLabel ?? ""
             let target = board.effectiveTarget.formatted(.number.precision(.fractionLength(0...1)))
             return "Goal: \(target) \(unit)/day"
-        }
-    }
-
-    private func gaugeLabel(for fraction: Double) -> String {
-        switch board.metric {
-        case .binary:
-            return fraction >= 1.0 ? "✓" : "–"
-        case .quantitative:
-            return "\(Int((fraction * 100).rounded()))%"
         }
     }
 
     private func todayStatusText(total: Double, fraction: Double) -> String {
         switch board.metric {
         case .binary:
-            return fraction >= 1.0 ? "logged today" : "not logged today"
+            return fraction >= 1 ? "logged today" : "not logged today"
         case .quantitative:
-            let unit = board.unitLabel ?? ""
+            let unit      = board.unitLabel ?? ""
             let totalText = total.formatted(.number.precision(.fractionLength(0...1)))
-            let target = board.effectiveTarget.formatted(.number.precision(.fractionLength(0...1)))
+            let target    = board.effectiveTarget.formatted(.number.precision(.fractionLength(0...1)))
             return "\(totalText) of \(target) \(unit) today"
         }
     }
@@ -217,27 +159,21 @@ struct HabitCardView: View {
 // MARK: - Preview
 
 #Preview {
-    let quantitative = HabitBoard(name: "Running", metricType: HabitBoard.MetricType.quantitative.rawValue,
-                                   targetValue: 5.0, unitLabel: "mi", colorIndex: 0)
-    quantitative.currentStreak = 5
-    quantitative.longestStreak = 12
-    let entry = LogEntry(value: 3.0, boardID: quantitative.id, board: quantitative)
-    quantitative.logs = [entry]
+    let q = HabitBoard(name: "Running", metricType: 1, targetValue: 5, unitLabel: "mi", colorIndex: 0)
+    q.currentStreak = 5; q.longestStreak = 12
+    q.logs = [LogEntry(value: 3.2, boardID: q.id, board: q)]
 
-    let binaryCompleted = HabitBoard(name: "Meditate", colorIndex: 5)
-    binaryCompleted.currentStreak = 3
-    binaryCompleted.longestStreak = 3
-    let binaryEntry = LogEntry(value: 1.0, boardID: binaryCompleted.id, board: binaryCompleted)
-    binaryCompleted.logs = [binaryEntry]
+    let b = HabitBoard(name: "Meditate", colorIndex: 5)
+    b.currentStreak = 3; b.longestStreak = 3
+    b.logs = [LogEntry(value: 1, boardID: b.id, board: b)]
 
-    let binaryPending = HabitBoard(name: "Reading", colorIndex: 2)
-    binaryPending.currentStreak = 0
-    binaryPending.longestStreak = 8
+    let p = HabitBoard(name: "Reading — a very long habit name indeed", colorIndex: 2)
+    p.currentStreak = 0; p.longestStreak = 8
 
     return List {
-        HabitCardView(board: quantitative)
-        HabitCardView(board: binaryCompleted)
-        HabitCardView(board: binaryPending)
+        HabitCardView(board: q)
+        HabitCardView(board: b)
+        HabitCardView(board: p)
     }
     .listStyle(.sidebar)
 }

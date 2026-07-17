@@ -33,6 +33,8 @@
 		4AA1CD25606B82324EBBAB89 /* LOCAShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F386776E75E86F3F6312296 /* LOCAShortcuts.swift */; };
 		3AAE3C8D090CD30BEAB0975C /* HabitBoardDraft.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA7ECE49E75530F4636DA3CA /* HabitBoardDraft.swift */; };
 		BF8EEE2C96C910A5E0C5C8EB /* HabitFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D51B7D82991FFC42BE1EFA3C /* HabitFormView.swift */; };
+		B4B8693D3BEF8467BA561D9A /* UnitOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F36A9584E32FB531F321E61 /* UnitOption.swift */; };
+		82D61AAF037FF51EC29D9FC4 /* ArcProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CDAE353812C31ADEF5B9789 /* ArcProgressView.swift */; };
 		7146E82590C741108AF373D7 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A18185A6B14A16B58268EB /* ColorPalette.swift */; };
 		21F090B2CE8B4E3FB9E4F6C6 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A18185A6B14A16B58268EB /* ColorPalette.swift */; };
 		EA67B446FFD340ECBF1E9F6D /* Double+Clamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13289E001E014999A9EFB063 /* Double+Clamp.swift */; };
@@ -80,6 +82,8 @@
 		0F386776E75E86F3F6312296 /* LOCAShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LOCAShortcuts.swift"; sourceTree = "<group>"; };
 		BA7ECE49E75530F4636DA3CA /* HabitBoardDraft.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitBoardDraft.swift"; sourceTree = "<group>"; };
 		D51B7D82991FFC42BE1EFA3C /* HabitFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitFormView.swift"; sourceTree = "<group>"; };
+		5F36A9584E32FB531F321E61 /* UnitOption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UnitOption.swift"; sourceTree = "<group>"; };
+		8CDAE353812C31ADEF5B9789 /* ArcProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ArcProgressView.swift"; sourceTree = "<group>"; };
 		D5A18185A6B14A16B58268EB /* ColorPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ColorPalette.swift"; sourceTree = "<group>"; };
 		13289E001E014999A9EFB063 /* Double+Clamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Double+Clamp.swift"; sourceTree = "<group>"; };
 		A23A644233DD4BE6AAD23539 /* StreakCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StreakCalculator.swift"; sourceTree = "<group>"; };
@@ -204,6 +208,7 @@
 			children = (
 				CA23BF1816F44D92873A3FCD /* DashboardView.swift */,
 				FA2BCF72800F4D06A36251AA /* HabitCardView.swift */,
+				8CDAE353812C31ADEF5B9789 /* ArcProgressView.swift */,
 			);
 			path = "Dashboard";
 			sourceTree = "<group>";
@@ -252,6 +257,7 @@
 			children = (
 				BA7ECE49E75530F4636DA3CA /* HabitBoardDraft.swift */,
 				D51B7D82991FFC42BE1EFA3C /* HabitFormView.swift */,
+				5F36A9584E32FB531F321E61 /* UnitOption.swift */,
 			);
 			path = "HabitManagement";
 			sourceTree = "<group>";
@@ -470,6 +476,8 @@
 				4AA1CD25606B82324EBBAB89 /* LOCAShortcuts.swift in Sources */,
 				3AAE3C8D090CD30BEAB0975C /* HabitBoardDraft.swift in Sources */,
 				BF8EEE2C96C910A5E0C5C8EB /* HabitFormView.swift in Sources */,
+				B4B8693D3BEF8467BA561D9A /* UnitOption.swift in Sources */,
+				82D61AAF037FF51EC29D9FC4 /* ArcProgressView.swift in Sources */,
 				CD444AE42731F450C8BB84C3 /* View+PlatformAdaptations.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

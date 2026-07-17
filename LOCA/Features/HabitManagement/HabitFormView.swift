@@ -43,6 +43,11 @@ struct HabitFormView: View {
 
     let mode: Mode
 
+    /// Called after a successful **create** save, with the new board's `UUID`.
+    /// The caller (Dashboard → RootNavigationView) sets `selectedBoardID` to
+    /// navigate straight to the new habit's detail view.
+    var onBoardCreated: ((UUID) -> Void)?
+
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -60,8 +65,9 @@ struct HabitFormView: View {
 
     // MARK: Init
 
-    init(mode: Mode) {
+    init(mode: Mode, onBoardCreated: ((UUID) -> Void)? = nil) {
         self.mode = mode
+        self.onBoardCreated = onBoardCreated
         switch mode {
         case .create:
             _draft = State(initialValue: HabitBoardDraft())
@@ -95,7 +101,14 @@ struct HabitFormView: View {
             }
             .navigationTitle(navigationTitle)
             .inlineNavigationTitleDisplay()
+            .scrollDismissesKeyboard(.interactively)
             .toolbar { toolbarContent }
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") { nameFocused = false }
+                }
+            }
             .onAppear { if isCreate { nameFocused = true } }
             .animation(reduceMotion ? nil : .rippleSettle, value: draft.metric)
             .alert("Couldn't Save Habit", isPresented: $showSaveError) {
@@ -159,16 +172,19 @@ struct HabitFormView: View {
                     .frame(maxWidth: 160)
                     .accessibilityLabel("Daily goal amount")
 
-                Divider()
-
-                TextField("unit", text: $draft.unitLabel)
-                    .frame(maxWidth: 120)
-                    .multilineTextAlignment(.leading)
-                    .foregroundStyle(.secondary)
-                    .accessibilityLabel("Unit")
-                    .accessibilityHint("Optional, e.g. mi or mins")
-
                 Spacer(minLength: 0)
+
+                Picker("Unit", selection: $draft.unit) {
+                    ForEach(UnitOption.Category.allCases, id: \.self) { category in
+                        Section(category.rawValue) {
+                            ForEach(category.units) { option in
+                                Text(option.displayName).tag(option)
+                            }
+                        }
+                    }
+                }
+                .labelsHidden()
+                .frame(maxWidth: 140)
             }
         } header: {
             Text("Daily Goal")
@@ -227,9 +243,12 @@ struct HabitFormView: View {
     // atomically; the sheet stays open with a non-blocking alert (EP §4.1).
 
     private func save() {
+        var newBoardID: UUID?
         switch mode {
         case .create:
-            modelContext.insert(draft.makeBoard())
+            let board = draft.makeBoard()
+            newBoardID = board.id
+            modelContext.insert(board)
         case .edit(let board):
             draft.apply(to: board)
         }
@@ -240,6 +259,9 @@ struct HabitFormView: View {
                 "Habit saved (\(isCreate ? "create" : "edit", privacy: .public)): '\(draft.trimmedName, privacy: .public)'."
             )
             dismiss()
+            if let id = newBoardID {
+                onBoardCreated?(id)
+            }
         } catch {
             logger.error(
                 "Habit save failed: \(error.localizedDescription, privacy: .public)"

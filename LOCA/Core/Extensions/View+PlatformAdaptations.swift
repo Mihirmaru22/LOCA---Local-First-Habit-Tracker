@@ -30,6 +30,19 @@ extension View {
         #endif
     }
 
+    /// Large navigation-bar title display.
+    ///
+    /// - iOS: applies `.navigationBarTitleDisplayMode(.large)`.
+    /// - macOS: no-op.
+    @ViewBuilder
+    func largeNavigationTitleDisplay() -> some View {
+        #if os(iOS)
+        navigationBarTitleDisplayMode(.large)
+        #else
+        self
+        #endif
+    }
+
     /// Decimal keypad for numeric text entry.
     ///
     /// - iOS: applies `.keyboardType(.decimalPad)`.

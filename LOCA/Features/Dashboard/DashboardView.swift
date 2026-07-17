@@ -18,6 +18,9 @@ struct DashboardView: View {
     let boards: [HabitBoard]
     @Binding var selection: UUID?
 
+    /// Called after a habit is created so the caller can auto-select it.
+    var onBoardCreated: ((UUID) -> Void)?
+
     @Environment(\.modelContext) private var modelContext
 
     @State private var showingCreateSheet = false
@@ -64,7 +67,7 @@ struct DashboardView: View {
             }
         }
         .sheet(isPresented: $showingCreateSheet) {
-            HabitFormView(mode: .create)
+            HabitFormView(mode: .create, onBoardCreated: onBoardCreated)
         }
         .alert(
             "Delete \(boardPendingDeletion?.name ?? "Habit")?",

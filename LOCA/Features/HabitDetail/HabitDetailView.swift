@@ -3,67 +3,14 @@ import SwiftData
 
 // MARK: - HabitDetailView
 
-/// Detail container for a selected habit.
-///
-/// ## Layout Architecture (Phase 5.5 — Integration)
-///
-/// Phase 5.1 used a `ScrollView { VStack { } }` shell that was correct for phases
-/// that only embedded pure SwiftUI views. Phase 5.4's addition of `JournalTimelineView`
-/// (which is itself a `List`) introduced a `List`-inside-`ScrollView` composition:
-/// `List` has no intrinsic height, collapses to zero inside a `ScrollView`, and
-/// renders the journal section as invisible on device.
-///
-/// The fix is to promote the root container to `List` with `Section`s — the exact
-/// structure Apple uses in Health, Fitness, and Screen Time detail views. Each Phase 5.x
-/// subview becomes a section or group of sections rather than a VStack child:
-///
-/// ```
-/// List (.insetGrouped)
-///   Section               ← header (board name, streak, target)
-///   Section "History"     ← HeatmapView or empty-state label
-///   Section               ← AnalyticsCardsView     } gated on !logs.isEmpty
-///   Section "Today"       ← journal entries        }
-///   Section "Yesterday"   ← journal entries        }
-///   ...                                             }
-/// ```
-///
-/// ## @Query Ownership (Phase 5.5)
-///
-/// `HabitDetailView` now owns a `@Query` on `LogEntry` filtered by `boardID`
-/// (ADR-003 — not `board?.id`, which returns empty on iOS 17). This replaces
-/// `!(board.logs ?? []).isEmpty` (a lazy-relationship read) for gating sections,
-/// and provides the data for inlined journal sections without a nested view with
-/// its own `List`. The query is timestamp-descending, matching journal display order.
-///
-/// `HeatmapView` and `AnalyticsCardsView` continue to manage their own `@State`
-/// and `.task(id:)` triggers independently — this query does not replace their
-/// internal data paths, only the gating logic and journal section data.
-///
-/// ## Check-In Integration (Phase 6.1)
-///
-/// `CheckInButton` is attached via `.safeAreaInset(edge: .bottom)`, which pushes
-/// `List` content up and stays above the home indicator. The button manages its
-/// own `@Query` on today's entries and `ModelContext` — `HabitDetailView` passes
-/// only `board` to it.
 struct HabitDetailView: View {
 
     let board: HabitBoard
 
     @Environment(\.modelContext) private var modelContext
-
-    /// Drives the edit form sheet (Phase 7.2). The form is presented in
-    /// `.edit(board)` mode and mutates the board in place on save.
     @State private var showingEditSheet = false
 
-    /// ADR-003: filter on the denormalized `boardID` scalar.
-    /// Sorted descending for journal display; HeatmapView and AnalyticsCardsView
-    /// manage their own data paths and are not driven by this query.
     @Query private var logs: [LogEntry]
-
-    private enum Layout {
-        static let colorDotSize: CGFloat = 16
-        static let horizontalPadding: CGFloat = 16
-    }
 
     init(board: HabitBoard) {
         self.board = board
@@ -74,12 +21,8 @@ struct HabitDetailView: View {
         )
     }
 
-    // MARK: - Derived State
-
     private var hasLogs: Bool { !logs.isEmpty }
 
-    /// Day-grouped journal sections derived from the @Query result.
-    /// Recomputed whenever `logs` changes (SwiftData @Query drives updates).
     private var journalSections: [JournalDaySection] {
         JournalGrouping.groupByDay(logs)
     }
@@ -87,24 +30,37 @@ struct HabitDetailView: View {
     // MARK: - Body
 
     var body: some View {
-        List {
-            headerSection
-            historySection
-            if hasLogs {
-                analyticsSection
-                journalSections_
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0, pinnedViews: []) {
+                // 1 — Current status (hero)
+                statusHeader
+                    .padding(.horizontal, 20)
+                    .padding(.top, 16)
+                    .padding(.bottom, 20)
+
+                Divider().padding(.horizontal, 20)
+
+                // 2 — History heatmap
+                historyBlock
+                    .padding(.top, 20)
+                    .padding(.bottom, 8)
+
+                // 3 — Statistics (only when there's data)
+                if hasLogs {
+                    statisticsBlock
+                        .padding(.top, 4)
+                        .padding(.bottom, 8)
+
+                    Divider().padding(.horizontal, 20)
+
+                    // 4 — Journal
+                    journalBlock
+                        .padding(.bottom, 32)
+                }
             }
         }
-        .groupedInsetList()
         .navigationTitle(board.name)
-        // Phase 6.1: CheckInButton attaches as a sticky bottom element via
-        // .safeAreaInset. This modifier pushes List content up so nothing is
-        // hidden behind the button, and the button stays above the home indicator.
-        //
-        // CheckInButton returns EmptyView for quantitative habits in Phase 6.1
-        // (explicit scope gate). EmptyView has zero intrinsic height, so the
-        // .safeAreaInset has no visual effect for quantitative boards until
-        // Phase 6.2 replaces it with the sheet-presenting button.
+        .largeNavigationTitleDisplay()
         .safeAreaInset(edge: .bottom) {
             CheckInButton(board: board)
                 .padding(.horizontal)
@@ -121,58 +77,77 @@ struct HabitDetailView: View {
         }
     }
 
-    // MARK: - Header Section
+    // MARK: - Status Header
 
-    // MARK: Accessibility: .contain, not .ignore
-    //
-    // HabitCardView (Phase 4) uses .accessibilityElement(children: .ignore) plus
-    // a single synthesized label — the right call for a compact selectable List row.
-    // This header is in a full-screen scrolling context; VoiceOver users benefit from
-    // swiping through name, streak, best streak, and target as distinct grouped elements.
-    // .contain preserves granularity while reading the group as a coherent unit.
+    private var statusHeader: some View {
+        HStack(alignment: .center, spacing: 16) {
+            // Large ring
+            let total    = todaysTotal
+            let fraction = progressFraction(for: total)
+            let accent   = ColorPalette[board.colorIndex]
 
-    @ViewBuilder
-    private var headerSection: some View {
-        Section {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 10) {
-                    Circle()
-                        .fill(ColorPalette[board.colorIndex])
-                        .frame(width: Layout.colorDotSize, height: Layout.colorDotSize)
-                    Text(board.name)
-                        .font(.title2.bold())
-                }
-
-                Label(streakText, systemImage: "flame.fill")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-
-                if board.longestStreak > board.currentStreak {
-                    Label(bestStreakText, systemImage: "trophy.fill")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                }
-
-                Text(targetText)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            ZStack {
+                ArcProgressView(fraction: fraction, color: accent, size: 64)
+                percentOrCheck(fraction: fraction, accent: accent)
             }
-            .accessibilityElement(children: .contain)
+            .frame(width: 64, height: 64)
+
+            // Identity + progress
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(accent)
+                        .frame(width: 8, height: 8)
+                    Text(board.name)
+                        .font(.title3.bold())
+                        .lineLimit(2)
+                }
+
+                Text(todayProgressLine(total: total, fraction: fraction))
+                    .font(.subheadline)
+                    .foregroundStyle(fraction >= 1 ? accent : .primary)
+
+                HStack(spacing: 4) {
+                    Image(systemName: "flame.fill")
+                        .font(.caption2)
+                        .foregroundStyle(.orange)
+                    Text(streakSubtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Spacer(minLength: 0)
         }
     }
 
-    // MARK: - History Section (Phase 5.2)
-
     @ViewBuilder
-    private var historySection: some View {
-        Section("History") {
+    private func percentOrCheck(fraction: Double, accent: Color) -> some View {
+        switch board.metric {
+        case .binary:
+            if fraction >= 1 {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(accent)
+            }
+        case .quantitative:
+            Text("\(Int((fraction * 100).rounded()))%")
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .foregroundStyle(accent)
+        }
+    }
+
+    // MARK: - History Block
+
+    private var historyBlock: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("History")
+                .font(.headline)
+                .padding(.horizontal, 20)
+
             if hasLogs {
                 HeatmapView(board: board)
-                    // Edge-to-edge insets: the heatmap's horizontal ScrollView needs
-                    // full-width access. The default List row insets (16 pt each side)
-                    // would clip the scrollable grid area.
-                    .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                    .listRowSeparator(.hidden)
+                    .padding(.horizontal, 8)
             } else {
                 Label(
                     "Log \(board.name) to start building your history.",
@@ -180,155 +155,128 @@ struct HabitDetailView: View {
                 )
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 8)
             }
         }
     }
 
-    // MARK: - Analytics Section (Phase 5.3)
-    //
-    // Gated on hasLogs. A board with zero entries has nothing meaningful to
-    // summarize; "0%, 0, —" stat cards would be noise rather than information.
-    // Not a Section with a header — consistent with Health app's unlabeled
-    // stat-card blocks.
+    // MARK: - Statistics Block
 
-    @ViewBuilder
-    private var analyticsSection: some View {
-        Section {
+    private var statisticsBlock: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Statistics")
+                .font(.headline)
+                .padding(.horizontal, 20)
             AnalyticsCardsView(board: board)
-                .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                .listRowSeparator(.hidden)
+                .padding(.horizontal, 12)
         }
+        .padding(.top, 12)
     }
 
-    // MARK: - Journal Sections (Phase 5.4)
-    //
-    // One Section per calendar day. `JournalGrouping.groupByDay` is called on the
-    // already-sorted @Query result — no additional sort, no off-main-thread work.
-    // `JournalEntryRow` is defined in JournalTimelineView.swift (internal access).
-    // Swipe-to-delete works natively in a List context (not possible in LazyVStack,
-    // which is why the root container is a List rather than a ScrollView).
-    //
-    // After deleting all entries for a day, that Section disappears automatically
-    // because `journalSections` recomputes from `logs` (@Query updates reactively).
-    // After deleting all entries, `hasLogs` becomes false and this entire block hides.
+    // MARK: - Journal Block
 
-    @ViewBuilder
-    private var journalSections_: some View {
-        ForEach(journalSections) { daySection in
-            Section {
-                ForEach(daySection.entries) { entry in
-                    JournalEntryRow(entry: entry, board: board)
-                        .swipeActions(edge: .trailing) {
-                            Button(role: .destructive) {
-                                delete(entry)
-                            } label: {
-                                Label("Delete", systemImage: "trash")
+    private var journalBlock: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Activity")
+                .font(.headline)
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+                .padding(.bottom, 8)
+
+            ForEach(journalSections) { section in
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(JournalGrouping.headerTitle(for: section.dayStart))
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 12)
+                        .padding(.bottom, 4)
+
+                    ForEach(section.entries) { entry in
+                        JournalEntryRow(entry: entry, board: board)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 4)
+                            .contextMenu {
+                                Button(role: .destructive) { delete(entry) } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
                             }
+                        if entry.id != section.entries.last?.id {
+                            Divider().padding(.leading, 20)
                         }
+                    }
                 }
-            } header: {
-                Text(JournalGrouping.headerTitle(for: daySection.dayStart))
             }
         }
     }
 
-    // MARK: - Delete
+    // MARK: - Helpers
 
-    /// Hard-deletes a `LogEntry`. Exempt from the append-only check-in path constraint
-    /// (ADR-001 exemption for LogEntry) — this is a deliberate user action.
+    private var todaysTotal: Double {
+        logs.filter { $0.timestamp.isToday() }.reduce(0) { $0 + $1.value }
+    }
+
+    private func progressFraction(for total: Double) -> Double {
+        max(0, min(1, total / board.effectiveTarget))
+    }
+
+    private func todayProgressLine(total: Double, fraction: Double) -> String {
+        switch board.metric {
+        case .binary:
+            return fraction >= 1 ? "Done today ✓" : "Check off daily"
+        case .quantitative:
+            let unit = board.unitLabel.flatMap { $0.isEmpty ? nil : " \($0)" } ?? ""
+            let done = total.formatted(.number.precision(.fractionLength(0...1)))
+            let goal = board.effectiveTarget.formatted(.number.precision(.fractionLength(0...1)))
+            return fraction >= 1
+                ? "\(done)\(unit) logged · Goal met ✓"
+                : "\(done) / \(goal)\(unit) today"
+        }
+    }
+
+    private var streakSubtitle: String {
+        let s = board.currentStreak
+        let b = board.longestStreak
+        let streak = s == 1 ? "1 day streak" : "\(s) day streak"
+        return b > s ? "\(streak) · Best: \(b)d" : streak
+    }
+
     private func delete(_ entry: LogEntry) {
         modelContext.delete(entry)
         try? modelContext.save()
     }
 
-    // MARK: - Display Text
-    //
-    // Mirrors HabitCardView (Phase 4) exactly — same source data, same phrasing,
-    // same "Best" visibility rule (shown only when it exceeds current).
-    // Intentionally not extracted to a shared helper: Phase 4 was approved without
-    // that extraction, and this is not a Phase 5.5 scope item.
-
     private var streakText: String {
         board.currentStreak == 1 ? "1 day streak" : "\(board.currentStreak) day streak"
     }
-
-    private var bestStreakText: String {
-        "Best: \(board.longestStreak) days"
-    }
-
-    private var targetText: String {
-        switch board.metric {
-        case .binary:
-            return "Check off daily"
-        case .quantitative:
-            let unit = board.unitLabel ?? ""
-            let target = board.effectiveTarget.formatted(.number.precision(.fractionLength(0...1)))
-            return "Goal: \(target) \(unit)/day"
-        }
-    }
 }
 
-// MARK: - Preview
+// MARK: - Previews
 
 @MainActor
 private func makeDetailWithHistoryContainer() -> (ModelContainer, HabitBoard) {
     let schema = Schema([HabitBoard.self, LogEntry.self])
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
     let container = try! ModelContainer(for: schema, configurations: [config])
-
-    let board = HabitBoard(
-        name: "Running",
-        metricType: HabitBoard.MetricType.quantitative.rawValue,
-        targetValue: 5.0,
-        unitLabel: "mi",
-        colorIndex: 0
-    )
-    board.currentStreak = 5
-    board.longestStreak = 12
+    let board = HabitBoard(name: "Running", metricType: 1, targetValue: 5, unitLabel: "mi", colorIndex: 0)
+    board.currentStreak = 5; board.longestStreak = 12
     container.mainContext.insert(board)
-
     let calendar = Calendar.current
-    let notes: [String?] = ["Felt great today.", nil, "Rain but worth it.", nil, "Easy 3 miles."]
-    for (offset, note) in notes.enumerated() {
-        guard let day = calendar.date(byAdding: .day, value: -offset, to: .now) else { continue }
-        let entry = LogEntry(
-            timestamp: day,
-            value: Double.random(in: 2...6),
-            note: note,
-            boardID: board.id,
-            board: board
-        )
-        container.mainContext.insert(entry)
+    for (i, note) in ["Felt great.", nil, "Rain but worth it."].enumerated() {
+        if let day = calendar.date(byAdding: .day, value: -i, to: .now) {
+            container.mainContext.insert(
+                LogEntry(timestamp: day, value: Double.random(in: 2...6),
+                         note: note, boardID: board.id, board: board)
+            )
+        }
     }
-
-    try? container.mainContext.save()
-    return (container, board)
-}
-
-@MainActor
-private func makeDetailNoHistoryContainer() -> (ModelContainer, HabitBoard) {
-    let schema = Schema([HabitBoard.self, LogEntry.self])
-    let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(for: schema, configurations: [config])
-    let board = HabitBoard(name: "Meditate", colorIndex: 5)
-    container.mainContext.insert(board)
     try? container.mainContext.save()
     return (container, board)
 }
 
 #Preview("With History") {
     let (container, board) = makeDetailWithHistoryContainer()
-    return NavigationStack {
-        HabitDetailView(board: board)
-    }
-    .modelContainer(container)
+    return NavigationStack { HabitDetailView(board: board) }
+        .modelContainer(container)
 }
-
-#Preview("No History") {
-    let (container, board) = makeDetailNoHistoryContainer()
-    return NavigationStack {
-        HabitDetailView(board: board)
-    }
-    .modelContainer(container)
-}
-
