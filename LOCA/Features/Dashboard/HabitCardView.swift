@@ -88,7 +88,7 @@ struct HabitCardView: View {
             // A filled or empty check circle — intentional and readable at 32 pt.
             Image(systemName: fraction >= 1 ? "checkmark.circle.fill" : "circle")
                 .font(.system(size: CardLayout.gaugeSize * 0.7, weight: .light))
-                .foregroundStyle(fraction >= 1 ? accent : .quaternary)
+                .foregroundStyle(fraction >= 1 ? accent : Color.primary.opacity(0.15))
 
         case .quantitative:
             Gauge(value: fraction) {
