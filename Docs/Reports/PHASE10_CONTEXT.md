@@ -12,7 +12,7 @@ Performance & Accessibility · **10.4** Release Readiness.
 
 | ID | Sev | Area | Description | Status | Routes to |
 |----|-----|------|-------------|--------|-----------|
-| D-01 | High | Widget / macOS | LOCA widget does not appear in the macOS widget gallery though the extension is embedded. Diagnostic `StaticConfiguration` widget pushed to bisect App-Intents-metadata vs extension registration. | Under diagnosis | 10.1 |
+| D-01 | High | Widget / macOS | LOCA widget does not appear in the macOS widget gallery. iOS widget confirmed working (runtime). macOS: provisioning/signing environment issue, not a code defect. Deferred pending stable macOS environment. | Deferred (env) | 10.1 |
 | D-02 | Low | macOS / Form | New Habit sheet goal field renders stretched full-width on macOS. | Fixed (10.2 P1: .formStyle(.grouped) + constrained goal field) | 10.2 |
 | D-03 | Med | macOS / Sidebar | Habit cards truncate meaningful text in the narrow split-view sidebar. | Fixed (10.2 P1: sidebar min width 280) | 10.2 |
 | D-04 | Low | Widget | Widget shows an empty "skeleton" in the gallery/pre-load. | Fixed (10.2 P1: representative placeholder + preview sample) | 10.2 |
@@ -97,3 +97,15 @@ the Defect Log above.
 - Every **Critical/High** defect fixed and re-verified (`one-build → one-root-cause-fix`).
 - Remaining items fixed or explicitly logged as deferred with rationale.
 - No regressions to previously runtime-validated phases (6, 7).
+
+## Phase 10.2 — UI/UX Polish Status
+
+| Pass | Description | Status |
+|------|-------------|--------|
+| Pass 1 | Layout & Platform Adaptation | Complete — pending user review |
+| Pass 2 | Visual Hierarchy & Typography | Complete — pending user review |
+| Pass 3 | Motion & Interaction | Complete |
+| Pass 4 | Cross-Platform Visual Audit | ✅ Clean — no raw iOS-only modifiers, no rogue springs, no force-unwraps, consistent corner radii (14pt), widget safe, pbxproj valid |
+
+**New files registered:** UnitOption.swift, ArcProgressView.swift.
+**Key decisions:** .formStyle(.grouped) reverted (caused F-01/F-02); platform shims extended with largeNavigationTitleDisplay(); all springs use canonical EP §7.1 constants.
