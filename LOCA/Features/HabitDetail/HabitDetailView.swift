@@ -137,7 +137,7 @@ struct HabitDetailView: View {
             }
         case .quantitative:
             Text("\(Int((fraction * 100).rounded()))%")
-                .font(.title3.weight(.bold).design(.rounded))
+                .font(.system(.title3, design: .rounded, weight: .bold))
                 .foregroundStyle(accent)
         }
     }
