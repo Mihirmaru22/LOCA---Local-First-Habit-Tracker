@@ -189,26 +189,26 @@ struct JournalEntryRow: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .center, spacing: 14) {
             valueIndicator
-                .frame(width: 48, alignment: .leading)
+                .frame(width: 52, alignment: .leading)
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(timeString)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
 
                 if let note = entry.note, !note.isEmpty {
                     Text(note)
-                        .font(.body)
-                        .foregroundStyle(.primary)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
 
             Spacer(minLength: 0)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 6)
         .accessibilityElement(children: .combine)
     }
 
@@ -218,12 +218,12 @@ struct JournalEntryRow: View {
     private var valueIndicator: some View {
         if isBinary {
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 20))
+                .font(.system(size: 22, weight: .semibold))
                 .foregroundStyle(ColorPalette[board.colorIndex])
         } else {
-            VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 1) {
                 Text(entry.value.formatted(.number.precision(.fractionLength(0...2))))
-                    .font(.system(.body, design: .rounded, weight: .semibold))
+                    .font(.system(.subheadline, design: .rounded, weight: .bold))
                     .foregroundStyle(ColorPalette[board.colorIndex])
                 if let unit = board.unitLabel, !unit.isEmpty {
                     Text(unit)

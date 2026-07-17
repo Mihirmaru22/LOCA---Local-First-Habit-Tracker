@@ -80,7 +80,14 @@ struct CheckInSheet: View {
             }
             .navigationTitle("Log \(board.name)")
             .inlineNavigationTitleDisplay()
+            .scrollDismissesKeyboard(.interactively)
             .toolbar { toolbarContent }
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") { valueFieldFocused = false }
+                }
+            }
             .onAppear { valueFieldFocused = true }
             .alert("Couldn't Save Check-In", isPresented: $showSaveError) {
                 Button("OK", role: .cancel) {}
