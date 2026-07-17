@@ -81,7 +81,7 @@ struct HabitCardView: View {
                     .foregroundStyle(accent)
             case .quantitative:
                 Text(percentLabel(for: fraction))
-                    .font(.caption.weight(.bold).design(.rounded))
+                    .font(.system(.caption, design: .rounded, weight: .bold))
                     .foregroundStyle(accent)
             }
         }
@@ -170,3 +170,4 @@ struct HabitCardView: View {
     }
     .listStyle(.sidebar)
 }
+
