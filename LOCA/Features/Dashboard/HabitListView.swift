@@ -52,8 +52,36 @@ struct HabitListView: View {
             }
         }
         .sheet(isPresented: $showingCreateSheet) {
-            HabitFormView(mode: .create, onBoardCreated: { _ in })
+            HabitFormView(mode: .create)
         }
+    }
+
+    // MARK: - State computation (outside ViewBuilder)
+
+    private var boardsWithState: [(board: HabitBoard, state: HabitState)] {
+        displayBoards.map { board in
+            let todaysTotal = (board.logs ?? [])
+                .filter { $0.timestamp.isToday() }
+                .reduce(0.0) { $0 + $1.value }
+            let state = HabitState.compute(for: board, todaysTotal: todaysTotal)
+            return (board, state)
+        }
+    }
+
+    private var needsActionBoards: [(board: HabitBoard, state: HabitState)] {
+        boardsWithState.filter { $0.state == .needsAction }
+    }
+
+    private var inProgressBoards: [(board: HabitBoard, state: HabitState)] {
+        boardsWithState.filter { $0.state == .inProgress }
+    }
+
+    private var behindBoards: [(board: HabitBoard, state: HabitState)] {
+        boardsWithState.filter { $0.state == .behind }
+    }
+
+    private var doneBoards: [(board: HabitBoard, state: HabitState)] {
+        boardsWithState.filter { $0.state == .done }
     }
 
     // MARK: - Content
@@ -61,28 +89,13 @@ struct HabitListView: View {
     private var habitsContent: some View {
         VStack(alignment: .leading, spacing: DS.Space.xxl) {
 
-            // Compute states for all boards
-            let boardsWithState = displayBoards.map { board -> (board: HabitBoard, state: HabitState) in
-                let todaysTotal = (board.logs ?? [])
-                    .filter { $0.timestamp.isToday() }
-                    .reduce(0.0) { $0 + $1.value }
-                let state = HabitState.compute(for: board, todaysTotal: todaysTotal)
-                return (board, state)
-            }
-
-            // Group by state
-            let needsAction = boardsWithState.filter { $0.state == .needsAction }
-            let inProgress = boardsWithState.filter { $0.state == .inProgress }
-            let behind = boardsWithState.filter { $0.state == .behind }
-            let done = boardsWithState.filter { $0.state == .done }
-
             // NEEDS ACTION ZONE (hero)
-            if !needsAction.isEmpty {
+            if !needsActionBoards.isEmpty {
                 VStack(alignment: .leading, spacing: DS.Space.lg) {
                     SectionHeader("Today")
 
                     VStack(spacing: DS.Space.md) {
-                        ForEach(needsAction, id: \.board.id) { item in
+                        ForEach(needsActionBoards, id: \.board.id) { item in
                             NavigationLink(destination: HabitDetailView(board: item.board)) {
                                 HabitListRow(
                                     board: item.board,
@@ -101,12 +114,12 @@ struct HabitListView: View {
             }
 
             // IN PROGRESS ZONE
-            if !inProgress.isEmpty {
+            if !inProgressBoards.isEmpty {
                 VStack(alignment: .leading, spacing: DS.Space.lg) {
                     SectionHeader("In Progress")
 
                     VStack(spacing: DS.Space.md) {
-                        ForEach(inProgress, id: \.board.id) { item in
+                        ForEach(inProgressBoards, id: \.board.id) { item in
                             NavigationLink(destination: HabitDetailView(board: item.board)) {
                                 HabitListRow(
                                     board: item.board,
@@ -123,12 +136,12 @@ struct HabitListView: View {
             }
 
             // BEHIND ZONE (subtle urgency)
-            if !behind.isEmpty {
+            if !behindBoards.isEmpty {
                 VStack(alignment: .leading, spacing: DS.Space.lg) {
                     SectionHeader("Needs Attention")
 
                     VStack(spacing: DS.Space.md) {
-                        ForEach(behind, id: \.board.id) { item in
+                        ForEach(behindBoards, id: \.board.id) { item in
                             NavigationLink(destination: HabitDetailView(board: item.board)) {
                                 HabitListRow(
                                     board: item.board,
@@ -147,12 +160,12 @@ struct HabitListView: View {
             }
 
             // DONE ZONE (receded)
-            if !done.isEmpty {
+            if !doneBoards.isEmpty {
                 VStack(alignment: .leading, spacing: DS.Space.lg) {
                     SectionHeader("Done Today")
 
                     VStack(spacing: DS.Space.md) {
-                        ForEach(done, id: \.board.id) { item in
+                        ForEach(doneBoards, id: \.board.id) { item in
                             NavigationLink(destination: HabitDetailView(board: item.board)) {
                                 HabitListRow(
                                     board: item.board,
