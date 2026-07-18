@@ -22,40 +22,38 @@ import SwiftData
 
 struct HabitListView: View {
 
-    @Query(sort: [SortDescriptor(\.createdAt)], animation: .default)
+    @Query(sort: [SortDescriptor(\HabitBoard.createdAt)], animation: .default)
     private var boards: [HabitBoard]
 
+    @Environment(\.modelContext) private var modelContext
     @State private var showingCreateSheet = false
 
     /// Future: a HabitSortStrategy seam will allow pluggable sort modes.
     /// Today: manual (stable, user-defined) order. No reordering by state.
     private var displayBoards: [HabitBoard] {
-        boards.filter { !$0.isArchived }
+        boards.filter { $0.archivedAt == nil }
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                if displayBoards.isEmpty {
-                    emptyStateView
-                } else {
-                    habitsContent
+        ScrollView {
+            if displayBoards.isEmpty {
+                emptyStateView
+            } else {
+                habitsContent
+            }
+        }
+        .navigationTitle("Today")
+        .largeNavigationTitleDisplay()
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button(action: { showingCreateSheet = true }) {
+                    Image(systemName: "plus")
                 }
             }
-            .navigationTitle("Today")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button(action: { showingCreateSheet = true }) {
-                        Image(systemName: "plus")
-                    }
-                }
-            }
-            .sheet(isPresented: $showingCreateSheet) {
-                HabitFormView(mode: .create) { newID in
-                    // Auto-select newly created habit
-                    // (will wire to detail navigation in next phase)
-                }
+        }
+        .sheet(isPresented: $showingCreateSheet) {
+            HabitFormView(mode: .create) { newID in
+                // Auto-select newly created habit
             }
         }
     }
@@ -219,12 +217,11 @@ struct HabitListView: View {
 
     private func checkInBinary(board: HabitBoard) {
         let entry = LogEntry(value: 1.0, boardID: board.id, board: board)
+        modelContext.insert(entry)
         do {
-            let context = ModelContext(ModelContext.self as! ModelContext.Type)
-            context.insert(entry)
-            try context.save()
+            try modelContext.save()
         } catch {
-            print("Failed to log check-in: \(error)")
+            modelContext.rollback()
         }
     }
 }
@@ -256,6 +253,6 @@ struct HabitListView: View {
 
     try? container.mainContext.save()
 
-    return HabitListView()
+    HabitListView()
         .modelContainer(container)
 }

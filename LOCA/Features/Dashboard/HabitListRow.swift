@@ -223,7 +223,8 @@ enum HabitState {
             return .done
         }
 
-        let isBehind = board.currentStreak == 0 && !board.logs!.isEmpty
+        let hasAnyLogs = !(board.logs ?? []).isEmpty
+        let isBehind = board.currentStreak == 0 && hasAnyLogs
         if isBehind && todaysTotal == 0 {
             return .behind
         }
