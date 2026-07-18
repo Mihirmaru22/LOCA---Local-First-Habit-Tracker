@@ -45,6 +45,7 @@
 		290812E393429F92DFF5711C /* HabitListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AAEC2D33ABC3ABB90525E4 /* HabitListView.swift */; };
 		7933F28D2868EE14245E30DB /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E2A187171CA9C92C1E862CC /* TodayView.swift */; };
 		126502F6A951AC2CD8F22DA0 /* WeeklyBarChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37119D6BF608C9E0EDFAA772 /* WeeklyBarChart.swift */; };
+		3DD05FACBA31EE0C7FFFF99B /* ArcGaugeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8430612562AB5270D58C46C7 /* ArcGaugeView.swift */; };
 		21F090B2CE8B4E3FB9E4F6C6 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A18185A6B14A16B58268EB /* ColorPalette.swift */; };
 		EA67B446FFD340ECBF1E9F6D /* Double+Clamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13289E001E014999A9EFB063 /* Double+Clamp.swift */; };
 		D27B8705E25F45C2A8DFABE1 /* Double+Clamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13289E001E014999A9EFB063 /* Double+Clamp.swift */; };
@@ -103,6 +104,7 @@
 		39AAEC2D33ABC3ABB90525E4 /* HabitListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitListView.swift"; sourceTree = "<group>"; };
 		6E2A187171CA9C92C1E862CC /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TodayView.swift"; sourceTree = "<group>"; };
 		37119D6BF608C9E0EDFAA772 /* WeeklyBarChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WeeklyBarChart.swift"; sourceTree = "<group>"; };
+		8430612562AB5270D58C46C7 /* ArcGaugeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ArcGaugeView.swift"; sourceTree = "<group>"; };
 		13289E001E014999A9EFB063 /* Double+Clamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Double+Clamp.swift"; sourceTree = "<group>"; };
 		A23A644233DD4BE6AAD23539 /* StreakCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StreakCalculator.swift"; sourceTree = "<group>"; };
 		CB921FD359F548A389FFA196 /* HeatmapDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HeatmapDataProvider.swift"; sourceTree = "<group>"; };
@@ -283,6 +285,7 @@
 				C2D47C4C19429A1E8AB3FB34 /* DS+Motion.swift */,
 				FE3AFDA24101174CA0C31F34 /* DSComponents.swift */,
 				37119D6BF608C9E0EDFAA772 /* WeeklyBarChart.swift */,
+				8430612562AB5270D58C46C7 /* ArcGaugeView.swift */,
 			);
 			path = "DesignSystem";
 			sourceTree = "<group>";
@@ -500,6 +503,7 @@
 				290812E393429F92DFF5711C /* HabitListView.swift in Sources */,
 				7933F28D2868EE14245E30DB /* TodayView.swift in Sources */,
 				126502F6A951AC2CD8F22DA0 /* WeeklyBarChart.swift in Sources */,
+				3DD05FACBA31EE0C7FFFF99B /* ArcGaugeView.swift in Sources */,
 				EA67B446FFD340ECBF1E9F6D /* Double+Clamp.swift in Sources */,
 				8A004F606662408989430FF3 /* StreakCalculator.swift in Sources */,
 				7504D58ADAB74D25BA2F69C8 /* HeatmapDataProvider.swift in Sources */,
