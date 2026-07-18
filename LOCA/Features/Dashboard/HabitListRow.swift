@@ -173,9 +173,7 @@ struct HabitListRow: View {
     /// typography and color. Tint is applied optionally per the habit's setting.
     private var rowBackground: Color {
         if board.useColorBackground {
-            return DS.Color.surface.overlay(
-                ColorPalette[board.colorIndex].opacity(0.1)
-            )
+            return ColorPalette[board.colorIndex].opacity(0.1)
         }
         return DS.Color.surface
     }

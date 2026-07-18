@@ -10,6 +10,8 @@
 //
 
 import SwiftUI
+import SwiftData
+import UserNotifications
 
 // MARK: - SettingsMenuView
 
@@ -128,6 +130,8 @@ struct ArchiveListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: [SortDescriptor(\HabitBoard.createdAt)]) private var allBoards: [HabitBoard]
 
+    init() {}
+
     private var archivedBoards: [HabitBoard] {
         allBoards.filter { $0.archivedAt != nil }
     }
@@ -225,7 +229,7 @@ struct ReviewReminderSettingsView: View {
                                     .font(DS.Text.body)
 
                                 Picker("Minute", selection: $minute) {
-                                    ForEach(stride(from: 0, to: 60, by: 15), id: \.self) { m in
+                                    ForEach(Array(stride(from: 0, to: 60, by: 15)), id: \.self) { m in
                                         Text(String(format: "%02d", m)).tag(m)
                                     }
                                 }
