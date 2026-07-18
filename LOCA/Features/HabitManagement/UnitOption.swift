@@ -46,6 +46,14 @@ enum UnitOption: String, CaseIterable, Identifiable {
     // Energy
     case kcal     = "kcal"
 
+    // Money
+    case usd      = "$"
+    case eur      = "€"
+    case gbp      = "£"
+
+    // Percentage
+    case percent  = "%"
+
     var id: String { rawValue }
 
     /// The short label stored in `HabitBoard.unitLabel` and shown in the UI.
@@ -70,6 +78,10 @@ enum UnitOption: String, CaseIterable, Identifiable {
         case .sessions: return "Sessions"
         case .items:    return "Items"
         case .kcal:     return "Calories (kcal)"
+        case .usd:      return "US Dollars ($)"
+        case .eur:      return "Euros (€)"
+        case .gbp:      return "British Pounds (£)"
+        case .percent:  return "Percent (%)"
         }
     }
 
@@ -85,6 +97,8 @@ enum UnitOption: String, CaseIterable, Identifiable {
         case time     = "Time"
         case count    = "Count"
         case energy   = "Energy"
+        case money    = "Money"
+        case percent  = "Other"
 
         var units: [UnitOption] {
             switch self {
@@ -94,6 +108,8 @@ enum UnitOption: String, CaseIterable, Identifiable {
             case .time:     return [.seconds, .minutes, .hours]
             case .count:    return [.reps, .sets, .pages, .glasses, .sessions, .items]
             case .energy:   return [.kcal]
+            case .money:    return [.usd, .eur, .gbp]
+            case .percent:  return [.percent]
             }
         }
 

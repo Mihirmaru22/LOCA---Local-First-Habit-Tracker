@@ -20,6 +20,9 @@ struct HabitBoardDraft {
 
     /// Controlled unit selection. Replaces the free-text `unitLabel` field.
     var unit: UnitOption
+    
+    /// Custom unit text (overrides `unit` label if non-empty).
+    var customUnitText: String = ""
 
     var colorIndex: Int
 
@@ -30,6 +33,7 @@ struct HabitBoardDraft {
         self.metric = .binary
         self.targetText = ""
         self.unit = .minutes
+        self.customUnitText = ""
         self.colorIndex = 0
     }
 
@@ -40,6 +44,8 @@ struct HabitBoardDraft {
         self.targetText = board.targetValue
             .map { $0.formatted(.number.precision(.fractionLength(0...2))) } ?? ""
         self.unit = UnitOption.from(label: board.unitLabel) ?? .minutes
+        // If the label doesn't match a known unit, store it as custom text
+        self.customUnitText = (UnitOption.from(label: board.unitLabel) == nil && board.unitLabel != nil) ? board.unitLabel! : ""
         self.colorIndex = board.colorIndex
     }
 
@@ -67,21 +73,27 @@ struct HabitBoardDraft {
     // MARK: Materialisation
 
     func makeBoard() -> HabitBoard {
-        HabitBoard(
+        let effectiveUnit = !customUnitText.trimmingCharacters(in: .whitespaces).isEmpty 
+            ? customUnitText 
+            : unit.label
+        return HabitBoard(
             name: trimmedName,
             metricType: metric.rawValue,
             targetValue: metric == .quantitative ? parsedTarget : nil,
-            unitLabel: metric == .quantitative ? unit.label : nil,
+            unitLabel: metric == .quantitative ? effectiveUnit : nil,
             colorIndex: colorIndex
         )
     }
 
     @MainActor
     func apply(to board: HabitBoard) {
+        let effectiveUnit = !customUnitText.trimmingCharacters(in: .whitespaces).isEmpty 
+            ? customUnitText 
+            : unit.label
         board.name = trimmedName
         board.metricType = metric.rawValue
         board.targetValue = metric == .quantitative ? parsedTarget : nil
-        board.unitLabel = metric == .quantitative ? unit.label : nil
+        board.unitLabel = metric == .quantitative ? effectiveUnit : nil
         board.colorIndex = colorIndex
     }
 }

@@ -186,6 +186,15 @@ struct HabitFormView: View {
                 .labelsHidden()
                 .frame(maxWidth: 140)
             }
+
+            HStack(spacing: DS.Space.md) {
+                Text("Custom Unit")
+                    .font(DS.Text.caption)
+                    .foregroundStyle(DS.Color.textSecondary)
+                TextField("or type your own", text: $draft.customUnitText)
+                    .font(DS.Text.body)
+                    .textFieldStyle(.roundedBorder)
+            }
         } header: {
             Text("Daily Goal")
         } footer: {
