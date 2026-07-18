@@ -1,3 +1,18 @@
+//
+//  HabitDetailView.swift
+//  LOCA
+//
+//  Phase 11.3b — Habit Detail: Heatmap-First Redesign
+//
+//  Restructures the detail page around the heatmap as the hero visualization.
+//  Flow: Heatmap (history, primary focus) → Metrics 2×2 (today's snapshot,
+//  secondary) → Journal (activity details, tertiary).
+//
+//  This inverts the Phase 10 hierarchy (ring → heatmap → stats) to reflect
+//  the actual information value for decision-making: patterns matter more
+//  than today's data point.
+//
+
 import SwiftUI
 import SwiftData
 
@@ -6,282 +21,255 @@ import SwiftData
 struct HabitDetailView: View {
 
     let board: HabitBoard
-
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showingEditSheet = false
 
-    @Query private var logs: [LogEntry]
+    // MARK: - Computed metrics
 
-    init(board: HabitBoard) {
-        self.board = board
-        let boardID = board.id
-        _logs = Query(
-            filter: #Predicate<LogEntry> { $0.boardID == boardID },
-            sort: [SortDescriptor(\.timestamp, order: .reverse)]
-        )
+    /// Today's total for this habit.
+    private var todaysTotal: Double {
+        (board.logs ?? [])
+            .filter { $0.timestamp.isToday() }
+            .reduce(0.0) { $0 + $1.value }
     }
 
-    private var hasLogs: Bool { !logs.isEmpty }
+    /// Days completed this month (value >= target).
+    private var daysCompletedThisMonth: Int {
+        let now = Date()
+        guard let monthStart = Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: now)) else {
+            return 0
+        }
+        guard let monthEnd = Calendar.current.date(byAdding: DateComponents(month: 1, day: -1), to: monthStart) else {
+            return 0
+        }
 
-    private var journalSections: [JournalDaySection] {
-        JournalGrouping.groupByDay(logs)
+        let logsThisMonth = (board.logs ?? []).filter { log in
+            log.timestamp >= monthStart && log.timestamp <= monthEnd
+        }
+
+        // Group by day and sum values
+        var dailyTotals = [Date: Double]()
+        for log in logsThisMonth {
+            let day = Calendar.current.startOfDay(for: log.timestamp)
+            dailyTotals[day, default: 0] += log.value
+        }
+
+        return dailyTotals.filter { $0.value >= board.effectiveTarget }.count
     }
 
-    // MARK: - Body
+    /// Days in the current month.
+    private var daysInMonth: Int {
+        let now = Date()
+        guard let monthStart = Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: now)) else {
+            return 30
+        }
+        guard let range = Calendar.current.range(of: .day, in: .month, for: monthStart) else {
+            return 30
+        }
+        return range.count
+    }
+
+    /// Total logged this month.
+    private var totalThisMonth: Double {
+        let now = Date()
+        guard let monthStart = Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: now)) else {
+            return 0
+        }
+        guard let monthEnd = Calendar.current.date(byAdding: DateComponents(month: 1, day: -1), to: monthStart) else {
+            return 0
+        }
+
+        return (board.logs ?? [])
+            .filter { $0.timestamp >= monthStart && $0.timestamp <= monthEnd }
+            .reduce(0.0) { $0 + $1.value }
+    }
+
+    /// Last 7 days' daily totals (oldest to newest) for the weekly chart.
+    private var weeklyTotals: [Double] {
+        var totals: [Double] = []
+        for daysAgo in (0..<7).reversed() {
+            guard let dayDate = Calendar.current.date(byAdding: .day, value: -daysAgo, to: .now) else {
+                totals.append(0)
+                continue
+            }
+            let dayStart = Calendar.current.startOfDay(for: dayDate)
+            guard let dayEnd = Calendar.current.date(byAdding: DateComponents(day: 1, second: -1), to: dayStart) else {
+                totals.append(0)
+                continue
+            }
+
+            let dayTotal = (board.logs ?? [])
+                .filter { $0.timestamp >= dayStart && $0.timestamp <= dayEnd }
+                .reduce(0.0) { $0 + $1.value }
+            totals.append(dayTotal)
+        }
+        return totals
+    }
 
     var body: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0, pinnedViews: []) {
-                // 1 — Current status (hero)
-                statusHeader
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
-                    .padding(.bottom, 20)
-                    .animation(
-                        reduceMotion ? .linear(duration: 0.1) : .rippleSettle,
-                        value: todaysTotal
-                    )
+            VStack(alignment: .leading, spacing: DS.Space.xxl) {
 
-                Divider().padding(.horizontal, 20)
-
-                // 2 — History heatmap
-                historyBlock
-                    .padding(.top, 20)
-                    .padding(.bottom, 8)
-
-                // 3 — Statistics (only when there's data)
-                if hasLogs {
-                    statisticsBlock
-                        .padding(.top, 4)
-                        .padding(.bottom, 8)
-
-                    Divider().padding(.horizontal, 20)
-
-                    // 4 — Journal
-                    journalBlock
-                        .padding(.bottom, 32)
+                // MARK: - Heatmap Hero
+                VStack(alignment: .leading, spacing: DS.Space.lg) {
+                    HeatmapView(board: board)
                 }
+
+                // MARK: - Metrics Grid (2×2)
+                VStack(alignment: .leading, spacing: DS.Space.lg) {
+                    SectionHeader("Metrics")
+
+                    HStack(spacing: DS.Space.lg) {
+                        // Left column
+                        VStack(spacing: DS.Space.lg) {
+                            // Streak
+                            LOCACard {
+                                MetricTile(
+                                    icon: "flame.fill",
+                                    value: "\(board.currentStreak)",
+                                    label: "Current Streak",
+                                    accent: ColorPalette[board.colorIndex]
+                                )
+                            }
+
+                            // Consistency gauge
+                            LOCACard {
+                                ArcGaugeView(
+                                    completedCount: daysCompletedThisMonth,
+                                    totalCount: daysInMonth,
+                                    accentColor: ColorPalette[board.colorIndex],
+                                    label: "Days"
+                                )
+                            }
+                        }
+
+                        // Right column
+                        VStack(spacing: DS.Space.lg) {
+                            // Month total
+                            LOCACard {
+                                VStack(alignment: .leading, spacing: DS.Space.sm) {
+                                    HStack(spacing: DS.Space.xs) {
+                                        Image(systemName: "calendar")
+                                            .font(DS.Text.caption)
+                                            .foregroundStyle(ColorPalette[board.colorIndex])
+                                        Text("THIS MONTH")
+                                            .font(DS.Text.footnote)
+                                            .foregroundStyle(DS.Color.textSecondary)
+                                            .tracking(0.5)
+                                    }
+
+                                    ValueText(
+                                        totalThisMonth.formatted(.number.precision(.fractionLength(0...1))),
+                                        font: DS.Text.value
+                                    )
+                                    .foregroundStyle(DS.Color.textPrimary)
+
+                                    if !board.unitLabel.isEmpty {
+                                        Text(board.unitLabel)
+                                            .font(DS.Text.caption)
+                                            .foregroundStyle(DS.Color.textSecondary)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+
+                            // Weekly chart
+                            LOCACard {
+                                VStack(alignment: .leading, spacing: DS.Space.md) {
+                                    Text("PAST WEEK")
+                                        .font(DS.Text.footnote)
+                                        .foregroundStyle(DS.Color.textSecondary)
+                                        .tracking(0.5)
+
+                                    WeeklyBarChart(
+                                        dailyTotals: weeklyTotals,
+                                        target: board.effectiveTarget,
+                                        accentColor: ColorPalette[board.colorIndex],
+                                        size: .normal
+                                    )
+                                    .frame(height: 48)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // MARK: - Journal Timeline
+                VStack(alignment: .leading, spacing: DS.Space.lg) {
+                    SectionHeader("Activity")
+
+                    if let logs = board.logs, !logs.isEmpty {
+                        JournalTimelineView(board: board, logs: logs)
+                    } else {
+                        VStack(spacing: DS.Space.md) {
+                            Image(systemName: "book.closed")
+                                .font(.title3)
+                                .foregroundStyle(.secondary)
+                            Text("No activity yet")
+                                .font(DS.Text.caption)
+                                .foregroundStyle(DS.Color.textSecondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(DS.Space.xl)
+                    }
+                }
+
+                Spacer(minLength: DS.Space.xxxl)
             }
+            .padding(DS.Space.lg)
         }
         .navigationTitle(board.name)
         .largeNavigationTitleDisplay()
-        .safeAreaInset(edge: .bottom) {
-            CheckInButton(board: board)
-                .padding(.horizontal)
-                .padding(.vertical, 12)
-                .background(.thinMaterial)
-        }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button("Edit") { showingEditSheet = true }
+                Button(action: { showingEditSheet = true }) {
+                    Image(systemName: "pencil")
+                }
             }
         }
         .sheet(isPresented: $showingEditSheet) {
             HabitFormView(mode: .edit(board))
         }
     }
-
-    // MARK: - Status Header
-
-    private var statusHeader: some View {
-        HStack(alignment: .center, spacing: 16) {
-            // Large ring
-            let total    = todaysTotal
-            let fraction = progressFraction(for: total)
-            let accent   = ColorPalette[board.colorIndex]
-
-            ZStack {
-                ArcProgressView(fraction: fraction, color: accent, size: 64)
-                percentOrCheck(fraction: fraction, accent: accent)
-            }
-            .frame(width: 64, height: 64)
-
-            // Identity + progress
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
-                    Circle()
-                        .fill(accent)
-                        .frame(width: 8, height: 8)
-                    Text(board.name)
-                        .font(.title3.bold())
-                        .lineLimit(2)
-                }
-
-                Text(todayProgressLine(total: total, fraction: fraction))
-                    .font(.subheadline)
-                    .foregroundStyle(fraction >= 1 ? accent : .primary)
-
-                HStack(spacing: 4) {
-                    Image(systemName: "flame.fill")
-                        .font(.caption2)
-                        .foregroundStyle(.orange)
-                    Text(streakSubtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Spacer(minLength: 0)
-        }
-    }
-
-    @ViewBuilder
-    private func percentOrCheck(fraction: Double, accent: Color) -> some View {
-        switch board.metric {
-        case .binary:
-            if fraction >= 1 {
-                Image(systemName: "checkmark")
-                    .font(.title.weight(.bold))
-                    .foregroundStyle(accent)
-            }
-        case .quantitative:
-            Text("\(Int((fraction * 100).rounded()))%")
-                .font(.system(.title3, design: .rounded, weight: .bold))
-                .foregroundStyle(accent)
-        }
-    }
-
-    // MARK: - History Block
-
-    private var historyBlock: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("History")
-                .font(.headline)
-                .padding(.horizontal, 20)
-
-            if hasLogs {
-                HeatmapView(board: board)
-                    .padding(.horizontal, 8)
-            } else {
-                Label(
-                    "Log \(board.name) to start building your history.",
-                    systemImage: "square.grid.3x3"
-                )
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 20)
-                .padding(.bottom, 8)
-            }
-        }
-    }
-
-    // MARK: - Statistics Block
-
-    private var statisticsBlock: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Statistics")
-                .font(.headline)
-                .padding(.horizontal, 20)
-            AnalyticsCardsView(board: board)
-                .padding(.horizontal, 12)
-        }
-        .padding(.top, 12)
-    }
-
-    // MARK: - Journal Block
-
-    private var journalBlock: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text("Activity")
-                .font(.headline)
-                .padding(.horizontal, 20)
-                .padding(.top, 12)
-                .padding(.bottom, 8)
-
-            ForEach(journalSections) { section in
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(JournalGrouping.headerTitle(for: section.dayStart))
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 20)
-                        .padding(.top, 12)
-                        .padding(.bottom, 4)
-
-                    ForEach(section.entries) { entry in
-                        JournalEntryRow(entry: entry, board: board)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 4)
-                            .contextMenu {
-                                Button(role: .destructive) { delete(entry) } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                            }
-                        if entry.id != section.entries.last?.id {
-                            Divider().padding(.leading, 20)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: - Helpers
-
-    private var todaysTotal: Double {
-        logs.filter { $0.timestamp.isToday() }.reduce(0) { $0 + $1.value }
-    }
-
-    private func progressFraction(for total: Double) -> Double {
-        max(0, min(1, total / board.effectiveTarget))
-    }
-
-    private func todayProgressLine(total: Double, fraction: Double) -> String {
-        switch board.metric {
-        case .binary:
-            return fraction >= 1 ? "Done today ✓" : "Check off daily"
-        case .quantitative:
-            let unit = board.unitLabel.flatMap { $0.isEmpty ? nil : " \($0)" } ?? ""
-            let done = total.formatted(.number.precision(.fractionLength(0...1)))
-            let goal = board.effectiveTarget.formatted(.number.precision(.fractionLength(0...1)))
-            return fraction >= 1
-                ? "\(done)\(unit) logged · Goal met ✓"
-                : "\(done) / \(goal)\(unit) today"
-        }
-    }
-
-    private var streakSubtitle: String {
-        let s = board.currentStreak
-        let b = board.longestStreak
-        let streak = s == 1 ? "1 day streak" : "\(s) day streak"
-        return b > s ? "\(streak) · Best: \(b)d" : streak
-    }
-
-    private func delete(_ entry: LogEntry) {
-        modelContext.delete(entry)
-        try? modelContext.save()
-    }
-
-    private var streakText: String {
-        board.currentStreak == 1 ? "1 day streak" : "\(board.currentStreak) day streak"
-    }
 }
 
-// MARK: - Previews
+// MARK: - Preview
 
 @MainActor
-private func makeDetailWithHistoryContainer() -> (ModelContainer, HabitBoard) {
+private func makeDetailPreviewContainer() -> (ModelContainer, HabitBoard) {
     let schema = Schema([HabitBoard.self, LogEntry.self])
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
     let container = try! ModelContainer(for: schema, configurations: [config])
-    let board = HabitBoard(name: "Running", metricType: 1, targetValue: 5, unitLabel: "mi", colorIndex: 0)
-    board.currentStreak = 5; board.longestStreak = 12
-    container.mainContext.insert(board)
+    let context = container.mainContext
+
+    let habit = HabitBoard(name: "Morning Run", metricType: 1, targetValue: 5, unitLabel: "km", colorIndex: 0)
+    habit.currentStreak = 12
+    habit.longestStreak = 45
+    context.insert(habit)
+
+    // Add logs across this month
+    let now = Date()
     let calendar = Calendar.current
-    for (i, note) in ["Felt great.", nil, "Rain but worth it."].enumerated() {
-        if let day = calendar.date(byAdding: .day, value: -i, to: .now) {
-            container.mainContext.insert(
-                LogEntry(timestamp: day, value: Double.random(in: 2...6),
-                         note: note, boardID: board.id, board: board)
-            )
+    guard let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: now)) else {
+        return (container, habit)
+    }
+
+    for daysAgo in 0..<30 {
+        if daysAgo % 2 == 0 { // Log every other day
+            guard let logDate = calendar.date(byAdding: .day, value: daysAgo, to: monthStart) else { continue }
+            let value = Double.random(in: 3...7)
+            context.insert(LogEntry(timestamp: logDate, value: value, boardID: habit.id, board: habit))
         }
     }
-    try? container.mainContext.save()
-    return (container, board)
+
+    try? context.save()
+    return (container, habit)
 }
 
-#Preview("With History") {
-    let (container, board) = makeDetailWithHistoryContainer()
-    return NavigationStack { HabitDetailView(board: board) }
-        .modelContainer(container)
+#Preview {
+    let (container, habit) = makeDetailPreviewContainer()
+    return NavigationStack {
+        HabitDetailView(board: habit)
+    }
+    .modelContainer(container)
 }
