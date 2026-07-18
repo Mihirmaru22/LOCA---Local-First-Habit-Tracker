@@ -71,27 +71,42 @@ struct HeatmapView: View {
                 }
                 .frame(minHeight: gridHeight)
             } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHGrid(
-                        rows: Array(
-                            repeating: GridItem(.fixed(HeatmapLayout.cellSize), spacing: HeatmapLayout.cellSpacing),
-                            count: HeatmapLayout.rowsPerColumn
-                        ),
-                        spacing: HeatmapLayout.cellSpacing
-                    ) {
-                        ForEach(cells) { cell in
-                            HeatmapCellView(cell: cell, colorIndex: board.colorIndex, unitLabel: board.unitLabel)
+                HStack(alignment: .top, spacing: DS.Space.sm) {
+                    // Day labels (left column, fixed width)
+                    VStack(spacing: HeatmapLayout.cellSpacing) {
+                        ForEach(0..<HeatmapLayout.rowsPerColumn, id: \.self) { rowIdx in
+                            let dayName = ["S", "M", "T", "W", "T", "F", "S"][rowIdx % 7]
+                            Text(dayName)
+                                .font(DS.Text.caption)
+                                .foregroundStyle(DS.Color.textSecondary)
+                                .frame(width: 20, height: HeatmapLayout.cellSize, alignment: .center)
                         }
                     }
                     .padding(.vertical, 2)
+
+                    // Heatmap grid (scrollable)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        LazyHGrid(
+                            rows: Array(
+                                repeating: GridItem(.fixed(HeatmapLayout.cellSize), spacing: HeatmapLayout.cellSpacing),
+                                count: HeatmapLayout.rowsPerColumn
+                            ),
+                            spacing: HeatmapLayout.cellSpacing
+                        ) {
+                            ForEach(cells) { cell in
+                                HeatmapCellView(cell: cell, colorIndex: board.colorIndex, unitLabel: board.unitLabel)
+                            }
+                        }
+                        .padding(.vertical, 2)
+                    }
+                    .defaultScrollAnchor(.trailing)
+                    // On macOS, the outer List's scroll gesture handler can consume
+                    // horizontal trackpad events before the inner ScrollView sees them.
+                    // Adding a simultaneous DragGesture gives the inner ScrollView
+                    // priority for horizontal swipes without blocking List's vertical
+                    // scroll (they run in parallel).
+                    .simultaneousGesture(DragGesture(minimumDistance: 0))
                 }
-                .defaultScrollAnchor(.trailing)
-                // On macOS, the outer List's scroll gesture handler can consume
-                // horizontal trackpad events before the inner ScrollView sees them.
-                // Adding a simultaneous DragGesture gives the inner ScrollView
-                // priority for horizontal swipes without blocking List's vertical
-                // scroll (they run in parallel).
-                .simultaneousGesture(DragGesture(minimumDistance: 0))
             }
         }
         .task(id: taskID) {
