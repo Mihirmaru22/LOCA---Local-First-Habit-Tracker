@@ -164,8 +164,8 @@ struct HabitDetailView: View {
                                     )
                                     .foregroundStyle(DS.Color.textPrimary)
 
-                                    if !board.unitLabel.isEmpty {
-                                        Text(board.unitLabel)
+                                    if let unitLabel = board.unitLabel, !unitLabel.isEmpty {
+                                        Text(unitLabel)
                                             .font(DS.Text.caption)
                                             .foregroundStyle(DS.Color.textSecondary)
                                     }
