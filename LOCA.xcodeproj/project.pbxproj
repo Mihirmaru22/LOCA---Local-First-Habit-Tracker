@@ -36,6 +36,11 @@
 		B4B8693D3BEF8467BA561D9A /* UnitOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F36A9584E32FB531F321E61 /* UnitOption.swift */; };
 		82D61AAF037FF51EC29D9FC4 /* ArcProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CDAE353812C31ADEF5B9789 /* ArcProgressView.swift */; };
 		7146E82590C741108AF373D7 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A18185A6B14A16B58268EB /* ColorPalette.swift */; };
+		BBDE3E23BFE69EB442FE3625 /* DS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A8D2D460BD70B1FCE35B5F7 /* DS.swift */; };
+		A169E81FE1EABCE6473FBFF6 /* DS+Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100D7CA1E16B5BF2CFB3774E /* DS+Typography.swift */; };
+		32CDC07A4896BFECC0C32797 /* DS+Color.swift in Sources */ = {isa = PBXBuildFile; fileRef = A70908D4D7F064AAB567F413 /* DS+Color.swift */; };
+		CCBD1D27BFEF796EFB9DFD39 /* DS+Motion.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2D47C4C19429A1E8AB3FB34 /* DS+Motion.swift */; };
+		FE1C77B02737FF7D02B147F9 /* DSComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE3AFDA24101174CA0C31F34 /* DSComponents.swift */; };
 		21F090B2CE8B4E3FB9E4F6C6 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A18185A6B14A16B58268EB /* ColorPalette.swift */; };
 		EA67B446FFD340ECBF1E9F6D /* Double+Clamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13289E001E014999A9EFB063 /* Double+Clamp.swift */; };
 		D27B8705E25F45C2A8DFABE1 /* Double+Clamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13289E001E014999A9EFB063 /* Double+Clamp.swift */; };
@@ -85,6 +90,11 @@
 		5F36A9584E32FB531F321E61 /* UnitOption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UnitOption.swift"; sourceTree = "<group>"; };
 		8CDAE353812C31ADEF5B9789 /* ArcProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ArcProgressView.swift"; sourceTree = "<group>"; };
 		D5A18185A6B14A16B58268EB /* ColorPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ColorPalette.swift"; sourceTree = "<group>"; };
+		8A8D2D460BD70B1FCE35B5F7 /* DS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DS.swift"; sourceTree = "<group>"; };
+		100D7CA1E16B5BF2CFB3774E /* DS+Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DS+Typography.swift"; sourceTree = "<group>"; };
+		A70908D4D7F064AAB567F413 /* DS+Color.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DS+Color.swift"; sourceTree = "<group>"; };
+		C2D47C4C19429A1E8AB3FB34 /* DS+Motion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DS+Motion.swift"; sourceTree = "<group>"; };
+		FE3AFDA24101174CA0C31F34 /* DSComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DSComponents.swift"; sourceTree = "<group>"; };
 		13289E001E014999A9EFB063 /* Double+Clamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Double+Clamp.swift"; sourceTree = "<group>"; };
 		A23A644233DD4BE6AAD23539 /* StreakCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StreakCalculator.swift"; sourceTree = "<group>"; };
 		CB921FD359F548A389FFA196 /* HeatmapDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HeatmapDataProvider.swift"; sourceTree = "<group>"; };
@@ -245,11 +255,24 @@
 		7217A5FC0D2E4084AA1CCF76 /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				F38EDBB49703F2D384534A60 /* DesignSystem */,
 				EB90B3E734DF43DB9DA12CBA /* Extensions */,
 				88A18AD0B9CB4A4789EECB90 /* Models */,
 				1A0CD3231B404E30A92BA2DF /* Persistence */,
 			);
 			path = "Core";
+			sourceTree = "<group>";
+		};
+		F38EDBB49703F2D384534A60 /* DesignSystem */ = {
+			isa = PBXGroup;
+			children = (
+				8A8D2D460BD70B1FCE35B5F7 /* DS.swift */,
+				100D7CA1E16B5BF2CFB3774E /* DS+Typography.swift */,
+				A70908D4D7F064AAB567F413 /* DS+Color.swift */,
+				C2D47C4C19429A1E8AB3FB34 /* DS+Motion.swift */,
+				FE3AFDA24101174CA0C31F34 /* DSComponents.swift */,
+			);
+			path = "DesignSystem";
 			sourceTree = "<group>";
 		};
 		B325876734E272C06C77D326 /* HabitManagement */ = {
@@ -456,6 +479,11 @@
 				A97E09E4062B4BEFAE3D7418 /* DebugSeeder.swift in Sources */,
 				44693FCE5D424FE2907A1040 /* Date+Calendar.swift in Sources */,
 				7146E82590C741108AF373D7 /* ColorPalette.swift in Sources */,
+				BBDE3E23BFE69EB442FE3625 /* DS.swift in Sources */,
+				A169E81FE1EABCE6473FBFF6 /* DS+Typography.swift in Sources */,
+				32CDC07A4896BFECC0C32797 /* DS+Color.swift in Sources */,
+				CCBD1D27BFEF796EFB9DFD39 /* DS+Motion.swift in Sources */,
+				FE1C77B02737FF7D02B147F9 /* DSComponents.swift in Sources */,
 				EA67B446FFD340ECBF1E9F6D /* Double+Clamp.swift in Sources */,
 				8A004F606662408989430FF3 /* StreakCalculator.swift in Sources */,
 				7504D58ADAB74D25BA2F69C8 /* HeatmapDataProvider.swift in Sources */,
