@@ -98,6 +98,7 @@ struct HeatmapView: View {
                             }
                         }
                         .padding(.vertical, 2)
+                        .frame(minWidth: 100)  // Ensure grid is scrollable
                     }
                     .defaultScrollAnchor(.trailing)
                     // On macOS, the outer List's scroll gesture handler can consume

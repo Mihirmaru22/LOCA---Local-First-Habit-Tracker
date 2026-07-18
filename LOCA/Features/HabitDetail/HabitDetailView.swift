@@ -105,8 +105,9 @@ struct HabitDetailView: View {
             VStack(alignment: .leading, spacing: DS.Space.xxl) {
 
                 // MARK: - Heatmap Hero
-                VStack(alignment: .leading, spacing: DS.Space.lg) {
+                LOCACard {
                     HeatmapView(board: board)
+                        .frame(maxHeight: .infinity)
                 }
 
                 // MARK: - Metrics Grid (2×2)
