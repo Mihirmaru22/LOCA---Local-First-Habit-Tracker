@@ -22,7 +22,6 @@ struct HabitListRow: View {
 
     let board: HabitBoard
     let state: HabitState
-    let onTap: () -> Void
     let onCheckBinary: () -> Void
 
     // Track today's logs for this habit
@@ -71,63 +70,49 @@ struct HabitListRow: View {
 
             Spacer(minLength: DS.Space.sm)
 
-            // Center: Progress indicator (mini weekly chart or progress bar)
-            miniProgressView
-                .frame(width: 80, height: 24)
+            // Center: quantitative progress only. Binary state is carried by the
+            // trailing check control — drawing it twice reads as two controls.
+            if board.metric == .quantitative {
+                miniProgressView
+                    .frame(width: 80, height: 24)
+            }
 
-            // Right: Trailing control (binary check or detail arrow)
+            // Right: Trailing control (binary check or detail chevron)
             trailingControl
                 .frame(width: 44, height: 44)
         }
         .padding(DS.Space.lg)
         .background(rowBackground, in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
         .contentShape(Rectangle())
-        .onTapGesture(perform: onTap)
-        .opacity(state == .done ? 0.7 : 1.0)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityLabel)
     }
 
     // MARK: - Sub-views
 
-    @ViewBuilder
+    /// Quantitative progress only. Binary completion is expressed solely by the
+    /// trailing check control — rendering it here as well produced two competing
+    /// circles in the same row.
     private var miniProgressView: some View {
-        if board.metric == .binary {
-            // Binary: simple checkmark indicator
-            if isBinaryDone {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.title3)
-                    .foregroundStyle(ColorPalette[board.colorIndex])
-            } else {
-                Circle()
-                    .strokeBorder(ColorPalette[board.colorIndex], lineWidth: 1.5)
-                    .opacity(0.3)
-            }
-        } else {
-            // Quantitative: mini progress bar
-            HStack(spacing: DS.Space.xs) {
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        // Track
-                        RoundedRectangle(cornerRadius: 2, style: .continuous)
-                            .fill(ColorPalette[board.colorIndex].opacity(0.15))
+        HStack(spacing: DS.Space.sm) {
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule(style: .continuous)
+                        .fill(ColorPalette[board.colorIndex].opacity(0.18))
 
-                        // Progress
-                        RoundedRectangle(cornerRadius: 2, style: .continuous)
-                            .fill(ColorPalette[board.colorIndex])
-                            .frame(width: geo.size.width * progressFraction)
-                    }
+                    Capsule(style: .continuous)
+                        .fill(ColorPalette[board.colorIndex])
+                        .frame(width: max(0, geo.size.width * progressFraction))
                 }
-                .frame(height: 4)
-
-                // Percentage
-                ValueText(
-                    "\(Int((progressFraction * 100).rounded()))%",
-                    font: DS.Text.valueSmall
-                )
-                .foregroundStyle(rowSubtextColor)
-                .frame(width: 28, alignment: .trailing)
             }
+            .frame(height: 4)
+
+            ValueText(
+                "\(Int((progressFraction * 100).rounded()))%",
+                font: DS.Text.valueSmall
+            )
+            .foregroundStyle(rowSubtextColor)
+            .frame(width: 30, alignment: .trailing)
         }
     }
 
@@ -135,18 +120,21 @@ struct HabitListRow: View {
     private var trailingControl: some View {
         if board.metric == .binary {
             // Binary: dedicated check button
+            // .borderless keeps this button independently hit-testable inside the
+            // enclosing NavigationLink; without it the link consumes the tap.
             Button(action: onCheckBinary) {
                 Image(systemName: isBinaryDone ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 24, weight: .semibold))
+                    .font(.title2.weight(.semibold))
                     .foregroundStyle(isBinaryDone ? ColorPalette[board.colorIndex] : .secondary)
                     .contentShape(Circle())
             }
+            .buttonStyle(.borderless)
             .disabled(isBinaryDone)
             .accessibilityLabel("Check off \(board.name)")
         } else {
             // Quantitative: open detail arrow
             Image(systemName: "chevron.right")
-                .font(.system(size: 14, weight: .semibold))
+                .font(.footnote.weight(.semibold))
                 .foregroundStyle(.secondary)
         }
     }
@@ -180,13 +168,12 @@ struct HabitListRow: View {
         }
     }
 
+    /// Every row keeps the same surface so its shape and position stay constant
+    /// (spatial memory). Recession for completed habits is carried entirely by
+    /// typography and color — using the page background here made done rows
+    /// look like unstyled floating text rather than quieter rows.
     private var rowBackground: Color {
-        switch state {
-        case .needsAction:  return DS.Color.surface
-        case .inProgress:   return DS.Color.surface
-        case .done:         return DS.Color.background
-        case .behind:       return DS.Color.surface
-        }
+        DS.Color.surface
     }
 
     // MARK: - Accessibility
@@ -276,7 +263,6 @@ private func makeRowPreviewBoards() -> [(board: HabitBoard, state: HabitState)] 
             HabitListRow(
                 board: item.board,
                 state: item.state,
-                onTap: {},
                 onCheckBinary: {}
             )
         }

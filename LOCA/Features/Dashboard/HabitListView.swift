@@ -92,7 +92,7 @@ struct HabitListView: View {
             // NEEDS ACTION ZONE (hero)
             if !needsActionBoards.isEmpty {
                 VStack(alignment: .leading, spacing: DS.Space.lg) {
-                    SectionHeader("Today")
+                    SectionHeader("To Do")
 
                     VStack(spacing: DS.Space.md) {
                         ForEach(needsActionBoards, id: \.board.id) { item in
@@ -100,7 +100,6 @@ struct HabitListView: View {
                                 HabitListRow(
                                     board: item.board,
                                     state: item.state,
-                                    onTap: {},  // Navigation via NavigationLink
                                     onCheckBinary: {
                                         checkInBinary(board: item.board)
                                     }
@@ -124,7 +123,6 @@ struct HabitListView: View {
                                 HabitListRow(
                                     board: item.board,
                                     state: item.state,
-                                    onTap: {},
                                     onCheckBinary: {}
                                 )
                             }
@@ -146,7 +144,6 @@ struct HabitListView: View {
                                 HabitListRow(
                                     board: item.board,
                                     state: item.state,
-                                    onTap: {},
                                     onCheckBinary: {
                                         checkInBinary(board: item.board)
                                     }
@@ -170,7 +167,6 @@ struct HabitListView: View {
                                 HabitListRow(
                                     board: item.board,
                                     state: item.state,
-                                    onTap: {},
                                     onCheckBinary: {}
                                 )
                             }
