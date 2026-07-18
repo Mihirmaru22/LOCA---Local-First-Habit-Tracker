@@ -26,13 +26,6 @@ struct HabitDetailView: View {
 
     // MARK: - Computed metrics
 
-    /// Today's total for this habit.
-    private var todaysTotal: Double {
-        (board.logs ?? [])
-            .filter { $0.timestamp.isToday() }
-            .reduce(0.0) { $0 + $1.value }
-    }
-
     /// Days completed this month (value >= target).
     private var daysCompletedThisMonth: Int {
         let now = Date()
@@ -198,20 +191,7 @@ struct HabitDetailView: View {
                 VStack(alignment: .leading, spacing: DS.Space.lg) {
                     SectionHeader("Activity")
 
-                    if let logs = board.logs, !logs.isEmpty {
-                        JournalTimelineView(board: board, logs: logs)
-                    } else {
-                        VStack(spacing: DS.Space.md) {
-                            Image(systemName: "book.closed")
-                                .font(.title3)
-                                .foregroundStyle(.secondary)
-                            Text("No activity yet")
-                                .font(DS.Text.caption)
-                                .foregroundStyle(DS.Color.textSecondary)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(DS.Space.xl)
-                    }
+                    JournalTimelineView(board: board)
                 }
 
                 Spacer(minLength: DS.Space.xxxl)
