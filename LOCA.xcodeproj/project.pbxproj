@@ -41,6 +41,9 @@
 		32CDC07A4896BFECC0C32797 /* DS+Color.swift in Sources */ = {isa = PBXBuildFile; fileRef = A70908D4D7F064AAB567F413 /* DS+Color.swift */; };
 		CCBD1D27BFEF796EFB9DFD39 /* DS+Motion.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2D47C4C19429A1E8AB3FB34 /* DS+Motion.swift */; };
 		FE1C77B02737FF7D02B147F9 /* DSComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE3AFDA24101174CA0C31F34 /* DSComponents.swift */; };
+		9BC55CE15C7D2A795DDDD331 /* HabitListRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86A9A6A783B46023591EB5D0 /* HabitListRow.swift */; };
+		290812E393429F92DFF5711C /* HabitListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AAEC2D33ABC3ABB90525E4 /* HabitListView.swift */; };
+		7933F28D2868EE14245E30DB /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E2A187171CA9C92C1E862CC /* TodayView.swift */; };
 		21F090B2CE8B4E3FB9E4F6C6 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A18185A6B14A16B58268EB /* ColorPalette.swift */; };
 		EA67B446FFD340ECBF1E9F6D /* Double+Clamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13289E001E014999A9EFB063 /* Double+Clamp.swift */; };
 		D27B8705E25F45C2A8DFABE1 /* Double+Clamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13289E001E014999A9EFB063 /* Double+Clamp.swift */; };
@@ -95,6 +98,9 @@
 		A70908D4D7F064AAB567F413 /* DS+Color.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DS+Color.swift"; sourceTree = "<group>"; };
 		C2D47C4C19429A1E8AB3FB34 /* DS+Motion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DS+Motion.swift"; sourceTree = "<group>"; };
 		FE3AFDA24101174CA0C31F34 /* DSComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DSComponents.swift"; sourceTree = "<group>"; };
+		86A9A6A783B46023591EB5D0 /* HabitListRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitListRow.swift"; sourceTree = "<group>"; };
+		39AAEC2D33ABC3ABB90525E4 /* HabitListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitListView.swift"; sourceTree = "<group>"; };
+		6E2A187171CA9C92C1E862CC /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TodayView.swift"; sourceTree = "<group>"; };
 		13289E001E014999A9EFB063 /* Double+Clamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Double+Clamp.swift"; sourceTree = "<group>"; };
 		A23A644233DD4BE6AAD23539 /* StreakCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StreakCalculator.swift"; sourceTree = "<group>"; };
 		CB921FD359F548A389FFA196 /* HeatmapDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HeatmapDataProvider.swift"; sourceTree = "<group>"; };
@@ -219,6 +225,9 @@
 				CA23BF1816F44D92873A3FCD /* DashboardView.swift */,
 				FA2BCF72800F4D06A36251AA /* HabitCardView.swift */,
 				8CDAE353812C31ADEF5B9789 /* ArcProgressView.swift */,
+				6E2A187171CA9C92C1E862CC /* TodayView.swift */,
+				39AAEC2D33ABC3ABB90525E4 /* HabitListView.swift */,
+				86A9A6A783B46023591EB5D0 /* HabitListRow.swift */,
 			);
 			path = "Dashboard";
 			sourceTree = "<group>";
@@ -484,6 +493,9 @@
 				32CDC07A4896BFECC0C32797 /* DS+Color.swift in Sources */,
 				CCBD1D27BFEF796EFB9DFD39 /* DS+Motion.swift in Sources */,
 				FE1C77B02737FF7D02B147F9 /* DSComponents.swift in Sources */,
+				9BC55CE15C7D2A795DDDD331 /* HabitListRow.swift in Sources */,
+				290812E393429F92DFF5711C /* HabitListView.swift in Sources */,
+				7933F28D2868EE14245E30DB /* TodayView.swift in Sources */,
 				EA67B446FFD340ECBF1E9F6D /* Double+Clamp.swift in Sources */,
 				8A004F606662408989430FF3 /* StreakCalculator.swift in Sources */,
 				7504D58ADAB74D25BA2F69C8 /* HeatmapDataProvider.swift in Sources */,

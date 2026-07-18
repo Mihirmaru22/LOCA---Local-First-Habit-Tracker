@@ -35,13 +35,10 @@ import SwiftData
 ///
 /// ## Scene Configuration
 ///
-/// A single `WindowGroup` hosting `RootNavigationView` (Phase 3) directly as its
-/// root content. No separate `ContentView` wrapper exists — `RootNavigationView`'s
-/// own `NavigationSplitView` (ADR-006) already handles iPhone/iPad/Mac adaptively,
-/// so an intermediate "platform-adaptive entry point" view would have nothing left
-/// to do. (An earlier planning-stage note in this project's README anticipated a
-/// separate `ContentView.swift` for that role; it is correctly superseded by
-/// `RootNavigationView` and is not created here.)
+/// A single `WindowGroup` hosting `TodayView` (Phase 11.1) directly as its root
+/// content. `TodayView` is a NavigationStack wrapping the ModuleDescriptor-driven
+/// "Today" surface. When modules >= 3 arrive, the root upgrades to a TabView or
+/// Browse grid, but the screens beneath don't change — only this container swaps.
 @main
 struct LOCAApp: App {
 
@@ -79,7 +76,7 @@ struct LOCAApp: App {
     var body: some Scene {
         WindowGroup {
             if let container {
-                RootNavigationView()
+                TodayView()
                     .modelContainer(container)
                     .task {
                         // .task ties CloudKitSyncCoordinator's observation loop
