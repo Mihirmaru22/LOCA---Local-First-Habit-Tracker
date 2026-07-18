@@ -239,31 +239,50 @@ struct HabitListView: View {
 
 // MARK: - Preview
 
-#Preview {
+@MainActor
+private func makeHabitListPreviewContainer() -> ModelContainer {
     let schema = Schema([HabitBoard.self, LogEntry.self])
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+    // try! is acceptable in a #Preview fixture (Engineering Principles §Previews).
     let container = try! ModelContainer(for: schema, configurations: [config])
+    let context = container.mainContext
 
-    let running = HabitBoard(name: "Running", metricType: 1, targetValue: 5, unitLabel: "mi", colorIndex: 0)
-    running.currentStreak = 5; running.longestStreak = 12
-    container.mainContext.insert(running)
-    container.mainContext.insert(LogEntry(value: 3.2, boardID: running.id, board: running))
+    // In progress: quantitative, partway to goal.
+    let running = HabitBoard(name: "Running", metricType: 1, targetValue: 5, unitLabel: "km", colorIndex: 0)
+    running.currentStreak = 5
+    running.longestStreak = 12
+    context.insert(running)
+    context.insert(LogEntry(value: 3.2, boardID: running.id, board: running))
 
+    // Needs action: binary, not yet logged today.
     let meditate = HabitBoard(name: "Meditate", colorIndex: 5)
-    meditate.currentStreak = 3; meditate.longestStreak = 3
-    container.mainContext.insert(meditate)
+    meditate.currentStreak = 3
+    meditate.longestStreak = 3
+    context.insert(meditate)
 
+    // Behind: streak broken, has history, nothing today.
     let read = HabitBoard(name: "Read", colorIndex: 2)
-    read.currentStreak = 0; read.longestStreak = 8
-    container.mainContext.insert(read)
+    read.currentStreak = 0
+    read.longestStreak = 8
+    context.insert(read)
+    if let yesterday = Calendar.current.date(byAdding: .day, value: -2, to: .now) {
+        context.insert(LogEntry(timestamp: yesterday, value: 1, boardID: read.id, board: read))
+    }
 
+    // Done: binary, completed today.
     let stretch = HabitBoard(name: "Stretch", colorIndex: 3)
-    stretch.currentStreak = 10; stretch.longestStreak = 10
-    container.mainContext.insert(stretch)
-    container.mainContext.insert(LogEntry(value: 1, boardID: stretch.id, board: stretch))
+    stretch.currentStreak = 10
+    stretch.longestStreak = 10
+    context.insert(stretch)
+    context.insert(LogEntry(value: 1, boardID: stretch.id, board: stretch))
 
-    try? container.mainContext.save()
+    try? context.save()
+    return container
+}
 
-    HabitListView()
-        .modelContainer(container)
+#Preview {
+    NavigationStack {
+        HabitListView()
+    }
+    .modelContainer(makeHabitListPreviewContainer())
 }

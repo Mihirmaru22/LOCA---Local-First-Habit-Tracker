@@ -86,7 +86,6 @@ struct HabitListRow: View {
         .opacity(state == .done ? 0.7 : 1.0)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityLabel)
-        .accessibilityHint(state == .needsAction ? "Double tap to open" : nil)
     }
 
     // MARK: - Sub-views
@@ -239,51 +238,48 @@ enum HabitState {
 
 // MARK: - Preview
 
+@MainActor
+private func makeRowPreviewBoards() -> [(board: HabitBoard, state: HabitState)] {
+    // Quantitative, partway to goal → .inProgress
+    let running = HabitBoard(name: "Running", metricType: 1, targetValue: 5, unitLabel: "km", colorIndex: 0)
+    running.currentStreak = 5
+    running.longestStreak = 12
+    running.logs = [LogEntry(value: 3.2, boardID: running.id, board: running)]
+
+    // Binary, not yet logged → .needsAction
+    let meditate = HabitBoard(name: "Meditate", colorIndex: 5)
+    meditate.currentStreak = 3
+    meditate.longestStreak = 3
+
+    // Streak broken, nothing today → .behind
+    let read = HabitBoard(name: "Read a long habit name that truncates", colorIndex: 2)
+    read.currentStreak = 0
+    read.longestStreak = 8
+
+    // Binary, completed today → .done
+    let stretch = HabitBoard(name: "Stretch", colorIndex: 3)
+    stretch.currentStreak = 10
+    stretch.longestStreak = 10
+    stretch.logs = [LogEntry(value: 1, boardID: stretch.id, board: stretch)]
+
+    return [
+        (running, .inProgress),
+        (meditate, .needsAction),
+        (read, .behind),
+        (stretch, .done)
+    ]
+}
+
 #Preview {
-    let q = HabitBoard(name: "Running", metricType: 1, targetValue: 5, unitLabel: "mi", colorIndex: 0)
-    q.currentStreak = 5; q.longestStreak = 12
-    q.logs = [LogEntry(value: 3.2, boardID: q.id, board: q)]
-
-    let b = HabitBoard(name: "Meditate", colorIndex: 5)
-    b.currentStreak = 3; b.longestStreak = 3
-    b.logs = [LogEntry(value: 1, boardID: b.id, board: b)]
-
-    let behind = HabitBoard(name: "Read", colorIndex: 2)
-    behind.currentStreak = 0; behind.longestStreak = 8
-    behind.logs = [LogEntry(value: 0.5, boardID: behind.id, board: behind)]
-
-    let done = HabitBoard(name: "Stretch", colorIndex: 3)
-    done.currentStreak = 10; done.longestStreak = 10
-    done.logs = [LogEntry(value: 1, boardID: done.id, board: done)]
-
-    return VStack(spacing: 0) {
-        HabitListRow(
-            board: q,
-            state: .inProgress,
-            onTap: { print("tap running") },
-            onCheckBinary: { print("check") }
-        )
-
-        HabitListRow(
-            board: b,
-            state: .needsAction,
-            onTap: { print("tap meditate") },
-            onCheckBinary: { print("check") }
-        )
-
-        HabitListRow(
-            board: behind,
-            state: .behind,
-            onTap: { print("tap read") },
-            onCheckBinary: { print("check") }
-        )
-
-        HabitListRow(
-            board: done,
-            state: .done,
-            onTap: { print("tap stretch") },
-            onCheckBinary: { print("check") }
-        )
+    VStack(spacing: DS.Space.md) {
+        ForEach(makeRowPreviewBoards(), id: \.board.id) { item in
+            HabitListRow(
+                board: item.board,
+                state: item.state,
+                onTap: {},
+                onCheckBinary: {}
+            )
+        }
     }
     .padding(DS.Space.lg)
 }
