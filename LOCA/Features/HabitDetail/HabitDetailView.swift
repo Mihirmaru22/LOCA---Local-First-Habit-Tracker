@@ -23,6 +23,7 @@ struct HabitDetailView: View {
     let board: HabitBoard
     @Environment(\.modelContext) private var modelContext
     @State private var showingEditSheet = false
+    @State private var showingCheckInSheet = false
 
     // MARK: - Computed metrics
 
@@ -206,9 +207,19 @@ struct HabitDetailView: View {
                     Image(systemName: "pencil")
                 }
             }
+            if board.metric == .quantitative {
+                ToolbarItem(placement: .secondaryAction) {
+                    Button(action: { showingCheckInSheet = true }) {
+                        Image(systemName: "plus.circle")
+                    }
+                }
+            }
         }
         .sheet(isPresented: $showingEditSheet) {
             HabitFormView(mode: .edit(board))
+        }
+        .sheet(isPresented: $showingCheckInSheet) {
+            CheckInSheetView(board: board)
         }
     }
 }
