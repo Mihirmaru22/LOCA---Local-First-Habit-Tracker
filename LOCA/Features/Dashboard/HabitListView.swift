@@ -52,9 +52,7 @@ struct HabitListView: View {
             }
         }
         .sheet(isPresented: $showingCreateSheet) {
-            HabitFormView(mode: .create) { newID in
-                // Auto-select newly created habit
-            }
+            HabitFormView(mode: .create, onBoardCreated: { _ in })
         }
     }
 

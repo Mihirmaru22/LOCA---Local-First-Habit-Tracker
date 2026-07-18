@@ -20,12 +20,11 @@ import SwiftUI
 // MARK: - ModuleDescriptor
 
 /// A protocol defining how a module presents itself on the "Today" surface.
-/// Each module (Habits, Fitness, Sleep, etc.) conforms to this and provides
-/// its own dashboard view.
 protocol ModuleDescriptor {
+    associatedtype Dashboard: View
     var id: String { get }
     var title: String { get }
-    @ViewBuilder var dashboardView: some View { get }
+    @ViewBuilder var dashboardView: Dashboard { get }
 }
 
 // MARK: - HabitsModule (first tenant)
