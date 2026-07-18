@@ -97,7 +97,7 @@ struct LayoutPickerView: View {
             }
             .padding(DS.Space.lg)
             .navigationTitle("Layout")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitleDisplay()
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button("Done", action: { dismiss() })
@@ -176,7 +176,7 @@ struct ArchiveListView: View {
             }
             .padding(DS.Space.lg)
             .navigationTitle("Archive")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitleDisplay()
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button("Done", action: { dismiss() })
@@ -245,7 +245,7 @@ struct ReviewReminderSettingsView: View {
             }
             .padding(DS.Space.lg)
             .navigationTitle("Review Reminder")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitleDisplay()
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button("Done", action: { dismiss() })
@@ -286,7 +286,7 @@ struct AppSettingsView: View {
             }
             .padding(DS.Space.lg)
             .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitleDisplay()
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button("Done", action: { dismiss() })

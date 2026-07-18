@@ -41,8 +41,7 @@ struct ArcGaugeView: View {
     var body: some View {
         VStack(spacing: DS.Space.md) {
             // Arc gauge
-            Canvas { context in
-                let size = CGSize(width: 100, height: 100)
+            Canvas { context, size in
                 let center = CGPoint(x: size.width / 2, y: size.height / 2)
                 let radius = size.width / 2 - 5
 
