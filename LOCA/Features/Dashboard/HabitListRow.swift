@@ -170,10 +170,14 @@ struct HabitListRow: View {
 
     /// Every row keeps the same surface so its shape and position stay constant
     /// (spatial memory). Recession for completed habits is carried entirely by
-    /// typography and color — using the page background here made done rows
-    /// look like unstyled floating text rather than quieter rows.
+    /// typography and color. Tint is applied optionally per the habit's setting.
     private var rowBackground: Color {
-        DS.Color.surface
+        if board.useColorBackground {
+            return DS.Color.surface.overlay(
+                ColorPalette[board.colorIndex].opacity(0.1)
+            )
+        }
+        return DS.Color.surface
     }
 
     // MARK: - Accessibility

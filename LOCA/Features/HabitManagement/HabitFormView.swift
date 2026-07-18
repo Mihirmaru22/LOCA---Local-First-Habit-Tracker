@@ -222,6 +222,9 @@ struct HabitFormView: View {
                 }
             }
             .padding(.vertical, 4)
+
+            Toggle("Tinted Background", isOn: $draft.useColorBackground)
+                .accessibilityLabel("Use habit color as background tint")
         } header: {
             Text("Color")
         }

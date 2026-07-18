@@ -25,6 +25,9 @@ struct HabitBoardDraft {
     var customUnitText: String = ""
 
     var colorIndex: Int
+    
+    /// If true, the habit card displays with a tinted background.
+    var useColorBackground: Bool = false
 
     // MARK: Initialisers
 
@@ -35,6 +38,7 @@ struct HabitBoardDraft {
         self.unit = .minutes
         self.customUnitText = ""
         self.colorIndex = 0
+        self.useColorBackground = false
     }
 
     @MainActor
@@ -47,6 +51,7 @@ struct HabitBoardDraft {
         // If the label doesn't match a known unit, store it as custom text
         self.customUnitText = (UnitOption.from(label: board.unitLabel) == nil && board.unitLabel != nil) ? board.unitLabel! : ""
         self.colorIndex = board.colorIndex
+        self.useColorBackground = board.useColorBackground
     }
 
     // MARK: Derived
@@ -76,13 +81,15 @@ struct HabitBoardDraft {
         let effectiveUnit = !customUnitText.trimmingCharacters(in: .whitespaces).isEmpty 
             ? customUnitText 
             : unit.label
-        return HabitBoard(
+        let board = HabitBoard(
             name: trimmedName,
             metricType: metric.rawValue,
             targetValue: metric == .quantitative ? parsedTarget : nil,
             unitLabel: metric == .quantitative ? effectiveUnit : nil,
             colorIndex: colorIndex
         )
+        board.useColorBackground = useColorBackground
+        return board
     }
 
     @MainActor
@@ -95,5 +102,6 @@ struct HabitBoardDraft {
         board.targetValue = metric == .quantitative ? parsedTarget : nil
         board.unitLabel = metric == .quantitative ? effectiveUnit : nil
         board.colorIndex = colorIndex
+        board.useColorBackground = useColorBackground
     }
 }

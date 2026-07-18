@@ -60,6 +60,10 @@ final class HabitBoard {
     /// no hex string parsing occurs in the heatmap's hot path. See ADR-002.
     var colorIndex: Int = 0
 
+    /// If true, the habit row displays with a tinted background (10% opacity of the habit color).
+    /// Defaults to false (neutral background).
+    @Attribute(.unique) var useColorBackground: Bool = false
+
     /// The timestamp at which this board was first created.
     var createdAt: Date = Date()
 
