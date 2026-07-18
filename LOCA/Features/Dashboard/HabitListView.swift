@@ -46,8 +46,11 @@ struct HabitListView: View {
         .largeNavigationTitleDisplay()
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button(action: { showingCreateSheet = true }) {
-                    Image(systemName: "plus")
+                HStack(spacing: DS.Space.md) {
+                    SettingsMenuView()
+                    Button(action: { showingCreateSheet = true }) {
+                        Image(systemName: "plus")
+                    }
                 }
             }
         }

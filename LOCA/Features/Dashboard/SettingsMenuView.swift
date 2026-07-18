@@ -1,0 +1,299 @@
+//
+//  SettingsMenuView.swift
+//  LOCA
+//
+//  Phase 11.4 — Dashboard settings menu.
+//
+//  Accessible via the 3-dot toolbar button on the dashboard. Routes to:
+//  Layout (list/grid/timeline), Archive (view archived habits), Review
+//  Reminder (daily notification), and app Settings.
+//
+
+import SwiftUI
+
+// MARK: - SettingsMenuView
+
+struct SettingsMenuView: View {
+
+    @State private var showingLayoutPicker = false
+    @State private var showingArchive = false
+    @State private var showingReminder = false
+    @State private var showingSettings = false
+
+    var body: some View {
+        Menu {
+            Section {
+                Button(action: { showingLayoutPicker = true }) {
+                    Label("Layout", systemImage: "square.grid.2x2")
+                }
+                Button(action: { showingReminder = true }) {
+                    Label("Review Reminder", systemImage: "bell.badge")
+                }
+            }
+
+            Section {
+                Button(action: { showingArchive = true }) {
+                    Label("Archive", systemImage: "archivebox")
+                }
+                Button(action: { showingSettings = true }) {
+                    Label("Settings", systemImage: "gear")
+                }
+            }
+        } label: {
+            Image(systemName: "ellipsis.circle")
+        }
+        .sheet(isPresented: $showingLayoutPicker) {
+            LayoutPickerView()
+        }
+        .sheet(isPresented: $showingArchive) {
+            ArchiveListView()
+        }
+        .sheet(isPresented: $showingReminder) {
+            ReviewReminderSettingsView()
+        }
+        .sheet(isPresented: $showingSettings) {
+            AppSettingsView()
+        }
+    }
+}
+
+// MARK: - Layout Picker
+
+struct LayoutPickerView: View {
+    @Environment(\.dismiss) var dismiss
+    @AppStorage("habitListLayout") private var layout: String = "list"
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: DS.Space.lg) {
+                SectionHeader("List Layout")
+
+                VStack(spacing: DS.Space.md) {
+                    ForEach(["list", "grid", "timeline"], id: \.self) { option in
+                        Button(action: { layout = option; dismiss() }) {
+                            HStack {
+                                Image(systemName: layoutIcon(option))
+                                    .font(.title3)
+                                    .frame(width: 24)
+                                Text(layoutLabel(option))
+                                    .font(DS.Text.body)
+                                Spacer()
+                                if layout == option {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(ColorPalette[0])
+                                }
+                            }
+                            .contentShape(Rectangle())
+                            .foregroundStyle(DS.Color.textPrimary)
+                        }
+                        .padding(DS.Space.md)
+                        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+                    }
+                }
+
+                Spacer()
+            }
+            .padding(DS.Space.lg)
+            .navigationTitle("Layout")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Done", action: { dismiss() })
+                }
+            }
+        }
+    }
+
+    private func layoutIcon(_ layout: String) -> String {
+        switch layout {
+        case "grid": return "square.grid.2x2"
+        case "timeline": return "line.3.horizontal"
+        default: return "list.bullet"
+        }
+    }
+
+    private func layoutLabel(_ layout: String) -> String {
+        switch layout {
+        case "grid": return "Grid View"
+        case "timeline": return "Timeline View"
+        default: return "List View"
+        }
+    }
+}
+
+// MARK: - Archive List
+
+struct ArchiveListView: View {
+    @Environment(\.dismiss) var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: [SortDescriptor(\HabitBoard.createdAt)]) private var allBoards: [HabitBoard]
+
+    private var archivedBoards: [HabitBoard] {
+        allBoards.filter { $0.archivedAt != nil }
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: DS.Space.lg) {
+                if archivedBoards.isEmpty {
+                    VStack(spacing: DS.Space.md) {
+                        Image(systemName: "archivebox")
+                            .font(.title2)
+                            .foregroundStyle(.secondary)
+                        Text("No Archived Habits")
+                            .font(DS.Text.body)
+                            .foregroundStyle(DS.Color.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                } else {
+                    VStack(spacing: DS.Space.md) {
+                        ForEach(archivedBoards) { board in
+                            HStack {
+                                VStack(alignment: .leading, spacing: DS.Space.xs) {
+                                    Text(board.name)
+                                        .font(DS.Text.body)
+                                    Text("Archived")
+                                        .font(DS.Text.caption)
+                                        .foregroundStyle(DS.Color.textSecondary)
+                                }
+                                Spacer()
+                                Button(action: { unarchive(board) }) {
+                                    Image(systemName: "arrow.uturn.backward")
+                                        .foregroundStyle(ColorPalette[board.colorIndex])
+                                }
+                            }
+                            .padding(DS.Space.md)
+                            .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+                        }
+                    }
+                }
+
+                Spacer()
+            }
+            .padding(DS.Space.lg)
+            .navigationTitle("Archive")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Done", action: { dismiss() })
+                }
+            }
+        }
+    }
+
+    private func unarchive(_ board: HabitBoard) {
+        board.archivedAt = nil
+        try? modelContext.save()
+    }
+}
+
+// MARK: - Review Reminder Settings
+
+struct ReviewReminderSettingsView: View {
+    @Environment(\.dismiss) var dismiss
+    @AppStorage("reviewReminderEnabled") private var enabled = false
+    @AppStorage("reviewReminderHour") private var hour = 9
+    @AppStorage("reviewReminderMinute") private var minute = 0
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: DS.Space.lg) {
+                SectionHeader("Daily Review Reminder")
+
+                Toggle("Enable Reminder", isOn: $enabled)
+                    .onChange(of: enabled) { _, newValue in
+                        if newValue {
+                            requestNotificationPermission()
+                        }
+                    }
+
+                if enabled {
+                    VStack(spacing: DS.Space.md) {
+                        HStack {
+                            Text("Time")
+                                .font(DS.Text.body)
+                            Spacer()
+                            HStack(spacing: DS.Space.md) {
+                                Picker("Hour", selection: $hour) {
+                                    ForEach(0..<24, id: \.self) { h in
+                                        Text("\(h):00").tag(h)
+                                    }
+                                }
+                                .frame(maxWidth: 80)
+
+                                Text(":")
+                                    .font(DS.Text.body)
+
+                                Picker("Minute", selection: $minute) {
+                                    ForEach(stride(from: 0, to: 60, by: 15), id: \.self) { m in
+                                        Text(String(format: "%02d", m)).tag(m)
+                                    }
+                                }
+                                .frame(maxWidth: 80)
+                            }
+                        }
+                    }
+                    .padding(DS.Space.md)
+                    .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+                }
+
+                Spacer()
+            }
+            .padding(DS.Space.lg)
+            .navigationTitle("Review Reminder")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Done", action: { dismiss() })
+                }
+            }
+        }
+    }
+
+    private func requestNotificationPermission() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
+    }
+}
+
+// MARK: - App Settings
+
+struct AppSettingsView: View {
+    @Environment(\.dismiss) var dismiss
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: DS.Space.lg) {
+                SectionHeader("App Settings")
+
+                VStack(spacing: DS.Space.md) {
+                    HStack {
+                        Text("Version")
+                            .font(DS.Text.body)
+                        Spacer()
+                        Text("1.0.0")
+                            .font(DS.Text.caption)
+                            .foregroundStyle(DS.Color.textSecondary)
+                    }
+                    .padding(DS.Space.md)
+                    .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+                }
+
+                Spacer()
+            }
+            .padding(DS.Space.lg)
+            .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Done", action: { dismiss() })
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Preview
+
+#Preview {
+    SettingsMenuView()
+}
