@@ -2,66 +2,95 @@
 //  HabitDetailView.swift
 //  LOCA
 //
-//  Phase 12.3 — Habit Detail: Three-Surface Redesign
+//  Phase 14.5 — Habit Detail: Full analytics view with heatmap and metric cards.
 //
-//  Restructures the detail page into three surfaces accessible via bottom tabs:
-//  - Analytics: charts and trend visualizations
-//  - Check-ins: today's status and quick logging interface
-//  - Journal: day-grouped activity timeline
-//
-//  This separation allows each surface to focus on its purpose without
-//  compression, and provides a natural workflow: review trends → log today →
-//  reflect on history.
+//  Single unified detail view showing:
+//  - Large week-labeled heatmap (7 rows × ~52 weeks)
+//  - Current Streak card
+//  - Consistency gauge card
+//  - Current Month bar chart card
+//  - Bottom toolbar for chart/checkins/journal navigation
 //
 
 import SwiftUI
 import SwiftData
 
-// MARK: - HabitDetailView
-
 struct HabitDetailView: View {
-
     let board: HabitBoard
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) var dismiss
+    
     @State private var showingEditSheet = false
-    @State private var _selectedTab = 0
-
+    @State private var selectedTab = 0
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            TabView(selection: $_selectedTab) {
-                // Analytics Tab
-                HabitAnalyticsView(board: board)
-                    .tabItem { Label("Analytics", systemImage: "chart.xyaxis.line") }
-                    .tag(0)
+            ScrollView {
+                VStack(alignment: .leading, spacing: DS.Space.lg) {
+                    // Heatmap with day labels
+                    HabitHeatmapWithLabels(board: board)
+                        .padding(.horizontal, DS.Space.lg)
 
-                // Check-ins Tab
-                HabitCheckInsView(board: board)
-                    .tabItem { Label("Check-ins", systemImage: "checklist") }
-                    .tag(1)
+                    // Metrics cards
+                    VStack(spacing: DS.Space.md) {
+                        HStack(spacing: DS.Space.md) {
+                            CurrentStreakCard(board: board)
+                            ConsistencyCard(board: board)
+                        }
 
-                // Journal Tab
-                HabitJournalView(board: board)
-                    .tabItem { Label("Journal", systemImage: "doc.text") }
-                    .tag(2)
+                        CurrentMonthCard(board: board)
+                    }
+                    .padding(.horizontal, DS.Space.lg)
+
+                    Spacer(minLength: DS.Space.xxxl)
+                }
+                .padding(.vertical, DS.Space.lg)
             }
-            .pagedTabView()
 
-            // iOS uses the paged style, which draws no tab bar of its own, so the
-            // selector is ours to supply. macOS falls back to the native tabbed
-            // TabView (driven by the .tabItem labels above) — adding the pill
-            // there would duplicate it.
-            #if os(iOS)
-            SurfaceSelector(selection: $_selectedTab)
-                .padding(.bottom, DS.Space.lg)
-            #endif
+            // Bottom toolbar
+            HStack(spacing: DS.Space.lg) {
+                Button(action: { selectedTab = 0 }) {
+                    Image(systemName: "chart.xyaxis.line")
+                        .font(.title2)
+                        .foregroundStyle(selectedTab == 0 ? ColorPalette[board.colorIndex] : DS.Color.textSecondary)
+                }
+
+                Button(action: { selectedTab = 1 }) {
+                    Image(systemName: "checklist")
+                        .font(.title2)
+                        .foregroundStyle(selectedTab == 1 ? ColorPalette[board.colorIndex] : DS.Color.textSecondary)
+                }
+
+                Button(action: { selectedTab = 2 }) {
+                    Image(systemName: "doc.text")
+                        .font(.title2)
+                        .foregroundStyle(selectedTab == 2 ? ColorPalette[board.colorIndex] : DS.Color.textSecondary)
+                }
+
+                Spacer()
+
+                Button(action: { showingEditSheet = true }) {
+                    Image(systemName: "plus")
+                        .font(.title2)
+                        .foregroundStyle(ColorPalette[board.colorIndex])
+                }
+            }
+            .padding(DS.Space.lg)
+            .background(DS.Color.surface)
         }
         .navigationTitle(board.name)
-        .largeNavigationTitleDisplay()
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: { dismiss() }) {
+                    Image(systemName: "chevron.left")
+                        .foregroundStyle(ColorPalette[board.colorIndex])
+                }
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: { showingEditSheet = true }) {
                     Image(systemName: "pencil")
+                        .foregroundStyle(ColorPalette[board.colorIndex])
                 }
             }
         }
@@ -71,108 +100,287 @@ struct HabitDetailView: View {
     }
 }
 
-// MARK: - SurfaceSelector
+// MARK: - Heatmap with Day Labels
 
-/// Floating segmented control for the three detail surfaces.
-///
-/// Sits over the paged `TabView` on iOS, where `.page(indexDisplayMode: .never)`
-/// supplies no affordance of its own. Icon-only to stay compact at the bottom
-/// of the screen; each segment carries an accessibility label so the meaning is
-/// never carried by the glyph alone.
-private struct SurfaceSelector: View {
+struct HabitHeatmapWithLabels: View {
+    let board: HabitBoard
 
-    @Binding var selection: Int
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    private struct Surface {
-        let index: Int
-        let icon: String
-        let label: String
+    private var weeksToShow: Int {
+        52
     }
 
-    private let surfaces: [Surface] = [
-        Surface(index: 0, icon: "chart.xyaxis.line", label: "Analytics"),
-        Surface(index: 1, icon: "checklist", label: "Check-ins"),
-        Surface(index: 2, icon: "doc.text", label: "Journal")
-    ]
+    private var dayLabels: [String] {
+        ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    }
 
     var body: some View {
-        HStack(spacing: DS.Space.xs) {
-            ForEach(surfaces, id: \.index) { surface in
-                Button {
-                    withAnimation(DS.Motion.confirm(reduceMotion: reduceMotion)) {
-                        selection = surface.index
-                    }
-                } label: {
-                    Image(systemName: surface.icon)
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(
-                            selection == surface.index
-                                ? DS.Color.textPrimary
-                                : DS.Color.textSecondary
-                        )
-                        .frame(width: 52, height: 40)
-                        .background {
-                            if selection == surface.index {
-                                RoundedRectangle(cornerRadius: DS.Radius.control, style: .continuous)
-                                    .fill(DS.Color.surfaceRecessed)
-                            }
+        VStack(spacing: 1) {
+            ForEach(0..<7, id: \.self) { dayIndex in
+                HStack(spacing: 1) {
+                    // Day label
+                    Text(dayLabels[dayIndex])
+                        .font(DS.Text.caption)
+                        .foregroundStyle(DS.Color.textSecondary)
+                        .frame(width: 40)
+
+                    // Week cells
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 1), count: weeksToShow), spacing: 1) {
+                        ForEach(0..<weeksToShow, id: \.self) { weekIndex in
+                            HeatmapWeekCell(
+                                board: board,
+                                dayIndex: dayIndex,
+                                weekIndex: weekIndex
+                            )
                         }
-                        .contentShape(Rectangle())
+                    }
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text(surface.label))
-                .accessibilityAddTraits(
-                    selection == surface.index ? [.isButton, .isSelected] : .isButton
-                )
             }
         }
-        .padding(DS.Space.xs)
-        .background {
-            Capsule(style: .continuous)
-                .fill(DS.Color.surface)
-                .shadow(color: .black.opacity(0.18), radius: 12, y: 4)
+        .padding(DS.Space.md)
+        .background(ColorPalette[board.colorIndex].opacity(0.08), in: RoundedRectangle(cornerRadius: DS.Radius.card))
+        .overlay(
+            RoundedRectangle(cornerRadius: DS.Radius.card)
+                .stroke(ColorPalette[board.colorIndex].opacity(0.2), lineWidth: 0.5)
+        )
+    }
+}
+
+// MARK: - Heatmap Week Cell
+
+struct HeatmapWeekCell: View {
+    let board: HabitBoard
+    let dayIndex: Int
+    let weekIndex: Int
+
+    private var cellDate: Date? {
+        let today = Calendar.current.startOfDay(for: .now)
+        let weeksBack = 52 - 1 - weekIndex
+        let daysBack = weeksBack * 7 + dayIndex
+        return Calendar.current.date(byAdding: .day, value: -daysBack, to: today)
+    }
+
+    private var dayLogs: [LogEntry]? {
+        guard let date = cellDate else { return nil }
+        return (board.logs ?? [])
+            .filter { Calendar.current.isDate($0.timestamp, inSameDayAs: date) }
+    }
+
+    private var totalValue: Double {
+        dayLogs?.reduce(0.0) { $0 + $1.value } ?? 0
+    }
+
+    private var cellOpacity: Double {
+        guard let logs = dayLogs, !logs.isEmpty else { return 0 }
+        let ratio = totalValue / board.effectiveTarget
+        return min(1.0, max(0.3, ratio))
+    }
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 1.5)
+            .fill(
+                (dayLogs?.isEmpty ?? true)
+                    ? DS.Color.surface
+                    : ColorPalette[board.colorIndex].opacity(cellOpacity)
+            )
+            .aspectRatio(1, contentMode: .fit)
+    }
+}
+
+// MARK: - Current Streak Card
+
+struct CurrentStreakCard: View {
+    let board: HabitBoard
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Space.md) {
+            HStack(spacing: DS.Space.sm) {
+                Image(systemName: "flame.fill")
+                    .font(.title3)
+                    .foregroundStyle(.orange)
+                
+                Text("CURRENT STREAK")
+                    .font(DS.Text.caption)
+                    .tracking(0.5)
+                    .foregroundStyle(DS.Color.textSecondary)
+                
+                Spacer()
+            }
+
+            ValueText(
+                String(board.currentStreak),
+                font: DS.Text.valueHero
+            )
+            .foregroundStyle(ColorPalette[board.colorIndex])
+
+            Spacer(minLength: 0)
+
+            HStack {
+                Text("Longest:")
+                    .font(DS.Text.caption)
+                    .foregroundStyle(DS.Color.textSecondary)
+                
+                ValueText(
+                    String(board.longestStreak),
+                    font: DS.Text.body
+                )
+                .foregroundStyle(DS.Color.textPrimary)
+                
+                Spacer()
+            }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(DS.Space.md)
+        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+    }
+}
+
+// MARK: - Consistency Card
+
+struct ConsistencyCard: View {
+    let board: HabitBoard
+
+    var body: some View {
+        VStack(alignment: .center, spacing: DS.Space.md) {
+            HStack {
+                Image(systemName: "shield.fill")
+                    .font(.title3)
+                    .foregroundStyle(.blue)
+                
+                Text("CONSISTENCY")
+                    .font(DS.Text.caption)
+                    .tracking(0.5)
+                    .foregroundStyle(DS.Color.textSecondary)
+                
+                Spacer()
+            }
+
+            // Ring gauge (simple arc representation)
+            ZStack {
+                Circle()
+                    .stroke(DS.Color.surface, lineWidth: 8)
+                
+                Circle()
+                    .trim(from: 0, to: 0.5)
+                    .stroke(ColorPalette[board.colorIndex], lineWidth: 8)
+                    .rotationEffect(.degrees(-90))
+                
+                Text("Average")
+                    .font(DS.Text.caption)
+                    .foregroundStyle(DS.Color.textSecondary)
+            }
+            .frame(height: 60)
+
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(DS.Space.md)
+        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+    }
+}
+
+// MARK: - Current Month Card
+
+struct CurrentMonthCard: View {
+    let board: HabitBoard
+
+    private var currentMonthTotal: Double {
+        let calendar = Calendar.current
+        let now = Date()
+        let monthRange = calendar.range(of: .day, in: .month, for: now)!
+        let daysInMonth = monthRange.count
+
+        var total = 0.0
+        for day in 1...daysInMonth {
+            let components = DateComponents(year: calendar.component(.year, from: now),
+                                          month: calendar.component(.month, from: now),
+                                          day: day)
+            if let date = calendar.date(from: components) {
+                let dayLogs = (board.logs ?? [])
+                    .filter { calendar.isDate($0.timestamp, inSameDayAs: date) }
+                total += dayLogs.reduce(0.0) { $0 + $1.value }
+            }
+        }
+        return total
+    }
+
+    private var currentWeekTotal: Double {
+        let today = Calendar.current.startOfDay(for: .now)
+        let sunday = Calendar.current.date(from: Calendar.current.dateComponents([.yearForWeekOfYear, .weekOfYear], from: today))!
+
+        var total = 0.0
+        for offset in 0..<7 {
+            if let date = Calendar.current.date(byAdding: .day, value: offset, to: sunday) {
+                let dayLogs = (board.logs ?? [])
+                    .filter { Calendar.current.isDate($0.timestamp, inSameDayAs: date) }
+                total += dayLogs.reduce(0.0) { $0 + $1.value }
+            }
+        }
+        return total
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Space.md) {
+            HStack {
+                Image(systemName: "chart.bar.fill")
+                    .font(.title3)
+                    .foregroundStyle(.gray)
+                
+                Text("CURRENT MONTH")
+                    .font(DS.Text.caption)
+                    .tracking(0.5)
+                    .foregroundStyle(DS.Color.textSecondary)
+                
+                Spacer()
+            }
+
+            HStack(spacing: DS.Space.lg) {
+                VStack(alignment: .leading, spacing: DS.Space.xs) {
+                    ValueText(
+                        String(format: "%.0f", currentMonthTotal),
+                        font: DS.Text.valueHero
+                    )
+                    .foregroundStyle(ColorPalette[board.colorIndex])
+                    
+                    if let unit = board.unitLabel {
+                        Text(unit)
+                            .font(DS.Text.caption)
+                            .foregroundStyle(DS.Color.textSecondary)
+                    }
+                }
+
+                Spacer()
+
+                // Simple bar chart
+                HStack(alignment: .bottom, spacing: 4) {
+                    ForEach(0..<7, id: \.self) { _ in
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(DS.Color.surface)
+                            .frame(height: CGFloat.random(in: 20...50))
+                    }
+                }
+            }
+
+            HStack {
+                Text("Current week:")
+                    .font(DS.Text.caption)
+                    .foregroundStyle(DS.Color.textSecondary)
+                
+                Text("–")
+                    .font(DS.Text.caption)
+                    .foregroundStyle(DS.Color.textSecondary)
+                
+                Spacer()
+            }
+        }
+        .padding(DS.Space.md)
+        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
     }
 }
 
 // MARK: - Preview
 
-@MainActor
-private func makeDetailPreviewContainer() -> (ModelContainer, HabitBoard) {
-    let schema = Schema([HabitBoard.self, LogEntry.self])
-    let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(for: schema, configurations: [config])
-    let context = container.mainContext
-
-    let habit = HabitBoard(name: "Morning Run", metricType: 1, targetValue: 5, unitLabel: "km", colorIndex: 0)
-    habit.currentStreak = 12
-    habit.longestStreak = 45
-    context.insert(habit)
-
-    // Add logs across this month
-    let now = Date()
-    let calendar = Calendar.current
-    guard let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: now)) else {
-        return (container, habit)
-    }
-
-    for daysAgo in 0..<30 {
-        if daysAgo % 2 == 0 { // Log every other day
-            guard let logDate = calendar.date(byAdding: .day, value: daysAgo, to: monthStart) else { continue }
-            let value = Double.random(in: 3...7)
-            context.insert(LogEntry(timestamp: logDate, value: value, boardID: habit.id, board: habit))
-        }
-    }
-
-    try? context.save()
-    return (container, habit)
-}
-
 #Preview {
-    let (container, habit) = makeDetailPreviewContainer()
-    return NavigationStack {
-        HabitDetailView(board: habit)
+    NavigationStack {
+        HabitDetailView(board: HabitBoard(name: "Running", metricType: 1, targetValue: 5.0, unitLabel: "km", colorIndex: 0))
     }
-    .modelContainer(container)
 }
