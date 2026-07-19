@@ -38,16 +38,19 @@ struct HabitAnalyticsView: View {
         return dailyTotals.filter { $0.value >= board.effectiveTarget }.count
     }
 
-    /// Days in the current month.
-    private var daysInMonth: Int {
+    /// Days in the current month (for progress numerator).
+    /// Days elapsed in the current month (denominator for consistency ratio).
+    /// 
+    /// On July 2nd, this returns 2 (not 31). A perfect user on day 2 sees "2 of 2"
+    /// — full arc, full motivation. Denominator grows daily and never punishes the
+    /// user for the calendar having more days left.
+    private var daysElapsedThisMonth: Int {
         let now = Date()
         guard let monthStart = Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: now)) else {
-            return 30
+            return 1
         }
-        guard let range = Calendar.current.range(of: .day, in: .month, for: monthStart) else {
-            return 30
-        }
-        return range.count
+        let components = Calendar.current.dateComponents([.day], from: monthStart, to: now)
+        return (components.day ?? 0) + 1  // +1 because day 1 of month = 1 elapsed, not 0
     }
 
     /// Total logged this month.
@@ -118,7 +121,7 @@ struct HabitAnalyticsView: View {
                             LOCACard {
                                 ArcGaugeView(
                                     completedCount: daysCompletedThisMonth,
-                                    totalCount: daysInMonth,
+                                    totalCount: daysElapsedThisMonth,
                                     accentColor: ColorPalette[board.colorIndex],
                                     label: "Days"
                                 )
