@@ -85,7 +85,7 @@ struct HabitListRow: View {
         .background(rowBackground, in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityLabel)
+        .accessibilityLabel(Text(rowAccessibilityLabel))
     }
 
     // MARK: - Sub-views
@@ -180,7 +180,7 @@ struct HabitListRow: View {
 
     // MARK: - Accessibility
 
-    private var accessibilityLabel: String {
+    private var rowAccessibilityLabel: String {
         let base = board.name
         let streakInfo = "Streak: \(board.currentStreak) days"
         let progressInfo: String
