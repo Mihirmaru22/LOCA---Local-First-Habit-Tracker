@@ -88,7 +88,7 @@ struct HabitTimelineCard: View {
                 VStack(alignment: .leading, spacing: DS.Space.xs) {
                     HStack {
                         Text(board.name)
-                            .font(DS.Text.headline)
+                            .font(DS.Text.heading)
                             .lineLimit(1)
 
                         Spacer()
