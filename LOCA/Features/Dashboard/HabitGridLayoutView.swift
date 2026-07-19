@@ -81,7 +81,7 @@ struct HabitGridCardWithHeatmap: View {
         VStack(alignment: .leading, spacing: DS.Space.md) {
             // Header: emoji + name
             HStack(spacing: DS.Space.sm) {
-                Text(board.emoji)
+                Text(board.emoji ?? "✓")
                     .font(.title3)
                 Text(board.name)
                     .font(DS.Text.body)
