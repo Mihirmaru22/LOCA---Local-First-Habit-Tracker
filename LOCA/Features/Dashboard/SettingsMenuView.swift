@@ -2,10 +2,10 @@
 //  SettingsMenuView.swift
 //  LOCA
 //
-//  Phase 14.3 — Dashboard settings menu (ship-blocker fix).
+//  Phase 14.4 — Dashboard settings menu with working layout picker.
 //
-//  Removed: Layout picker (habitListLayout writes but nothing reads it; Grid/Timeline modes don't exist).
-//  Routes to: Archive (view archived habits) and app Settings.
+//  Routes to: Layout (list/grid/timeline), Archive (view archived habits),
+//  and app Settings.
 //
 
 import SwiftUI
@@ -15,25 +15,101 @@ import SwiftData
 
 struct SettingsMenuView: View {
 
+    @State private var showingLayoutPicker = false
     @State private var showingArchive = false
     @State private var showingSettings = false
 
     var body: some View {
         Menu {
-            Button(action: { showingArchive = true }) {
-                Label("Archive", systemImage: "archivebox")
+            Section {
+                Button(action: { showingLayoutPicker = true }) {
+                    Label("Layout", systemImage: "square.grid.2x2")
+                }
             }
-            Button(action: { showingSettings = true }) {
-                Label("Settings", systemImage: "gear")
+
+            Section {
+                Button(action: { showingArchive = true }) {
+                    Label("Archive", systemImage: "archivebox")
+                }
+                Button(action: { showingSettings = true }) {
+                    Label("Settings", systemImage: "gear")
+                }
             }
         } label: {
             Image(systemName: "ellipsis.circle")
+        }
+        .sheet(isPresented: $showingLayoutPicker) {
+            LayoutPickerView()
         }
         .sheet(isPresented: $showingArchive) {
             ArchiveListView()
         }
         .sheet(isPresented: $showingSettings) {
             AppSettingsView()
+        }
+    }
+}
+
+// MARK: - Layout Picker
+
+struct LayoutPickerView: View {
+    @Environment(\.dismiss) var dismiss
+    @AppStorage("habitListLayout") private var layout: String = "list"
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: DS.Space.lg) {
+                SectionHeader("List Layout")
+
+                VStack(spacing: DS.Space.md) {
+                    ForEach(["list", "grid", "timeline"], id: \.self) { option in
+                        Button(action: { layout = option; dismiss() }) {
+                            HStack {
+                                Image(systemName: layoutIcon(option))
+                                    .font(.title3)
+                                    .frame(width: 24)
+                                Text(layoutLabel(option))
+                                    .font(DS.Text.body)
+                                Spacer()
+                                if layout == option {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(ColorPalette[0])
+                                }
+                            }
+                            .contentShape(Rectangle())
+                            .foregroundStyle(DS.Color.textPrimary)
+                        }
+                        .padding(DS.Space.md)
+                        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+                    }
+                }
+
+                Spacer()
+            }
+            .padding(DS.Space.lg)
+            .navigationTitle("Layout")
+            .inlineNavigationTitleDisplay()
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Done", action: { dismiss() })
+                }
+            }
+        }
+    }
+
+    private func layoutIcon(_ layout: String) -> String {
+        switch layout {
+        case "grid": return "square.grid.2x2"
+        case "timeline": return "line.3.horizontal"
+        default: return "list.bullet"
+        }
+    }
+
+    private func layoutLabel(_ layout: String) -> String {
+        switch layout {
+        case "grid": return "Grid View"
+        case "timeline": return "Timeline View"
+        default: return "List View"
         }
     }
 }
