@@ -2,10 +2,10 @@
 //  HabitGridLayoutView.swift
 //  LOCA
 //
-//  Phase 14.4 — Grid layout with mini heatmaps (exact reference match).
+//  Phase 14.4 — Grid layout with interactive check button and wave animation.
 //
 //  2-column grid. Each card: emoji + name (top), 14-day heatmap (middle),
-//  streak + value (bottom). Colored background, subtle border.
+//  check button with streak (bottom). Tap button triggers wave animation on heatmap.
 //
 
 import SwiftUI
@@ -46,18 +46,14 @@ struct HabitGridLayoutView: View {
     }
 }
 
-// MARK: - Grid Card with Mini Heatmap
+// MARK: - Grid Card with Interactive Heatmap
 
 struct HabitGridCardWithHeatmap: View {
     let board: HabitBoard
     let state: HabitState
     let onCheckBinary: () -> Void
 
-    private var todaysTotal: Double {
-        (board.logs ?? [])
-            .filter { $0.timestamp.isToday() }
-            .reduce(0.0) { $0 + $1.value }
-    }
+    @State private var waveIndices: Set<Int> = []
 
     private var currentStreakValue: Int {
         board.currentStreak
@@ -65,6 +61,10 @@ struct HabitGridCardWithHeatmap: View {
 
     private var cardBackgroundColor: Color {
         ColorPalette[board.colorIndex].opacity(0.12)
+    }
+
+    private var buttonBackgroundColor: Color {
+        ColorPalette[board.colorIndex].opacity(0.2)
     }
 
     private var heatmapDays: [Date] {
@@ -91,7 +91,7 @@ struct HabitGridCardWithHeatmap: View {
                 Spacer()
             }
 
-            // Mini heatmap grid (2 rows × 7 days)
+            // Interactive heatmap grid (2 rows × 7 days)
             VStack(spacing: 2) {
                 ForEach(0..<2, id: \.self) { row in
                     HStack(spacing: 2) {
@@ -99,9 +99,10 @@ struct HabitGridCardWithHeatmap: View {
                             let index = row * 7 + col
                             if index < heatmapDays.count {
                                 let date = heatmapDays[index]
-                                MiniHeatmapCell(
+                                MiniHeatmapCellWithWave(
                                     board: board,
-                                    date: date
+                                    date: date,
+                                    isAnimating: waveIndices.contains(index)
                                 )
                             }
                         }
@@ -113,58 +114,33 @@ struct HabitGridCardWithHeatmap: View {
 
             Spacer(minLength: 0)
 
-            // Bottom: Streak + Value
-            HStack(spacing: DS.Space.md) {
-                // Streak count
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Streak")
-                        .font(DS.Text.caption)
-                        .foregroundStyle(DS.Color.textSecondary)
+            // Check button with streak count
+            Button(action: { triggerWaveAnimation() }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 16, weight: .semibold))
+                    
+                    Text("×")
+                        .font(.system(size: 14, weight: .semibold))
                     
                     ValueText(
                         String(currentStreakValue),
-                        font: DS.Text.value
+                        font: DS.Text.valueCompact
                     )
-                    .foregroundStyle(ColorPalette[board.colorIndex])
+                    
+                    Spacer()
                 }
-
-                Spacer()
-
-                // Today's value or check button
-                if board.metricType == 0 {
-                    // Binary: checkmark or empty circle
-                    if todaysTotal >= 1.0 {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 28))
-                            .foregroundStyle(ColorPalette[board.colorIndex])
-                    } else {
-                        Button(action: onCheckBinary) {
-                            Image(systemName: "circle")
-                                .font(.system(size: 28))
-                                .foregroundStyle(DS.Color.textTertiary)
-                        }
-                    }
-                } else {
-                    // Quantitative: show value + unit
-                    VStack(alignment: .trailing, spacing: 2) {
-                        if let unit = board.unitLabel, !unit.isEmpty {
-                            Text(unit)
-                                .font(DS.Text.caption)
-                                .foregroundStyle(DS.Color.textSecondary)
-                        }
-                        
-                        ValueText(
-                            todaysTotal.formatted(.number.precision(.fractionLength(0...1))),
-                            font: DS.Text.value
-                        )
-                        .foregroundStyle(
-                            todaysTotal >= board.effectiveTarget
-                                ? ColorPalette[board.colorIndex]
-                                : DS.Color.textSecondary
-                        )
-                    }
-                }
+                .foregroundStyle(ColorPalette[board.colorIndex])
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DS.Space.md)
+                .padding(.horizontal, DS.Space.md)
+                .background(buttonBackgroundColor, in: RoundedRectangle(cornerRadius: 12))
             }
+            .simultaneousGesture(
+                TapGesture().onEnded { _ in
+                    onCheckBinary()
+                }
+            )
         }
         .padding(DS.Space.md)
         .background(cardBackgroundColor, in: RoundedRectangle(cornerRadius: DS.Radius.card))
@@ -173,13 +149,30 @@ struct HabitGridCardWithHeatmap: View {
                 .stroke(ColorPalette[board.colorIndex].opacity(0.25), lineWidth: 0.5)
         )
     }
+
+    private func triggerWaveAnimation() {
+        for index in 0..<14 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.08) {
+                withAnimation(.easeOut(duration: 0.4)) {
+                    waveIndices.insert(index)
+                }
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.08 + 0.4) {
+                withAnimation {
+                    waveIndices.remove(index)
+                }
+            }
+        }
+    }
 }
 
-// MARK: - Mini Heatmap Cell
+// MARK: - Mini Heatmap Cell with Wave Animation
 
-struct MiniHeatmapCell: View {
+struct MiniHeatmapCellWithWave: View {
     let board: HabitBoard
     let date: Date
+    let isAnimating: Bool
 
     private var dayLogs: [LogEntry] {
         (board.logs ?? [])
@@ -197,13 +190,24 @@ struct MiniHeatmapCell: View {
     }
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 2)
-            .fill(
-                dayLogs.isEmpty
-                    ? DS.Color.surface
-                    : ColorPalette[board.colorIndex].opacity(cellOpacity)
-            )
-            .frame(maxWidth: .infinity)
-            .aspectRatio(1, contentMode: .fit)
+        ZStack {
+            RoundedRectangle(cornerRadius: 2)
+                .fill(
+                    dayLogs.isEmpty
+                        ? DS.Color.surface
+                        : ColorPalette[board.colorIndex].opacity(cellOpacity)
+                )
+            
+            // Wave overlay
+            if isAnimating {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(ColorPalette[board.colorIndex])
+                    .opacity(0.6)
+                    .scaleEffect(isAnimating ? 1.2 : 1.0)
+                    .opacity(isAnimating ? 0 : 1)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .aspectRatio(1, contentMode: .fit)
     }
 }
