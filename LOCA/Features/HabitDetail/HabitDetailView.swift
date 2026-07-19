@@ -20,11 +20,11 @@ struct HabitDetailView: View {
             Color.black.ignoresSafeArea()
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 12) {
                     RefHeatmapCard(board: board)
                         .padding(.horizontal, 18)
 
-                    HStack(alignment: .top, spacing: 14) {
+                    HStack(alignment: .top, spacing: 12) {
                         RefStreakCard(board: board)
                         RefConsistencyCard(board: board)
                     }
@@ -102,24 +102,25 @@ private struct RefTabIcon: View {
 struct RefHeatmapCard: View {
     let board: HabitBoard
     private let dayLabels = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]
-    private let gap: CGFloat    = 4
-    private let labelW: CGFloat = 36
-    private let hPad: CGFloat   = 14
-    private let vPad: CGFloat   = 14
+    private let gap: CGFloat    = 3
+    private let labelW: CGFloat = 30
+    private let hPad: CGFloat   = 10
+    private let vPad: CGFloat   = 10
+    // Target cell size — drives column count
+    private let targetCell: CGFloat = 11
 
     var body: some View {
         GeometryReader { geo in
-            let usable  = geo.size.width - hPad * 2 - labelW - gap
-            let cols    = max(1, Int(usable / (cellSize(geo) + gap)))
-            let cSize   = (usable - gap * CGFloat(cols - 1)) / CGFloat(cols)
-            let rowH    = cSize + gap
-            let totalH  = rowH * 7 - gap + vPad * 2
+            let usable = geo.size.width - hPad * 2 - labelW - gap
+            let cols   = max(1, Int((usable + gap) / (targetCell + gap)))
+            let cSize  = (usable - gap * CGFloat(cols - 1)) / CGFloat(cols)
+            let totalH = (cSize + gap) * 7 - gap + vPad * 2
 
             VStack(alignment: .leading, spacing: gap) {
                 ForEach(0..<7, id: \.self) { d in
                     HStack(spacing: gap) {
                         Text(dayLabels[d])
-                            .font(.system(size: 10, weight: .medium))
+                            .font(.system(size: 9, weight: .medium))
                             .foregroundStyle(Color(white: 0.45))
                             .frame(width: labelW, alignment: .leading)
                         ForEach(0..<cols, id: \.self) { w in
@@ -132,28 +133,19 @@ struct RefHeatmapCard: View {
             .padding(.vertical, vPad)
             .frame(width: geo.size.width, height: totalH)
             .background(
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
                     .fill(ColorPalette[board.colorIndex].opacity(0.13))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
                     .stroke(ColorPalette[board.colorIndex].opacity(0.25), lineWidth: 0.6)
             )
         }
         .frame(height: heatmapHeight())
     }
 
-    private func cellSize(_ geo: GeometryProxy) -> CGFloat {
-        let usable = geo.size.width - hPad * 2 - labelW - gap
-        let cols   = max(1, Int(usable / 20))           // ~20pt target cell+gap
-        return (usable - gap * CGFloat(cols - 1)) / CGFloat(cols)
-    }
-
     private func heatmapHeight() -> CGFloat {
-        // Approximate: 7 rows × (cellSize + gap) + vertical padding
-        // We don't know geo here, use 15pt cell estimate
-        let approxCell: CGFloat = 15
-        return (approxCell + gap) * 7 - gap + vPad * 2
+        (targetCell + gap) * 7 - gap + vPad * 2
     }
 }
 
@@ -401,19 +393,22 @@ struct RefMonthCard: View {
                 let todayIdx = Calendar.current.component(.weekday, from: .now) - 1 // 0=Sun
                 let maxV = max(weekTotals.max() ?? 1, board.effectiveTarget, 1)
 
-                HStack(alignment: .bottom, spacing: 5) {
+                HStack(alignment: .bottom, spacing: 4) {
                     ForEach(0..<7, id: \.self) { i in
-                        let v      = weekTotals[i]
+                        let v       = weekTotals[i]
                         let isToday = i == todayIdx
-                        let barH   = v > 0 ? max(10, 60 * (v / maxV)) : 10
+                        let isFut   = i > todayIdx
+                        let barH: CGFloat = v > 0 ? max(8, 56 * CGFloat(v / maxV)) : 6
 
-                        RoundedRectangle(cornerRadius: 4, style: .continuous)
+                        RoundedRectangle(cornerRadius: 3, style: .continuous)
                             .fill(
                                 isToday && v > 0
                                     ? ColorPalette[board.colorIndex]
-                                    : Color(white: v > 0 ? 0.28 : 0.17)
+                                    : isFut
+                                        ? Color(white: 0.13)
+                                        : Color(white: v > 0 ? 0.26 : 0.18)
                             )
-                            .frame(width: 18, height: barH)
+                            .frame(width: 16, height: barH)
                     }
                 }
             }
