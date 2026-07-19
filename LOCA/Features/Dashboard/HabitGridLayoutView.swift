@@ -2,10 +2,11 @@
 //  HabitGridLayoutView.swift
 //  LOCA
 //
-//  Phase 14.4 — Grid layout for habit display.
+//  Phase 14.4 — Grid layout with mini heatmaps.
 //
-//  2-column grid of compact habit cards. Removes zone organization
-//  in favor of dense visual scanning. Same cards, rearranged.
+//  2-column grid of habit cards. Each card displays a small heatmap
+//  (7-14 recent days) with intensity-coded cells, streak count, and
+//  today's value.
 //
 
 import SwiftUI
@@ -20,7 +21,6 @@ struct HabitGridLayoutView: View {
         GridItem(.flexible(), spacing: DS.Space.md)
     ]
 
-    // Sort by state priority, but keep visual density
     private var sortedBoards: [(board: HabitBoard, state: HabitState)] {
         boardsWithState.sorted { a, b in
             let stateOrder: [HabitState] = [.needsAction, .behind, .inProgress, .done]
@@ -34,7 +34,7 @@ struct HabitGridLayoutView: View {
         LazyVGrid(columns: columns, spacing: DS.Space.md) {
             ForEach(sortedBoards, id: \.board.id) { item in
                 NavigationLink(destination: HabitDetailView(board: item.board)) {
-                    HabitGridCard(
+                    HabitGridCardWithHeatmap(
                         board: item.board,
                         state: item.state,
                         onCheckBinary: { onCheckBinary(item.board) }
@@ -47,9 +47,9 @@ struct HabitGridLayoutView: View {
     }
 }
 
-// MARK: - Grid Card
+// MARK: - Grid Card with Mini Heatmap
 
-struct HabitGridCard: View {
+struct HabitGridCardWithHeatmap: View {
     let board: HabitBoard
     let state: HabitState
     let onCheckBinary: () -> Void
@@ -60,98 +60,140 @@ struct HabitGridCard: View {
             .reduce(0.0) { $0 + $1.value }
     }
 
-    private var stateColor: Color {
-        switch state {
-        case .needsAction, .behind:
-            return ColorPalette[board.colorIndex]
-        case .inProgress:
-            return DS.Color.textSecondary
-        case .done:
-            return DS.Color.textTertiary
-        }
+    private var currentStreakValue: Int {
+        board.currentStreak
+    }
+
+    private var cardBackgroundColor: Color {
+        ColorPalette[board.colorIndex].opacity(0.15)
+    }
+
+    private var heatmapDays: [Date] {
+        let today = Calendar.current.startOfDay(for: .now)
+        let dayCount = 14
+        return (0..<dayCount)
+            .compactMap { offset in
+                Calendar.current.date(byAdding: .day, value: -(dayCount - 1 - offset), to: today)
+            }
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.md) {
-            // Header: name + badge
+            // Header: emoji + name
             HStack(spacing: DS.Space.sm) {
+                Text(board.emoji)
+                    .font(.title3)
                 Text(board.name)
-                    .font(DS.Text.footnote)
-                    .fontWeight(.semibold)
+                    .font(DS.Text.body)
                     .lineLimit(1)
-
+                    .truncationMode(.tail)
                 Spacer()
-
-                // State badge
-                Image(systemName: stateBadgeIcon)
-                    .font(.caption2)
-                    .foregroundStyle(stateColor)
             }
 
-            // Progress bar
-            ProgressView(value: min(todaysTotal / board.effectiveTarget, 1.0))
-                .tint(ColorPalette[board.colorIndex])
-
-            // Value display
-            VStack(alignment: .leading, spacing: DS.Space.xs) {
-                ValueText(
-                    todaysTotal.formatted(.number.precision(.fractionLength(0...1))),
-                    font: DS.Text.body
-                )
-                .foregroundStyle(
-                    todaysTotal >= board.effectiveTarget
-                        ? ColorPalette[board.colorIndex]
-                        : DS.Color.textSecondary
-                )
-
-                if let unitLabel = board.unitLabel, !unitLabel.isEmpty {
-                    Text("\(unitLabel)")
-                        .font(DS.Text.caption)
-                        .foregroundStyle(DS.Color.textTertiary)
+            // Mini heatmap grid (14 days in 2 rows of 7)
+            VStack(spacing: 2) {
+                ForEach(0..<2, id: \.self) { row in
+                    HStack(spacing: 2) {
+                        ForEach(0..<7, id: \.self) { col in
+                            let index = row * 7 + col
+                            if index < heatmapDays.count {
+                                let date = heatmapDays[index]
+                                MiniHeatmapCell(
+                                    board: board,
+                                    date: date
+                                )
+                            }
+                        }
+                    }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-            Spacer(minLength: 0)
-
-            // Streak + quick action
-            HStack(spacing: DS.Space.sm) {
-                VStack(alignment: .leading, spacing: DS.Space.xs) {
+            // Bottom: Streak + Value
+            HStack(spacing: DS.Space.md) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text("Streak")
                         .font(DS.Text.caption)
                         .foregroundStyle(DS.Color.textSecondary)
                     ValueText(
-                        String(board.currentStreak),
-                        font: DS.Text.body
+                        String(currentStreakValue),
+                        font: DS.Text.valueCompact
                     )
                     .foregroundStyle(ColorPalette[board.colorIndex])
                 }
 
                 Spacer()
 
-                // Quick check-in button for binary/needsAction
-                if state == .needsAction && board.metricType == 0 {
-                    Button(action: onCheckBinary) {
+                // Today's value or check button
+                if board.metricType == 0 {
+                    // Binary: show checkmark or button
+                    if todaysTotal >= 1.0 {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.title3)
                             .foregroundStyle(ColorPalette[board.colorIndex])
+                    } else {
+                        Button(action: onCheckBinary) {
+                            Image(systemName: "circle")
+                                .font(.title3)
+                                .foregroundStyle(DS.Color.textTertiary)
+                        }
+                    }
+                } else {
+                    // Quantitative: show value
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text(board.unitLabel ?? "")
+                            .font(DS.Text.caption)
+                            .foregroundStyle(DS.Color.textSecondary)
+                        ValueText(
+                            todaysTotal.formatted(.number.precision(.fractionLength(0...1))),
+                            font: DS.Text.valueCompact
+                        )
+                        .foregroundStyle(
+                            todaysTotal >= board.effectiveTarget
+                                ? ColorPalette[board.colorIndex]
+                                : DS.Color.textSecondary
+                        )
                     }
                 }
             }
         }
         .padding(DS.Space.md)
-        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+        .background(cardBackgroundColor, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+        .overlay(
+            RoundedRectangle(cornerRadius: DS.Radius.card)
+                .stroke(ColorPalette[board.colorIndex].opacity(0.3), lineWidth: 0.5)
+        )
+    }
+}
+
+// MARK: - Mini Heatmap Cell
+
+struct MiniHeatmapCell: View {
+    let board: HabitBoard
+    let date: Date
+
+    private var dayLogs: [LogEntry] {
+        (board.logs ?? [])
+            .filter { Calendar.current.isDate($0.timestamp, inSameDayAs: date) }
     }
 
-    private var stateBadgeIcon: String {
-        switch state {
-        case .needsAction:
-            return "exclamationmark.circle.fill"
-        case .inProgress:
-            return "hourglass.circle.fill"
-        case .behind:
-            return "minus.circle.fill"
-        case .done:
-            return "checkmark.circle.fill"
-        }
+    private var totalValue: Double {
+        dayLogs.reduce(0.0) { $0 + $1.value }
+    }
+
+    private var cellOpacity: Double {
+        let ratio = totalValue / board.effectiveTarget
+        return min(1.0, max(0.2, ratio))
+    }
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 3)
+            .fill(
+                dayLogs.isEmpty
+                    ? DS.Color.surface
+                    : ColorPalette[board.colorIndex].opacity(cellOpacity)
+            )
+            .frame(maxWidth: .infinity)
+            .aspectRatio(1, contentMode: .fit)
     }
 }
