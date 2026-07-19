@@ -97,7 +97,7 @@ struct AddCheckInSheetView: View {
                             HStack(spacing: DS.Space.md) {
                                 TextField("0", text: $amountText)
                                     .font(DS.Text.body)
-                                    .keyboardType(.decimalPad)
+                                    .decimalKeyboard()
                                     .textFieldStyle(.roundedBorder)
 
                                 if let unitLabel = board.unitLabel, !unitLabel.isEmpty {

@@ -106,7 +106,7 @@ struct HabitCheckInsView: View {
                         HStack(spacing: DS.Space.md) {
                             TextField("Add amount", text: $quickLogAmount)
                                 .font(DS.Text.body)
-                                .keyboardType(.decimalPad)
+                                .decimalKeyboard()
 
                             if let unitLabel = board.unitLabel, !unitLabel.isEmpty {
                                 Text(unitLabel)
