@@ -27,7 +27,6 @@
 		052F419EE842417885F32906 /* Animation+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35FC423A6DF845B191C059CB /* Animation+Extensions.swift */; };
 		5A83AE55776345929CB34BF7 /* WidgetRefreshCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2805490003546CEAA6A8872 /* WidgetRefreshCoordinator.swift */; };
 		021213EDB5E14A9A81A44CC0 /* CheckInButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B49F0935A1CA4625B075C54A /* CheckInButton.swift */; };
-		9B3E3DC62CB647289A7363CF /* CheckInSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 764B712936BB4BEFBA74F28A /* CheckInSheet.swift */; };
 		28F5EB6811FC33FB01EC2F9D /* HabitBoardEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = D61E8A43B9C46C5F8DB68C17 /* HabitBoardEntity.swift */; };
 		E8F19F01F9AC07C3B4690A1F /* LogHabitIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F232FDAB6A6A9C3C9779C7B /* LogHabitIntent.swift */; };
 		4AA1CD25606B82324EBBAB89 /* LOCAShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F386776E75E86F3F6312296 /* LOCAShortcuts.swift */; };
@@ -90,7 +89,6 @@
 		10298EDBEB3995D68C76C212 /* View+PlatformAdaptations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+PlatformAdaptations.swift"; sourceTree = "<group>"; };
 		F2805490003546CEAA6A8872 /* WidgetRefreshCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WidgetRefreshCoordinator.swift"; sourceTree = "<group>"; };
 		B49F0935A1CA4625B075C54A /* CheckInButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CheckInButton.swift"; sourceTree = "<group>"; };
-		764B712936BB4BEFBA74F28A /* CheckInSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CheckInSheet.swift"; sourceTree = "<group>"; };
 		D61E8A43B9C46C5F8DB68C17 /* HabitBoardEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitBoardEntity.swift"; sourceTree = "<group>"; };
 		3F232FDAB6A6A9C3C9779C7B /* LogHabitIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LogHabitIntent.swift"; sourceTree = "<group>"; };
 		0F386776E75E86F3F6312296 /* LOCAShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LOCAShortcuts.swift"; sourceTree = "<group>"; };
@@ -263,7 +261,6 @@
 			isa = PBXGroup;
 			children = (
 				B49F0935A1CA4625B075C54A /* CheckInButton.swift */,
-				764B712936BB4BEFBA74F28A /* CheckInSheet.swift */,
 			);
 			path = "CheckIn";
 			sourceTree = "<group>";
@@ -534,7 +531,6 @@
 				5A16ED2F33C94E529C637EF7 /* Animation+Extensions.swift in Sources */,
 				5A83AE55776345929CB34BF7 /* WidgetRefreshCoordinator.swift in Sources */,
 				021213EDB5E14A9A81A44CC0 /* CheckInButton.swift in Sources */,
-				9B3E3DC62CB647289A7363CF /* CheckInSheet.swift in Sources */,
 				28F5EB6811FC33FB01EC2F9D /* HabitBoardEntity.swift in Sources */,
 				E8F19F01F9AC07C3B4690A1F /* LogHabitIntent.swift in Sources */,
 				4AA1CD25606B82324EBBAB89 /* LOCAShortcuts.swift in Sources */,
