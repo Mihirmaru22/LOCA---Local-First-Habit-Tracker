@@ -40,11 +40,15 @@ struct EditCheckInSheetView: View {
         _selectedDate   = State(initialValue: entry.timestamp)
         _selectedHour   = State(initialValue: cal.component(.hour,   from: entry.timestamp))
         _selectedMinute = State(initialValue: cal.component(.minute, from: entry.timestamp))
-        _amountText     = State(initialValue: board.metric == .quantitative
-                                    ? String(format: entry.value.truncatingRemainder(dividingBy: 1) == 0
-                                             ? "%.0f" : "%.2f", entry.value)
-                                    : "")
         _notesText      = State(initialValue: entry.note ?? "")
+
+        // Extract amount text separately to avoid compiler complexity limit
+        if board.metric == .quantitative {
+            let fmt = entry.value.truncatingRemainder(dividingBy: 1) == 0 ? "%.0f" : "%.2f"
+            _amountText = State(initialValue: String(format: fmt, entry.value))
+        } else {
+            _amountText = State(initialValue: "")
+        }
     }
 
     private var parsedAmount: Double? {
