@@ -58,6 +58,12 @@ struct HabitCheckInsView: View {
         }
     }
 
+    private func formattedTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.lg) {
@@ -157,9 +163,7 @@ struct HabitCheckInsView: View {
                                         HStack(spacing: DS.Space.md) {
                                             // Time
                                             VStack(alignment: .leading, spacing: DS.Space.xs) {
-                                                let formatter = DateFormatter()
-                                                formatter.timeStyle = .short
-                                                Text(formatter.string(from: entry.timestamp))
+                                                Text(formattedTime(entry.timestamp))
                                                     .font(DS.Text.caption)
                                                     .foregroundStyle(DS.Color.textSecondary)
                                             }
