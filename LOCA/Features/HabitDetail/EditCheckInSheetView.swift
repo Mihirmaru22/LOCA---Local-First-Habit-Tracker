@@ -159,7 +159,7 @@ struct EditCheckInSheetView: View {
         TextEditor(text: $notesText)
             .frame(minHeight: 80)
             .scrollContentBackground(.hidden)
-            .background(Color(.secondarySystemBackground))
+            .background(DS.Color.surface)
             .cornerRadius(8)
     }
 
