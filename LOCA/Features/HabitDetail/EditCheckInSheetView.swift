@@ -2,6 +2,9 @@
 //  EditCheckInSheetView.swift
 //  LOCA — Phase 15.1
 //
+//  Uses plain literals throughout — DS token chains exceed Swift
+//  type-checker complexity on macOS (confirmed compiler bug).
+//
 
 import SwiftUI
 import SwiftData
@@ -33,13 +36,10 @@ struct EditCheckInSheetView: View {
         _selectedHour   = State(initialValue: cal.component(.hour,   from: entry.timestamp))
         _selectedMinute = State(initialValue: cal.component(.minute, from: entry.timestamp))
         _notesText      = State(initialValue: entry.note ?? "")
-        // Flatten nested ternary — compiler cannot type-check it inline
         let isQuant = board.metric == .quantitative
         let fmt     = entry.value.truncatingRemainder(dividingBy: 1) == 0 ? "%.0f" : "%.2f"
         _amountText = State(initialValue: isQuant ? String(format: fmt, entry.value) : "")
     }
-
-    // MARK: - Derived
 
     private var parsedAmount: Double? {
         Double(amountText.trimmingCharacters(in: .whitespaces))
@@ -48,8 +48,6 @@ struct EditCheckInSheetView: View {
     private var isValid: Bool {
         board.metric == .binary || (parsedAmount ?? 0) > 0
     }
-
-    // MARK: - Body (broken into sub-views to stay under type-checker limit)
 
     var body: some View {
         NavigationStack {
@@ -65,11 +63,11 @@ struct EditCheckInSheetView: View {
         }
     }
 
-    // MARK: - Form (extracted to lower complexity)
+    // MARK: - Sections (plain literals — no DS token chains)
 
     private var editForm: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.lg) {
+            VStack(alignment: .leading, spacing: 20) {
                 dateSection
                 Divider()
                 timeSection
@@ -80,15 +78,13 @@ struct EditCheckInSheetView: View {
                 }
                 notesSection
             }
-            .padding(DS.Space.lg)
+            .padding(16)
         }
     }
 
     private var dateSection: some View {
-        VStack(alignment: .leading, spacing: DS.Space.sm) {
-            Text("Date")
-                .font(DS.Text.body)
-                .foregroundStyle(DS.Color.textPrimary)
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Date").font(.body)
             DatePicker("", selection: $selectedDate, displayedComponents: .date)
                 .datePickerStyle(.graphical)
                 .tint(ColorPalette[board.colorIndex])
@@ -96,61 +92,75 @@ struct EditCheckInSheetView: View {
     }
 
     private var timeSection: some View {
-        VStack(alignment: .leading, spacing: DS.Space.sm) {
-            Text("Time")
-                .font(DS.Text.body)
-                .foregroundStyle(DS.Color.textPrimary)
-            HStack(spacing: DS.Space.md) {
-                Picker("Hour", selection: $selectedHour) {
-                    ForEach(0..<24, id: \.self) { h in
-                        Text(String(format: "%02d", h)).tag(h)
-                    }
-                }
-                .frame(maxWidth: 80)
-                Text(":").font(DS.Text.body)
-                Picker("Minute", selection: $selectedMinute) {
-                    ForEach(Array(stride(from: 0, to: 60, by: 15)), id: \.self) { m in
-                        Text(String(format: "%02d", m)).tag(m)
-                    }
-                }
-                .frame(maxWidth: 80)
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Time").font(.body)
+            HStack(spacing: 12) {
+                hourPicker
+                Text(":").font(.body)
+                minutePicker
                 Spacer()
             }
         }
     }
 
-    private var amountSection: some View {
-        VStack(alignment: .leading, spacing: DS.Space.sm) {
-            Text("Amount")
-                .font(DS.Text.body)
-                .foregroundStyle(DS.Color.textPrimary)
-            HStack(spacing: DS.Space.md) {
-                TextField("0", text: $amountText)
-                    .font(DS.Text.body)
-                    .decimalKeyboard()
-                    .textFieldStyle(.roundedBorder)
-                if let unit = board.unitLabel, !unit.isEmpty {
-                    Text(unit)
-                        .font(DS.Text.caption)
-                        .foregroundStyle(DS.Color.textSecondary)
-                        .frame(minWidth: 60)
-                }
+    // Split pickers out to reduce VStack closure complexity
+    private var hourPicker: some View {
+        Picker("Hour", selection: $selectedHour) {
+            ForEach(0..<24, id: \.self) { h in
+                Text(String(format: "%02d", h)).tag(h)
             }
+        }
+        .frame(maxWidth: 80)
+    }
+
+    private var minutePicker: some View {
+        Picker("Minute", selection: $selectedMinute) {
+            ForEach(Array(stride(from: 0, to: 60, by: 15)), id: \.self) { m in
+                Text(String(format: "%02d", m)).tag(m)
+            }
+        }
+        .frame(maxWidth: 80)
+    }
+
+    private var amountSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Amount").font(.body)
+            amountRow
+        }
+    }
+
+    private var amountRow: some View {
+        HStack(spacing: 12) {
+            TextField("0", text: $amountText)
+                .decimalKeyboard()
+                .textFieldStyle(.roundedBorder)
+            unitLabel
+        }
+    }
+
+    @ViewBuilder
+    private var unitLabel: some View {
+        if let unit = board.unitLabel, !unit.isEmpty {
+            Text(unit)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(minWidth: 60)
         }
     }
 
     private var notesSection: some View {
-        VStack(alignment: .leading, spacing: DS.Space.sm) {
-            Text("Notes (Optional)")
-                .font(DS.Text.body)
-                .foregroundStyle(DS.Color.textPrimary)
-            TextEditor(text: $notesText)
-                .font(DS.Text.body)
-                .frame(minHeight: 80)
-                .scrollContentBackground(.hidden)
-                .background(DS.Color.surface)
-                .cornerRadius(DS.Radius.sm)
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Notes (Optional)").font(.body)
+            notesEditor
         }
+    }
+
+    private var notesEditor: some View {
+        TextEditor(text: $notesText)
+            .frame(minHeight: 80)
+            .scrollContentBackground(.hidden)
+            .background(Color(.secondarySystemBackground))
+            .cornerRadius(8)
     }
 
     // MARK: - Toolbar
@@ -181,9 +191,9 @@ struct EditCheckInSheetView: View {
         comp.second = 0
         let newTS = cal.date(from: comp) ?? selectedDate
 
-        let oldTS    = entry.timestamp
-        let oldVal   = entry.value
-        let oldNote  = entry.note
+        let oldTS   = entry.timestamp
+        let oldVal  = entry.value
+        let oldNote = entry.note
 
         entry.timestamp = newTS
         entry.value     = board.metric == .quantitative ? (parsedAmount ?? oldVal) : 1.0
