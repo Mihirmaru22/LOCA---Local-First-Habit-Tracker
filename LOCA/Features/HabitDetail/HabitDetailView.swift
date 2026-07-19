@@ -32,17 +32,29 @@ struct HabitDetailView: View {
             TabView(selection: $_selectedTab) {
                 // Analytics Tab
                 HabitAnalyticsView(board: board)
+                    .tabItem { Label("Analytics", systemImage: "chart.xyaxis.line") }
                     .tag(0)
 
                 // Check-ins Tab
                 HabitCheckInsView(board: board)
+                    .tabItem { Label("Check-ins", systemImage: "checklist") }
                     .tag(1)
 
                 // Journal Tab
                 HabitJournalView(board: board)
+                    .tabItem { Label("Journal", systemImage: "doc.text") }
                     .tag(2)
             }
             .pagedTabView()
+
+            // iOS uses the paged style, which draws no tab bar of its own, so the
+            // selector is ours to supply. macOS falls back to the native tabbed
+            // TabView (driven by the .tabItem labels above) — adding the pill
+            // there would duplicate it.
+            #if os(iOS)
+            SurfaceSelector(selection: $_selectedTab)
+                .padding(.bottom, DS.Space.lg)
+            #endif
         }
         .navigationTitle(board.name)
         .largeNavigationTitleDisplay()
@@ -55,6 +67,71 @@ struct HabitDetailView: View {
         }
         .sheet(isPresented: $showingEditSheet) {
             HabitFormView(mode: .edit(board))
+        }
+    }
+}
+
+// MARK: - SurfaceSelector
+
+/// Floating segmented control for the three detail surfaces.
+///
+/// Sits over the paged `TabView` on iOS, where `.page(indexDisplayMode: .never)`
+/// supplies no affordance of its own. Icon-only to stay compact at the bottom
+/// of the screen; each segment carries an accessibility label so the meaning is
+/// never carried by the glyph alone.
+private struct SurfaceSelector: View {
+
+    @Binding var selection: Int
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private struct Surface {
+        let index: Int
+        let icon: String
+        let label: String
+    }
+
+    private let surfaces: [Surface] = [
+        Surface(index: 0, icon: "chart.xyaxis.line", label: "Analytics"),
+        Surface(index: 1, icon: "checklist", label: "Check-ins"),
+        Surface(index: 2, icon: "doc.text", label: "Journal")
+    ]
+
+    var body: some View {
+        HStack(spacing: DS.Space.xs) {
+            ForEach(surfaces, id: \.index) { surface in
+                Button {
+                    withAnimation(DS.Motion.confirm(reduceMotion: reduceMotion)) {
+                        selection = surface.index
+                    }
+                } label: {
+                    Image(systemName: surface.icon)
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(
+                            selection == surface.index
+                                ? DS.Color.textPrimary
+                                : DS.Color.textSecondary
+                        )
+                        .frame(width: 52, height: 40)
+                        .background {
+                            if selection == surface.index {
+                                RoundedRectangle(cornerRadius: DS.Radius.control, style: .continuous)
+                                    .fill(DS.Color.surfaceRecessed)
+                            }
+                        }
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text(surface.label))
+                .accessibilityAddTraits(
+                    selection == surface.index ? [.isButton, .isSelected] : .isButton
+                )
+            }
+        }
+        .padding(DS.Space.xs)
+        .background {
+            Capsule(style: .continuous)
+                .fill(DS.Color.surface)
+                .shadow(color: .black.opacity(0.18), radius: 12, y: 4)
         }
     }
 }

@@ -144,7 +144,8 @@ struct HabitCheckInsView: View {
                     }
                 }
 
-                Spacer(minLength: DS.Space.xxxl)
+                // Clearance for the floating SurfaceSelector pill.
+                Spacer(minLength: DS.Space.xxxl + DS.Space.xl)
             }
             .padding(DS.Space.lg)
         }
