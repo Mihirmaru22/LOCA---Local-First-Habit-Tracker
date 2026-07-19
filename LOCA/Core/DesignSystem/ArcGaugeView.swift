@@ -87,7 +87,12 @@ struct ArcGaugeView: View {
     private func arcPath(center: CGPoint, radius: CGFloat, fraction: Double) -> Path {
         var path = Path()
         let startAngle: Double = -90  // Top of circle
-        let endAngle = startAngle + (360 * fraction)
+        
+        // Ensure minimum visible arc angle even for very small fractions
+        // (prevents the rounded caps from dominating the visual at low completion)
+        let minArcDegrees = 8.0  // Minimum 8 degrees for visibility
+        let effectiveFraction = max(fraction, minArcDegrees / 360.0)
+        let endAngle = startAngle + (360 * effectiveFraction)
 
         path.addArc(
             center: center,
