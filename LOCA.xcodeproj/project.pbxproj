@@ -41,6 +41,9 @@
 		FE1C77B02737FF7D02B147F9 /* DSComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE3AFDA24101174CA0C31F34 /* DSComponents.swift */; };
 		9BC55CE15C7D2A795DDDD331 /* HabitListRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86A9A6A783B46023591EB5D0 /* HabitListRow.swift */; };
 		290812E393429F92DFF5711C /* HabitListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AAEC2D33ABC3ABB90525E4 /* HabitListView.swift */; };
+		C925DCC8608E4CC8B96FB1BE /* HabitListLayoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30B7627F917F4D3E8569640B /* HabitListLayoutView.swift */; };
+		D9F19BCA3572423D959CEEF5 /* HabitGridLayoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1722A0BDC804F11856E575D /* HabitGridLayoutView.swift */; };
+		E9AD5D5A79294D419351145A /* HabitTimelineLayoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4F66C1B540B481B99AD752F /* HabitTimelineLayoutView.swift */; };
 		7933F28D2868EE14245E30DB /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E2A187171CA9C92C1E862CC /* TodayView.swift */; };
 		126502F6A951AC2CD8F22DA0 /* WeeklyBarChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37119D6BF608C9E0EDFAA772 /* WeeklyBarChart.swift */; };
 		3DD05FACBA31EE0C7FFFF99B /* ArcGaugeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8430612562AB5270D58C46C7 /* ArcGaugeView.swift */; };
@@ -108,6 +111,9 @@
 		FE3AFDA24101174CA0C31F34 /* DSComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DSComponents.swift"; sourceTree = "<group>"; };
 		86A9A6A783B46023591EB5D0 /* HabitListRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitListRow.swift"; sourceTree = "<group>"; };
 		39AAEC2D33ABC3ABB90525E4 /* HabitListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitListView.swift"; sourceTree = "<group>"; };
+		30B7627F917F4D3E8569640B /* HabitListLayoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitListLayoutView.swift"; sourceTree = "<group>"; };
+		D1722A0BDC804F11856E575D /* HabitGridLayoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitGridLayoutView.swift"; sourceTree = "<group>"; };
+		F4F66C1B540B481B99AD752F /* HabitTimelineLayoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitTimelineLayoutView.swift"; sourceTree = "<group>"; };
 		6E2A187171CA9C92C1E862CC /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TodayView.swift"; sourceTree = "<group>"; };
 		37119D6BF608C9E0EDFAA772 /* WeeklyBarChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WeeklyBarChart.swift"; sourceTree = "<group>"; };
 		8430612562AB5270D58C46C7 /* ArcGaugeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ArcGaugeView.swift"; sourceTree = "<group>"; };
@@ -247,6 +253,9 @@
 				8CDAE353812C31ADEF5B9789 /* ArcProgressView.swift */,
 				6E2A187171CA9C92C1E862CC /* TodayView.swift */,
 				39AAEC2D33ABC3ABB90525E4 /* HabitListView.swift */,
+				30B7627F917F4D3E8569640B /* HabitListLayoutView.swift */,
+				D1722A0BDC804F11856E575D /* HabitGridLayoutView.swift */,
+				F4F66C1B540B481B99AD752F /* HabitTimelineLayoutView.swift */,
 				86A9A6A783B46023591EB5D0 /* HabitListRow.swift */,
 				04AD22D76419B8B94DE6EC40 /* SettingsMenuView.swift */,
 			);
@@ -517,6 +526,9 @@
 				FE1C77B02737FF7D02B147F9 /* DSComponents.swift in Sources */,
 				9BC55CE15C7D2A795DDDD331 /* HabitListRow.swift in Sources */,
 				290812E393429F92DFF5711C /* HabitListView.swift in Sources */,
+				C925DCC8608E4CC8B96FB1BE /* HabitListLayoutView.swift in Sources */,
+				D9F19BCA3572423D959CEEF5 /* HabitGridLayoutView.swift in Sources */,
+				E9AD5D5A79294D419351145A /* HabitTimelineLayoutView.swift in Sources */,
 				7933F28D2868EE14245E30DB /* TodayView.swift in Sources */,
 				126502F6A951AC2CD8F22DA0 /* WeeklyBarChart.swift in Sources */,
 				3DD05FACBA31EE0C7FFFF99B /* ArcGaugeView.swift in Sources */,
@@ -770,3 +782,4 @@
 	};
 	rootObject = 0AFF682CCDB14D60A059831D /* Project object */;
 }
+
