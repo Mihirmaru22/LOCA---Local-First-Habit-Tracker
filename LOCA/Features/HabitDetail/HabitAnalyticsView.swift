@@ -182,6 +182,9 @@ struct HabitAnalyticsView: View {
                 // MARK: - Timeline Chart
                 TimelineChartView(board: board)
 
+                // MARK: - Streaks Chart
+                StreaksChartView(board: board)
+
                 // Clearance for the floating SurfaceSelector pill.
                 Spacer(minLength: DS.Space.xxxl + DS.Space.xl)
             }
