@@ -40,20 +40,11 @@ struct HabitListView: View {
                 Group {
                     switch layout {
                     case "grid":
-                        HabitGridLayoutView(
-                            boardsWithState: boardsWithState,
-                            onCheckBinary: checkInBinary
-                        )
+                        HabitGridLayoutView()
                     case "timeline":
-                        HabitTimelineLayoutView(
-                            boardsWithState: boardsWithState,
-                            onCheckBinary: checkInBinary
-                        )
+                        HabitTimelineLayoutView()
                     default: // "list"
-                        HabitListLayoutView(
-                            boardsWithState: boardsWithState,
-                            onCheckBinary: checkInBinary
-                        )
+                        HabitListLayoutView()
                     }
                 }
             }
