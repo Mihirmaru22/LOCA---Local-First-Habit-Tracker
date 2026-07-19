@@ -2,13 +2,7 @@
 //  HabitDetailView.swift
 //  LOCA
 //
-//  Phase 14.6 — Pixel-perfect match to reference screenshot.
-//
-//  Layout:
-//    - Heatmap hero (52 weeks × 7 days, dark card, day labels left)
-//    - 2-column metric row: CurrentStreakCard | ConsistencyCard
-//    - Full-width CurrentMonthCard (real data, real bars)
-//    - Bottom pill toolbar: 3 nav icons left, + button right
+//  Phase 14.7 — Pixel-perfect habit detail view.
 //
 
 import SwiftUI
@@ -19,7 +13,6 @@ import SwiftData
 struct HabitDetailView: View {
     let board: HabitBoard
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.dismiss) var dismiss
 
     @State private var showingEditSheet = false
     @State private var selectedTab = 0
@@ -29,77 +22,60 @@ struct HabitDetailView: View {
             Color.black.ignoresSafeArea()
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    // Heatmap hero
+                VStack(alignment: .leading, spacing: 14) {
+                    // Heatmap — fills width, cells sized by geometry
                     DetailHeatmapCard(board: board)
-                        .padding(.horizontal, 16)
 
-                    // Metric row
-                    HStack(spacing: 12) {
+                    // 2-col metric row
+                    HStack(alignment: .top, spacing: 12) {
                         DetailStreakCard(board: board)
                         DetailConsistencyCard(board: board)
                     }
                     .padding(.horizontal, 16)
 
-                    // Month card
+                    // Full-width month card
                     DetailMonthCard(board: board)
                         .padding(.horizontal, 16)
 
                     Spacer(minLength: 100)
                 }
-                .padding(.top, 12)
+                .padding(.top, 8)
             }
 
             // Bottom pill toolbar
             HStack(spacing: 0) {
-                // Left pill: 3 nav icons
-                HStack(spacing: 28) {
-                    ToolbarIcon(icon: "chart.xyaxis.line", selected: selectedTab == 0, color: ColorPalette[board.colorIndex]) {
-                        selectedTab = 0
-                    }
-                    ToolbarIcon(icon: "checklist", selected: selectedTab == 1, color: ColorPalette[board.colorIndex]) {
-                        selectedTab = 1
-                    }
-                    ToolbarIcon(icon: "doc.text", selected: selectedTab == 2, color: ColorPalette[board.colorIndex]) {
-                        selectedTab = 2
-                    }
+                HStack(spacing: 26) {
+                    ToolbarTabIcon(icon: "chart.xyaxis.line", selected: selectedTab == 0, color: ColorPalette[board.colorIndex]) { selectedTab = 0 }
+                    ToolbarTabIcon(icon: "checklist",         selected: selectedTab == 1, color: ColorPalette[board.colorIndex]) { selectedTab = 1 }
+                    ToolbarTabIcon(icon: "doc.text",          selected: selectedTab == 2, color: ColorPalette[board.colorIndex]) { selectedTab = 2 }
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 22)
                 .padding(.vertical, 14)
-                .background(Color(white: 0.13), in: Capsule(style: .continuous))
+                .background(Color(white: 0.14), in: Capsule(style: .continuous))
 
                 Spacer()
 
-                // Right: + button
                 Button(action: { showingEditSheet = true }) {
                     Image(systemName: "plus")
                         .font(.title2.weight(.semibold))
                         .foregroundStyle(.white)
                         .frame(width: 52, height: 52)
-                        .background(Color(white: 0.13), in: Circle())
+                        .background(Color(white: 0.14), in: Circle())
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.bottom, 24)
+            .padding(.bottom, 28)
         }
         .navigationTitle(board.name)
-        .inlineNavigationTitleDisplay()
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(false)
         .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: { dismiss() }) {
-                    Image(systemName: "chevron.left")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 36, height: 36)
-                        .background(Color(white: 0.18), in: Circle())
-                }
-            }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: { showingEditSheet = true }) {
                     Image(systemName: "pencil")
                         .font(.body.weight(.semibold))
                         .foregroundStyle(.white)
-                        .frame(width: 36, height: 36)
+                        .frame(width: 34, height: 34)
                         .background(Color(white: 0.18), in: Circle())
                 }
             }
@@ -110,9 +86,9 @@ struct HabitDetailView: View {
     }
 }
 
-// MARK: - ToolbarIcon
+// MARK: - ToolbarTabIcon
 
-private struct ToolbarIcon: View {
+private struct ToolbarTabIcon: View {
     let icon: String
     let selected: Bool
     let color: Color
@@ -121,8 +97,8 @@ private struct ToolbarIcon: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(selected ? color : Color(white: 0.45))
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(selected ? color : Color(white: 0.40))
         }
         .buttonStyle(.plain)
     }
@@ -135,40 +111,51 @@ struct DetailHeatmapCard: View {
 
     private let dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
     private let weeks = 52
-    private let cellSize: CGFloat = 7
-    private let cellSpacing: CGFloat = 2
+    private let cellSpacing: CGFloat = 2.5
+    private let labelWidth: CGFloat = 30
+    private let horizontalPad: CGFloat = 16
 
     var body: some View {
-        VStack(alignment: .leading, spacing: cellSpacing) {
-            ForEach(0..<7, id: \.self) { dayIndex in
-                HStack(spacing: cellSpacing) {
-                    // Day label
-                    Text(dayLabels[dayIndex])
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(Color(white: 0.45))
-                        .frame(width: 28, alignment: .leading)
+        GeometryReader { geo in
+            let availableWidth = geo.size.width - horizontalPad * 2 - labelWidth - cellSpacing
+            let cellSize = max(4, (availableWidth - cellSpacing * CGFloat(weeks - 1)) / CGFloat(weeks))
 
-                    // Cells
-                    ForEach(0..<weeks, id: \.self) { weekIndex in
-                        DetailHeatmapCell(
-                            board: board,
-                            dayIndex: dayIndex,
-                            weekIndex: weekIndex,
-                            cellSize: cellSize
-                        )
+            VStack(alignment: .leading, spacing: cellSpacing) {
+                ForEach(0..<7, id: \.self) { dayIndex in
+                    HStack(spacing: cellSpacing) {
+                        Text(dayLabels[dayIndex])
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundStyle(Color(white: 0.40))
+                            .frame(width: labelWidth, alignment: .leading)
+
+                        ForEach(0..<weeks, id: \.self) { weekIndex in
+                            DetailHeatmapCell(board: board, dayIndex: dayIndex, weekIndex: weekIndex)
+                                .frame(width: cellSize, height: cellSize)
+                        }
                     }
                 }
             }
+            .padding(12)
+            .frame(width: geo.size.width - horizontalPad * 2)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(ColorPalette[board.colorIndex].opacity(0.10))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(ColorPalette[board.colorIndex].opacity(0.20), lineWidth: 0.5)
+            )
+            .position(x: geo.size.width / 2, y: geo.size.height / 2)
         }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(ColorPalette[board.colorIndex].opacity(0.10))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(ColorPalette[board.colorIndex].opacity(0.18), lineWidth: 0.5)
-        )
+        .frame(height: heatmapHeight())
+        .padding(.horizontal, horizontalPad)
+    }
+
+    private func heatmapHeight() -> CGFloat {
+        // 7 rows * (cellSize + spacing) + vertical padding
+        // Approximate: screen-independent estimate
+        let rowH: CGFloat = 9 + cellSpacing
+        return rowH * 7 + 24 + 2
     }
 }
 
@@ -178,17 +165,12 @@ struct DetailHeatmapCell: View {
     let board: HabitBoard
     let dayIndex: Int
     let weekIndex: Int
-    let cellSize: CGFloat
 
-    private var cellDate: Date? {
+    private var totalValue: Double {
         let today = Calendar.current.startOfDay(for: .now)
         let weeksBack = 52 - 1 - weekIndex
         let daysBack = weeksBack * 7 + dayIndex
-        return Calendar.current.date(byAdding: .day, value: -daysBack, to: today)
-    }
-
-    private var totalValue: Double {
-        guard let date = cellDate else { return 0 }
+        guard let date = Calendar.current.date(byAdding: .day, value: -daysBack, to: today) else { return 0 }
         return (board.logs ?? [])
             .filter { Calendar.current.isDate($0.timestamp, inSameDayAs: date) }
             .reduce(0.0) { $0 + $1.value }
@@ -197,20 +179,18 @@ struct DetailHeatmapCell: View {
     private var fillOpacity: Double {
         guard totalValue > 0 else { return 0 }
         let ratio = totalValue / board.effectiveTarget
-        // Three tiers matching screenshot: dim / mid / full
         if ratio >= 1.0 { return 1.0 }
         if ratio >= 0.5 { return 0.55 }
-        return 0.28
+        return 0.30
     }
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 2.5, style: .continuous)
+        RoundedRectangle(cornerRadius: 2, style: .continuous)
             .fill(
                 totalValue > 0
                     ? ColorPalette[board.colorIndex].opacity(fillOpacity)
-                    : Color(white: 0.18)
+                    : Color(white: 0.17)
             )
-            .frame(width: cellSize, height: cellSize)
     }
 }
 
@@ -221,48 +201,43 @@ struct DetailStreakCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Header
-            HStack(spacing: 6) {
+            HStack(spacing: 5) {
                 Image(systemName: "flame.fill")
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color(white: 0.5))
+                    .font(.system(size: 10))
+                    .foregroundStyle(Color(white: 0.45))
                 Text("CURRENT STREAK")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(Color(white: 0.5))
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(Color(white: 0.45))
                     .tracking(0.4)
                 Spacer()
             }
 
-            Spacer(minLength: 16)
+            Spacer(minLength: 14)
 
-            // Streak value — dashes if 0
             if board.currentStreak > 0 {
-                ValueText(String(board.currentStreak), font: DS.Text.valueHero)
+                Text("\(board.currentStreak)")
+                    .font(.system(size: 36, weight: .bold, design: .rounded))
                     .foregroundStyle(ColorPalette[board.colorIndex])
             } else {
                 Text("– –")
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color(white: 0.35))
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color(white: 0.30))
             }
 
             Spacer(minLength: 12)
 
-            // Longest
             HStack(spacing: 4) {
                 Text("Longest:")
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color(white: 0.45))
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color(white: 0.40))
                 Text("\(board.longestStreak)")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.white)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: 140, alignment: .leading)
         .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(white: 0.11))
-        )
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color(white: 0.11)))
     }
 }
 
@@ -273,70 +248,63 @@ struct DetailConsistencyCard: View {
 
     private var consistencyRatio: Double {
         let now = Date()
-        guard let monthStart = Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: now)) else {
-            return 0
-        }
-        let components = Calendar.current.dateComponents([.day], from: monthStart, to: now)
-        let daysElapsed = max(1, (components.day ?? 0) + 1)
+        guard let monthStart = Calendar.current.date(
+            from: Calendar.current.dateComponents([.year, .month], from: now)
+        ) else { return 0 }
 
-        var dailyTotals = [Date: Double]()
+        let elapsed = max(1, (Calendar.current.dateComponents([.day], from: monthStart, to: now).day ?? 0) + 1)
+
+        var daily = [Date: Double]()
         for log in board.logs ?? [] {
             guard log.timestamp >= monthStart else { continue }
             let day = Calendar.current.startOfDay(for: log.timestamp)
-            dailyTotals[day, default: 0] += log.value
+            daily[day, default: 0] += log.value
         }
-        let completed = dailyTotals.filter { $0.value >= board.effectiveTarget }.count
-        return Double(completed) / Double(daysElapsed)
+        let completed = daily.filter { $0.value >= board.effectiveTarget }.count
+        return Double(completed) / Double(elapsed)
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Header
-            HStack(spacing: 6) {
+            HStack(spacing: 5) {
                 Image(systemName: "leaf.fill")
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color(white: 0.5))
+                    .font(.system(size: 10))
+                    .foregroundStyle(Color(white: 0.45))
                 Text("CONSISTENCY")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(Color(white: 0.5))
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(Color(white: 0.45))
                     .tracking(0.4)
                 Spacer()
             }
 
-            Spacer(minLength: 10)
+            Spacer(minLength: 8)
 
-            // Open-bottom arc gauge
+            // Open-bottom arc
             ZStack {
-                // Track arc (open bottom: 225° → 315°, so 270° sweep)
                 Circle()
                     .trim(from: 0.125, to: 0.875)
-                    .stroke(Color(white: 0.22), style: StrokeStyle(lineWidth: 9, lineCap: .round))
+                    .stroke(Color(white: 0.20), style: StrokeStyle(lineWidth: 10, lineCap: .round))
                     .rotationEffect(.degrees(90))
 
-                // Fill arc
-                Circle()
-                    .trim(from: 0.125, to: 0.125 + 0.75 * consistencyRatio)
-                    .stroke(
-                        ColorPalette[board.colorIndex].opacity(consistencyRatio > 0 ? 1 : 0),
-                        style: StrokeStyle(lineWidth: 9, lineCap: .round)
-                    )
-                    .rotationEffect(.degrees(90))
+                if consistencyRatio > 0 {
+                    Circle()
+                        .trim(from: 0.125, to: 0.125 + 0.75 * min(1, consistencyRatio))
+                        .stroke(ColorPalette[board.colorIndex], style: StrokeStyle(lineWidth: 10, lineCap: .round))
+                        .rotationEffect(.degrees(90))
+                }
 
                 Text("Average")
                     .font(.system(size: 11))
-                    .foregroundStyle(Color(white: 0.4))
+                    .foregroundStyle(Color(white: 0.38))
             }
-            .frame(height: 70)
-            .padding(.horizontal, 8)
+            .frame(height: 80)
+            .padding(.horizontal, 4)
 
             Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: 140, alignment: .leading)
         .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(white: 0.11))
-        )
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color(white: 0.11)))
     }
 }
 
@@ -345,12 +313,20 @@ struct DetailConsistencyCard: View {
 struct DetailMonthCard: View {
     let board: HabitBoard
 
+    private var currentMonthTotal: Double {
+        guard let monthStart = Calendar.current.date(
+            from: Calendar.current.dateComponents([.year, .month], from: Date())
+        ) else { return 0 }
+        return (board.logs ?? [])
+            .filter { $0.timestamp >= monthStart }
+            .reduce(0.0) { $0 + $1.value }
+    }
+
     private var weekDayTotals: [Double] {
-        // Last 7 days (Mon-Sun of current week)
         let today = Calendar.current.startOfDay(for: .now)
-        let sunday = Calendar.current.date(
+        guard let sunday = Calendar.current.date(
             from: Calendar.current.dateComponents([.yearForWeekOfYear, .weekOfYear], from: today)
-        ) ?? today
+        ) else { return Array(repeating: 0, count: 7) }
 
         return (0..<7).map { offset -> Double in
             guard let day = Calendar.current.date(byAdding: .day, value: offset, to: sunday) else { return 0 }
@@ -360,71 +336,67 @@ struct DetailMonthCard: View {
         }
     }
 
-    private var currentMonthTotal: Double {
-        let now = Date()
-        guard let monthStart = Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: now)) else {
-            return 0
-        }
-        return (board.logs ?? [])
-            .filter { $0.timestamp >= monthStart }
-            .reduce(0.0) { $0 + $1.value }
-    }
-
-    private var currentWeekTotal: Double {
-        weekDayTotals.reduce(0, +)
-    }
+    private var currentWeekTotal: Double { weekDayTotals.reduce(0, +) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Header
-            HStack(spacing: 6) {
+            HStack(spacing: 5) {
                 Image(systemName: "chart.bar.fill")
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color(white: 0.5))
+                    .font(.system(size: 10))
+                    .foregroundStyle(Color(white: 0.45))
                 Text("CURRENT MONTH")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(Color(white: 0.5))
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(Color(white: 0.45))
                     .tracking(0.4)
                 Spacer()
             }
 
-            Spacer(minLength: 12)
+            Spacer(minLength: 10)
 
+            // Value + bars
             HStack(alignment: .bottom, spacing: 0) {
-                // Left: total value
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(alignment: .lastTextBaseline, spacing: 6) {
+                // Left: big number
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(alignment: .lastTextBaseline, spacing: 5) {
                         Text(String(format: "%.0f", currentMonthTotal))
-                            .font(.system(size: 48, weight: .bold, design: .rounded))
-                            .foregroundStyle(ColorPalette[board.colorIndex])
-                        if let unit = board.unitLabel {
+                            .font(.system(size: 46, weight: .bold, design: .rounded))
+                            .foregroundStyle(
+                                currentMonthTotal > 0
+                                    ? ColorPalette[board.colorIndex]
+                                    : Color(white: 0.30)
+                            )
+                        if let unit = board.unitLabel, !unit.isEmpty {
                             Text(unit)
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundStyle(Color(white: 0.5))
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundStyle(Color(white: 0.45))
                         }
                     }
-                    Spacer(minLength: 0)
                 }
 
                 Spacer()
 
                 // Right: 7-bar week chart
-                let maxVal = max(weekDayTotals.max() ?? 1, 1)
+                let maxVal = max(weekDayTotals.max() ?? 1, board.effectiveTarget)
+                let todayWeekday = Calendar.current.component(.weekday, from: .now) - 1 // 0=Sun
+
                 HStack(alignment: .bottom, spacing: 5) {
                     ForEach(0..<7, id: \.self) { i in
-                        let ratio = weekDayTotals[i] / maxVal
-                        let isToday = i == Calendar.current.component(.weekday, from: .now) - 1
-                        let isFuture = Calendar.current.date(
-                            from: Calendar.current.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Calendar.current.startOfDay(for: .now))
-                        ).map { Calendar.current.date(byAdding: .day, value: i, to: $0)! > Date() } ?? false
+                        let val = weekDayTotals[i]
+                        let ratio = val / maxVal
+                        let barH = max(6, 56 * ratio)
+                        let isToday = i == todayWeekday
+                        let hasFill = val > 0
 
                         RoundedRectangle(cornerRadius: 3, style: .continuous)
                             .fill(
-                                weekDayTotals[i] > 0
-                                    ? ColorPalette[board.colorIndex].opacity(isToday ? 1.0 : 0.45)
-                                    : Color(white: isFuture ? 0.10 : 0.18)
+                                hasFill
+                                    ? (isToday
+                                        ? ColorPalette[board.colorIndex]
+                                        : ColorPalette[board.colorIndex].opacity(0.40))
+                                    : Color(white: 0.18)
                             )
-                            .frame(width: 18, height: max(8, 52 * ratio))
+                            .frame(width: 18, height: hasFill ? barH : 8)
                     }
                 }
             }
@@ -435,29 +407,26 @@ struct DetailMonthCard: View {
             HStack(spacing: 4) {
                 Text("Current week:")
                     .font(.system(size: 12))
-                    .foregroundStyle(Color(white: 0.45))
+                    .foregroundStyle(Color(white: 0.40))
 
                 if currentWeekTotal > 0 {
                     Text(String(format: "%.0f", currentWeekTotal))
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.white)
-                    if let unit = board.unitLabel {
+                    if let unit = board.unitLabel, !unit.isEmpty {
                         Text(unit)
                             .font(.system(size: 12))
-                            .foregroundStyle(Color(white: 0.45))
+                            .foregroundStyle(Color(white: 0.40))
                     }
                 } else {
                     Text("–")
                         .font(.system(size: 12))
-                        .foregroundStyle(Color(white: 0.45))
+                        .foregroundStyle(Color(white: 0.40))
                 }
             }
         }
         .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(white: 0.11))
-        )
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color(white: 0.11)))
     }
 }
 
@@ -465,6 +434,6 @@ struct DetailMonthCard: View {
 
 #Preview {
     NavigationStack {
-        HabitDetailView(board: HabitBoard(name: "Work on side project", metricType: 1, targetValue: 1, unitLabel: "h", colorIndex: 5))
+        HabitDetailView(board: HabitBoard(name: "Cardio", metricType: 1, targetValue: 1, unitLabel: "kcal", colorIndex: 5))
     }
 }
