@@ -70,4 +70,19 @@ extension View {
         listStyle(.inset)
         #endif
     }
+
+    /// Swipeable paged `TabView` without the page-dot index.
+    ///
+    /// - iOS: `.tabViewStyle(.page(indexDisplayMode: .never))` — horizontal swipe
+    ///   between surfaces, with the selector supplied by the caller.
+    /// - macOS: no-op — `PageTabViewStyle` is unavailable; the `TabView` falls
+    ///   back to its automatic (tabbed) style, which is the native idiom there.
+    @ViewBuilder
+    func pagedTabView() -> some View {
+        #if os(iOS)
+        tabViewStyle(.page(indexDisplayMode: .never))
+        #else
+        self
+        #endif
+    }
 }

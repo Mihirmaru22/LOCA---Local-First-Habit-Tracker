@@ -42,7 +42,7 @@ struct HabitDetailView: View {
                 HabitJournalView(board: board)
                     .tag(2)
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
+            .pagedTabView()
         }
         .navigationTitle(board.name)
         .largeNavigationTitleDisplay()

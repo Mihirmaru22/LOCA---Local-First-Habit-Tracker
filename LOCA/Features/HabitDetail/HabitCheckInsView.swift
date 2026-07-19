@@ -11,7 +11,6 @@
 
 import SwiftUI
 import SwiftData
-import UIKit
 
 struct HabitCheckInsView: View {
 
@@ -111,7 +110,7 @@ struct HabitCheckInsView: View {
                         HStack(spacing: DS.Space.md) {
                             TextField("0", text: $inputValue)
                                 .font(DS.Text.body)
-                                .keyboardType(.decimalPad)
+                                .decimalKeyboard()
                                 .textFieldStyle(.roundedBorder)
 
                             if let unit = board.unitLabel, !unit.isEmpty {
@@ -157,36 +156,53 @@ struct HabitCheckInsView: View {
         guard let value = Double(inputValue), value > 0 else { return }
 
         isSubmitting = true
-        let logEntry = LogEntry(timestamp: Date(), value: value, boardID: board.id, board: board)
+        let logEntry = LogEntry(value: value, boardID: board.id, board: board)
         modelContext.insert(logEntry)
+        board.updateStreak(using: .current)
 
-        let impact = UIImpactFeedbackGenerator(style: .medium)
-        impact.impactOccurred()
-
-        withAnimation(DS.Motion.confirm(reduceMotion: reduceMotion)) {
-            inputValue = ""
+        do {
+            try modelContext.save()
+            triggerConfirmationHaptic()
+            WidgetRefreshCoordinator.shared.scheduleReload()
+            withAnimation(DS.Motion.confirm(reduceMotion: reduceMotion)) {
+                inputValue = ""
+                isSubmitting = false
+            }
+        } catch {
+            modelContext.rollback()
             isSubmitting = false
         }
-
-        try? modelContext.save()
     }
 
     private func toggleBinary() {
-        let impact = UIImpactFeedbackGenerator(style: .medium)
-        impact.impactOccurred()
-
         if isCompleted {
-            // Delete today's entry (if exists)
-            if let todaysEntry = (board.logs ?? []).first(where: { $0.timestamp.isToday() }) {
-                modelContext.delete(todaysEntry)
+            // Remove today's entries
+            for entry in (board.logs ?? []).filter({ $0.timestamp.isToday() }) {
+                modelContext.delete(entry)
             }
         } else {
-            // Add today's entry
-            let logEntry = LogEntry(timestamp: Date(), value: 1, boardID: board.id, board: board)
+            let logEntry = LogEntry(value: 1, boardID: board.id, board: board)
             modelContext.insert(logEntry)
+            board.updateStreak(using: .current)
         }
 
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+            triggerConfirmationHaptic()
+            WidgetRefreshCoordinator.shared.scheduleReload()
+        } catch {
+            modelContext.rollback()
+        }
+    }
+
+    // MARK: - Haptics
+
+    /// Gated on UIKit availability — the macOS target has no
+    /// UIImpactFeedbackGenerator (Engineering Rules §Platform shims).
+    private func triggerConfirmationHaptic() {
+        #if canImport(UIKit)
+        UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
+        #endif
     }
 }
 
