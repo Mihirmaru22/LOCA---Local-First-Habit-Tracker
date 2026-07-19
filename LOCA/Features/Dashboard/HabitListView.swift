@@ -42,9 +42,15 @@ struct HabitListView: View {
                     case "grid":
                         HabitGridLayoutView()
                     case "timeline":
-                        HabitTimelineLayoutView()
+                        HabitTimelineLayoutView(
+                            boardsWithState: boardsWithState,
+                            onCheckBinary: checkInBinary
+                        )
                     default: // "list"
-                        HabitListLayoutView()
+                        HabitListLayoutView(
+                            boardsWithState: boardsWithState,
+                            onCheckBinary: checkInBinary
+                        )
                     }
                 }
             }
