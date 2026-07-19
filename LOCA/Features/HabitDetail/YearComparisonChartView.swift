@@ -176,7 +176,7 @@ struct YearComparisonChartView: View {
 
                 var current = monthStart
                 while current <= monthEnd {
-                    if Double.random() < 0.7 {
+                    if Double.random(in: 0...1) < 0.7 {
                         let value = Double.random(in: 20...45)
                         let entry = LogEntry(timestamp: current, value: value, boardID: habit.id, board: habit)
                         container.mainContext.insert(entry)

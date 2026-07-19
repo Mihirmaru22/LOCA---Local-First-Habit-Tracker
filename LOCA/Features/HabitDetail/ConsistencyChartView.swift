@@ -199,7 +199,7 @@ struct ConsistencyChartView: View {
 
                 var current = monthStart
                 while current <= monthEnd {
-                    if Double.random() < (0.5 + Double(12 - monthsAgo) * 0.05) {
+                    if Double.random(in: 0...1) < (0.5 + Double(12 - monthsAgo) * 0.05) {
                         let entry = LogEntry(timestamp: current, value: 1, boardID: habit.id, board: habit)
                         container.mainContext.insert(entry)
                     }

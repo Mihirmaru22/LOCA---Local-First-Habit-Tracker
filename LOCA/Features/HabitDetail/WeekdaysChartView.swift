@@ -154,7 +154,7 @@ struct WeekdaysChartView: View {
                         let weekday = Calendar.current.component(.weekday, from: day)
                         let probability = weekday > 2 && weekday < 7 ? 0.7 : 0.4  // More on weekdays
                         
-                        if Double.random() < probability {
+                        if Double.random(in: 0...1) < probability {
                             let entry = LogEntry(timestamp: day, value: 1, boardID: habit.id, board: habit)
                             container.mainContext.insert(entry)
                         }
