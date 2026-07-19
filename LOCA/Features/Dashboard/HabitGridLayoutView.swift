@@ -2,11 +2,10 @@
 //  HabitGridLayoutView.swift
 //  LOCA
 //
-//  Phase 14.4 — Grid layout with mini heatmaps.
+//  Phase 14.4 — Grid layout with mini heatmaps (exact reference match).
 //
-//  2-column grid of habit cards. Each card displays a small heatmap
-//  (7-14 recent days) with intensity-coded cells, streak count, and
-//  today's value.
+//  2-column grid. Each card: emoji + name (top), 14-day heatmap (middle),
+//  streak + value (bottom). Colored background, subtle border.
 //
 
 import SwiftUI
@@ -65,7 +64,7 @@ struct HabitGridCardWithHeatmap: View {
     }
 
     private var cardBackgroundColor: Color {
-        ColorPalette[board.colorIndex].opacity(0.15)
+        ColorPalette[board.colorIndex].opacity(0.12)
     }
 
     private var heatmapDays: [Date] {
@@ -82,15 +81,17 @@ struct HabitGridCardWithHeatmap: View {
             // Header: emoji + name
             HStack(spacing: DS.Space.sm) {
                 Text(board.emoji ?? "✓")
-                    .font(.title3)
+                    .font(.system(size: 24))
+                
                 Text(board.name)
                     .font(DS.Text.body)
                     .lineLimit(1)
                     .truncationMode(.tail)
+                
                 Spacer()
             }
 
-            // Mini heatmap grid (14 days in 2 rows of 7)
+            // Mini heatmap grid (2 rows × 7 days)
             VStack(spacing: 2) {
                 ForEach(0..<2, id: \.self) { row in
                     HStack(spacing: 2) {
@@ -108,16 +109,21 @@ struct HabitGridCardWithHeatmap: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, DS.Space.sm)
+
+            Spacer(minLength: 0)
 
             // Bottom: Streak + Value
             HStack(spacing: DS.Space.md) {
+                // Streak count
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Streak")
                         .font(DS.Text.caption)
                         .foregroundStyle(DS.Color.textSecondary)
+                    
                     ValueText(
                         String(currentStreakValue),
-                        font: DS.Text.valueCompact
+                        font: DS.Text.value
                     )
                     .foregroundStyle(ColorPalette[board.colorIndex])
                 }
@@ -126,27 +132,30 @@ struct HabitGridCardWithHeatmap: View {
 
                 // Today's value or check button
                 if board.metricType == 0 {
-                    // Binary: show checkmark or button
+                    // Binary: checkmark or empty circle
                     if todaysTotal >= 1.0 {
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.title3)
+                            .font(.system(size: 28))
                             .foregroundStyle(ColorPalette[board.colorIndex])
                     } else {
                         Button(action: onCheckBinary) {
                             Image(systemName: "circle")
-                                .font(.title3)
+                                .font(.system(size: 28))
                                 .foregroundStyle(DS.Color.textTertiary)
                         }
                     }
                 } else {
-                    // Quantitative: show value
+                    // Quantitative: show value + unit
                     VStack(alignment: .trailing, spacing: 2) {
-                        Text(board.unitLabel ?? "")
-                            .font(DS.Text.caption)
-                            .foregroundStyle(DS.Color.textSecondary)
+                        if let unit = board.unitLabel, !unit.isEmpty {
+                            Text(unit)
+                                .font(DS.Text.caption)
+                                .foregroundStyle(DS.Color.textSecondary)
+                        }
+                        
                         ValueText(
                             todaysTotal.formatted(.number.precision(.fractionLength(0...1))),
-                            font: DS.Text.valueCompact
+                            font: DS.Text.value
                         )
                         .foregroundStyle(
                             todaysTotal >= board.effectiveTarget
@@ -161,7 +170,7 @@ struct HabitGridCardWithHeatmap: View {
         .background(cardBackgroundColor, in: RoundedRectangle(cornerRadius: DS.Radius.card))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.card)
-                .stroke(ColorPalette[board.colorIndex].opacity(0.3), lineWidth: 0.5)
+                .stroke(ColorPalette[board.colorIndex].opacity(0.25), lineWidth: 0.5)
         )
     }
 }
@@ -182,12 +191,13 @@ struct MiniHeatmapCell: View {
     }
 
     private var cellOpacity: Double {
+        guard !dayLogs.isEmpty else { return 0 }
         let ratio = totalValue / board.effectiveTarget
-        return min(1.0, max(0.2, ratio))
+        return min(1.0, max(0.3, ratio))
     }
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 3)
+        RoundedRectangle(cornerRadius: 2)
             .fill(
                 dayLogs.isEmpty
                     ? DS.Color.surface
