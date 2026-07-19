@@ -11,7 +11,6 @@
 
 import SwiftUI
 import SwiftData
-import UserNotifications
 
 // MARK: - SettingsMenuView
 
@@ -19,7 +18,6 @@ struct SettingsMenuView: View {
 
     @State private var showingLayoutPicker = false
     @State private var showingArchive = false
-    @State private var showingReminder = false
     @State private var showingSettings = false
 
     var body: some View {
@@ -27,9 +25,6 @@ struct SettingsMenuView: View {
             Section {
                 Button(action: { showingLayoutPicker = true }) {
                     Label("Layout", systemImage: "square.grid.2x2")
-                }
-                Button(action: { showingReminder = true }) {
-                    Label("Review Reminder", systemImage: "bell.badge")
                 }
             }
 
@@ -49,9 +44,6 @@ struct SettingsMenuView: View {
         }
         .sheet(isPresented: $showingArchive) {
             ArchiveListView()
-        }
-        .sheet(isPresented: $showingReminder) {
-            ReviewReminderSettingsView()
         }
         .sheet(isPresented: $showingSettings) {
             AppSettingsView()
@@ -191,73 +183,6 @@ struct ArchiveListView: View {
     }
 }
 
-// MARK: - Review Reminder Settings
-
-struct ReviewReminderSettingsView: View {
-    @Environment(\.dismiss) var dismiss
-    @AppStorage("reviewReminderEnabled") private var enabled = false
-    @AppStorage("reviewReminderHour") private var hour = 9
-    @AppStorage("reviewReminderMinute") private var minute = 0
-
-    var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: DS.Space.lg) {
-                SectionHeader("Daily Review Reminder")
-
-                Toggle("Enable Reminder", isOn: $enabled)
-                    .onChange(of: enabled) { _, newValue in
-                        if newValue {
-                            requestNotificationPermission()
-                        }
-                    }
-
-                if enabled {
-                    VStack(spacing: DS.Space.md) {
-                        HStack {
-                            Text("Time")
-                                .font(DS.Text.body)
-                            Spacer()
-                            HStack(spacing: DS.Space.md) {
-                                Picker("Hour", selection: $hour) {
-                                    ForEach(0..<24, id: \.self) { h in
-                                        Text("\(h):00").tag(h)
-                                    }
-                                }
-                                .frame(maxWidth: 80)
-
-                                Text(":")
-                                    .font(DS.Text.body)
-
-                                Picker("Minute", selection: $minute) {
-                                    ForEach(Array(stride(from: 0, to: 60, by: 15)), id: \.self) { m in
-                                        Text(String(format: "%02d", m)).tag(m)
-                                    }
-                                }
-                                .frame(maxWidth: 80)
-                            }
-                        }
-                    }
-                    .padding(DS.Space.md)
-                    .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
-                }
-
-                Spacer()
-            }
-            .padding(DS.Space.lg)
-            .navigationTitle("Review Reminder")
-            .inlineNavigationTitleDisplay()
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button("Done", action: { dismiss() })
-                }
-            }
-        }
-    }
-
-    private func requestNotificationPermission() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
-    }
-}
 
 // MARK: - App Settings
 
