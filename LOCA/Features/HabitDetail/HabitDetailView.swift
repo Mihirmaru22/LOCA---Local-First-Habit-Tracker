@@ -12,8 +12,9 @@ import SwiftData
 
 struct HabitDetailView: View {
     let board: HabitBoard
-    @State private var showingEditSheet = false
-    @State private var selectedTab = 0
+    @State private var showingEditSheet    = false
+    @State private var showingCheckIn      = false
+    @State private var selectedTab         = 0
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -62,7 +63,8 @@ struct HabitDetailView: View {
 
                 Spacer()
 
-                Button(action: { showingEditSheet = true }) {
+                // + button → add check-in
+                Button(action: { showingCheckIn = true }) {
                     Image(systemName: "plus")
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundStyle(.white)
@@ -76,6 +78,7 @@ struct HabitDetailView: View {
         .navigationTitle(board.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            // pencil → edit habit
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: { showingEditSheet = true }) {
                     Image(systemName: "pencil")
@@ -88,6 +91,9 @@ struct HabitDetailView: View {
         }
         .sheet(isPresented: $showingEditSheet) {
             HabitFormView(mode: .edit(board))
+        }
+        .sheet(isPresented: $showingCheckIn) {
+            AddCheckInSheetView(board: board)
         }
     }
 }
