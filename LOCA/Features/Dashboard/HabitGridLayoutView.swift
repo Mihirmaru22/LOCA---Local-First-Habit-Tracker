@@ -39,6 +39,8 @@ struct GridHabitCard: View {
     let board: HabitBoard
     let onCheck: () -> Void
 
+    @State private var showingCheckIn = false
+
     // Today's logged value
     private var todayValue: Double {
         (board.logs ?? [])
@@ -78,7 +80,13 @@ struct GridHabitCard: View {
                 board: board,
                 todayLogged: todayLogged,
                 todayValue: todayValue,
-                onCheck: onCheck
+                onCheck: {
+                    if board.metric == .binary {
+                        onCheck()           // direct DB write via HabitListView
+                    } else {
+                        showingCheckIn = true   // open sheet for amount
+                    }
+                }
             )
             .padding(.horizontal, 13)
             .padding(.top, 10)
@@ -94,6 +102,9 @@ struct GridHabitCard: View {
                 .stroke(ColorPalette[board.colorIndex].opacity(0.18), lineWidth: 0.5)
         )
         .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .sheet(isPresented: $showingCheckIn) {
+            AddCheckInSheetView(board: board)
+        }
     }
 }
 

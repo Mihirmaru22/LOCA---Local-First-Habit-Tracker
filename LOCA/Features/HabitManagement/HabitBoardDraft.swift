@@ -29,6 +29,9 @@ struct HabitBoardDraft {
     /// If true, the habit card displays with a tinted background.
     var useColorBackground: Bool = false
 
+    /// Optional emoji prefix shown on habit cards (e.g. "🏃", "📚").
+    var emoji: String = ""
+
     // MARK: Initialisers
 
     init() {
@@ -39,6 +42,7 @@ struct HabitBoardDraft {
         self.customUnitText = ""
         self.colorIndex = 0
         self.useColorBackground = false
+        self.emoji = ""
     }
 
     @MainActor
@@ -52,6 +56,7 @@ struct HabitBoardDraft {
         self.customUnitText = (UnitOption.from(label: board.unitLabel) == nil && board.unitLabel != nil) ? board.unitLabel! : ""
         self.colorIndex = board.colorIndex
         self.useColorBackground = board.useColorBackground
+        self.emoji = board.emoji ?? ""
     }
 
     // MARK: Derived
@@ -89,6 +94,7 @@ struct HabitBoardDraft {
             colorIndex: colorIndex
         )
         board.useColorBackground = useColorBackground
+        board.emoji = emoji.trimmingCharacters(in: .whitespaces).isEmpty ? nil : emoji
         return board
     }
 
@@ -103,5 +109,6 @@ struct HabitBoardDraft {
         board.unitLabel = metric == .quantitative ? effectiveUnit : nil
         board.colorIndex = colorIndex
         board.useColorBackground = useColorBackground
+        board.emoji = emoji.trimmingCharacters(in: .whitespaces).isEmpty ? nil : emoji
     }
 }

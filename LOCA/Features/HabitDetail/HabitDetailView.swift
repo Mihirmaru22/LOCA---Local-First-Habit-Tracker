@@ -19,23 +19,34 @@ struct HabitDetailView: View {
         ZStack(alignment: .bottom) {
             Color.black.ignoresSafeArea()
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    RefHeatmapCard(board: board)
-                        .padding(.horizontal, 18)
+            Group {
+                switch selectedTab {
+                case 1:
+                    HabitCheckInsView(board: board)
+                        .padding(.bottom, 80) // clear toolbar
+                case 2:
+                    HabitJournalView(board: board)
+                        .padding(.bottom, 80)
+                default:
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 12) {
+                            RefHeatmapCard(board: board)
+                                .padding(.horizontal, 18)
 
-                    HStack(alignment: .top, spacing: 12) {
-                        RefStreakCard(board: board)
-                        RefConsistencyCard(board: board)
+                            HStack(alignment: .top, spacing: 12) {
+                                RefStreakCard(board: board)
+                                RefConsistencyCard(board: board)
+                            }
+                            .padding(.horizontal, 18)
+
+                            RefMonthCard(board: board)
+                                .padding(.horizontal, 18)
+
+                            Spacer(minLength: 110)
+                        }
+                        .padding(.top, 10)
                     }
-                    .padding(.horizontal, 18)
-
-                    RefMonthCard(board: board)
-                        .padding(.horizontal, 18)
-
-                    Spacer(minLength: 110)
                 }
-                .padding(.top, 10)
             }
 
             // Toolbar

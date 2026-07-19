@@ -21,6 +21,7 @@ struct HabitCheckInsView: View {
 
     @State private var isSubmitting = false
     @State private var showingAddCheckIn = false
+    @State private var editingEntry: LogEntry? = nil
     @State private var quickLogAmount = ""
 
     private var groupedLogs: [(date: Date, entries: [LogEntry])] {
@@ -216,6 +217,9 @@ struct HabitCheckInsView: View {
         .sheet(isPresented: $showingAddCheckIn) {
             AddCheckInSheetView(board: board)
         }
+        .sheet(item: $editingEntry) { entry in
+            EditCheckInSheetView(entry: entry, board: board)
+        }
         .overlay(alignment: .bottomTrailing) {
             Button(action: { showingAddCheckIn = true }) {
                 Image(systemName: "plus")
@@ -251,7 +255,7 @@ struct HabitCheckInsView: View {
     }
 
     private func editEntry(_ entry: LogEntry) {
-        // TODO: Open edit sheet with entry pre-filled
+        editingEntry = entry
     }
 
     private func deleteEntry(_ entry: LogEntry) {

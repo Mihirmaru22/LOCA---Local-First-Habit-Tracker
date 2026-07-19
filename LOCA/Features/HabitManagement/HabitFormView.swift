@@ -124,12 +124,28 @@ struct HabitFormView: View {
     @ViewBuilder
     private var nameSection: some View {
         Section {
-            TextField("Habit name", text: $draft.name)
-                .focused($nameFocused)
-                .multilineTextAlignment(.leading)
-                .accessibilityLabel("Habit name")
+            HStack(spacing: 10) {
+                TextField("Emoji", text: $draft.emoji)
+                    .frame(width: 48)
+                    .multilineTextAlignment(.center)
+                    .font(.title2)
+                    .onChange(of: draft.emoji) { _, new in
+                        // Keep only the first character (or first emoji cluster)
+                        let trimmed = new.trimmingCharacters(in: .whitespaces)
+                        if trimmed.count > 1 {
+                            let first = String(trimmed.unicodeScalars.prefix(while: { $0.value > 127 || trimmed.count == 1 }).map(Character.init))
+                            draft.emoji = String(trimmed.prefix(first.isEmpty ? 1 : 1))
+                        }
+                    }
+                TextField("Habit name", text: $draft.name)
+                    .focused($nameFocused)
+                    .multilineTextAlignment(.leading)
+                    .accessibilityLabel("Habit name")
+            }
         } header: {
             Text("Name")
+        } footer: {
+            Text("Add an optional emoji to represent this habit.")
         }
     }
 
