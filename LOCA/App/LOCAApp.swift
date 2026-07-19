@@ -40,6 +40,7 @@ import SwiftData
 /// "Today" surface. When modules >= 3 arrive, the root upgrades to a TabView or
 /// Browse grid, but the screens beneath don't change — only this container swaps.
 @main
+@MainActor
 struct LOCAApp: App {
 
     private let container: ModelContainer?
