@@ -2,11 +2,11 @@
 //  HabitCheckInsView.swift
 //  LOCA
 //
-//  Phase 12.3 — Check-ins surface for habit details.
+//  Phase 14.2 — Check-ins history surface.
 //
-//  Shows today's progress and provides quick-logging interface for both
-//  binary and quantitative habits. Binary habits show a toggle; quantitative
-//  habits show an input field.
+//  Displays grouped check-in history (by date), with swipe actions for
+//  edit, delete, duplicate. Today's entries highlighted. Quick-log input
+//  in the header for same-day logging.
 //
 
 import SwiftUI
@@ -15,40 +15,46 @@ import SwiftData
 struct HabitCheckInsView: View {
 
     let board: HabitBoard
+
     @Environment(\.modelContext) private var modelContext
-
-    @State private var inputValue: String = ""
-    @State private var isSubmitting = false
-    @State private var showingAddCheckIn = false
-
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private var parsedValue: Double? {
-        Double(inputValue.trimmingCharacters(in: .whitespaces))
+    @State private var isSubmitting = false
+    @State private var showingAddCheckIn = false
+    @State private var quickLogAmount = ""
+
+    private var groupedLogs: [(date: Date, entries: [LogEntry])] {
+        let logs = board.logs ?? []
+        let calendar = Calendar.current
+
+        var grouped: [Date: [LogEntry]] = [:]
+        for log in logs {
+            let dayStart = calendar.startOfDay(for: log.timestamp)
+            grouped[dayStart, default: []].append(log)
+        }
+
+        return grouped
+            .map { (date: $0.key, entries: $0.value.sorted { $0.timestamp > $1.timestamp }) }
+            .sorted { $0.date > $1.date }
     }
 
-    private var isBinary: Bool {
-        board.metric == .binary
+    private var isToday: (Date) -> Bool {
+        { date in
+            Calendar.current.isDateInToday(date)
+        }
     }
 
-    private var isQuantitative: Bool {
-        board.metric == .quantitative
-    }
-
-    /// Today's total
-    private var todaysTotal: Double {
-        (board.logs ?? [])
-            .filter { $0.timestamp.isToday() }
-            .reduce(0.0) { $0 + $1.value }
-    }
-
-    /// Has today been marked complete (binary) or target reached (quantitative)?
-    private var isCompleted: Bool {
-        if isBinary {
-            return todaysTotal > 0
-        } else {
-            let target = board.effectiveTarget
-            return todaysTotal >= target
+    private var dateLabel: (Date) -> String {
+        { date in
+            if Calendar.current.isDateInToday(date) {
+                return "Today"
+            } else if Calendar.current.isDateInYesterday(date) {
+                return "Yesterday"
+            } else {
+                let formatter = DateFormatter()
+                formatter.dateStyle = .medium
+                return formatter.string(from: date)
+            }
         }
     }
 
@@ -56,92 +62,145 @@ struct HabitCheckInsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.lg) {
 
-                // MARK: - Today's Status
-                LOCACard {
-                    VStack(alignment: .leading, spacing: DS.Space.md) {
-                        HStack {
-                            Text("TODAY")
-                                .font(DS.Text.footnote)
-                                .foregroundStyle(DS.Color.textSecondary)
-                                .tracking(0.5)
-                            Spacer()
-                            if isCompleted {
+                // MARK: - Today Status Card
+                if let todayGroup = groupedLogs.first(where: { isToday($0.date) }) {
+                    LOCACard {
+                        VStack(alignment: .leading, spacing: DS.Space.md) {
+                            HStack(spacing: DS.Space.xs) {
                                 Image(systemName: "checkmark.circle.fill")
+                                    .font(DS.Text.caption)
                                     .foregroundStyle(ColorPalette[board.colorIndex])
+                                Text("TODAY")
+                                    .font(DS.Text.footnote)
+                                    .foregroundStyle(DS.Color.textSecondary)
+                                    .tracking(0.5)
                             }
-                        }
 
-                        if isQuantitative {
-                            HStack(spacing: DS.Space.md) {
+                            let todayTotal = todayGroup.entries.reduce(0.0) { $0 + $1.value }
+                            VStack(alignment: .leading, spacing: DS.Space.xs) {
                                 ValueText(
-                                    todaysTotal.formatted(.number.precision(.fractionLength(0...1))),
+                                    todayTotal.formatted(.number.precision(.fractionLength(0...1))),
                                     font: DS.Text.value
                                 )
-                                .foregroundStyle(DS.Color.textPrimary)
+                                .foregroundStyle(
+                                    todayTotal >= board.effectiveTarget
+                                        ? ColorPalette[board.colorIndex]
+                                        : DS.Color.textSecondary
+                                )
 
-                                if let target = board.targetValue, target > 0 {
-                                    Text("/ \(target.formatted(.number.precision(.fractionLength(0...1))))")
-                                        .font(DS.Text.body)
-                                        .foregroundStyle(DS.Color.textSecondary)
-                                }
-
-                                if let unit = board.unitLabel, !unit.isEmpty {
-                                    Text(unit)
+                                if let unitLabel = board.unitLabel, !unitLabel.isEmpty {
+                                    Text("\(todayGroup.entries.count) \(todayGroup.entries.count == 1 ? "entry" : "entries") • \(unitLabel)")
                                         .font(DS.Text.caption)
                                         .foregroundStyle(DS.Color.textSecondary)
                                 }
-
-                                Spacer()
                             }
-                        } else {
-                            Text(isCompleted ? "Completed" : "Not completed")
-                                .font(DS.Text.body)
-                                .foregroundStyle(isCompleted ? ColorPalette[board.colorIndex] : DS.Color.textSecondary)
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(DS.Space.md)
                     }
                 }
 
-                // MARK: - Quick Input
-                if isQuantitative {
-                    VStack(alignment: .leading, spacing: DS.Space.sm) {
-                        Text("Log Amount")
-                            .font(DS.Text.caption)
-                            .foregroundStyle(DS.Color.textSecondary)
-
+                // MARK: - Quick Log Input (Today only)
+                if groupedLogs.first?.date == Calendar.current.startOfDay(for: .now) || groupedLogs.isEmpty {
+                    LOCACard {
                         HStack(spacing: DS.Space.md) {
-                            TextField("0", text: $inputValue)
+                            TextField("Add amount", text: $quickLogAmount)
                                 .font(DS.Text.body)
-                                .decimalKeyboard()
-                                .textFieldStyle(.roundedBorder)
+                                .keyboardType(.decimalPad)
 
-                            if let unit = board.unitLabel, !unit.isEmpty {
-                                Text(unit)
+                            if let unitLabel = board.unitLabel, !unitLabel.isEmpty {
+                                Text(unitLabel)
                                     .font(DS.Text.caption)
                                     .foregroundStyle(DS.Color.textSecondary)
-                                    .frame(minWidth: 50)
                             }
 
-                            Button(action: { submitQuantitative() }) {
+                            Button(action: { quickLog() }) {
                                 Image(systemName: "plus.circle.fill")
+                                    .font(.title3)
                                     .foregroundStyle(ColorPalette[board.colorIndex])
                             }
-                            .disabled((Double(inputValue) ?? 0) <= 0 || isSubmitting)
+                            .disabled(Double(quickLogAmount.trimmingCharacters(in: .whitespaces)) == nil || Double(quickLogAmount.trimmingCharacters(in: .whitespaces)) ?? 0 <= 0)
                         }
-                    }
-                    .padding(DS.Space.md)
-                    .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
-                } else {
-                    Button(action: { toggleBinary() }) {
-                        HStack {
-                            Image(systemName: isCompleted ? "checkmark.circle.fill" : "circle")
-                            Text(isCompleted ? "Completed" : "Mark as Done")
-                                .font(DS.Text.body)
-                        }
-                        .frame(maxWidth: .infinity)
                         .padding(DS.Space.md)
-                        .background(isCompleted ? ColorPalette[board.colorIndex] : DS.Color.surface)
-                        .foregroundStyle(isCompleted ? .white : DS.Color.textPrimary)
-                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.control))
+                    }
+                }
+
+                // MARK: - History (Grouped by Date)
+                VStack(alignment: .leading, spacing: DS.Space.lg) {
+                    if groupedLogs.isEmpty {
+                        VStack(spacing: DS.Space.md) {
+                            Image(systemName: "square.and.pencil")
+                                .font(.title2)
+                                .foregroundStyle(DS.Color.textTertiary)
+                            Text("No check-ins yet")
+                                .font(DS.Text.body)
+                                .foregroundStyle(DS.Color.textSecondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(DS.Space.xxxl)
+                    } else {
+                        ForEach(groupedLogs, id: \.date) { group in
+                            VStack(alignment: .leading, spacing: DS.Space.md) {
+                                // Date header
+                                Text(dateLabel(group.date))
+                                    .font(DS.Text.footnote)
+                                    .foregroundStyle(DS.Color.textSecondary)
+                                    .tracking(0.5)
+
+                                // Entries for this date
+                                ForEach(group.entries, id: \.id) { entry in
+                                    SwipeAction(
+                                        onEdit: { editEntry(entry) },
+                                        onDelete: { deleteEntry(entry) },
+                                        onDuplicate: { duplicateEntry(entry) }
+                                    ) {
+                                        HStack(spacing: DS.Space.md) {
+                                            // Time
+                                            VStack(alignment: .leading, spacing: DS.Space.xs) {
+                                                let formatter = DateFormatter()
+                                                formatter.timeStyle = .short
+                                                Text(formatter.string(from: entry.timestamp))
+                                                    .font(DS.Text.caption)
+                                                    .foregroundStyle(DS.Color.textSecondary)
+                                            }
+
+                                            Spacer()
+
+                                            // Value + unit
+                                            HStack(spacing: DS.Space.xs) {
+                                                ValueText(
+                                                    entry.value.formatted(.number.precision(.fractionLength(0...1))),
+                                                    font: DS.Text.body
+                                                )
+                                                .foregroundStyle(
+                                                    entry.value >= board.effectiveTarget
+                                                        ? ColorPalette[board.colorIndex]
+                                                        : DS.Color.textPrimary
+                                                )
+
+                                                if let unitLabel = board.unitLabel, !unitLabel.isEmpty {
+                                                    Text(unitLabel)
+                                                        .font(DS.Text.caption)
+                                                        .foregroundStyle(DS.Color.textSecondary)
+                                                }
+                                            }
+                                        }
+                                        .padding(DS.Space.md)
+                                        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+                                    }
+
+                                    // Notes (if present)
+                                    if let note = entry.note, !note.isEmpty {
+                                        Text(note)
+                                            .font(DS.Text.caption)
+                                            .foregroundStyle(DS.Color.textSecondary)
+                                            .padding(DS.Space.md)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -168,57 +227,129 @@ struct HabitCheckInsView: View {
 
     // MARK: - Actions
 
-    private func submitQuantitative() {
-        guard let value = Double(inputValue), value > 0 else { return }
+    private func quickLog() {
+        guard let amount = Double(quickLogAmount.trimmingCharacters(in: .whitespaces)), amount > 0 else {
+            return
+        }
 
-        isSubmitting = true
-        let logEntry = LogEntry(value: value, boardID: board.id, board: board)
-        modelContext.insert(logEntry)
+        let entry = LogEntry(timestamp: .now, value: amount, boardID: board.id, board: board)
+        modelContext.insert(entry)
         board.updateStreak(using: .current)
 
         do {
             try modelContext.save()
-            triggerConfirmationHaptic()
+            triggerHaptic()
             WidgetRefreshCoordinator.shared.scheduleReload()
-            withAnimation(DS.Motion.confirm(reduceMotion: reduceMotion)) {
-                inputValue = ""
-                isSubmitting = false
-            }
+            quickLogAmount = ""
         } catch {
             modelContext.rollback()
-            isSubmitting = false
         }
     }
 
-    private func toggleBinary() {
-        if isCompleted {
-            // Remove today's entries
-            for entry in (board.logs ?? []).filter({ $0.timestamp.isToday() }) {
-                modelContext.delete(entry)
-            }
-        } else {
-            let logEntry = LogEntry(value: 1, boardID: board.id, board: board)
-            modelContext.insert(logEntry)
-            board.updateStreak(using: .current)
-        }
+    private func editEntry(_ entry: LogEntry) {
+        // TODO: Open edit sheet with entry pre-filled
+    }
+
+    private func deleteEntry(_ entry: LogEntry) {
+        modelContext.delete(entry)
+        board.updateStreak(using: .current)
 
         do {
             try modelContext.save()
-            triggerConfirmationHaptic()
             WidgetRefreshCoordinator.shared.scheduleReload()
         } catch {
             modelContext.rollback()
         }
     }
 
-    // MARK: - Haptics
+    private func duplicateEntry(_ entry: LogEntry) {
+        let newEntry = LogEntry(
+            timestamp: .now,
+            value: entry.value,
+            note: entry.note,
+            boardID: board.id,
+            board: board
+        )
+        modelContext.insert(newEntry)
+        board.updateStreak(using: .current)
 
-    /// Gated on UIKit availability — the macOS target has no
-    /// UIImpactFeedbackGenerator (Engineering Rules §Platform shims).
-    private func triggerConfirmationHaptic() {
+        do {
+            try modelContext.save()
+            triggerHaptic()
+            WidgetRefreshCoordinator.shared.scheduleReload()
+        } catch {
+            modelContext.rollback()
+        }
+    }
+
+    private func triggerHaptic() {
         #if canImport(UIKit)
-        UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
         #endif
+    }
+}
+
+// MARK: - SwipeAction
+
+struct SwipeAction<Content: View>: View {
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+    let onDuplicate: () -> Void
+    let content: () -> Content
+
+    @State private var offset: CGFloat = 0
+
+    var body: some View {
+        ZStack(alignment: .trailing) {
+            // Action buttons (hidden, revealed on swipe)
+            HStack(spacing: 0) {
+                Button(action: onDuplicate) {
+                    Image(systemName: "doc.on.doc")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .background(DS.Color.textSecondary.opacity(0.6))
+                }
+
+                Button(action: onEdit) {
+                    Image(systemName: "pencil")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .background(ColorPalette[4])
+                }
+
+                Button(action: onDelete) {
+                    Image(systemName: "trash")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .background(.red.opacity(0.8))
+                }
+            }
+
+            // Content (foreground, swipeable)
+            content()
+                .offset(x: offset)
+                .gesture(
+                    DragGesture()
+                        .onChanged { value in
+                            offset = min(0, value.translation.width)
+                        }
+                        .onEnded { value in
+                            if offset < -60 {
+                                offset = -132
+                            } else {
+                                offset = 0
+                            }
+                        }
+                )
+        }
+        .frame(height: 44)
+        .clipped()
     }
 }
 
@@ -228,8 +359,16 @@ struct HabitCheckInsView: View {
         let schema = Schema([HabitBoard.self, LogEntry.self])
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try! ModelContainer(for: schema, configurations: [config])
-        let habit = HabitBoard(name: "Morning Run", metricType: 1, targetValue: 5, unitLabel: "km", colorIndex: 0)
+        let habit = HabitBoard(name: "Running", metricType: 1, targetValue: 5, unitLabel: "km", colorIndex: 0)
         container.mainContext.insert(habit)
+
+        for daysAgo in 0..<5 {
+            if let date = Calendar.current.date(byAdding: .day, value: -daysAgo, to: .now) {
+                let entry = LogEntry(timestamp: date, value: Double.random(in: 3...8), boardID: habit.id, board: habit)
+                container.mainContext.insert(entry)
+            }
+        }
+
         try? container.mainContext.save()
         return (container, habit)
     }
