@@ -24,86 +24,12 @@ struct HabitDetailView: View {
     let board: HabitBoard
     @Environment(\.modelContext) private var modelContext
     @State private var showingEditSheet = false
-    @State private var showingCheckInSheet = false
+    @State private var _selectedTab = 0
 
-    // MARK: - Computed metrics
-
-    /// Days completed this month (value >= target).
-    private var daysCompletedThisMonth: Int {
-        let now = Date()
-        guard let monthStart = Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: now)) else {
-            return 0
-        }
-        guard let monthEnd = Calendar.current.date(byAdding: DateComponents(month: 1, day: -1), to: monthStart) else {
-            return 0
-        }
-
-        let logsThisMonth = (board.logs ?? []).filter { log in
-            log.timestamp >= monthStart && log.timestamp <= monthEnd
-        }
-
-        // Group by day and sum values
-        var dailyTotals = [Date: Double]()
-        for log in logsThisMonth {
-            let day = Calendar.current.startOfDay(for: log.timestamp)
-            dailyTotals[day, default: 0] += log.value
-        }
-
-        return dailyTotals.filter { $0.value >= board.effectiveTarget }.count
-    }
-
-    /// Days in the current month.
-    private var daysInMonth: Int {
-        let now = Date()
-        guard let monthStart = Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: now)) else {
-            return 30
-        }
-        guard let range = Calendar.current.range(of: .day, in: .month, for: monthStart) else {
-            return 30
-        }
-        return range.count
-    }
-
-    /// Total logged this month.
-    private var totalThisMonth: Double {
-        let now = Date()
-        guard let monthStart = Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: now)) else {
-            return 0
-        }
-        guard let monthEnd = Calendar.current.date(byAdding: DateComponents(month: 1, day: -1), to: monthStart) else {
-            return 0
-        }
-
-        return (board.logs ?? [])
-            .filter { $0.timestamp >= monthStart && $0.timestamp <= monthEnd }
-            .reduce(0.0) { $0 + $1.value }
-    }
-
-    /// Last 7 days' daily totals (oldest to newest) for the weekly chart.
-    private var weeklyTotals: [Double] {
-        var totals: [Double] = []
-        for daysAgo in (0..<7).reversed() {
-            guard let dayDate = Calendar.current.date(byAdding: .day, value: -daysAgo, to: .now) else {
-                totals.append(0)
-                continue
-            }
-            let dayStart = Calendar.current.startOfDay(for: dayDate)
-            guard let dayEnd = Calendar.current.date(byAdding: DateComponents(day: 1, second: -1), to: dayStart) else {
-                totals.append(0)
-                continue
-            }
-
-            let dayTotal = (board.logs ?? [])
-                .filter { $0.timestamp >= dayStart && $0.timestamp <= dayEnd }
-                .reduce(0.0) { $0 + $1.value }
-            totals.append(dayTotal)
-        }
-        return totals
-    }
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            TabView(selection: $selectedTab) {
+            TabView(selection: $_selectedTab) {
                 // Analytics Tab
                 HabitAnalyticsView(board: board)
                     .tag(0)
@@ -131,14 +57,6 @@ struct HabitDetailView: View {
             HabitFormView(mode: .edit(board))
         }
     }
-
-    // MARK: - Tab Selector Picker (below content)
-
-    private var selectedTab: Int {
-        get { _selectedTab }
-        set { _selectedTab = newValue }
-    }
-    @State private var _selectedTab = 0
 }
 
 // MARK: - Preview

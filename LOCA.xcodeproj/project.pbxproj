@@ -58,7 +58,6 @@
 		B4340C7D3F7A43C89833F876 /* HabitSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F91A4520B0B4E4383DEEAED /* HabitSidebarView.swift */; };
 		E8A397AD3E3F43468E8BFF20 /* HabitDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EA3DF789134654984688CB /* HabitDetailView.swift */; };
 		FB7C2613B33C4BAAB22BB911 /* HeatmapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CE91B0C5D88414094E4DD05 /* HeatmapView.swift */; };
-		587E699FE6D816891EC9E24D /* CheckInSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1912CCFA3BF60744C6B6F57 /* CheckInSheetView.swift */; };
 		D3F68D36689EDD3AB476FAE0 /* HabitAnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C351824E770C933A393581B /* HabitAnalyticsView.swift */; };
 		3D053EF389D282B1C5921995 /* HabitCheckInsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABA9551FC8C82DA8A6FEA0AD /* HabitCheckInsView.swift */; };
 		3CB41CE97E4FF273209C5DAC /* HabitJournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E0CEC1DACBB3FDB6E82E5BD /* HabitJournalView.swift */; };
@@ -118,7 +117,6 @@
 		1F91A4520B0B4E4383DEEAED /* HabitSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitSidebarView.swift"; sourceTree = "<group>"; };
 		75EA3DF789134654984688CB /* HabitDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitDetailView.swift"; sourceTree = "<group>"; };
 		4CE91B0C5D88414094E4DD05 /* HeatmapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HeatmapView.swift"; sourceTree = "<group>"; };
-		D1912CCFA3BF60744C6B6F57 /* CheckInSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CheckInSheetView.swift"; sourceTree = "<group>"; };
 		8C351824E770C933A393581B /* HabitAnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitAnalyticsView.swift"; sourceTree = "<group>"; };
 		ABA9551FC8C82DA8A6FEA0AD /* HabitCheckInsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitCheckInsView.swift"; sourceTree = "<group>"; };
 		5E0CEC1DACBB3FDB6E82E5BD /* HabitJournalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitJournalView.swift"; sourceTree = "<group>"; };
@@ -252,7 +250,6 @@
 			children = (
 				75EA3DF789134654984688CB /* HabitDetailView.swift */,
 				4CE91B0C5D88414094E4DD05 /* HeatmapView.swift */,
-				D1912CCFA3BF60744C6B6F57 /* CheckInSheetView.swift */,
 				8C351824E770C933A393581B /* HabitAnalyticsView.swift */,
 				ABA9551FC8C82DA8A6FEA0AD /* HabitCheckInsView.swift */,
 				5E0CEC1DACBB3FDB6E82E5BD /* HabitJournalView.swift */,
@@ -527,7 +524,6 @@
 				B4340C7D3F7A43C89833F876 /* HabitSidebarView.swift in Sources */,
 				E8A397AD3E3F43468E8BFF20 /* HabitDetailView.swift in Sources */,
 				FB7C2613B33C4BAAB22BB911 /* HeatmapView.swift in Sources */,
-				587E699FE6D816891EC9E24D /* CheckInSheetView.swift in Sources */,
 				D3F68D36689EDD3AB476FAE0 /* HabitAnalyticsView.swift in Sources */,
 				3D053EF389D282B1C5921995 /* HabitCheckInsView.swift in Sources */,
 				3CB41CE97E4FF273209C5DAC /* HabitJournalView.swift in Sources */,
