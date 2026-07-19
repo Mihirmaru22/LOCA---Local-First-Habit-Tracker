@@ -2,17 +2,14 @@
 //  HabitListView.swift
 //  LOCA
 //
-//  Phase 11.1 — Habit List: the list container.
+//  Phase 14.4 — Habit List: the list container with layout switching.
 //
-//  Groups habits by semantic state (Needs Action, In Progress, Done, Behind).
-//  Renders zones with distinct emphasis to communicate priority visually without
-//  reordering. Stable position + visual hierarchy = decision speed without
-//  sacrificing spatial memory.
+//  Reads @AppStorage("habitListLayout") and renders one of three layouts:
+//  - list: Zones by state (To Do, In Progress, Needs Attention, Done)
+//  - grid: 2-column grid of compact cards
+//  - timeline: Chronological timeline with expanded stats
 //
-//  Architecture: the list queries the model, computes state for each habit,
-//  and renders zones. Future: a HabitSortStrategy seam will allow "manual" (today)
-//  or "needsAttentionFirst" (later) without redesign — the row rendering doesn't
-//  change, only the order passed to the zones.
+//  State computation remains centralized outside ViewBuilder.
 //
 
 import SwiftUI
@@ -27,6 +24,7 @@ struct HabitListView: View {
 
     @Environment(\.modelContext) private var modelContext
     @State private var showingCreateSheet = false
+    @AppStorage("habitListLayout") private var layout: String = "list"
 
     /// Future: a HabitSortStrategy seam will allow pluggable sort modes.
     /// Today: manual (stable, user-defined) order. No reordering by state.
@@ -39,7 +37,25 @@ struct HabitListView: View {
             if displayBoards.isEmpty {
                 emptyStateView
             } else {
-                habitsContent
+                Group {
+                    switch layout {
+                    case "grid":
+                        HabitGridLayoutView(
+                            boardsWithState: boardsWithState,
+                            onCheckBinary: checkInBinary
+                        )
+                    case "timeline":
+                        HabitTimelineLayoutView(
+                            boardsWithState: boardsWithState,
+                            onCheckBinary: checkInBinary
+                        )
+                    default: // "list"
+                        HabitListLayoutView(
+                            boardsWithState: boardsWithState,
+                            onCheckBinary: checkInBinary
+                        )
+                    }
+                }
             }
         }
         .navigationTitle("Today")
@@ -69,120 +85,6 @@ struct HabitListView: View {
             let state = HabitState.compute(for: board, todaysTotal: todaysTotal)
             return (board, state)
         }
-    }
-
-    private var needsActionBoards: [(board: HabitBoard, state: HabitState)] {
-        boardsWithState.filter { $0.state == .needsAction }
-    }
-
-    private var inProgressBoards: [(board: HabitBoard, state: HabitState)] {
-        boardsWithState.filter { $0.state == .inProgress }
-    }
-
-    private var behindBoards: [(board: HabitBoard, state: HabitState)] {
-        boardsWithState.filter { $0.state == .behind }
-    }
-
-    private var doneBoards: [(board: HabitBoard, state: HabitState)] {
-        boardsWithState.filter { $0.state == .done }
-    }
-
-    // MARK: - Content
-
-    private var habitsContent: some View {
-        VStack(alignment: .leading, spacing: DS.Space.xxl) {
-
-            // NEEDS ACTION ZONE (hero)
-            if !needsActionBoards.isEmpty {
-                VStack(alignment: .leading, spacing: DS.Space.lg) {
-                    SectionHeader("To Do")
-
-                    VStack(spacing: DS.Space.md) {
-                        ForEach(needsActionBoards, id: \.board.id) { item in
-                            NavigationLink(destination: HabitDetailView(board: item.board)) {
-                                HabitListRow(
-                                    board: item.board,
-                                    state: item.state,
-                                    onCheckBinary: {
-                                        checkInBinary(board: item.board)
-                                    }
-                                )
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
-                .padding(.horizontal, DS.Space.lg)
-            }
-
-            // IN PROGRESS ZONE
-            if !inProgressBoards.isEmpty {
-                VStack(alignment: .leading, spacing: DS.Space.lg) {
-                    SectionHeader("In Progress")
-
-                    VStack(spacing: DS.Space.md) {
-                        ForEach(inProgressBoards, id: \.board.id) { item in
-                            NavigationLink(destination: HabitDetailView(board: item.board)) {
-                                HabitListRow(
-                                    board: item.board,
-                                    state: item.state,
-                                    onCheckBinary: {}
-                                )
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
-                .padding(.horizontal, DS.Space.lg)
-            }
-
-            // BEHIND ZONE (subtle urgency)
-            if !behindBoards.isEmpty {
-                VStack(alignment: .leading, spacing: DS.Space.lg) {
-                    SectionHeader("Needs Attention")
-
-                    VStack(spacing: DS.Space.md) {
-                        ForEach(behindBoards, id: \.board.id) { item in
-                            NavigationLink(destination: HabitDetailView(board: item.board)) {
-                                HabitListRow(
-                                    board: item.board,
-                                    state: item.state,
-                                    onCheckBinary: {
-                                        checkInBinary(board: item.board)
-                                    }
-                                )
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
-                .padding(.horizontal, DS.Space.lg)
-            }
-
-            // DONE ZONE (receded)
-            if !doneBoards.isEmpty {
-                VStack(alignment: .leading, spacing: DS.Space.lg) {
-                    SectionHeader("Done Today")
-
-                    VStack(spacing: DS.Space.md) {
-                        ForEach(doneBoards, id: \.board.id) { item in
-                            NavigationLink(destination: HabitDetailView(board: item.board)) {
-                                HabitListRow(
-                                    board: item.board,
-                                    state: item.state,
-                                    onCheckBinary: {}
-                                )
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
-                .padding(.horizontal, DS.Space.lg)
-            }
-
-            Spacer(minLength: DS.Space.xxxl)
-        }
-        .padding(.vertical, DS.Space.xl)
     }
 
     // MARK: - Empty State
@@ -228,8 +130,10 @@ struct HabitListView: View {
     private func checkInBinary(board: HabitBoard) {
         let entry = LogEntry(value: 1.0, boardID: board.id, board: board)
         modelContext.insert(entry)
+        board.updateStreak(using: .current)
         do {
             try modelContext.save()
+            WidgetRefreshCoordinator.shared.scheduleReload()
         } catch {
             modelContext.rollback()
         }
