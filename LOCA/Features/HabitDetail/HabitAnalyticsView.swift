@@ -188,6 +188,12 @@ struct HabitAnalyticsView: View {
                 // MARK: - Year Comparison Chart
                 YearComparisonChartView(board: board)
 
+                // MARK: - Consistency Chart
+                ConsistencyChartView(board: board)
+
+                // MARK: - Weekdays Chart
+                WeekdaysChartView(board: board)
+
                 // Clearance for the floating SurfaceSelector pill.
                 Spacer(minLength: DS.Space.xxxl + DS.Space.xl)
             }
