@@ -76,10 +76,10 @@ struct HabitDetailView: View {
             .padding(.bottom, 28)
         }
         .navigationTitle(board.name)
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitleDisplay()
         .toolbar {
             // pencil → edit habit
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItem(placement: .confirmationAction) {
                 Button(action: { showingEditSheet = true }) {
                     Image(systemName: "pencil")
                         .font(.system(size: 15, weight: .semibold))
