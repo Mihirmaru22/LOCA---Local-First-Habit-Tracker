@@ -11,6 +11,7 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 
 // MARK: - CheckInSheetView
 
@@ -53,7 +54,6 @@ struct CheckInSheetView: View {
                             .font(DS.Text.value)
                             .keyboardType(.decimalPad)
                             .textFieldStyle(.roundedBorder)
-                            .focused($isSubmitting, equals: false)
 
                         if let unitLabel = board.unitLabel, !unitLabel.isEmpty {
                             Text(unitLabel)

@@ -2,15 +2,16 @@
 //  HabitDetailView.swift
 //  LOCA
 //
-//  Phase 11.3b — Habit Detail: Heatmap-First Redesign
+//  Phase 12.3 — Habit Detail: Three-Surface Redesign
 //
-//  Restructures the detail page around the heatmap as the hero visualization.
-//  Flow: Heatmap (history, primary focus) → Metrics 2×2 (today's snapshot,
-//  secondary) → Journal (activity details, tertiary).
+//  Restructures the detail page into three surfaces accessible via bottom tabs:
+//  - Analytics: charts and trend visualizations
+//  - Check-ins: today's status and quick logging interface
+//  - Journal: day-grouped activity timeline
 //
-//  This inverts the Phase 10 hierarchy (ring → heatmap → stats) to reflect
-//  the actual information value for decision-making: patterns matter more
-//  than today's data point.
+//  This separation allows each surface to focus on its purpose without
+//  compression, and provides a natural workflow: review trends → log today →
+//  reflect on history.
 //
 
 import SwiftUI
@@ -101,104 +102,21 @@ struct HabitDetailView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.xxl) {
+        ZStack(alignment: .bottom) {
+            TabView(selection: $selectedTab) {
+                // Analytics Tab
+                HabitAnalyticsView(board: board)
+                    .tag(0)
 
-                // MARK: - Heatmap Hero
-                LOCACard {
-                    HeatmapView(board: board)
-                        .frame(maxHeight: .infinity)
-                }
+                // Check-ins Tab
+                HabitCheckInsView(board: board)
+                    .tag(1)
 
-                // MARK: - Metrics Grid (2×2)
-                VStack(alignment: .leading, spacing: DS.Space.lg) {
-                    SectionHeader("Metrics")
-
-                    HStack(spacing: DS.Space.lg) {
-                        // Left column
-                        VStack(spacing: DS.Space.lg) {
-                            // Streak
-                            LOCACard {
-                                MetricTile(
-                                    icon: "flame.fill",
-                                    value: "\(board.currentStreak)",
-                                    label: "Current Streak",
-                                    accent: ColorPalette[board.colorIndex]
-                                )
-                            }
-
-                            // Consistency gauge
-                            LOCACard {
-                                ArcGaugeView(
-                                    completedCount: daysCompletedThisMonth,
-                                    totalCount: daysInMonth,
-                                    accentColor: ColorPalette[board.colorIndex],
-                                    label: "Days"
-                                )
-                            }
-                        }
-
-                        // Right column
-                        VStack(spacing: DS.Space.lg) {
-                            // Month total
-                            LOCACard {
-                                VStack(alignment: .leading, spacing: DS.Space.sm) {
-                                    HStack(spacing: DS.Space.xs) {
-                                        Image(systemName: "calendar")
-                                            .font(DS.Text.caption)
-                                            .foregroundStyle(ColorPalette[board.colorIndex])
-                                        Text("THIS MONTH")
-                                            .font(DS.Text.footnote)
-                                            .foregroundStyle(DS.Color.textSecondary)
-                                            .tracking(0.5)
-                                    }
-
-                                    ValueText(
-                                        totalThisMonth.formatted(.number.precision(.fractionLength(0...1))),
-                                        font: DS.Text.value
-                                    )
-                                    .foregroundStyle(DS.Color.textPrimary)
-
-                                    if let unitLabel = board.unitLabel, !unitLabel.isEmpty {
-                                        Text(unitLabel)
-                                            .font(DS.Text.caption)
-                                            .foregroundStyle(DS.Color.textSecondary)
-                                    }
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-
-                            // Weekly chart
-                            LOCACard {
-                                VStack(alignment: .leading, spacing: DS.Space.md) {
-                                    Text("PAST WEEK")
-                                        .font(DS.Text.footnote)
-                                        .foregroundStyle(DS.Color.textSecondary)
-                                        .tracking(0.5)
-
-                                    WeeklyBarChart(
-                                        dailyTotals: weeklyTotals,
-                                        target: board.effectiveTarget,
-                                        accentColor: ColorPalette[board.colorIndex],
-                                        size: .normal
-                                    )
-                                    .frame(height: 48)
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // MARK: - Journal Timeline
-                VStack(alignment: .leading, spacing: DS.Space.lg) {
-                    SectionHeader("Activity")
-
-                    JournalTimelineView(board: board)
-                }
-
-                Spacer(minLength: DS.Space.xxxl)
+                // Journal Tab
+                HabitJournalView(board: board)
+                    .tag(2)
             }
-            .padding(DS.Space.lg)
+            .tabViewStyle(.page(indexDisplayMode: .never))
         }
         .navigationTitle(board.name)
         .largeNavigationTitleDisplay()
@@ -208,21 +126,19 @@ struct HabitDetailView: View {
                     Image(systemName: "pencil")
                 }
             }
-            if board.metric == .quantitative {
-                ToolbarItem(placement: .secondaryAction) {
-                    Button(action: { showingCheckInSheet = true }) {
-                        Image(systemName: "plus.circle")
-                    }
-                }
-            }
         }
         .sheet(isPresented: $showingEditSheet) {
             HabitFormView(mode: .edit(board))
         }
-        .sheet(isPresented: $showingCheckInSheet) {
-            CheckInSheetView(board: board)
-        }
     }
+
+    // MARK: - Tab Selector Picker (below content)
+
+    private var selectedTab: Int {
+        get { _selectedTab }
+        set { _selectedTab = newValue }
+    }
+    @State private var _selectedTab = 0
 }
 
 // MARK: - Preview
