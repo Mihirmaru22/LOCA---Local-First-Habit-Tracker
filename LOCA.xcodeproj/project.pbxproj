@@ -64,6 +64,7 @@
 		20237B905F07F6FB68C1E84C /* YearComparisonChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EED539C8E562129FC1FEB9B /* YearComparisonChartView.swift */; };
 		CD4E8274A62B0E5B6C75D6C1 /* ConsistencyChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC3230A263C5088C154C34B8 /* ConsistencyChartView.swift */; };
 		36720AD2F22A64170387C940 /* WeekdaysChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEBB745C663B20E8B2CAA432 /* WeekdaysChartView.swift */; };
+		E8ADDA453FAB3851AB3CB853 /* AddCheckInSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EC5E1C58596652E07B3FDB9 /* AddCheckInSheetView.swift */; };
 		4EF82DD478E641C081644338 /* AnalyticsCardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4AC62C281824C358828EBED /* AnalyticsCardsView.swift */; };
 		37DA6E005EE84382B6E2B538 /* JournalTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CEB70E6A1F742B4A1F35A2F /* JournalTimelineView.swift */; };
 		42A8AE7D0252462CA1F5A2D2 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA23BF1816F44D92873A3FCD /* DashboardView.swift */; };
@@ -126,6 +127,7 @@
 		7EED539C8E562129FC1FEB9B /* YearComparisonChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "YearComparisonChartView.swift"; sourceTree = "<group>"; };
 		FC3230A263C5088C154C34B8 /* ConsistencyChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ConsistencyChartView.swift"; sourceTree = "<group>"; };
 		DEBB745C663B20E8B2CAA432 /* WeekdaysChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WeekdaysChartView.swift"; sourceTree = "<group>"; };
+		3EC5E1C58596652E07B3FDB9 /* AddCheckInSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AddCheckInSheetView.swift"; sourceTree = "<group>"; };
 		A4AC62C281824C358828EBED /* AnalyticsCardsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AnalyticsCardsView.swift"; sourceTree = "<group>"; };
 		2CEB70E6A1F742B4A1F35A2F /* JournalTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "JournalTimelineView.swift"; sourceTree = "<group>"; };
 		CA23BF1816F44D92873A3FCD /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DashboardView.swift"; sourceTree = "<group>"; };
@@ -264,6 +266,7 @@
 				7EED539C8E562129FC1FEB9B /* YearComparisonChartView.swift */,
 				FC3230A263C5088C154C34B8 /* ConsistencyChartView.swift */,
 				DEBB745C663B20E8B2CAA432 /* WeekdaysChartView.swift */,
+				3EC5E1C58596652E07B3FDB9 /* AddCheckInSheetView.swift */,
 				A4AC62C281824C358828EBED /* AnalyticsCardsView.swift */,
 				2CEB70E6A1F742B4A1F35A2F /* JournalTimelineView.swift */,
 			);
@@ -533,6 +536,7 @@
 				20237B905F07F6FB68C1E84C /* YearComparisonChartView.swift in Sources */,
 				CD4E8274A62B0E5B6C75D6C1 /* ConsistencyChartView.swift in Sources */,
 				36720AD2F22A64170387C940 /* WeekdaysChartView.swift in Sources */,
+				E8ADDA453FAB3851AB3CB853 /* AddCheckInSheetView.swift in Sources */,
 				4EF82DD478E641C081644338 /* AnalyticsCardsView.swift in Sources */,
 				37DA6E005EE84382B6E2B538 /* JournalTimelineView.swift in Sources */,
 				42A8AE7D0252462CA1F5A2D2 /* DashboardView.swift in Sources */,

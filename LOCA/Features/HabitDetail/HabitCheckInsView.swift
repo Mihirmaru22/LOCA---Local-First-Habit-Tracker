@@ -19,6 +19,7 @@ struct HabitCheckInsView: View {
 
     @State private var inputValue: String = ""
     @State private var isSubmitting = false
+    @State private var showingAddCheckIn = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -146,6 +147,20 @@ struct HabitCheckInsView: View {
 
                 // Clearance for the floating SurfaceSelector pill.
                 Spacer(minLength: DS.Space.xxxl + DS.Space.xl)
+            }
+            .padding(DS.Space.lg)
+        }
+        .sheet(isPresented: $showingAddCheckIn) {
+            AddCheckInSheetView(board: board)
+        }
+        .overlay(alignment: .bottomTrailing) {
+            Button(action: { showingAddCheckIn = true }) {
+                Image(systemName: "plus")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 56, height: 56)
+                    .background(ColorPalette[board.colorIndex])
+                    .clipShape(Circle())
             }
             .padding(DS.Space.lg)
         }
