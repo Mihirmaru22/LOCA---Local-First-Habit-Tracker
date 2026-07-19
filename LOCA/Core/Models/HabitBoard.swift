@@ -64,6 +64,10 @@ final class HabitBoard {
     /// Defaults to false (neutral background).
     var useColorBackground: Bool = false
 
+    /// Optional emoji displayed on the habit card (e.g., "🏃", "📚").
+    /// If `nil`, a default icon is shown. Users set this via HabitFormView.
+    var emoji: String? = nil
+
     /// The timestamp at which this board was first created.
     var createdAt: Date = Date()
 
