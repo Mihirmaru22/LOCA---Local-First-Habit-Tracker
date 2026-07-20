@@ -89,7 +89,6 @@ struct StreaksChartView: View {
                     let height = size.height
                     let padding: CGFloat = 8
                     let barHeight: CGFloat = 16
-                    let barSpacing: CGFloat = 4
 
                     let maxStreak = max(board.effectiveTarget > 1 ? board.effectiveTarget : 10, Double(longestStreak))
                     let yScale = (height - padding * 2) / maxStreak
