@@ -2,8 +2,15 @@
 //  HabitGridLayoutView.swift
 //  LOCA
 //
-//  Phase 15.1 — Grid layout, pixel-perfect.
-//  No NavigationStack — lives inside HabitListView's existing stack.
+//  Phase 15.1 — Grid layout, adaptive to window width.
+//
+//  Uses GeometryReader to compute column count dynamically:
+//  - < 600pt  : 2 columns (iPhone)
+//  - 600–900  : 3 columns (iPad portrait / small Mac window)
+//  - 900–1200 : 4 columns (iPad landscape / medium Mac window)
+//  - > 1200pt : 5 columns (large Mac window / external display)
+//
+//  Card height scales with column width to maintain proportions.
 //
 
 import SwiftUI
@@ -12,24 +19,58 @@ import SwiftData
 // MARK: - HabitGridLayoutView
 
 struct HabitGridLayoutView: View {
-    // Passed from HabitListView — avoids double @Query
     let boardsWithState: [(board: HabitBoard, state: HabitState)]
     let onCheckBinary: (HabitBoard) -> Void
 
     var body: some View {
-        LazyVGrid(
-            columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)],
-            spacing: 14
-        ) {
-            ForEach(boardsWithState, id: \.board.id) { item in
-                NavigationLink(destination: HabitDetailView(board: item.board)) {
-                    GridHabitCard(board: item.board, onCheck: { onCheckBinary(item.board) })
+        GeometryReader { geo in
+            let columnCount = columnCount(for: geo.size.width)
+            let spacing: CGFloat = 14
+            let totalSpacing = spacing * CGFloat(columnCount - 1)
+            let horizontalPad: CGFloat = 16
+            let cardWidth = (geo.size.width - totalSpacing - horizontalPad * 2) / CGFloat(columnCount)
+            let cardHeight = cardHeight(for: cardWidth)
+
+            ScrollView {
+                LazyVGrid(
+                    columns: Array(repeating: GridItem(.flexible(), spacing: spacing), count: columnCount),
+                    spacing: spacing
+                ) {
+                    ForEach(boardsWithState, id: \.board.id) { item in
+                        NavigationLink(destination: HabitDetailView(board: item.board)) {
+                            GridHabitCard(
+                                board: item.board,
+                                cardWidth: cardWidth,
+                                cardHeight: cardHeight,
+                                onCheck: { onCheckBinary(item.board) }
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
-                .buttonStyle(.plain)
+                .padding(.horizontal, horizontalPad)
+                .padding(.vertical, 12)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+    }
+
+    // MARK: - Adaptive helpers
+
+    private func columnCount(for width: CGFloat) -> Int {
+        switch width {
+        case ..<600:   return 2
+        case 600..<900: return 3
+        case 900..<1200: return 4
+        default:       return 5
+        }
+    }
+
+    /// Card height scales with card width to maintain visual balance.
+    private func cardHeight(for width: CGFloat) -> CGFloat {
+        // Approx ratio from reference: card is ~1.3× taller than wide on iPhone.
+        // On wider screens we flatten slightly for information density.
+        let ratio: CGFloat = width < 200 ? 1.35 : width < 280 ? 1.25 : 1.15
+        return (width * ratio).rounded()
     }
 }
 
@@ -37,11 +78,12 @@ struct HabitGridLayoutView: View {
 
 struct GridHabitCard: View {
     let board: HabitBoard
+    let cardWidth: CGFloat
+    let cardHeight: CGFloat
     let onCheck: () -> Void
 
     @State private var showingCheckIn = false
 
-    // Today's logged value
     private var todayValue: Double {
         (board.logs ?? [])
             .filter { Calendar.current.isDateInToday($0.timestamp) }
@@ -57,20 +99,20 @@ struct GridHabitCard: View {
             HStack(alignment: .center, spacing: 7) {
                 if let emoji = board.emoji, !emoji.isEmpty {
                     Text(emoji)
-                        .font(.system(size: 16))
+                        .font(.system(size: clamp(cardWidth * 0.095, min: 13, max: 20)))
                 }
                 Text(board.name)
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.system(size: clamp(cardWidth * 0.09, min: 12, max: 16), weight: .bold))
                     .foregroundStyle(.white)
                     .lineLimit(1)
                     .truncationMode(.tail)
             }
             .padding(.horizontal, 13)
             .padding(.top, 13)
-            .padding(.bottom, 10)
+            .padding(.bottom, 8)
 
             // ── Mini heatmap ─────────────────────────────────────────
-            GridMiniHeatmap(board: board)
+            GridMiniHeatmap(board: board, cardWidth: cardWidth)
                 .padding(.horizontal, 10)
 
             Spacer(minLength: 0)
@@ -80,19 +122,20 @@ struct GridHabitCard: View {
                 board: board,
                 todayLogged: todayLogged,
                 todayValue: todayValue,
+                cardWidth: cardWidth,
                 onCheck: {
                     if board.metric == .binary {
-                        onCheck()           // direct DB write via HabitListView
+                        onCheck()
                     } else {
-                        showingCheckIn = true   // open sheet for amount
+                        showingCheckIn = true
                     }
                 }
             )
             .padding(.horizontal, 13)
-            .padding(.top, 10)
+            .padding(.top, 8)
             .padding(.bottom, 13)
         }
-        .frame(height: 236)
+        .frame(width: cardWidth, height: cardHeight)
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(ColorPalette[board.colorIndex].opacity(0.12))
@@ -106,43 +149,52 @@ struct GridHabitCard: View {
             AddCheckInSheetView(board: board)
         }
     }
+
+    private func clamp(_ value: CGFloat, min minVal: CGFloat, max maxVal: CGFloat) -> CGFloat {
+        Swift.max(minVal, Swift.min(maxVal, value))
+    }
 }
 
-// MARK: - Mini Heatmap (8 cols × 7 rows = 56 days)
+// MARK: - Mini Heatmap (adaptive cols × 7 rows)
 
 private struct GridMiniHeatmap: View {
     let board: HabitBoard
-    private let cols    = 8
-    private let rows    = 7
+    let cardWidth: CGFloat
+
+    private var cols: Int {
+        // More columns on wider cards
+        switch cardWidth {
+        case ..<160: return 7
+        case 160..<220: return 8
+        case 220..<300: return 10
+        default: return 12
+        }
+    }
+
+    private let rows = 7
     private let gap: CGFloat = 3.5
 
     var body: some View {
-        GeometryReader { geo in
-            let cellSize = (geo.size.width - gap * CGFloat(cols - 1)) / CGFloat(cols)
+        let innerWidth = cardWidth - 20  // subtract horizontal padding
+        let cellSize = (innerWidth - gap * CGFloat(cols - 1)) / CGFloat(cols)
+        let height = cellSize * CGFloat(rows) + gap * CGFloat(rows - 1)
 
-            VStack(alignment: .leading, spacing: gap) {
-                ForEach(0..<rows, id: \.self) { dayIdx in
-                    HStack(spacing: gap) {
-                        ForEach(0..<cols, id: \.self) { weekIdx in
-                            GridMiniCell(
-                                board: board,
-                                dayIndex: dayIdx,
-                                weekIndex: weekIdx,
-                                totalWeeks: cols,
-                                size: cellSize
-                            )
-                        }
+        VStack(alignment: .leading, spacing: gap) {
+            ForEach(0..<rows, id: \.self) { dayIdx in
+                HStack(spacing: gap) {
+                    ForEach(0..<cols, id: \.self) { weekIdx in
+                        GridMiniCell(
+                            board: board,
+                            dayIndex: dayIdx,
+                            weekIndex: weekIdx,
+                            totalWeeks: cols,
+                            size: cellSize
+                        )
                     }
                 }
             }
         }
-        .frame(height: heatmapHeight())
-    }
-
-    private func heatmapHeight() -> CGFloat {
-        // We estimate cell width based on card width (~161pt inner - 20pt pad = 141pt)
-        let approxCellW: CGFloat = (141 - gap * CGFloat(cols - 1)) / CGFloat(cols)
-        return approxCellW * CGFloat(rows) + gap * CGFloat(rows - 1)
+        .frame(height: height)
     }
 }
 
@@ -211,37 +263,47 @@ private struct GridCheckButton: View {
     let board: HabitBoard
     let todayLogged: Bool
     let todayValue: Double
+    let cardWidth: CGFloat
     let onCheck: () -> Void
+
+    private var buttonHeight: CGFloat { clamp(cardWidth * 0.18, min: 36, max: 48) }
+    private var fontSize: CGFloat     { clamp(cardWidth * 0.075, min: 12, max: 16) }
 
     var body: some View {
         Button(action: onCheck) {
             Group {
                 if todayLogged {
-                    // Logged — habit color fill, dark content
                     HStack(spacing: 7) {
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.system(size: fontSize, weight: .semibold))
                         if board.metric == .quantitative {
-                            Text(String(format: todayValue.truncatingRemainder(dividingBy: 1) == 0 ? "%.0f" : "%.1f", todayValue))
-                                .font(.system(size: 15, weight: .semibold))
+                            Text(String(
+                                format: todayValue.truncatingRemainder(dividingBy: 1) == 0 ? "%.0f" : "%.1f",
+                                todayValue))
+                                .font(.system(size: fontSize, weight: .semibold))
                         }
                     }
                     .foregroundStyle(Color.black.opacity(0.85))
                     .frame(maxWidth: .infinity)
-                    .frame(height: 46)
-                    .background(ColorPalette[board.colorIndex], in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .frame(height: buttonHeight)
+                    .background(ColorPalette[board.colorIndex],
+                                in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 } else {
-                    // Unlogged — neutral dark fill, muted plus
                     Image(systemName: "plus")
-                        .font(.system(size: 17, weight: .semibold))
+                        .font(.system(size: fontSize + 2, weight: .semibold))
                         .foregroundStyle(Color(white: 0.45))
                         .frame(maxWidth: .infinity)
-                        .frame(height: 46)
-                        .background(Color(white: 0.15), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .frame(height: buttonHeight)
+                        .background(Color(white: 0.15),
+                                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
             }
         }
         .buttonStyle(.plain)
+    }
+
+    private func clamp(_ value: CGFloat, min minVal: CGFloat, max maxVal: CGFloat) -> CGFloat {
+        Swift.max(minVal, Swift.min(maxVal, value))
     }
 }
 
@@ -249,8 +311,6 @@ private struct GridCheckButton: View {
 
 #Preview {
     NavigationStack {
-        ScrollView {
-            HabitGridLayoutView(boardsWithState: [], onCheckBinary: { _ in })
-        }
+        HabitGridLayoutView(boardsWithState: [], onCheckBinary: { _ in })
     }
 }
