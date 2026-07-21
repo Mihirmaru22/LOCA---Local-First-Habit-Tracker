@@ -45,6 +45,7 @@ struct LOCAApp: App {
 
     private let container: ModelContainer?
     private let cloudKitCoordinator: CloudKitSyncCoordinator?
+    private let streakMaintenanceCoordinator: StreakMaintenanceCoordinator?
 
     init() {
         do {
@@ -55,6 +56,10 @@ struct LOCAApp: App {
             let container = try ModelContainerFactory.makeConfiguredContainer()
             self.container = container
             self.cloudKitCoordinator = CloudKitSyncCoordinator(container: container)
+            // Consumer half of the needsStreakRecalculation pipeline (C-1):
+            // CloudKitSyncCoordinator flags boards after an import; this repairs
+            // their cached streaks from the full log history and clears the flag.
+            self.streakMaintenanceCoordinator = StreakMaintenanceCoordinator(container: container)
 
             // DEBUG-only: seeds minimal sample data so HabitDetailView,
             // HeatmapView, and AnalyticsCardsView can be exercised before
@@ -71,6 +76,7 @@ struct LOCAApp: App {
             // rather than force-unwrapping into a crash.
             self.container = nil
             self.cloudKitCoordinator = nil
+            self.streakMaintenanceCoordinator = nil
         }
     }
 
@@ -85,6 +91,14 @@ struct LOCAApp: App {
                         // on disappear, with no manual Task/queue lifecycle management
                         // (Engineering Principles §3.1: structured concurrency only).
                         await cloudKitCoordinator?.start()
+                    }
+                    .task {
+                        // Consumer half of the streak-recalculation pipeline (C-1):
+                        // runs a launch repair pass for boards flagged in a prior
+                        // session, then recalculates on each completed CloudKit import.
+                        // Separate .task so it observes concurrently with the coordinator
+                        // above rather than serially behind its never-returning loop.
+                        await streakMaintenanceCoordinator?.start()
                     }
             } else {
                 ContainerUnavailableView()

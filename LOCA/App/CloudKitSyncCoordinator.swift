@@ -217,7 +217,148 @@ extension Notification.Name {
     /// `NSPersistentCloudKitContainer.Event` directly — they observe this notification
     /// instead, if they need to react to a completed import (e.g. to trigger an
     /// immediate `StreakCalculator` pass rather than waiting for next display).
-    /// No current view observes this notification; it exists as the documented
-    /// integration point for Phase 4 and later, per the established pattern.
+    ///
+    /// `StreakMaintenanceCoordinator` (below) is the first consumer: it runs a full
+    /// `StreakCalculator` pass over flagged boards whenever this fires.
     static let cloudKitImportDidComplete = Notification.Name("cloudKitImportDidComplete")
+}
+
+// MARK: - StreakMaintenanceCoordinator
+
+/// Consumes `HabitBoard.needsStreakRecalculation` and repairs the cached streak
+/// properties from the full log history via `StreakCalculator`.
+///
+/// ## Why This Type Exists (closes review finding C-1)
+///
+/// `CloudKitSyncCoordinator` *sets* `needsStreakRecalculation = true` after an import,
+/// but nothing ever *acted* on that flag — `StreakCalculator.calculate(…)` had no call
+/// site, `resetStreakCache()` was never invoked, and the flag was never cleared. The
+/// entire last-write-wins streak-repair safety net (design risk "H1") was therefore
+/// inert at runtime: after the first import a board's flag stayed `true` forever and its
+/// merged history was never reflected in the scalar streak cache.
+///
+/// This type is the missing consumer. It closes the loop:
+///
+/// ```
+/// CloudKitSyncCoordinator: import → flag boards → post cloudKitImportDidComplete
+/// StreakMaintenanceCoordinator: (launch | notification) → recalc flagged boards → clear flag
+/// ```
+///
+/// ## Separation of Concerns
+///
+/// Kept distinct from `CloudKitSyncCoordinator`, whose documented contract is to *flag*
+/// boards and explicitly *not* perform recalculation. That responsibility lives here.
+/// The two are siblings in this file because they are the two halves of one pipeline —
+/// the producer and the consumer of `needsStreakRecalculation`.
+///
+/// ## Lifecycle
+///
+/// Instantiated once in `LOCAApp.init()` alongside the shared `ModelContainer` and started
+/// via a `.task` on the root view, mirroring `CloudKitSyncCoordinator`. Structured
+/// concurrency only — no manual thread or queue management (Engineering Principles §3.1).
+///
+/// ## Crash Safety
+///
+/// The flag is cleared to `false` only in the same `context.save()` that persists the
+/// recalculated values. A crash before that save leaves the flag `true` in the store, so
+/// the launch pass retries the recalculation on next launch rather than displaying stale
+/// or zeroed streaks — exactly the guarantee documented on `HabitBoard.needsStreakRecalculation`.
+@MainActor
+final class StreakMaintenanceCoordinator {
+
+    private let container: ModelContainer
+    private let logger = Logger(subsystem: "com.mihirmaru.loca", category: "StreakMaintenance")
+
+    // Same idempotency rationale as CloudKitSyncCoordinator: `start()` is driven from a
+    // per-window `.task`, and macOS "New Window" can fire it more than once against this
+    // single shared instance. The guard makes a second call a no-op.
+    private var isObserving = false
+
+    /// - Parameter container: The shared `ModelContainer` from `LOCAApp.init()`. This type
+    ///   never constructs its own container; it reads and writes the same `mainContext`
+    ///   that the views and `CloudKitSyncCoordinator` use, so flags set there are visible here.
+    init(container: ModelContainer) {
+        self.container = container
+    }
+
+    // MARK: - Observation Loop
+
+    /// Runs an initial recalculation pass for any boards flagged in a prior session, then
+    /// observes `cloudKitImportDidComplete` and re-runs a pass on each notification.
+    ///
+    /// Idempotent — a second concurrent call while already observing is a no-op. Runs until
+    /// the calling `Task` is cancelled (driven by a SwiftUI `.task` on a long-lived view).
+    func start() async {
+        guard !isObserving else { return }
+        isObserving = true
+
+        // Launch pass: repair boards flagged in a prior session — including one where a
+        // previous recalculation was interrupted before its save (flag still `true`).
+        await recalculateFlaggedBoards()
+
+        // Subsequent passes are driven by CloudKitSyncCoordinator, which posts this
+        // notification after it flags boards following an import.
+        let notifications = NotificationCenter.default.notifications(named: .cloudKitImportDidComplete)
+        for await _ in notifications {
+            guard !Task.isCancelled else { break }
+            await recalculateFlaggedBoards()
+        }
+    }
+
+    // MARK: - Recalculation Pass
+
+    /// Fetches every board with `needsStreakRecalculation == true`, recomputes its streak
+    /// metrics from the full log history off the main actor, writes the results back, and
+    /// clears the flag — all in a single save.
+    ///
+    /// Snapshots are taken on the main actor (`LogSnapshot.init(from:)` is `@MainActor`);
+    /// only the `Sendable` snapshots cross into `StreakCalculator.calculate`, which runs on
+    /// the cooperative thread pool. The write-back and save occur back on the main actor.
+    func recalculateFlaggedBoards() async {
+        let context = container.mainContext
+
+        let boards: [HabitBoard]
+        do {
+            boards = try context.fetch(
+                FetchDescriptor<HabitBoard>(
+                    predicate: #Predicate { $0.needsStreakRecalculation }
+                )
+            )
+        } catch {
+            logger.error(
+                "Failed to fetch boards needing streak recalculation: \(error.localizedDescription, privacy: .public)"
+            )
+            return
+        }
+
+        guard !boards.isEmpty else { return }
+
+        for board in boards {
+            // Snapshot on the main actor before suspending; the Sendable snapshots are
+            // then safe to hand to the off-actor calculator.
+            let snapshots = (board.logs ?? []).map(LogSnapshot.init(from:))
+            let target    = board.effectiveTarget
+
+            let result = await StreakCalculator.calculate(snapshots: snapshots, target: target)
+
+            // Back on the main actor: apply the authoritative values and clear the flag.
+            board.currentStreak       = result.currentStreak
+            board.longestStreak       = result.longestStreak
+            board.lastCheckedDate     = result.lastCompletedDate
+            board.needsStreakRecalculation = false
+        }
+
+        do {
+            try context.save()
+            logger.debug("Recalculated streaks for \(boards.count, privacy: .public) flagged board(s).")
+        } catch {
+            logger.error(
+                "Failed to save recalculated streaks: \(error.localizedDescription, privacy: .public)"
+            )
+            // Not rolled back: the flags remain `true` in the persistent store, so the
+            // launch pass retries on next launch rather than leaving streaks silently
+            // stale. This mirrors CloudKitSyncCoordinator's "recalculate once more than
+            // necessary" asymmetry.
+        }
+    }
 }
