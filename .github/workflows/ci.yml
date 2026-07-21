@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build & Unit Test
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 16
+        run: |
+          ls /Applications | grep -i xcode || true
+          sudo xcode-select -s /Applications/Xcode_16.2.app 2>/dev/null \
+            || sudo xcode-select -s /Applications/Xcode_16.1.app 2>/dev/null \
+            || sudo xcode-select -s /Applications/Xcode_16.app 2>/dev/null \
+            || true
+          xcodebuild -version
+          swift --version
+
+      - name: Pick an available iOS simulator
+        id: sim
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c "import json,sys
+data = json.load(sys.stdin)['devices']
+ids = [d['udid'] for rt in data for d in data[rt] if d.get('isAvailable') and 'iPhone' in d['name']]
+print(ids[0] if ids else '')")
+          if [ -z "$UDID" ]; then echo 'No available iPhone simulator'; exit 1; fi
+          echo "Using simulator $UDID"
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+
+      - name: Run unit tests
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project LOCA.xcodeproj \
+            -scheme LOCA \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -resultBundlePath TestResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee xcodebuild.log
+
+      - name: Upload result bundle
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TestResults
+          path: TestResults.xcresult
+          if-no-files-found: ignore
