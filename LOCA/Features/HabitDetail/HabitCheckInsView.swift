@@ -260,10 +260,14 @@ struct HabitCheckInsView: View {
 
     private func deleteEntry(_ entry: LogEntry) {
         modelContext.delete(entry)
-        board.updateStreak(using: .current)
+        // Deleting an entry can lower or break a streak on any day, which the increment-only
+        // updateStreak() cannot express — flag for a full recalculation instead (C-2).
+        board.needsStreakRecalculation = true
 
         do {
             try modelContext.save()
+            // Trigger the StreakMaintenanceCoordinator recalculation pass (T1 path).
+            NotificationCenter.default.post(name: .streakRecalculationRequested, object: nil)
             WidgetRefreshCoordinator.shared.scheduleReload()
         } catch {
             modelContext.rollback()

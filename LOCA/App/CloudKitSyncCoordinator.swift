@@ -221,6 +221,17 @@ extension Notification.Name {
     /// `StreakMaintenanceCoordinator` (below) is the first consumer: it runs a full
     /// `StreakCalculator` pass over flagged boards whenever this fires.
     static let cloudKitImportDidComplete = Notification.Name("cloudKitImportDidComplete")
+
+    /// Posted on the main actor by a mutation site (an edit, a delete, or a backdated/
+    /// future insert) after it sets `needsStreakRecalculation = true` and saves. Requests
+    /// the same full `StreakCalculator` pass the CloudKit path uses, so a local mutation
+    /// the increment-only `HabitBoard.updateStreak(using:)` fast path cannot service is
+    /// reflected immediately rather than only after the next import (C-2).
+    ///
+    /// Observed by `StreakMaintenanceCoordinator` alongside `cloudKitImportDidComplete`;
+    /// both triggers simply re-run the recalculation pass, whose work list is the set of
+    /// flagged boards.
+    static let streakRecalculationRequested = Notification.Name("streakRecalculationRequested")
 }
 
 // MARK: - StreakMaintenanceCoordinator
@@ -296,9 +307,21 @@ final class StreakMaintenanceCoordinator {
         // previous recalculation was interrupted before its save (flag still `true`).
         await recalculateFlaggedBoards()
 
-        // Subsequent passes are driven by CloudKitSyncCoordinator, which posts this
-        // notification after it flags boards following an import.
-        let notifications = NotificationCenter.default.notifications(named: .cloudKitImportDidComplete)
+        // Subsequent passes are driven by two triggers, observed concurrently:
+        //   • cloudKitImportDidComplete   — a remote import may have merged new logs (C-1)
+        //   • streakRecalculationRequested — a local edit / delete / backdated insert
+        //     flagged a board and needs the same full recalculation (C-2)
+        // Both simply re-run recalculateFlaggedBoards(); the flag set is the work list.
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask { [weak self] in await self?.observe(.cloudKitImportDidComplete) }
+            group.addTask { [weak self] in await self?.observe(.streakRecalculationRequested) }
+        }
+    }
+
+    /// Observes one notification stream, running a recalculation pass on each post, until
+    /// the surrounding task is cancelled. Two instances run concurrently (one per trigger).
+    private func observe(_ name: Notification.Name) async {
+        let notifications = NotificationCenter.default.notifications(named: name)
         for await _ in notifications {
             guard !Task.isCancelled else { break }
             await recalculateFlaggedBoards()

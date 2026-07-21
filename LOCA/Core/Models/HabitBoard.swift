@@ -341,6 +341,14 @@ extension HabitBoard {
     /// include it — SwiftData propagates relationship changes immediately upon insert
     /// within the same `ModelContext`.
     ///
+    /// **Contract (C-2):** this fast path is valid *only* for an entry dated **today**.
+    /// It inspects today's window exclusively and can only start or extend a streak — it
+    /// never decrements. Any mutation that touches another day (a backdated or future
+    /// insert, an edit, or a delete) must instead set `needsStreakRecalculation` and route
+    /// through `StreakCalculator` (see `StreakMaintenanceCoordinator`), which rebuilds the
+    /// cache from the full log history. Calling this for a non-today mutation leaves the
+    /// cached streak silently wrong.
+    ///
     /// Today's entries are identified using a precomputed half-open interval
     /// `[todayStart, tomorrowStart)`, avoiding per-entry Calendar calls. Total
     /// traversal is O(n_logs_for_board). Phase 2's `DailyAggregator` handles
