@@ -2,20 +2,11 @@
 //  HabitListView.swift
 //  LOCA
 //
-//  Phase 14.4 — Habit List: the list container with layout switching.
-//
-//  Reads @AppStorage("habitListLayout") and renders one of three layouts:
-//  - list: Zones by state (To Do, In Progress, Needs Attention, Done)
-//  - grid: 2-column grid of compact cards
-//  - timeline: Chronological timeline with expanded stats
-//
-//  State computation remains centralized outside ViewBuilder.
+//  Phase 15.1 — Habit List container with layout switching (simplified adaptive).
 //
 
 import SwiftUI
 import SwiftData
-
-// MARK: - HabitListView
 
 struct HabitListView: View {
 
@@ -26,8 +17,6 @@ struct HabitListView: View {
     @State private var showingCreateSheet = false
     @AppStorage("habitListLayout") private var layout: String = "list"
 
-    /// Future: a HabitSortStrategy seam will allow pluggable sort modes.
-    /// Today: manual (stable, user-defined) order. No reordering by state.
     private var displayBoards: [HabitBoard] {
         boards.filter { $0.archivedAt == nil }
     }
@@ -49,7 +38,7 @@ struct HabitListView: View {
                             boardsWithState: boardsWithState,
                             onCheckBinary: checkInBinary
                         )
-                    default: // "list"
+                    default:
                         HabitListLayoutView(
                             boardsWithState: boardsWithState,
                             onCheckBinary: checkInBinary
@@ -75,8 +64,6 @@ struct HabitListView: View {
         }
     }
 
-    // MARK: - State computation (outside ViewBuilder)
-
     private var boardsWithState: [(board: HabitBoard, state: HabitState)] {
         displayBoards.map { board in
             let todaysTotal = (board.logs ?? [])
@@ -86,8 +73,6 @@ struct HabitListView: View {
             return (board, state)
         }
     }
-
-    // MARK: - Empty State
 
     private var emptyStateView: some View {
         VStack(spacing: DS.Space.lg) {
@@ -125,8 +110,6 @@ struct HabitListView: View {
         .padding(DS.Space.xxl)
     }
 
-    // MARK: - Actions
-
     private func checkInBinary(board: HabitBoard) {
         let entry = LogEntry(value: 1.0, boardID: board.id, board: board)
         modelContext.insert(entry)
@@ -140,52 +123,8 @@ struct HabitListView: View {
     }
 }
 
-// MARK: - Preview
-
-@MainActor
-private func makeHabitListPreviewContainer() -> ModelContainer {
-    let schema = Schema([HabitBoard.self, LogEntry.self])
-    let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-    // try! is acceptable in a #Preview fixture (Engineering Principles §Previews).
-    let container = try! ModelContainer(for: schema, configurations: [config])
-    let context = container.mainContext
-
-    // In progress: quantitative, partway to goal.
-    let running = HabitBoard(name: "Running", metricType: 1, targetValue: 5, unitLabel: "km", colorIndex: 0)
-    running.currentStreak = 5
-    running.longestStreak = 12
-    context.insert(running)
-    context.insert(LogEntry(value: 3.2, boardID: running.id, board: running))
-
-    // Needs action: binary, not yet logged today.
-    let meditate = HabitBoard(name: "Meditate", colorIndex: 5)
-    meditate.currentStreak = 3
-    meditate.longestStreak = 3
-    context.insert(meditate)
-
-    // Behind: streak broken, has history, nothing today.
-    let read = HabitBoard(name: "Read", colorIndex: 2)
-    read.currentStreak = 0
-    read.longestStreak = 8
-    context.insert(read)
-    if let yesterday = Calendar.current.date(byAdding: .day, value: -2, to: .now) {
-        context.insert(LogEntry(timestamp: yesterday, value: 1, boardID: read.id, board: read))
-    }
-
-    // Done: binary, completed today.
-    let stretch = HabitBoard(name: "Stretch", colorIndex: 3)
-    stretch.currentStreak = 10
-    stretch.longestStreak = 10
-    context.insert(stretch)
-    context.insert(LogEntry(value: 1, boardID: stretch.id, board: stretch))
-
-    try? context.save()
-    return container
-}
-
 #Preview {
     NavigationStack {
         HabitListView()
     }
-    .modelContainer(makeHabitListPreviewContainer())
 }
