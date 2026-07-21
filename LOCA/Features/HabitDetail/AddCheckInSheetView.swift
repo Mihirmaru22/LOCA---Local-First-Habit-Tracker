@@ -183,10 +183,23 @@ struct AddCheckInSheetView: View {
             board: board
         )
         modelContext.insert(logEntry)
-        board.updateStreak(using: .current)
+
+        // The increment-only fast path is valid only when the entry is dated today
+        // (HabitBoard.updateStreak contract, C-2). A backdated or future entry changes a
+        // different day's completion, so it must go through a full recalculation instead.
+        let isToday = Calendar.current.isDateInToday(timestamp)
+        if isToday {
+            board.updateStreak(using: .current)
+        } else {
+            board.needsStreakRecalculation = true
+        }
 
         do {
             try modelContext.save()
+            if !isToday {
+                // Trigger the StreakMaintenanceCoordinator recalculation pass (T1 path).
+                NotificationCenter.default.post(name: .streakRecalculationRequested, object: nil)
+            }
             triggerConfirmationHaptic()
             WidgetRefreshCoordinator.shared.scheduleReload()
 

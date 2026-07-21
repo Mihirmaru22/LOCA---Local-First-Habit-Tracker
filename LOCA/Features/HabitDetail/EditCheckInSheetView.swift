@@ -198,10 +198,15 @@ struct EditCheckInSheetView: View {
         entry.timestamp = newTS
         entry.value     = board.metric == .quantitative ? (parsedAmount ?? oldVal) : 1.0
         entry.note      = notesText.isEmpty ? nil : notesText
-        board.updateStreak(using: .current)
+        // An edit can move the entry to another day or drop its value below target —
+        // neither of which the increment-only updateStreak() can express. Flag for a full
+        // recalculation instead (C-2). A save failure below rolls this back with the rest.
+        board.needsStreakRecalculation = true
 
         do {
             try modelContext.save()
+            // Trigger the StreakMaintenanceCoordinator recalculation pass (T1 path).
+            NotificationCenter.default.post(name: .streakRecalculationRequested, object: nil)
             logger.debug("LogEntry edited: \(entry.id, privacy: .public)")
             WidgetRefreshCoordinator.shared.scheduleReload()
             isSaving = false
