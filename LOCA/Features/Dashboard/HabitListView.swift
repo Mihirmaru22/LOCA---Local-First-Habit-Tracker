@@ -2,14 +2,13 @@
 //  HabitListView.swift
 //  LOCA
 //
-//  Phase 15.1 — Habit List container with layout switching (simplified adaptive).
+//  Minimal version - direct rendering, no state computation loops
 //
 
 import SwiftUI
 import SwiftData
 
 struct HabitListView: View {
-
     @Query(sort: [SortDescriptor(\HabitBoard.createdAt)], animation: .default)
     private var boards: [HabitBoard]
 
@@ -17,41 +16,48 @@ struct HabitListView: View {
     @State private var showingCreateSheet = false
     @AppStorage("habitListLayout") private var layout: String = "list"
 
-    private var displayBoards: [HabitBoard] {
-        boards.filter { $0.archivedAt == nil }
-    }
-
     var body: some View {
-        ScrollView {
-            if displayBoards.isEmpty {
-                emptyStateView
-            } else {
-                Group {
-                    switch layout {
-                    case "grid":
-                        HabitGridLayoutView(
-                            boardsWithState: boardsWithState,
-                            onCheckBinary: checkInBinary
-                        )
-                    case "timeline":
-                        HabitTimelineLayoutView(
-                            boardsWithState: boardsWithState,
-                            onCheckBinary: checkInBinary
-                        )
-                    default:
-                        HabitListLayoutView(
-                            boardsWithState: boardsWithState,
-                            onCheckBinary: checkInBinary
-                        )
+        ZStack {
+            if boards.isEmpty {
+                VStack(spacing: 20) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 48))
+                        .foregroundStyle(.secondary)
+                    Text("No habits yet")
+                        .font(.title2)
+                    Button("Create Habit") {
+                        showingCreateSheet = true
                     }
+                    .buttonStyle(.bordered)
+                }
+            } else {
+                ScrollView {
+                    VStack(spacing: 12) {
+                        ForEach(boards.filter { $0.archivedAt == nil }, id: \.id) { board in
+                            NavigationLink(destination: HabitDetailView(board: board)) {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text(board.name)
+                                        .font(.headline)
+                                        .foregroundStyle(.primary)
+                                    Text("Current Streak: \(board.currentStreak)")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding()
+                                .background(Color(white: 0.1), in: RoundedRectangle(cornerRadius: 12))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding()
                 }
             }
         }
         .navigationTitle("Today")
-        .largeNavigationTitleDisplay()
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                HStack(spacing: DS.Space.md) {
+                HStack(spacing: 12) {
                     SettingsMenuView()
                     Button(action: { showingCreateSheet = true }) {
                         Image(systemName: "plus")
@@ -61,64 +67,6 @@ struct HabitListView: View {
         }
         .sheet(isPresented: $showingCreateSheet) {
             HabitFormView(mode: .create)
-        }
-    }
-
-    private var boardsWithState: [(board: HabitBoard, state: HabitState)] {
-        displayBoards.map { board in
-            let todaysTotal = (board.logs ?? [])
-                .filter { $0.timestamp.isToday() }
-                .reduce(0.0) { $0 + $1.value }
-            let state = HabitState.compute(for: board, todaysTotal: todaysTotal)
-            return (board, state)
-        }
-    }
-
-    private var emptyStateView: some View {
-        VStack(spacing: DS.Space.lg) {
-            Spacer()
-
-            VStack(spacing: DS.Space.md) {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 48))
-                    .foregroundStyle(.secondary)
-
-                VStack(spacing: DS.Space.sm) {
-                    Text("All Set")
-                        .font(DS.Text.heading)
-
-                    Text("No habits yet. Create one to get started.")
-                        .font(DS.Text.caption)
-                        .foregroundStyle(DS.Color.textSecondary)
-                        .multilineTextAlignment(.center)
-                }
-            }
-
-            Spacer()
-
-            Button(action: { showingCreateSheet = true }) {
-                Text("Create Habit")
-                    .font(DS.Text.body)
-                    .frame(maxWidth: .infinity)
-                    .padding(DS.Space.lg)
-                    .background(ColorPalette[0])
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.control, style: .continuous))
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(DS.Space.xxl)
-    }
-
-    private func checkInBinary(board: HabitBoard) {
-        let entry = LogEntry(value: 1.0, boardID: board.id, board: board)
-        modelContext.insert(entry)
-        board.updateStreak(using: .current)
-        do {
-            try modelContext.save()
-            WidgetRefreshCoordinator.shared.scheduleReload()
-        } catch {
-            modelContext.rollback()
         }
     }
 }
