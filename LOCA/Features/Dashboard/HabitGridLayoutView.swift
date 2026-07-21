@@ -2,212 +2,255 @@
 //  HabitGridLayoutView.swift
 //  LOCA
 //
-//  Phase 14.4 — Grid layout with interactive check button and wave animation.
-//
-//  2-column grid. Each card: emoji + name (top), 14-day heatmap (middle),
-//  check button with streak (bottom). Tap button triggers wave animation on heatmap.
+//  Phase 15.1 — Grid layout, pixel-perfect.
+//  No NavigationStack — lives inside HabitListView's existing stack.
 //
 
 import SwiftUI
 import SwiftData
 
+// MARK: - HabitGridLayoutView
+
 struct HabitGridLayoutView: View {
+    // Passed from HabitListView — avoids double @Query
     let boardsWithState: [(board: HabitBoard, state: HabitState)]
     let onCheckBinary: (HabitBoard) -> Void
 
-    private let columns = [
-        GridItem(.flexible(), spacing: DS.Space.md),
-        GridItem(.flexible(), spacing: DS.Space.md)
-    ]
-
-    private var sortedBoards: [(board: HabitBoard, state: HabitState)] {
-        boardsWithState.sorted { a, b in
-            let stateOrder: [HabitState] = [.needsAction, .behind, .inProgress, .done]
-            let aIndex = stateOrder.firstIndex(of: a.state) ?? 4
-            let bIndex = stateOrder.firstIndex(of: b.state) ?? 4
-            return aIndex < bIndex
-        }
-    }
-
     var body: some View {
-        LazyVGrid(columns: columns, spacing: DS.Space.md) {
-            ForEach(sortedBoards, id: \.board.id) { item in
+        LazyVGrid(
+            columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)],
+            spacing: 14
+        ) {
+            ForEach(boardsWithState, id: \.board.id) { item in
                 NavigationLink(destination: HabitDetailView(board: item.board)) {
-                    HabitGridCardWithHeatmap(
-                        board: item.board,
-                        state: item.state,
-                        onCheckBinary: { onCheckBinary(item.board) }
-                    )
+                    GridHabitCard(board: item.board, onCheck: { onCheckBinary(item.board) })
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(DS.Space.lg)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
     }
 }
 
-// MARK: - Grid Card with Interactive Heatmap
+// MARK: - Grid Habit Card
 
-struct HabitGridCardWithHeatmap: View {
+struct GridHabitCard: View {
     let board: HabitBoard
-    let state: HabitState
-    let onCheckBinary: () -> Void
+    let onCheck: () -> Void
 
-    @State private var waveIndices: Set<Int> = []
+    @State private var showingCheckIn = false
 
-    private var currentStreakValue: Int {
-        board.currentStreak
+    // Today's logged value
+    private var todayValue: Double {
+        (board.logs ?? [])
+            .filter { Calendar.current.isDateInToday($0.timestamp) }
+            .reduce(0, { $0 + $1.value })
     }
 
-    private var cardBackgroundColor: Color {
-        ColorPalette[board.colorIndex].opacity(0.12)
-    }
-
-    private var buttonBackgroundColor: Color {
-        ColorPalette[board.colorIndex].opacity(0.2)
-    }
-
-    private var heatmapDays: [Date] {
-        let today = Calendar.current.startOfDay(for: .now)
-        let dayCount = 14
-        return (0..<dayCount)
-            .compactMap { offset in
-                Calendar.current.date(byAdding: .day, value: -(dayCount - 1 - offset), to: today)
-            }
-    }
+    private var todayLogged: Bool { todayValue > 0 }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.md) {
-            // Header: emoji + name
-            HStack(spacing: DS.Space.sm) {
-                Text(board.emoji ?? "✓")
-                    .font(.system(size: 24))
-                
+        VStack(alignment: .leading, spacing: 0) {
+
+            // ── Header ──────────────────────────────────────────────
+            HStack(alignment: .center, spacing: 7) {
+                if let emoji = board.emoji, !emoji.isEmpty {
+                    Text(emoji)
+                        .font(.system(size: 16))
+                }
                 Text(board.name)
-                    .font(DS.Text.body)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(.white)
                     .lineLimit(1)
                     .truncationMode(.tail)
-                
-                Spacer()
             }
+            .padding(.horizontal, 13)
+            .padding(.top, 13)
+            .padding(.bottom, 10)
 
-            // Interactive heatmap grid (2 rows × 7 days)
-            VStack(spacing: 2) {
-                ForEach(0..<2, id: \.self) { row in
-                    HStack(spacing: 2) {
-                        ForEach(0..<7, id: \.self) { col in
-                            let index = row * 7 + col
-                            if index < heatmapDays.count {
-                                let date = heatmapDays[index]
-                                MiniHeatmapCellWithWave(
-                                    board: board,
-                                    date: date,
-                                    isAnimating: waveIndices.contains(index)
-                                )
-                            }
+            // ── Mini heatmap ─────────────────────────────────────────
+            GridMiniHeatmap(board: board)
+                .padding(.horizontal, 10)
+
+            Spacer(minLength: 0)
+
+            // ── Check button ─────────────────────────────────────────
+            GridCheckButton(
+                board: board,
+                todayLogged: todayLogged,
+                todayValue: todayValue,
+                onCheck: {
+                    if board.metric == .binary {
+                        onCheck()           // direct DB write via HabitListView
+                    } else {
+                        showingCheckIn = true   // open sheet for amount
+                    }
+                }
+            )
+            .padding(.horizontal, 13)
+            .padding(.top, 10)
+            .padding(.bottom, 13)
+        }
+        .frame(height: 236)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(ColorPalette[board.colorIndex].opacity(0.12))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(ColorPalette[board.colorIndex].opacity(0.18), lineWidth: 0.5)
+        )
+        .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .sheet(isPresented: $showingCheckIn) {
+            AddCheckInSheetView(board: board)
+        }
+    }
+}
+
+// MARK: - Mini Heatmap (8 cols × 7 rows = 56 days)
+
+private struct GridMiniHeatmap: View {
+    let board: HabitBoard
+    private let cols    = 8
+    private let rows    = 7
+    private let gap: CGFloat = 3.5
+
+    var body: some View {
+        GeometryReader { geo in
+            let cellSize = (geo.size.width - gap * CGFloat(cols - 1)) / CGFloat(cols)
+
+            VStack(alignment: .leading, spacing: gap) {
+                ForEach(0..<rows, id: \.self) { dayIdx in
+                    HStack(spacing: gap) {
+                        ForEach(0..<cols, id: \.self) { weekIdx in
+                            GridMiniCell(
+                                board: board,
+                                dayIndex: dayIdx,
+                                weekIndex: weekIdx,
+                                totalWeeks: cols,
+                                size: cellSize
+                            )
                         }
                     }
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, DS.Space.sm)
-
-            Spacer(minLength: 0)
-
-            // Check button with streak count
-            Button(action: { triggerWaveAnimation() }) {
-                HStack(spacing: 6) {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 16, weight: .semibold))
-                    
-                    Text("×")
-                        .font(.system(size: 14, weight: .semibold))
-                    
-                    ValueText(
-                        String(currentStreakValue),
-                        font: DS.Text.valueCompact
-                    )
-                    
-                    Spacer()
-                }
-                .foregroundStyle(ColorPalette[board.colorIndex])
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, DS.Space.md)
-                .padding(.horizontal, DS.Space.md)
-                .background(buttonBackgroundColor, in: RoundedRectangle(cornerRadius: 12))
-            }
-            .simultaneousGesture(
-                TapGesture().onEnded { _ in
-                    onCheckBinary()
-                }
-            )
         }
-        .padding(DS.Space.md)
-        .background(cardBackgroundColor, in: RoundedRectangle(cornerRadius: DS.Radius.card))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.card)
-                .stroke(ColorPalette[board.colorIndex].opacity(0.25), lineWidth: 0.5)
-        )
+        .frame(height: heatmapHeight())
     }
 
-    private func triggerWaveAnimation() {
-        for index in 0..<14 {
-            DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.08) {
-                withAnimation(.easeOut(duration: 0.4)) {
-                    waveIndices.insert(index)
-                }
-            }
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.08 + 0.4) {
-                withAnimation {
-                    waveIndices.remove(index)
-                }
+    private func heatmapHeight() -> CGFloat {
+        // We estimate cell width based on card width (~161pt inner - 20pt pad = 141pt)
+        let approxCellW: CGFloat = (141 - gap * CGFloat(cols - 1)) / CGFloat(cols)
+        return approxCellW * CGFloat(rows) + gap * CGFloat(rows - 1)
+    }
+}
+
+// MARK: - Mini Heatmap Cell
+
+private struct GridMiniCell: View {
+    let board: HabitBoard
+    let dayIndex: Int
+    let weekIndex: Int
+    let totalWeeks: Int
+    let size: CGFloat
+
+    private var date: Date? {
+        let today = Calendar.current.startOfDay(for: .now)
+        let weeksBack = totalWeeks - 1 - weekIndex
+        let daysBack  = weeksBack * 7 + dayIndex
+        return Calendar.current.date(byAdding: .day, value: -daysBack, to: today)
+    }
+
+    private var isToday: Bool {
+        guard let d = date else { return false }
+        return Calendar.current.isDateInToday(d)
+    }
+
+    private var isFuture: Bool {
+        guard let d = date else { return false }
+        return d > Date()
+    }
+
+    private var total: Double {
+        guard let d = date else { return 0 }
+        let start = Calendar.current.startOfDay(for: d)
+        guard let end = Calendar.current.date(byAdding: .day, value: 1, to: start) else { return 0 }
+        return (board.logs ?? [])
+            .filter { $0.timestamp >= start && $0.timestamp < end }
+            .reduce(0, { $0 + $1.value })
+    }
+
+    private var opacity: Double {
+        if isFuture { return 0.07 }
+        guard total > 0 else { return 0.15 }
+        let r = total / board.effectiveTarget
+        if r >= 1.0 { return 1.0 }
+        if r >= 0.5 { return 0.55 }
+        return 0.30
+    }
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: size * 0.27, style: .continuous)
+                .fill(ColorPalette[board.colorIndex].opacity(opacity))
+                .frame(width: size, height: size)
+
+            if isToday {
+                RoundedRectangle(cornerRadius: size * 0.27, style: .continuous)
+                    .stroke(Color.white.opacity(0.80), lineWidth: 1.2)
+                    .frame(width: size, height: size)
             }
         }
     }
 }
 
-// MARK: - Mini Heatmap Cell with Wave Animation
+// MARK: - Check Button
 
-struct MiniHeatmapCellWithWave: View {
+private struct GridCheckButton: View {
     let board: HabitBoard
-    let date: Date
-    let isAnimating: Bool
-
-    private var dayLogs: [LogEntry] {
-        (board.logs ?? [])
-            .filter { Calendar.current.isDate($0.timestamp, inSameDayAs: date) }
-    }
-
-    private var totalValue: Double {
-        dayLogs.reduce(0.0) { $0 + $1.value }
-    }
-
-    private var cellOpacity: Double {
-        guard !dayLogs.isEmpty else { return 0 }
-        let ratio = totalValue / board.effectiveTarget
-        return min(1.0, max(0.3, ratio))
-    }
+    let todayLogged: Bool
+    let todayValue: Double
+    let onCheck: () -> Void
 
     var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 2)
-                .fill(
-                    dayLogs.isEmpty
-                        ? DS.Color.surface
-                        : ColorPalette[board.colorIndex].opacity(cellOpacity)
-                )
-            
-            // Wave overlay
-            if isAnimating {
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(ColorPalette[board.colorIndex])
-                    .opacity(0.6)
-                    .scaleEffect(isAnimating ? 1.2 : 1.0)
-                    .opacity(isAnimating ? 0 : 1)
+        Button(action: onCheck) {
+            Group {
+                if todayLogged {
+                    // Logged — habit color fill, dark content
+                    HStack(spacing: 7) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 15, weight: .semibold))
+                        if board.metric == .quantitative {
+                            Text(String(format: todayValue.truncatingRemainder(dividingBy: 1) == 0 ? "%.0f" : "%.1f", todayValue))
+                                .font(.system(size: 15, weight: .semibold))
+                        }
+                    }
+                    .foregroundStyle(Color.black.opacity(0.85))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 46)
+                    .background(ColorPalette[board.colorIndex], in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                } else {
+                    // Unlogged — neutral dark fill, muted plus
+                    Image(systemName: "plus")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(Color(white: 0.45))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 46)
+                        .background(Color(white: 0.15), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                }
             }
         }
-        .frame(maxWidth: .infinity)
-        .aspectRatio(1, contentMode: .fit)
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Preview
+
+#Preview {
+    NavigationStack {
+        ScrollView {
+            HabitGridLayoutView(boardsWithState: [], onCheckBinary: { _ in })
+        }
     }
 }
