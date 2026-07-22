@@ -153,17 +153,25 @@ struct HabitFormView: View {
                     .multilineTextAlignment(.center)
                     .font(.title2)
                     .onChange(of: draft.emoji) { _, new in
-                        // Keep only the first character (or first emoji cluster)
-                        let trimmed = new.trimmingCharacters(in: .whitespaces)
-                        if trimmed.count > 1 {
-                            let first = String(trimmed.unicodeScalars.prefix(while: { $0.value > 127 || trimmed.count == 1 }).map(Character.init))
-                            draft.emoji = String(trimmed.prefix(first.isEmpty ? 1 : 1))
-                        }
+                        // Reduce to the first grapheme cluster (String.prefix(1) respects
+                        // multi-scalar sequences like 🏃‍♂️). Accept only non-ASCII emoji:
+                        // ASCII scalars (# * 0-9) have isEmoji==true but render as text.
+                        let first = String(new.trimmingCharacters(in: .whitespaces).prefix(1))
+                        let isValidEmoji = first.unicodeScalars.first.map {
+                            $0.properties.isEmoji && $0.value > 0x007F
+                        } ?? false
+                        let clamped = isValidEmoji ? first : ""
+                        if draft.emoji != clamped { draft.emoji = clamped }
                     }
                 TextField("Habit name", text: $draft.name)
                     .focused($nameFocused)
                     .multilineTextAlignment(.leading)
                     .accessibilityLabel("Habit name")
+                    .onChange(of: draft.name) { _, new in
+                        if new.count > HabitBoardDraft.maxNameLength {
+                            draft.name = String(new.prefix(HabitBoardDraft.maxNameLength))
+                        }
+                    }
             }
         } header: {
             Text("Name")

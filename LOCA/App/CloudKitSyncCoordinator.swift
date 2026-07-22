@@ -140,6 +140,24 @@ final class CloudKitSyncCoordinator {
     // surfaced to the user as alerts. Sync is silent." No UI-facing error path
     // exists here by design.
 
+    // MARK: Debounce State (T13)
+    //
+    // `NSPersistentCloudKitContainer.Event` does not expose which entity types or
+    // object IDs were imported — only that an import occurred for a given store.
+    // "Scoping" to implicated boards is therefore not possible from the event itself;
+    // the optimisation available here is coalescing bursts of events into one pass.
+    //
+    // During first-install bulk sync, CloudKit fires many import events in rapid
+    // succession. Without coalescing, each event independently fetches all boards,
+    // marks them dirty, saves, and triggers StreakMaintenanceCoordinator — O(N×M)
+    // work for N events and M boards. The debounce collapses any burst into a single
+    // flagging pass that runs once the import stream quiets for `flagDebounceInterval`.
+    //
+    // The task is stored on `self` (main actor) and cancelled/replaced on each
+    // incoming event — only the last one survives the idle window.
+    private var pendingFlagTask: Task<Void, Never>? = nil
+    private static let flagDebounceInterval: Duration = .seconds(1.5)
+
     private func handle(_ event: NSPersistentCloudKitContainer.Event) {
         guard event.succeeded else {
             logger.error(
@@ -150,11 +168,20 @@ final class CloudKitSyncCoordinator {
 
         guard event.type == .import else { return }
 
-        // Any state update triggered by an NSPersistentCloudKitContainer.Event is
-        // wrapped in withAnimation(nil) — Engineering Principles §3.4. A bulk
-        // remote import must not drive SwiftUI layout recalculations mid-animation.
-        withAnimation(nil) {
-            markActiveBoardsForRecalculation()
+        // Cancel any pending pass from a previous event in this burst and start
+        // a fresh one. The pass runs only after flagDebounceInterval of quiet.
+        pendingFlagTask?.cancel()
+        pendingFlagTask = Task { [weak self] in
+            do {
+                try await Task.sleep(for: Self.flagDebounceInterval)
+            } catch {
+                return  // Cancelled by a later event in the same burst.
+            }
+            // Any state update triggered by a CloudKit import is wrapped in
+            // withAnimation(nil) — Engineering Principles §3.4.
+            withAnimation(nil) {
+                self?.markActiveBoardsForRecalculation()
+            }
         }
     }
 
@@ -166,6 +193,11 @@ final class CloudKitSyncCoordinator {
     // method) — flagging them for a recalculation that will never be read or
     // observed would be speculative work for a feature that doesn't exist, which
     // this phase is explicitly scoped to avoid introducing.
+    //
+    // Further scoped to boards where needsStreakRecalculation == false (T13): if a
+    // prior call in the same session already flagged all boards and StreakMaintenance-
+    // Coordinator has not yet cleared them, there is nothing to write. Skipping the
+    // save in that case avoids a redundant round-trip to the SQLite store.
     //
     // No rollback on save failure, unlike HabitBoard.archive(in:)'s rollback
     // pattern (Phase 1 finding C1). That asymmetry is intentional: a
@@ -179,9 +211,9 @@ final class CloudKitSyncCoordinator {
         let context = container.mainContext
         let descriptor = FetchDescriptor<HabitBoard>(predicate: HabitBoard.activePredicate)
 
-        let boards: [HabitBoard]
+        let activeBoards: [HabitBoard]
         do {
-            boards = try context.fetch(descriptor)
+            activeBoards = try context.fetch(descriptor)
         } catch {
             logger.error(
                 "Failed to fetch active boards for streak recalculation flagging: \(error.localizedDescription, privacy: .public)"
@@ -189,21 +221,29 @@ final class CloudKitSyncCoordinator {
             return
         }
 
-        guard !boards.isEmpty else { return }
+        guard !activeBoards.isEmpty else { return }
 
-        for board in boards {
-            board.needsStreakRecalculation = true
+        // Only write to boards not already carrying the flag. A board already marked
+        // dirty from a prior import event in this session needs no second write.
+        let unflagged = activeBoards.filter { !$0.needsStreakRecalculation }
+        if !unflagged.isEmpty {
+            for board in unflagged {
+                board.needsStreakRecalculation = true
+            }
+            do {
+                try context.save()
+            } catch {
+                logger.error(
+                    "Failed to save needsStreakRecalculation flags after CloudKit import: \(error.localizedDescription, privacy: .public)"
+                )
+                // Intentionally not rolled back — see algorithm note above.
+            }
         }
 
-        do {
-            try context.save()
-            NotificationCenter.default.post(name: .cloudKitImportDidComplete, object: nil)
-        } catch {
-            logger.error(
-                "Failed to save needsStreakRecalculation flags after CloudKit import: \(error.localizedDescription, privacy: .public)"
-            )
-            // Intentionally not rolled back — see algorithm note above.
-        }
+        // Notify regardless of whether any new flags were written: some boards may
+        // already be dirty (flagged by a prior event but not yet recalculated), and
+        // StreakMaintenanceCoordinator uses the flag set as its own work list.
+        NotificationCenter.default.post(name: .cloudKitImportDidComplete, object: nil)
     }
 }
 

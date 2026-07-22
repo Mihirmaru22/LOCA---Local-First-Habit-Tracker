@@ -128,6 +128,9 @@ struct AddCheckInSheetView: View {
                                 RoundedRectangle(cornerRadius: DS.Radius.card)
                                     .stroke(DS.Color.textTertiary.opacity(0.2), lineWidth: 1)
                             )
+                            .onChange(of: notesText) { _, new in
+                                if new.count > 500 { notesText = String(new.prefix(500)) }
+                            }
                     }
 
                     Spacer(minLength: DS.Space.xxxl)

@@ -161,6 +161,9 @@ struct EditCheckInSheetView: View {
             .scrollContentBackground(.hidden)
             .background(DS.Color.surface)
             .cornerRadius(8)
+            .onChange(of: notesText) { _, new in
+                if new.count > 500 { notesText = String(new.prefix(500)) }
+            }
     }
 
     // MARK: - Toolbar
