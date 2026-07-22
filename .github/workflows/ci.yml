@@ -4,15 +4,9 @@ on:
   push:
   pull_request:
 
-# cancel-in-progress removed: it can produce false "failure" conclusions in
-# GitHub's API when a run is cancelled before any job is assigned to a runner,
-# making the CI appear broken when it is merely being superseded.
-
 jobs:
   test:
     name: Build & Unit Test
-    # macos-15 is the current stable macOS runner as of Xcode 16 GA.
-    # macos-14 is kept as a fallback label comment; swap if 15 is unavailable.
     runs-on: macos-15
 
     steps:
@@ -33,24 +27,10 @@ jobs:
           xcodebuild -version
           swift --version
 
-      - name: List available simulators
-        run: xcrun simctl list runtimes available || true
-
       - name: Pick an available iPhone simulator
         id: sim
         run: |
-          UDID=$(xcrun simctl list devices available -j | python3 - <<'PYEOF'
-import json, sys
-data = json.load(sys.stdin)["devices"]
-ids = [
-    d["udid"]
-    for runtime_key in sorted(data.keys(), reverse=True)
-    for d in data[runtime_key]
-    if d.get("isAvailable") and "iPhone" in d.get("name", "")
-]
-print(ids[0] if ids else "")
-PYEOF
-)
+          UDID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; data=json.load(sys.stdin)["devices"]; ids=[d["udid"] for rt in sorted(data,reverse=True) for d in data[rt] if d.get("isAvailable") and "iPhone" in d.get("name","")]; print(ids[0] if ids else "")')
           if [ -z "$UDID" ]; then
             echo "ERROR: No available iPhone simulator found."
             xcrun simctl list devices
@@ -69,7 +49,6 @@ PYEOF
             -resultBundlePath TestResults.xcresult \
             CODE_SIGNING_ALLOWED=NO \
             2>&1 | tee xcodebuild.log
-          echo "Exit code: $?"
 
       - name: Upload result bundle
         if: always()
