@@ -12,6 +12,7 @@ import SwiftData
 
 struct HabitDetailView: View {
     let board: HabitBoard
+    @Environment(\.dismiss) private var dismiss
     @State private var showingEditSheet    = false
     @State private var showingCheckIn      = false
     @State private var selectedTab         = 0
@@ -90,7 +91,10 @@ struct HabitDetailView: View {
             }
         }
         .sheet(isPresented: $showingEditSheet) {
-            HabitFormView(mode: .edit(board))
+            HabitFormView(mode: .edit(board), onBoardArchived: { dismiss() })
+        }
+        .onChange(of: board.archivedAt) { _, newValue in
+            if newValue != nil { dismiss() }
         }
         .sheet(isPresented: $showingCheckIn) {
             AddCheckInSheetView(board: board)
@@ -184,12 +188,15 @@ struct RefHeatCell: View {
     }
 
     private var totalValue: Double {
-        let today = Calendar.current.startOfDay(for: .now)
-        let weeksBack = totalCols - 1 - weekIndex
-        let daysBack  = weeksBack * 7 + dayIndex
-        guard let date = Calendar.current.date(byAdding: .day, value: -daysBack, to: today) else { return 0 }
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: .now)
+        let todayWeekday = cal.component(.weekday, from: today) - 1  // 0 = Sunday
+        guard let currentSunday = cal.date(byAdding: .day, value: -todayWeekday, to: today),
+              let columnSunday  = cal.date(byAdding: .weekOfYear, value: -(totalCols - 1 - weekIndex), to: currentSunday),
+              let date           = cal.date(byAdding: .day, value: dayIndex, to: columnSunday)
+        else { return 0 }
         return (board.logs ?? [])
-            .filter { Calendar.current.isDate($0.timestamp, inSameDayAs: date) }
+            .filter { cal.isDate($0.timestamp, inSameDayAs: date) }
             .reduce(0.0) { $0 + $1.value }
     }
 

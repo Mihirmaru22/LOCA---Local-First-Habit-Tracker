@@ -50,7 +50,7 @@ struct AddCheckInSheetView: View {
                             .font(DS.Text.body)
                             .foregroundStyle(DS.Color.textPrimary)
 
-                        DatePicker("", selection: $selectedDate, displayedComponents: .date)
+                        DatePicker("", selection: $selectedDate, in: ...Date(), displayedComponents: .date)
                             .datePickerStyle(.graphical)
                             .tint(ColorPalette[board.colorIndex])
                     }
