@@ -46,6 +46,14 @@ enum ModelContainerFactory {
 
     // MARK: - Production Container
 
+    /// The iCloud container identifier for this app's CloudKit database.
+    ///
+    /// Pinned explicitly rather than using `.automatic` so the binding is
+    /// deterministic and auditable. Must match the container registered in the
+    /// Apple Developer portal and declared in both targets' entitlements files
+    /// (`com.apple.developer.icloud-container-identifiers`). [M-2]
+    static let cloudKitContainerIdentifier = "iCloud.com.mihirmaru.loca"
+
     /// Creates a `ModelContainer` backed by the shared App Group SQLite store
     /// with CloudKit synchronisation enabled.
     ///
@@ -54,10 +62,10 @@ enum ModelContainerFactory {
     /// Both the Main App and Widget Extension pass the same `appGroupIdentifier`
     /// to ensure they address the same physical file.
     ///
-    /// `cloudKitDatabase: .automatic` binds to the first iCloud container declared
-    /// in the target's entitlements. Before production release, confirm this resolves
-    /// to the intended CloudKit container identifier. If explicit binding is required,
-    /// replace `.automatic` with `.private("iCloud.com.mihirmaru.loca")`.
+    /// `cloudKitDatabase` is bound explicitly to `cloudKitContainerIdentifier`
+    /// rather than `.automatic`. This guarantees the same container is used
+    /// regardless of entitlement declaration order and makes the binding
+    /// auditable without opening the project file. [M-2]
     ///
     /// This method is the single call site for production container construction.
     /// It must only be called from `LOCAApp.swift` in the Main App and from
@@ -76,7 +84,7 @@ enum ModelContainerFactory {
         let schema = Schema(RippleSchemaV1.models)
         let configuration = ModelConfiguration(
             groupContainer: .identifier(appGroupIdentifier),
-            cloudKitDatabase: .automatic
+            cloudKitDatabase: .private(cloudKitContainerIdentifier)
         )
         do {
             let container = try ModelContainer(
