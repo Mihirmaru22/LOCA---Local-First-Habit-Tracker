@@ -370,9 +370,14 @@ struct RefConsistencyCard: View {
                         .rotationEffect(.degrees(90))
                 }
 
-                Text("Average")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Color(white: 0.42))
+                VStack(spacing: 2) {
+                    Text("\(Int((ratio * 100).rounded()))%")
+                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Color(white: 0.70))
+                    Text("this month")
+                        .font(.system(size: 10))
+                        .foregroundStyle(Color(white: 0.42))
+                }
             }
             .frame(height: 90)
             .padding(.horizontal, 6)

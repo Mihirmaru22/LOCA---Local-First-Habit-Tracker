@@ -46,20 +46,27 @@ struct HabitCheckInsView: View {
         { Calendar.current.isDateInToday($0) }
     }
 
-    private var dateLabel: (Date) -> String {
-        { date in
-            if Calendar.current.isDateInToday(date) { return "Today" }
-            if Calendar.current.isDateInYesterday(date) { return "Yesterday" }
-            let formatter = DateFormatter()
-            formatter.dateStyle = .medium
-            return formatter.string(from: date)
-        }
+    // Static formatters: DateFormatter init is expensive; one per format per process is enough.
+    private static let mediumDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        return f
+    }()
+
+    private static let shortTimeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.timeStyle = .short
+        return f
+    }()
+
+    private func dateLabel(_ date: Date) -> String {
+        if Calendar.current.isDateInToday(date) { return "Today" }
+        if Calendar.current.isDateInYesterday(date) { return "Yesterday" }
+        return Self.mediumDateFormatter.string(from: date)
     }
 
     private func formattedTime(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
+        Self.shortTimeFormatter.string(from: date)
     }
 
     private var parsedQuickLogAmount: Double? {

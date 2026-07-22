@@ -76,9 +76,11 @@ struct HabitCardView: View {
 
             switch board.metric {
             case .binary:
-                Image(systemName: fraction >= 1 ? "checkmark" : "")
-                    .font(.body.bold())
-                    .foregroundStyle(accent)
+                if fraction >= 1 {
+                    Image(systemName: "checkmark")
+                        .font(.body.bold())
+                        .foregroundStyle(accent)
+                }
             case .quantitative:
                 Text(percentLabel(for: fraction))
                     .font(.system(.caption, design: .rounded, weight: .bold))
