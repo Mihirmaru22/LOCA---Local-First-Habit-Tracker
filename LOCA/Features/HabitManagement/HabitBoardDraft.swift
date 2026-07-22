@@ -59,10 +59,14 @@ struct HabitBoardDraft {
         self.emoji = board.emoji ?? ""
     }
 
+    // MARK: Limits
+
+    static let maxNameLength = 50
+
     // MARK: Derived
 
     var trimmedName: String {
-        name.trimmingCharacters(in: .whitespacesAndNewlines)
+        String(name.trimmingCharacters(in: .whitespacesAndNewlines).prefix(Self.maxNameLength))
     }
 
     var parsedTarget: Double? {

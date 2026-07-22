@@ -68,27 +68,23 @@ LOCA/
 │   │   ├── ArcProgressView.swift
 │   │   └── SettingsMenuView.swift     # Layout picker, app settings
 │   ├── HabitDetail/
-│   │   ├── HabitDetailView.swift      # Analytics tab (heatmap + metric cards)
+│   │   ├── HabitDetailView.swift      # 4-tab detail: summary / check-ins / journal / analytics
 │   │   ├── HabitCheckInsView.swift    # Check-in history (grouped, swipe actions)
 │   │   ├── HabitJournalView.swift     # Journal surface (wraps JournalTimelineView)
 │   │   ├── JournalTimelineView.swift  # Day-grouped entry list
 │   │   ├── AddCheckInSheetView.swift  # New check-in modal
 │   │   ├── EditCheckInSheetView.swift # Edit existing check-in modal
-│   │   ├── HabitAnalyticsView.swift   # Full analytics (orphaned, kept for reference)
-│   │   ├── HeatmapView.swift
-│   │   ├── AnalyticsCardsView.swift
+│   │   ├── HabitAnalyticsView.swift   # Full analytics tab (Canvas charts + heatmap hero)
+│   │   ├── HeatmapView.swift          # Scrollable 365-day grid (used by HabitAnalyticsView)
 │   │   ├── TimelineChartView.swift    # Canvas-based 7/30/90/All chart
 │   │   ├── StreaksChartView.swift     # 12-month bar timeline
 │   │   ├── YearComparisonChartView.swift
 │   │   ├── ConsistencyChartView.swift
 │   │   └── WeekdaysChartView.swift
-│   ├── HabitManagement/
-│   │   ├── HabitFormView.swift        # Create / edit habit sheet
-│   │   ├── HabitBoardDraft.swift      # Form staging state
-│   │   └── UnitOption.swift           # Picker-backed unit catalogue
-│   └── Navigation/
-│       ├── RootNavigationView.swift
-│       └── HabitSidebarView.swift
+│   └── HabitManagement/
+│       ├── HabitFormView.swift        # Create / edit habit sheet
+│       ├── HabitBoardDraft.swift      # Form staging state
+│       └── UnitOption.swift           # Picker-backed unit catalogue
 ├── Intents/
 │   ├── LogHabitIntent.swift
 │   ├── HabitBoardEntity.swift
@@ -146,7 +142,7 @@ A single check-in event. Append-only at the check-in path; user-initiated delete
 | Concern | Implementation |
 |---|---|
 | Storage | App Group SQLite via `ModelContainerFactory.makeSharedContainer()` |
-| CloudKit | `.automatic` binding in production; `.none` in `LOCAL_DEVELOPMENT` builds |
+| CloudKit | `.private("iCloud.com.mihirmaru.loca")` explicit binding; `.none` in `LOCAL_DEVELOPMENT` builds |
 | Soft delete | `HabitBoard.archive(in:)` — sets `archivedAt`, never calls `modelContext.delete()` |
 | Hard delete | `LogEntry` only — explicit user action in check-in history and journal |
 | Save errors | Every site: `do/try/catch + modelContext.rollback()` + non-blocking alert |
@@ -169,9 +165,10 @@ A single check-in event. Append-only at the check-in path; user-initiated delete
 | Layout switching (list / grid / timeline) | ✅ Complete |
 | Binary check-in (tap to log) | ✅ Complete |
 | Quantitative check-in (sheet with amount) | ✅ Complete |
-| Detail view — analytics tab (heatmap + metric cards) | ✅ Complete |
+| Detail view — summary tab (heatmap card + streak + consistency + month) | ✅ Complete |
 | Detail view — check-in history tab | ✅ Complete |
 | Detail view — journal tab | ✅ Complete |
+| Detail view — full analytics tab (Canvas charts + 365-day heatmap) | ✅ Complete |
 | Add check-in (date, time, amount, notes) | ✅ Complete |
 | Edit check-in (pre-filled, in-place mutation) | ✅ Complete |
 | Delete check-in | ✅ Complete |
@@ -181,7 +178,7 @@ A single check-in event. Append-only at the check-in path; user-initiated delete
 | Consistency metric (days completed / days elapsed) | ✅ Complete |
 | Current month total + weekly bar chart | ✅ Complete |
 | 52-week heatmap (detail view) | ✅ Complete |
-| Canvas analytics charts (timeline, streaks, year comparison, consistency, weekdays) | ✅ Complete |
+| Canvas analytics charts (timeline, streaks, year, consistency, weekdays) | ✅ Complete (tab 3) |
 | Journal timeline (day-grouped, swipe-to-delete) | ✅ Complete |
 | CloudKit sync | ✅ Complete |
 | Widget (WidgetKit + AppIntentConfiguration) | ✅ Complete |
@@ -284,7 +281,7 @@ Select the `LOCA` scheme → set `LOCAL_DEVELOPMENT` if on a personal team → b
 - [ ] Delete a check-in (swipe → Delete)
 - [ ] Duplicate a check-in (swipe → Duplicate)
 - [ ] Switch between list / grid / timeline layouts
-- [ ] Open each detail tab (analytics / check-ins / journal)
+- [ ] Open each detail tab (summary / check-ins / journal / full analytics)
 - [ ] Verify heatmap updates immediately after check-in
 - [ ] Verify streak increments correctly at midnight rollover
 - [ ] Test on macOS — all layouts, no iOS-only crashes

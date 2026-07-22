@@ -12,6 +12,7 @@ import SwiftData
 
 struct HabitDetailView: View {
     let board: HabitBoard
+    @Environment(\.dismiss) private var dismiss
     @State private var showingEditSheet    = false
     @State private var showingCheckIn      = false
     @State private var selectedTab         = 0
@@ -27,6 +28,9 @@ struct HabitDetailView: View {
                         .padding(.bottom, 80) // clear toolbar
                 case 2:
                     HabitJournalView(board: board)
+                        .padding(.bottom, 80)
+                case 3:
+                    HabitAnalyticsView(board: board)
                         .padding(.bottom, 80)
                 default:
                     ScrollView {
@@ -53,9 +57,10 @@ struct HabitDetailView: View {
             // Toolbar
             HStack(spacing: 0) {
                 HStack(spacing: 24) {
-                    RefTabIcon(icon: "chart.line.uptrend.xyaxis", active: selectedTab == 0) { selectedTab = 0 }
-                    RefTabIcon(icon: "checklist",                 active: selectedTab == 1) { selectedTab = 1 }
-                    RefTabIcon(icon: "doc.text",                  active: selectedTab == 2) { selectedTab = 2 }
+                    RefTabIcon(icon: "chart.line.uptrend.xyaxis",   active: selectedTab == 0) { selectedTab = 0 }
+                    RefTabIcon(icon: "checklist",                   active: selectedTab == 1) { selectedTab = 1 }
+                    RefTabIcon(icon: "doc.text",                    active: selectedTab == 2) { selectedTab = 2 }
+                    RefTabIcon(icon: "chart.bar.xaxis.ascending",   active: selectedTab == 3) { selectedTab = 3 }
                 }
                 .padding(.horizontal, 22)
                 .padding(.vertical, 16)
@@ -90,7 +95,10 @@ struct HabitDetailView: View {
             }
         }
         .sheet(isPresented: $showingEditSheet) {
-            HabitFormView(mode: .edit(board))
+            HabitFormView(mode: .edit(board), onBoardArchived: { dismiss() })
+        }
+        .onChange(of: board.archivedAt) { _, newValue in
+            if newValue != nil { dismiss() }
         }
         .sheet(isPresented: $showingCheckIn) {
             AddCheckInSheetView(board: board)
@@ -126,6 +134,9 @@ struct RefHeatmapCard: View {
     // Target cell size — drives column count
     private let targetCell: CGFloat = 11
 
+    // Pre-aggregated off-main; O(1) lookup per cell at render time.
+    @State private var cellsByDate: [Date: DayCell] = [:]
+
     var body: some View {
         GeometryReader { geo in
             let usable = geo.size.width - hPad * 2 - labelW - gap
@@ -141,7 +152,14 @@ struct RefHeatmapCard: View {
                             .foregroundStyle(Color(white: 0.45))
                             .frame(width: labelW, alignment: .leading)
                         ForEach(0..<cols, id: \.self) { w in
-                            RefHeatCell(board: board, dayIndex: d, weekIndex: w, totalCols: cols, cellSize: cSize)
+                            RefHeatCell(
+                                colorIndex: board.colorIndex,
+                                cellsByDate: cellsByDate,
+                                dayIndex: d,
+                                weekIndex: w,
+                                totalCols: cols,
+                                cellSize: cSize
+                            )
                         }
                     }
                 }
@@ -159,6 +177,17 @@ struct RefHeatmapCard: View {
             )
         }
         .frame(height: heatmapHeight())
+        // 182 days (26 weeks) covers the widest reasonable grid on any iPhone width.
+        .task(id: "\(board.id)-\(board.logs?.count ?? -1)") {
+            let snapshots = (board.logs ?? []).map(LogSnapshot.init(from:))
+            let target    = board.effectiveTarget
+            let newCells  = await HeatmapDataProvider.buildDayGrid(
+                snapshots:  snapshots,
+                target:     target,
+                windowDays: 182
+            )
+            cellsByDate = Dictionary(uniqueKeysWithValues: newCells.map { ($0.date, $0) })
+        }
     }
 
     private func heatmapHeight() -> CGFloat {
@@ -167,37 +196,48 @@ struct RefHeatmapCard: View {
 }
 
 struct RefHeatCell: View {
-    let board: HabitBoard
+    let colorIndex: Int
+    let cellsByDate: [Date: DayCell]
     let dayIndex: Int
     let weekIndex: Int
     let totalCols: Int
     let cellSize: CGFloat
 
+    // Week-anchor date: locale's week-start of the column's week + dayIndex days.
+    private var cellDate: Date? {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: .now)
+        let todayWeekday = cal.component(.weekday, from: today)
+        let daysFromWeekStart = (todayWeekday - cal.firstWeekday + 7) % 7
+        guard let currentWeekStart = cal.date(byAdding: .day, value: -daysFromWeekStart, to: today),
+              let columnWeekStart  = cal.date(byAdding: .weekOfYear, value: -(totalCols - 1 - weekIndex), to: currentWeekStart),
+              let date             = cal.date(byAdding: .day, value: dayIndex, to: columnWeekStart)
+        else { return nil }
+        return date
+    }
+
+    private var daysFromWeekStartToday: Int {
+        let cal = Calendar.current
+        let weekday = cal.component(.weekday, from: .now)
+        return (weekday - cal.firstWeekday + 7) % 7
+    }
+
     private var isToday: Bool {
-        let todayWeekday = Calendar.current.component(.weekday, from: .now) - 1 // 0=Sun
-        return weekIndex == totalCols - 1 && dayIndex == todayWeekday
+        weekIndex == totalCols - 1 && dayIndex == daysFromWeekStartToday
     }
 
     private var isFuture: Bool {
-        let todayWeekday = Calendar.current.component(.weekday, from: .now) - 1
-        return weekIndex == totalCols - 1 && dayIndex > todayWeekday
+        weekIndex == totalCols - 1 && dayIndex > daysFromWeekStartToday
     }
 
-    private var totalValue: Double {
-        let today = Calendar.current.startOfDay(for: .now)
-        let weeksBack = totalCols - 1 - weekIndex
-        let daysBack  = weeksBack * 7 + dayIndex
-        guard let date = Calendar.current.date(byAdding: .day, value: -daysBack, to: today) else { return 0 }
-        return (board.logs ?? [])
-            .filter { Calendar.current.isDate($0.timestamp, inSameDayAs: date) }
-            .reduce(0.0) { $0 + $1.value }
-    }
+    private var cell: DayCell? { cellsByDate[cellDate ?? .distantPast] }
 
     private var fillOpacity: Double {
-        guard totalValue > 0, !isFuture else { return 0 }
-        let ratio = totalValue / board.effectiveTarget
-        if ratio >= 1.0 { return 1.0 }
-        if ratio >= 0.5 { return 0.55 }
+        guard !isFuture else { return 0 }
+        let intensity = cell?.intensity ?? 0
+        if intensity <= 0 { return 0 }
+        if intensity >= 1.0 { return 1.0 }
+        if intensity >= 0.5 { return 0.55 }
         return 0.30
     }
 
@@ -206,10 +246,10 @@ struct RefHeatCell: View {
             RoundedRectangle(cornerRadius: cellSize * 0.27, style: .continuous)
                 .fill(
                     isFuture
-                        ? ColorPalette[board.colorIndex].opacity(0.07)
-                        : totalValue > 0
-                            ? ColorPalette[board.colorIndex].opacity(fillOpacity)
-                            : ColorPalette[board.colorIndex].opacity(0.13)
+                        ? ColorPalette[colorIndex].opacity(0.07)
+                        : (cell?.intensity ?? 0) > 0
+                            ? ColorPalette[colorIndex].opacity(fillOpacity)
+                            : ColorPalette[colorIndex].opacity(0.13)
                 )
                 .frame(width: cellSize, height: cellSize)
 
@@ -330,9 +370,14 @@ struct RefConsistencyCard: View {
                         .rotationEffect(.degrees(90))
                 }
 
-                Text("Average")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Color(white: 0.42))
+                VStack(spacing: 2) {
+                    Text("\(Int((ratio * 100).rounded()))%")
+                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Color(white: 0.70))
+                    Text("this month")
+                        .font(.system(size: 10))
+                        .foregroundStyle(Color(white: 0.42))
+                }
             }
             .frame(height: 90)
             .padding(.horizontal, 6)

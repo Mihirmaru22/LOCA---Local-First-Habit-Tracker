@@ -4,9 +4,12 @@
 //
 //  Phase 14.2 — Check-ins history surface.
 //
-//  Displays grouped check-in history (by date), with swipe actions for
-//  edit, delete, duplicate. Today's entries highlighted. Quick-log input
-//  in the header for same-day logging.
+//  T9:  Binary habits show a toggle in the quick-log header (idempotent
+//       tap-to-log / tap-to-undo). Quantitative keeps the amount field.
+//  T10: All writes route through CheckInWriter; every path surfaces an
+//       alert on save failure.
+//  T12: History rows use native .swipeActions — removes the custom
+//       DragGesture/fixed-offset SwipeAction implementation.
 //
 
 import SwiftUI
@@ -19,10 +22,10 @@ struct HabitCheckInsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @State private var isSubmitting = false
     @State private var showingAddCheckIn = false
     @State private var editingEntry: LogEntry? = nil
     @State private var quickLogAmount = ""
+    @State private var showWriteError = false
 
     private var groupedLogs: [(date: Date, entries: [LogEntry])] {
         let logs = board.logs ?? []
@@ -40,179 +43,129 @@ struct HabitCheckInsView: View {
     }
 
     private var isToday: (Date) -> Bool {
-        { date in
-            Calendar.current.isDateInToday(date)
-        }
+        { Calendar.current.isDateInToday($0) }
     }
 
-    private var dateLabel: (Date) -> String {
-        { date in
-            if Calendar.current.isDateInToday(date) {
-                return "Today"
-            } else if Calendar.current.isDateInYesterday(date) {
-                return "Yesterday"
-            } else {
-                let formatter = DateFormatter()
-                formatter.dateStyle = .medium
-                return formatter.string(from: date)
-            }
-        }
+    // Static formatters: DateFormatter init is expensive; one per format per process is enough.
+    private static let mediumDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        return f
+    }()
+
+    private static let shortTimeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.timeStyle = .short
+        return f
+    }()
+
+    private func dateLabel(_ date: Date) -> String {
+        if Calendar.current.isDateInToday(date) { return "Today" }
+        if Calendar.current.isDateInYesterday(date) { return "Yesterday" }
+        return Self.mediumDateFormatter.string(from: date)
     }
 
     private func formattedTime(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
+        Self.shortTimeFormatter.string(from: date)
+    }
+
+    private var parsedQuickLogAmount: Double? {
+        Double(quickLogAmount.trimmingCharacters(in: .whitespaces))
+    }
+
+    // Show quick-log only when already logging today or completely empty.
+    private var showQuickLog: Bool {
+        groupedLogs.isEmpty || groupedLogs.first?.date == Calendar.current.startOfDay(for: .now)
+    }
+
+    // True when today already has at least one entry (used for binary toggle label).
+    private var isCheckedInToday: Bool {
+        (board.logs ?? []).contains(where: { Calendar.current.isDateInToday($0.timestamp) })
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.lg) {
-
-                // MARK: - Today Status Card
-                if let todayGroup = groupedLogs.first(where: { isToday($0.date) }) {
+        List {
+            // MARK: Today Status Card
+            if let todayGroup = groupedLogs.first(where: { isToday($0.date) }) {
+                Section {
                     LOCACard {
-                        VStack(alignment: .leading, spacing: DS.Space.md) {
-                            HStack(spacing: DS.Space.xs) {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .font(DS.Text.caption)
-                                    .foregroundStyle(ColorPalette[board.colorIndex])
-                                Text("TODAY")
-                                    .font(DS.Text.footnote)
-                                    .foregroundStyle(DS.Color.textSecondary)
-                                    .tracking(0.5)
-                            }
-
-                            let todayTotal = todayGroup.entries.reduce(0.0) { $0 + $1.value }
-                            VStack(alignment: .leading, spacing: DS.Space.xs) {
-                                ValueText(
-                                    todayTotal.formatted(.number.precision(.fractionLength(0...1))),
-                                    font: DS.Text.value
-                                )
-                                .foregroundStyle(
-                                    todayTotal >= board.effectiveTarget
-                                        ? ColorPalette[board.colorIndex]
-                                        : DS.Color.textSecondary
-                                )
-
-                                if let unitLabel = board.unitLabel, !unitLabel.isEmpty {
-                                    Text("\(todayGroup.entries.count) \(todayGroup.entries.count == 1 ? "entry" : "entries") • \(unitLabel)")
-                                        .font(DS.Text.caption)
-                                        .foregroundStyle(DS.Color.textSecondary)
-                                }
-                            }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(DS.Space.md)
+                        todayStatusContent(group: todayGroup)
                     }
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: DS.Space.sm, leading: DS.Space.lg, bottom: DS.Space.xs, trailing: DS.Space.lg))
                 }
-
-                // MARK: - Quick Log Input (Today only)
-                if groupedLogs.first?.date == Calendar.current.startOfDay(for: .now) || groupedLogs.isEmpty {
-                    LOCACard {
-                        HStack(spacing: DS.Space.md) {
-                            TextField("Add amount", text: $quickLogAmount)
-                                .font(DS.Text.body)
-                                .decimalKeyboard()
-
-                            if let unitLabel = board.unitLabel, !unitLabel.isEmpty {
-                                Text(unitLabel)
-                                    .font(DS.Text.caption)
-                                    .foregroundStyle(DS.Color.textSecondary)
-                            }
-
-                            Button(action: { quickLog() }) {
-                                Image(systemName: "plus.circle.fill")
-                                    .font(.title3)
-                                    .foregroundStyle(ColorPalette[board.colorIndex])
-                            }
-                            .disabled(Double(quickLogAmount.trimmingCharacters(in: .whitespaces)) == nil || Double(quickLogAmount.trimmingCharacters(in: .whitespaces)) ?? 0 <= 0)
-                        }
-                        .padding(DS.Space.md)
-                    }
-                }
-
-                // MARK: - History (Grouped by Date)
-                VStack(alignment: .leading, spacing: DS.Space.lg) {
-                    if groupedLogs.isEmpty {
-                        VStack(spacing: DS.Space.md) {
-                            Image(systemName: "square.and.pencil")
-                                .font(.title2)
-                                .foregroundStyle(DS.Color.textTertiary)
-                            Text("No check-ins yet")
-                                .font(DS.Text.body)
-                                .foregroundStyle(DS.Color.textSecondary)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(DS.Space.xxxl)
-                    } else {
-                        ForEach(groupedLogs, id: \.date) { group in
-                            VStack(alignment: .leading, spacing: DS.Space.md) {
-                                // Date header
-                                Text(dateLabel(group.date))
-                                    .font(DS.Text.footnote)
-                                    .foregroundStyle(DS.Color.textSecondary)
-                                    .tracking(0.5)
-
-                                // Entries for this date
-                                ForEach(group.entries, id: \.id) { entry in
-                                    SwipeAction(
-                                        onEdit: { editEntry(entry) },
-                                        onDelete: { deleteEntry(entry) },
-                                        onDuplicate: { duplicateEntry(entry) }
-                                    ) {
-                                        HStack(spacing: DS.Space.md) {
-                                            // Time
-                                            VStack(alignment: .leading, spacing: DS.Space.xs) {
-                                                Text(formattedTime(entry.timestamp))
-                                                    .font(DS.Text.caption)
-                                                    .foregroundStyle(DS.Color.textSecondary)
-                                            }
-
-                                            Spacer()
-
-                                            // Value + unit
-                                            HStack(spacing: DS.Space.xs) {
-                                                ValueText(
-                                                    entry.value.formatted(.number.precision(.fractionLength(0...1))),
-                                                    font: DS.Text.body
-                                                )
-                                                .foregroundStyle(
-                                                    entry.value >= board.effectiveTarget
-                                                        ? ColorPalette[board.colorIndex]
-                                                        : DS.Color.textPrimary
-                                                )
-
-                                                if let unitLabel = board.unitLabel, !unitLabel.isEmpty {
-                                                    Text(unitLabel)
-                                                        .font(DS.Text.caption)
-                                                        .foregroundStyle(DS.Color.textSecondary)
-                                                }
-                                            }
-                                        }
-                                        .padding(DS.Space.md)
-                                        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
-                                    }
-
-                                    // Notes (if present)
-                                    if let note = entry.note, !note.isEmpty {
-                                        Text(note)
-                                            .font(DS.Text.caption)
-                                            .foregroundStyle(DS.Color.textSecondary)
-                                            .padding(DS.Space.md)
-                                            .frame(maxWidth: .infinity, alignment: .leading)
-                                            .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Clearance for the floating SurfaceSelector pill.
-                Spacer(minLength: DS.Space.xxxl + DS.Space.xl)
             }
-            .padding(DS.Space.lg)
+
+            // MARK: Quick Log
+            if showQuickLog {
+                Section {
+                    LOCACard {
+                        quickLogContent
+                    }
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: DS.Space.xs, leading: DS.Space.lg, bottom: DS.Space.sm, trailing: DS.Space.lg))
+                }
+            }
+
+            // MARK: History
+            if groupedLogs.isEmpty {
+                Section {
+                    VStack(spacing: DS.Space.md) {
+                        Image(systemName: "square.and.pencil")
+                            .font(.title2)
+                            .foregroundStyle(DS.Color.textTertiary)
+                        Text("No check-ins yet")
+                            .font(DS.Text.body)
+                            .foregroundStyle(DS.Color.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(DS.Space.xxxl)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                }
+            } else {
+                ForEach(groupedLogs, id: \.date) { group in
+                    Section {
+                        ForEach(group.entries, id: \.id) { entry in
+                            entryRowView(entry: entry)
+                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                    Button(role: .destructive) { deleteEntry(entry) } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                    Button { editEntry(entry) } label: {
+                                        Label("Edit", systemImage: "pencil")
+                                    }
+                                    .tint(ColorPalette[4])
+                                    Button { duplicateEntry(entry) } label: {
+                                        Label("Duplicate", systemImage: "doc.on.doc")
+                                    }
+                                    .tint(DS.Color.textSecondary.opacity(0.6))
+                                }
+                        }
+                    } header: {
+                        Text(dateLabel(group.date))
+                            .font(DS.Text.footnote)
+                            .foregroundStyle(DS.Color.textSecondary)
+                            .tracking(0.5)
+                            .textCase(nil)
+                            .padding(.leading, DS.Space.sm)
+                    }
+                }
+            }
+
+            // Clearance for the floating button.
+            Color.clear
+                .frame(height: DS.Space.xxxl + DS.Space.xl)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+        }
+        .listStyle(.plain)
+        .alert("Couldn't Save Check-in", isPresented: $showWriteError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("The check-in couldn't be saved. Please try again.")
         }
         .sheet(isPresented: $showingAddCheckIn) {
             AddCheckInSheetView(board: board)
@@ -233,24 +186,133 @@ struct HabitCheckInsView: View {
         }
     }
 
+    // MARK: - Subviews
+
+    @ViewBuilder
+    private func todayStatusContent(group: (date: Date, entries: [LogEntry])) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.md) {
+            HStack(spacing: DS.Space.xs) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(DS.Text.caption)
+                    .foregroundStyle(ColorPalette[board.colorIndex])
+                Text("TODAY")
+                    .font(DS.Text.footnote)
+                    .foregroundStyle(DS.Color.textSecondary)
+                    .tracking(0.5)
+            }
+
+            let todayTotal = group.entries.reduce(0.0) { $0 + $1.value }
+            VStack(alignment: .leading, spacing: DS.Space.xs) {
+                ValueText(
+                    todayTotal.formatted(.number.precision(.fractionLength(0...1))),
+                    font: DS.Text.value
+                )
+                .foregroundStyle(
+                    todayTotal >= board.effectiveTarget
+                        ? ColorPalette[board.colorIndex]
+                        : DS.Color.textSecondary
+                )
+
+                if let unitLabel = board.unitLabel, !unitLabel.isEmpty {
+                    Text("\(group.entries.count) \(group.entries.count == 1 ? "entry" : "entries") • \(unitLabel)")
+                        .font(DS.Text.caption)
+                        .foregroundStyle(DS.Color.textSecondary)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private var quickLogContent: some View {
+        if board.metric == .binary {
+            // Binary: idempotent toggle (tap to log, tap again to undo).
+            Button(action: quickLog) {
+                HStack(spacing: DS.Space.md) {
+                    Image(systemName: isCheckedInToday ? "checkmark.circle.fill" : "circle")
+                        .font(.title3)
+                        .foregroundStyle(isCheckedInToday ? ColorPalette[board.colorIndex] : DS.Color.textSecondary)
+                    Text(isCheckedInToday ? "Done today — tap to undo" : "Mark as done")
+                        .font(DS.Text.body)
+                        .foregroundStyle(DS.Color.textPrimary)
+                    Spacer()
+                }
+            }
+            .buttonStyle(.plain)
+        } else {
+            // Quantitative: amount field + log button.
+            HStack(spacing: DS.Space.md) {
+                TextField("Add amount", text: $quickLogAmount)
+                    .font(DS.Text.body)
+                    .decimalKeyboard()
+
+                if let unitLabel = board.unitLabel, !unitLabel.isEmpty {
+                    Text(unitLabel)
+                        .font(DS.Text.caption)
+                        .foregroundStyle(DS.Color.textSecondary)
+                }
+
+                Button(action: quickLog) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title3)
+                        .foregroundStyle(ColorPalette[board.colorIndex])
+                }
+                .disabled((parsedQuickLogAmount ?? 0) <= 0)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func entryRowView(entry: LogEntry) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.xs) {
+            HStack(spacing: DS.Space.md) {
+                Text(formattedTime(entry.timestamp))
+                    .font(DS.Text.caption)
+                    .foregroundStyle(DS.Color.textSecondary)
+
+                Spacer()
+
+                HStack(spacing: DS.Space.xs) {
+                    ValueText(
+                        entry.value.formatted(.number.precision(.fractionLength(0...1))),
+                        font: DS.Text.body
+                    )
+                    .foregroundStyle(
+                        entry.value >= board.effectiveTarget
+                            ? ColorPalette[board.colorIndex]
+                            : DS.Color.textPrimary
+                    )
+
+                    if let unitLabel = board.unitLabel, !unitLabel.isEmpty {
+                        Text(unitLabel)
+                            .font(DS.Text.caption)
+                            .foregroundStyle(DS.Color.textSecondary)
+                    }
+                }
+            }
+
+            if let note = entry.note, !note.isEmpty {
+                Text(note)
+                    .font(DS.Text.caption)
+                    .foregroundStyle(DS.Color.textSecondary)
+            }
+        }
+    }
+
     // MARK: - Actions
 
     private func quickLog() {
-        guard let amount = Double(quickLogAmount.trimmingCharacters(in: .whitespaces)), amount > 0 else {
-            return
-        }
-
-        let entry = LogEntry(timestamp: .now, value: amount, boardID: board.id, board: board)
-        modelContext.insert(entry)
-        board.updateStreak(using: .current)
-
         do {
-            try modelContext.save()
+            if board.metric == .binary {
+                try CheckInWriter.toggleBinary(board: board, context: modelContext)
+            } else {
+                guard let amount = parsedQuickLogAmount, amount > 0 else { return }
+                try CheckInWriter.insert(value: amount, board: board, context: modelContext)
+                quickLogAmount = ""
+            }
             triggerHaptic()
-            WidgetRefreshCoordinator.shared.scheduleReload()
-            quickLogAmount = ""
         } catch {
-            modelContext.rollback()
+            showWriteError = true
         }
     }
 
@@ -259,38 +321,19 @@ struct HabitCheckInsView: View {
     }
 
     private func deleteEntry(_ entry: LogEntry) {
-        modelContext.delete(entry)
-        // Deleting an entry can lower or break a streak on any day, which the increment-only
-        // updateStreak() cannot express — flag for a full recalculation instead (C-2).
-        board.needsStreakRecalculation = true
-
         do {
-            try modelContext.save()
-            // Trigger the StreakMaintenanceCoordinator recalculation pass (T1 path).
-            NotificationCenter.default.post(name: .streakRecalculationRequested, object: nil)
-            WidgetRefreshCoordinator.shared.scheduleReload()
+            try CheckInWriter.delete(entry, board: board, context: modelContext)
         } catch {
-            modelContext.rollback()
+            showWriteError = true
         }
     }
 
     private func duplicateEntry(_ entry: LogEntry) {
-        let newEntry = LogEntry(
-            timestamp: .now,
-            value: entry.value,
-            note: entry.note,
-            boardID: board.id,
-            board: board
-        )
-        modelContext.insert(newEntry)
-        board.updateStreak(using: .current)
-
         do {
-            try modelContext.save()
+            try CheckInWriter.insert(value: entry.value, note: entry.note, board: board, context: modelContext)
             triggerHaptic()
-            WidgetRefreshCoordinator.shared.scheduleReload()
         } catch {
-            modelContext.rollback()
+            showWriteError = true
         }
     }
 
@@ -301,69 +344,7 @@ struct HabitCheckInsView: View {
     }
 }
 
-// MARK: - SwipeAction
-
-struct SwipeAction<Content: View>: View {
-    let onEdit: () -> Void
-    let onDelete: () -> Void
-    let onDuplicate: () -> Void
-    let content: () -> Content
-
-    @State private var offset: CGFloat = 0
-
-    var body: some View {
-        ZStack(alignment: .trailing) {
-            // Action buttons (hidden, revealed on swipe)
-            HStack(spacing: 0) {
-                Button(action: onDuplicate) {
-                    Image(systemName: "doc.on.doc")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 44)
-                        .background(DS.Color.textSecondary.opacity(0.6))
-                }
-
-                Button(action: onEdit) {
-                    Image(systemName: "pencil")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 44)
-                        .background(ColorPalette[4])
-                }
-
-                Button(action: onDelete) {
-                    Image(systemName: "trash")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 44)
-                        .background(.red.opacity(0.8))
-                }
-            }
-
-            // Content (foreground, swipeable)
-            content()
-                .offset(x: offset)
-                .gesture(
-                    DragGesture()
-                        .onChanged { value in
-                            offset = min(0, value.translation.width)
-                        }
-                        .onEnded { value in
-                            if offset < -60 {
-                                offset = -132
-                            } else {
-                                offset = 0
-                            }
-                        }
-                )
-        }
-        .frame(height: 44)
-        .clipped()
-    }
-}
+// MARK: - Preview
 
 #Preview {
     @MainActor

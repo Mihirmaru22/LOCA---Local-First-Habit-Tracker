@@ -116,6 +116,9 @@ private struct GridMiniHeatmap: View {
     private let rows    = 7
     private let gap: CGFloat = 3.5
 
+    // Pre-aggregated off-main; O(1) lookup per cell at render time.
+    @State private var cellsByDate: [Date: DayCell] = [:]
+
     var body: some View {
         GeometryReader { geo in
             let cellSize = (geo.size.width - gap * CGFloat(cols - 1)) / CGFloat(cols)
@@ -125,7 +128,8 @@ private struct GridMiniHeatmap: View {
                     HStack(spacing: gap) {
                         ForEach(0..<cols, id: \.self) { weekIdx in
                             GridMiniCell(
-                                board: board,
+                                colorIndex: board.colorIndex,
+                                cellsByDate: cellsByDate,
                                 dayIndex: dayIdx,
                                 weekIndex: weekIdx,
                                 totalWeeks: cols,
@@ -137,6 +141,17 @@ private struct GridMiniHeatmap: View {
             }
         }
         .frame(height: heatmapHeight())
+        // 56 days covers all cells in the 8×7 grid regardless of day-of-week alignment.
+        .task(id: "\(board.id)-\(board.logs?.count ?? -1)") {
+            let snapshots = (board.logs ?? []).map(LogSnapshot.init(from:))
+            let target    = board.effectiveTarget
+            let newCells  = await HeatmapDataProvider.buildDayGrid(
+                snapshots:  snapshots,
+                target:     target,
+                windowDays: 56
+            )
+            cellsByDate = Dictionary(uniqueKeysWithValues: newCells.map { ($0.date, $0) })
+        }
     }
 
     private func heatmapHeight() -> CGFloat {
@@ -149,51 +164,51 @@ private struct GridMiniHeatmap: View {
 // MARK: - Mini Heatmap Cell
 
 private struct GridMiniCell: View {
-    let board: HabitBoard
+    let colorIndex: Int
+    let cellsByDate: [Date: DayCell]
     let dayIndex: Int
     let weekIndex: Int
     let totalWeeks: Int
     let size: CGFloat
 
-    private var date: Date? {
-        let today = Calendar.current.startOfDay(for: .now)
-        let weeksBack = totalWeeks - 1 - weekIndex
-        let daysBack  = weeksBack * 7 + dayIndex
-        return Calendar.current.date(byAdding: .day, value: -daysBack, to: today)
+    // Week-anchor date: locale's week-start of the column's week + dayIndex days.
+    private var cellDate: Date? {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: .now)
+        let todayWeekday = cal.component(.weekday, from: today)
+        let daysFromWeekStart = (todayWeekday - cal.firstWeekday + 7) % 7
+        guard let currentWeekStart = cal.date(byAdding: .day, value: -daysFromWeekStart, to: today),
+              let columnWeekStart  = cal.date(byAdding: .weekOfYear, value: -(totalWeeks - 1 - weekIndex), to: currentWeekStart),
+              let date             = cal.date(byAdding: .day, value: dayIndex, to: columnWeekStart)
+        else { return nil }
+        return date
     }
 
     private var isToday: Bool {
-        guard let d = date else { return false }
+        guard let d = cellDate else { return false }
         return Calendar.current.isDateInToday(d)
     }
 
     private var isFuture: Bool {
-        guard let d = date else { return false }
-        return d > Date()
+        guard let d = cellDate else { return false }
+        return d > Calendar.current.startOfDay(for: Date())
     }
 
-    private var total: Double {
-        guard let d = date else { return 0 }
-        let start = Calendar.current.startOfDay(for: d)
-        guard let end = Calendar.current.date(byAdding: .day, value: 1, to: start) else { return 0 }
-        return (board.logs ?? [])
-            .filter { $0.timestamp >= start && $0.timestamp < end }
-            .reduce(0, { $0 + $1.value })
-    }
+    private var cell: DayCell? { cellsByDate[cellDate ?? .distantPast] }
 
     private var opacity: Double {
         if isFuture { return 0.07 }
-        guard total > 0 else { return 0.15 }
-        let r = total / board.effectiveTarget
-        if r >= 1.0 { return 1.0 }
-        if r >= 0.5 { return 0.55 }
+        let intensity = cell?.intensity ?? 0
+        if intensity <= 0 { return 0.15 }
+        if intensity >= 1.0 { return 1.0 }
+        if intensity >= 0.5 { return 0.55 }
         return 0.30
     }
 
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: size * 0.27, style: .continuous)
-                .fill(ColorPalette[board.colorIndex].opacity(opacity))
+                .fill(ColorPalette[colorIndex].opacity(opacity))
                 .frame(width: size, height: size)
 
             if isToday {

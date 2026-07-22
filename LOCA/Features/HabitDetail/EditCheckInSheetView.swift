@@ -161,6 +161,9 @@ struct EditCheckInSheetView: View {
             .scrollContentBackground(.hidden)
             .background(DS.Color.surface)
             .cornerRadius(8)
+            .onChange(of: notesText) { _, new in
+                if new.count > 500 { notesText = String(new.prefix(500)) }
+            }
     }
 
     // MARK: - Toolbar
@@ -189,33 +192,23 @@ struct EditCheckInSheetView: View {
         comp.hour   = selectedHour
         comp.minute = selectedMinute
         comp.second = 0
-        let newTS = cal.date(from: comp) ?? selectedDate
-
-        let oldTS   = entry.timestamp
-        let oldVal  = entry.value
-        let oldNote = entry.note
-
-        entry.timestamp = newTS
-        entry.value     = board.metric == .quantitative ? (parsedAmount ?? oldVal) : 1.0
-        entry.note      = notesText.isEmpty ? nil : notesText
-        // An edit can move the entry to another day or drop its value below target —
-        // neither of which the increment-only updateStreak() can express. Flag for a full
-        // recalculation instead (C-2). A save failure below rolls this back with the rest.
-        board.needsStreakRecalculation = true
+        let newTS    = cal.date(from: comp) ?? selectedDate
+        let newValue = board.metric == .quantitative ? (parsedAmount ?? entry.value) : 1.0
+        let newNote  = notesText.isEmpty ? nil : notesText
 
         do {
-            try modelContext.save()
-            // Trigger the StreakMaintenanceCoordinator recalculation pass (T1 path).
-            NotificationCenter.default.post(name: .streakRecalculationRequested, object: nil)
+            try CheckInWriter.update(
+                entry:     entry,
+                timestamp: newTS,
+                value:     newValue,
+                note:      newNote,
+                board:     board,
+                context:   modelContext
+            )
             logger.debug("LogEntry edited: \(entry.id, privacy: .public)")
-            WidgetRefreshCoordinator.shared.scheduleReload()
             isSaving = false
             dismiss()
         } catch {
-            entry.timestamp = oldTS
-            entry.value     = oldVal
-            entry.note      = oldNote
-            modelContext.rollback()
             logger.error("Edit save failed: \(error.localizedDescription, privacy: .public)")
             isSaving = false
             showSaveError = true

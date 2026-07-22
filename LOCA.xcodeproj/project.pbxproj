@@ -17,6 +17,7 @@
 		50C2F3E507384D21B34EB939 /* VersionedSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1E3F118B00458FA0744867 /* VersionedSchema.swift */; };
 		92BC012896714130A1B029DB /* ModelContainerFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AE37A1D4A974FA396744088 /* ModelContainerFactory.swift */; };
 		9A14DA72010B4F2CA5E419E7 /* ModelContainerFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AE37A1D4A974FA396744088 /* ModelContainerFactory.swift */; };
+		CF3B2C3D4E5F6A7B8C9D0E1F /* CheckInWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF3A1B2C3D4E5F6A7B8C9D0E /* CheckInWriter.swift */; };
 		FD032596119C457A8C650DD9 /* PersistenceError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 007029E177424E23BA4737C3 /* PersistenceError.swift */; };
 		FD67DA6924D0492880CEB1EA /* PersistenceError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 007029E177424E23BA4737C3 /* PersistenceError.swift */; };
 		A97E09E4062B4BEFAE3D7418 /* DebugSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E8D37FD0EAC4BBB8192F147 /* DebugSeeder.swift */; };
@@ -55,8 +56,6 @@
 		412B7DDF630D4B369E475DD2 /* StreakCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A23A644233DD4BE6AAD23539 /* StreakCalculator.swift */; };
 		7504D58ADAB74D25BA2F69C8 /* HeatmapDataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB921FD359F548A389FFA196 /* HeatmapDataProvider.swift */; };
 		C24B1432A5A9499083D59C9B /* HeatmapDataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB921FD359F548A389FFA196 /* HeatmapDataProvider.swift */; };
-		8804273F46B64991A51AC8E1 /* RootNavigationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB19A04F0D8C490BA12B738D /* RootNavigationView.swift */; };
-		B4340C7D3F7A43C89833F876 /* HabitSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F91A4520B0B4E4383DEEAED /* HabitSidebarView.swift */; };
 		E8A397AD3E3F43468E8BFF20 /* HabitDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EA3DF789134654984688CB /* HabitDetailView.swift */; };
 		FB7C2613B33C4BAAB22BB911 /* HeatmapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CE91B0C5D88414094E4DD05 /* HeatmapView.swift */; };
 		D3F68D36689EDD3AB476FAE0 /* HabitAnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C351824E770C933A393581B /* HabitAnalyticsView.swift */; };
@@ -69,7 +68,6 @@
 		36720AD2F22A64170387C940 /* WeekdaysChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEBB745C663B20E8B2CAA432 /* WeekdaysChartView.swift */; };
 		E8ADDA453FAB3851AB3CB853 /* AddCheckInSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EC5E1C58596652E07B3FDB9 /* AddCheckInSheetView.swift */; };
 		A1B2C3D4E5F6A7B8C9D0E1F2 /* EditCheckInSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7A8B9C0D1E2 /* EditCheckInSheetView.swift */; };
-		4EF82DD478E641C081644338 /* AnalyticsCardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4AC62C281824C358828EBED /* AnalyticsCardsView.swift */; };
 		37DA6E005EE84382B6E2B538 /* JournalTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CEB70E6A1F742B4A1F35A2F /* JournalTimelineView.swift */; };
 		42A8AE7D0252462CA1F5A2D2 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA23BF1816F44D92873A3FCD /* DashboardView.swift */; };
 		B45CB1ED59D240ED8D9DA386 /* HabitCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA2BCF72800F4D06A36251AA /* HabitCardView.swift */; };
@@ -94,6 +92,7 @@
 		2C8098FD69D64D2CB7E400BD /* LogEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LogEntry.swift"; sourceTree = "<group>"; };
 		8A1E3F118B00458FA0744867 /* VersionedSchema.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VersionedSchema.swift"; sourceTree = "<group>"; };
 		7AE37A1D4A974FA396744088 /* ModelContainerFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ModelContainerFactory.swift"; sourceTree = "<group>"; };
+		CF3A1B2C3D4E5F6A7B8C9D0E /* CheckInWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CheckInWriter.swift"; sourceTree = "<group>"; };
 		007029E177424E23BA4737C3 /* PersistenceError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PersistenceError.swift"; sourceTree = "<group>"; };
 		2E8D37FD0EAC4BBB8192F147 /* DebugSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DebugSeeder.swift"; sourceTree = "<group>"; };
 		8CF2B6B9240E460892583CEC /* Date+Calendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Calendar.swift"; sourceTree = "<group>"; };
@@ -125,8 +124,6 @@
 		13289E001E014999A9EFB063 /* Double+Clamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Double+Clamp.swift"; sourceTree = "<group>"; };
 		A23A644233DD4BE6AAD23539 /* StreakCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StreakCalculator.swift"; sourceTree = "<group>"; };
 		CB921FD359F548A389FFA196 /* HeatmapDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HeatmapDataProvider.swift"; sourceTree = "<group>"; };
-		EB19A04F0D8C490BA12B738D /* RootNavigationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RootNavigationView.swift"; sourceTree = "<group>"; };
-		1F91A4520B0B4E4383DEEAED /* HabitSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitSidebarView.swift"; sourceTree = "<group>"; };
 		75EA3DF789134654984688CB /* HabitDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitDetailView.swift"; sourceTree = "<group>"; };
 		4CE91B0C5D88414094E4DD05 /* HeatmapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HeatmapView.swift"; sourceTree = "<group>"; };
 		8C351824E770C933A393581B /* HabitAnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitAnalyticsView.swift"; sourceTree = "<group>"; };
@@ -139,7 +136,6 @@
 		DEBB745C663B20E8B2CAA432 /* WeekdaysChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WeekdaysChartView.swift"; sourceTree = "<group>"; };
 		3EC5E1C58596652E07B3FDB9 /* AddCheckInSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AddCheckInSheetView.swift"; sourceTree = "<group>"; };
 		F1A2B3C4D5E6F7A8B9C0D1E2 /* EditCheckInSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EditCheckInSheetView.swift"; sourceTree = "<group>"; };
-		A4AC62C281824C358828EBED /* AnalyticsCardsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AnalyticsCardsView.swift"; sourceTree = "<group>"; };
 		2CEB70E6A1F742B4A1F35A2F /* JournalTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "JournalTimelineView.swift"; sourceTree = "<group>"; };
 		CA23BF1816F44D92873A3FCD /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DashboardView.swift"; sourceTree = "<group>"; };
 		FA2BCF72800F4D06A36251AA /* HabitCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HabitCardView.swift"; sourceTree = "<group>"; };
@@ -261,6 +257,7 @@
 		1A0CD3231B404E30A92BA2DF /* Persistence */ = {
 			isa = PBXGroup;
 			children = (
+				CF3A1B2C3D4E5F6A7B8C9D0E /* CheckInWriter.swift */,
 				7AE37A1D4A974FA396744088 /* ModelContainerFactory.swift */,
 				007029E177424E23BA4737C3 /* PersistenceError.swift */,
 				2E8D37FD0EAC4BBB8192F147 /* DebugSeeder.swift */,
@@ -300,19 +297,9 @@
 				DEBB745C663B20E8B2CAA432 /* WeekdaysChartView.swift */,
 				3EC5E1C58596652E07B3FDB9 /* AddCheckInSheetView.swift */,
 				F1A2B3C4D5E6F7A8B9C0D1E2 /* EditCheckInSheetView.swift */,
-				A4AC62C281824C358828EBED /* AnalyticsCardsView.swift */,
 				2CEB70E6A1F742B4A1F35A2F /* JournalTimelineView.swift */,
 			);
 			path = "HabitDetail";
-			sourceTree = "<group>";
-		};
-		D49D3753CE3740DB99C3CD3B /* Navigation */ = {
-			isa = PBXGroup;
-			children = (
-				EB19A04F0D8C490BA12B738D /* RootNavigationView.swift */,
-				1F91A4520B0B4E4383DEEAED /* HabitSidebarView.swift */,
-			);
-			path = "Navigation";
 			sourceTree = "<group>";
 		};
 		7217A5FC0D2E4084AA1CCF76 /* Core */ = {
@@ -356,7 +343,6 @@
 				C98301DF1FB24E4484DAFE03 /* Dashboard */,
 				707B3ADA96F94C6090385589 /* HabitDetail */,
 				B325876734E272C06C77D326 /* HabitManagement */,
-				D49D3753CE3740DB99C3CD3B /* Navigation */,
 			);
 			path = "Features";
 			sourceTree = "<group>";
@@ -580,6 +566,7 @@
 				675D0365D5C54CA9B9670937 /* HabitBoard.swift in Sources */,
 				7C33229B8B884E4A8722EE7D /* LogEntry.swift in Sources */,
 				10E00AF3464D4663A80A2612 /* VersionedSchema.swift in Sources */,
+				CF3B2C3D4E5F6A7B8C9D0E1F /* CheckInWriter.swift in Sources */,
 				92BC012896714130A1B029DB /* ModelContainerFactory.swift in Sources */,
 				FD032596119C457A8C650DD9 /* PersistenceError.swift in Sources */,
 				A97E09E4062B4BEFAE3D7418 /* DebugSeeder.swift in Sources */,
@@ -602,8 +589,6 @@
 				EA67B446FFD340ECBF1E9F6D /* Double+Clamp.swift in Sources */,
 				8A004F606662408989430FF3 /* StreakCalculator.swift in Sources */,
 				7504D58ADAB74D25BA2F69C8 /* HeatmapDataProvider.swift in Sources */,
-				8804273F46B64991A51AC8E1 /* RootNavigationView.swift in Sources */,
-				B4340C7D3F7A43C89833F876 /* HabitSidebarView.swift in Sources */,
 				E8A397AD3E3F43468E8BFF20 /* HabitDetailView.swift in Sources */,
 				FB7C2613B33C4BAAB22BB911 /* HeatmapView.swift in Sources */,
 				D3F68D36689EDD3AB476FAE0 /* HabitAnalyticsView.swift in Sources */,
@@ -616,7 +601,6 @@
 				36720AD2F22A64170387C940 /* WeekdaysChartView.swift in Sources */,
 				E8ADDA453FAB3851AB3CB853 /* AddCheckInSheetView.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F2 /* EditCheckInSheetView.swift in Sources */,
-				4EF82DD478E641C081644338 /* AnalyticsCardsView.swift in Sources */,
 				37DA6E005EE84382B6E2B538 /* JournalTimelineView.swift in Sources */,
 				42A8AE7D0252462CA1F5A2D2 /* DashboardView.swift in Sources */,
 				B45CB1ED59D240ED8D9DA386 /* HabitCardView.swift in Sources */,

@@ -47,6 +47,7 @@ struct HabitFormView: View {
     /// The caller (Dashboard → RootNavigationView) sets `selectedBoardID` to
     /// navigate straight to the new habit's detail view.
     var onBoardCreated: ((UUID) -> Void)?
+    var onBoardArchived: (() -> Void)?
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -54,6 +55,8 @@ struct HabitFormView: View {
 
     @State private var draft: HabitBoardDraft
     @State private var showSaveError = false
+    @State private var showArchiveConfirmation = false
+    @State private var showArchiveError = false
 
     /// Auto-focuses the name field on create so the keyboard is immediately
     /// available; edit mode leaves focus unset so the user sees the whole form.
@@ -65,9 +68,10 @@ struct HabitFormView: View {
 
     // MARK: Init
 
-    init(mode: Mode, onBoardCreated: ((UUID) -> Void)? = nil) {
+    init(mode: Mode, onBoardCreated: ((UUID) -> Void)? = nil, onBoardArchived: (() -> Void)? = nil) {
         self.mode = mode
         self.onBoardCreated = onBoardCreated
+        self.onBoardArchived = onBoardArchived
         switch mode {
         case .create:
             _draft = State(initialValue: HabitBoardDraft())
@@ -98,6 +102,14 @@ struct HabitFormView: View {
                     goalSection
                 }
                 colorSection
+                if case .edit = mode {
+                    Section {
+                        Button("Delete Habit", role: .destructive) {
+                            showArchiveConfirmation = true
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                }
             }
             .navigationTitle(navigationTitle)
             .inlineNavigationTitleDisplay()
@@ -116,6 +128,17 @@ struct HabitFormView: View {
             } message: {
                 Text("Your habit couldn't be saved. Please try again.")
             }
+            .alert("Delete Habit?", isPresented: $showArchiveConfirmation) {
+                Button("Delete", role: .destructive) { archiveBoard() }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This will remove the habit and all its history. This cannot be undone.")
+            }
+            .alert("Couldn't Delete Habit", isPresented: $showArchiveError) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("An error occurred. Please try again.")
+            }
         }
     }
 
@@ -130,17 +153,25 @@ struct HabitFormView: View {
                     .multilineTextAlignment(.center)
                     .font(.title2)
                     .onChange(of: draft.emoji) { _, new in
-                        // Keep only the first character (or first emoji cluster)
-                        let trimmed = new.trimmingCharacters(in: .whitespaces)
-                        if trimmed.count > 1 {
-                            let first = String(trimmed.unicodeScalars.prefix(while: { $0.value > 127 || trimmed.count == 1 }).map(Character.init))
-                            draft.emoji = String(trimmed.prefix(first.isEmpty ? 1 : 1))
-                        }
+                        // Reduce to the first grapheme cluster (String.prefix(1) respects
+                        // multi-scalar sequences like 🏃‍♂️). Accept only non-ASCII emoji:
+                        // ASCII scalars (# * 0-9) have isEmoji==true but render as text.
+                        let first = String(new.trimmingCharacters(in: .whitespaces).prefix(1))
+                        let isValidEmoji = first.unicodeScalars.first.map {
+                            $0.properties.isEmoji && $0.value > 0x007F
+                        } ?? false
+                        let clamped = isValidEmoji ? first : ""
+                        if draft.emoji != clamped { draft.emoji = clamped }
                     }
                 TextField("Habit name", text: $draft.name)
                     .focused($nameFocused)
                     .multilineTextAlignment(.leading)
                     .accessibilityLabel("Habit name")
+                    .onChange(of: draft.name) { _, new in
+                        if new.count > HabitBoardDraft.maxNameLength {
+                            draft.name = String(new.prefix(HabitBoardDraft.maxNameLength))
+                        }
+                    }
             }
         } header: {
             Text("Name")
@@ -269,6 +300,17 @@ struct HabitFormView: View {
     // Edit:   apply(to: board)    → save.
     // On failure: rollback() discards the insert or in-place mutation
     // atomically; the sheet stays open with a non-blocking alert (EP §4.1).
+
+    private func archiveBoard() {
+        guard case .edit(let board) = mode else { return }
+        do {
+            try board.archive(in: modelContext)
+            dismiss()
+            onBoardArchived?()
+        } catch {
+            showArchiveError = true
+        }
+    }
 
     private func save() {
         var newBoardID: UUID?
