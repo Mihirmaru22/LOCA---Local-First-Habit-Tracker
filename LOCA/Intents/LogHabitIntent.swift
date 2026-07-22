@@ -147,9 +147,13 @@ struct LogHabitIntent: AppIntent {
 
     // MARK: Steps
 
-    /// Builds the intent-owned container/context. See "Own Context" above.
+    /// Returns the process-cached container's main context, falling back to a
+    /// freshly constructed container if the cache is unavailable.
     @MainActor
     private func makeContext() throws -> ModelContext {
+        if let cached = ModelContainerFactory.extensionContainer {
+            return cached.mainContext
+        }
         do {
             return try ModelContainerFactory.makeConfiguredContainer().mainContext
         } catch {
