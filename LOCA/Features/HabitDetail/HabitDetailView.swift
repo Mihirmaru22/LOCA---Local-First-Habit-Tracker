@@ -203,26 +203,31 @@ struct RefHeatCell: View {
     let totalCols: Int
     let cellSize: CGFloat
 
-    // Week-anchor date: Sunday of the column's week + dayIndex days.
+    // Week-anchor date: locale's week-start of the column's week + dayIndex days.
     private var cellDate: Date? {
         let cal = Calendar.current
         let today = cal.startOfDay(for: .now)
-        let todayWeekday = cal.component(.weekday, from: today) - 1  // 0 = Sunday
-        guard let currentSunday = cal.date(byAdding: .day, value: -todayWeekday, to: today),
-              let columnSunday  = cal.date(byAdding: .weekOfYear, value: -(totalCols - 1 - weekIndex), to: currentSunday),
-              let date           = cal.date(byAdding: .day, value: dayIndex, to: columnSunday)
+        let todayWeekday = cal.component(.weekday, from: today)
+        let daysFromWeekStart = (todayWeekday - cal.firstWeekday + 7) % 7
+        guard let currentWeekStart = cal.date(byAdding: .day, value: -daysFromWeekStart, to: today),
+              let columnWeekStart  = cal.date(byAdding: .weekOfYear, value: -(totalCols - 1 - weekIndex), to: currentWeekStart),
+              let date             = cal.date(byAdding: .day, value: dayIndex, to: columnWeekStart)
         else { return nil }
         return date
     }
 
+    private var daysFromWeekStartToday: Int {
+        let cal = Calendar.current
+        let weekday = cal.component(.weekday, from: .now)
+        return (weekday - cal.firstWeekday + 7) % 7
+    }
+
     private var isToday: Bool {
-        let todayWeekday = Calendar.current.component(.weekday, from: .now) - 1 // 0=Sun
-        return weekIndex == totalCols - 1 && dayIndex == todayWeekday
+        weekIndex == totalCols - 1 && dayIndex == daysFromWeekStartToday
     }
 
     private var isFuture: Bool {
-        let todayWeekday = Calendar.current.component(.weekday, from: .now) - 1
-        return weekIndex == totalCols - 1 && dayIndex > todayWeekday
+        weekIndex == totalCols - 1 && dayIndex > daysFromWeekStartToday
     }
 
     private var cell: DayCell? { cellsByDate[cellDate ?? .distantPast] }

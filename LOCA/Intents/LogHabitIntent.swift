@@ -115,29 +115,20 @@ struct LogHabitIntent: AppIntent {
         let liveBoard = try fetchActiveBoard(id: board.id, in: context)
         let loggedValue = try resolveValue(for: liveBoard)
 
-        let entry = LogEntry(
-            value: loggedValue,
-            note: normalizedNote(),
-            boardID: liveBoard.id,
-            board: liveBoard
-        )
-
-        // Identical ordering to CheckInButton.logBinaryEntry() and
-        // CheckInSheet.logEntry(): insert → updateStreak → save.
-        context.insert(entry)
-        liveBoard.updateStreak(using: .current)
-
         do {
-            try context.save()
+            try CheckInWriter.insert(
+                value: loggedValue,
+                note:  normalizedNote(),
+                board: liveBoard,
+                context: context
+            )
         } catch {
-            context.rollback()
             logger.error(
                 "App Intent check-in save failed for board '\(liveBoard.name, privacy: .public)': \(error.localizedDescription, privacy: .public)"
             )
             throw LogHabitError.saveFailed
         }
 
-        WidgetRefreshCoordinator.shared.scheduleReload()
         logger.debug(
             "App Intent check-in saved: \(loggedValue, privacy: .public) for board '\(liveBoard.name, privacy: .public)'."
         )

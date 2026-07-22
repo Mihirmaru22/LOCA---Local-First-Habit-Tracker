@@ -17,6 +17,7 @@
 		50C2F3E507384D21B34EB939 /* VersionedSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1E3F118B00458FA0744867 /* VersionedSchema.swift */; };
 		92BC012896714130A1B029DB /* ModelContainerFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AE37A1D4A974FA396744088 /* ModelContainerFactory.swift */; };
 		9A14DA72010B4F2CA5E419E7 /* ModelContainerFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AE37A1D4A974FA396744088 /* ModelContainerFactory.swift */; };
+		CF3B2C3D4E5F6A7B8C9D0E1F /* CheckInWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF3A1B2C3D4E5F6A7B8C9D0E /* CheckInWriter.swift */; };
 		FD032596119C457A8C650DD9 /* PersistenceError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 007029E177424E23BA4737C3 /* PersistenceError.swift */; };
 		FD67DA6924D0492880CEB1EA /* PersistenceError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 007029E177424E23BA4737C3 /* PersistenceError.swift */; };
 		A97E09E4062B4BEFAE3D7418 /* DebugSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E8D37FD0EAC4BBB8192F147 /* DebugSeeder.swift */; };
@@ -91,6 +92,7 @@
 		2C8098FD69D64D2CB7E400BD /* LogEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LogEntry.swift"; sourceTree = "<group>"; };
 		8A1E3F118B00458FA0744867 /* VersionedSchema.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VersionedSchema.swift"; sourceTree = "<group>"; };
 		7AE37A1D4A974FA396744088 /* ModelContainerFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ModelContainerFactory.swift"; sourceTree = "<group>"; };
+		CF3A1B2C3D4E5F6A7B8C9D0E /* CheckInWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CheckInWriter.swift"; sourceTree = "<group>"; };
 		007029E177424E23BA4737C3 /* PersistenceError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PersistenceError.swift"; sourceTree = "<group>"; };
 		2E8D37FD0EAC4BBB8192F147 /* DebugSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DebugSeeder.swift"; sourceTree = "<group>"; };
 		8CF2B6B9240E460892583CEC /* Date+Calendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Calendar.swift"; sourceTree = "<group>"; };
@@ -255,6 +257,7 @@
 		1A0CD3231B404E30A92BA2DF /* Persistence */ = {
 			isa = PBXGroup;
 			children = (
+				CF3A1B2C3D4E5F6A7B8C9D0E /* CheckInWriter.swift */,
 				7AE37A1D4A974FA396744088 /* ModelContainerFactory.swift */,
 				007029E177424E23BA4737C3 /* PersistenceError.swift */,
 				2E8D37FD0EAC4BBB8192F147 /* DebugSeeder.swift */,
@@ -563,6 +566,7 @@
 				675D0365D5C54CA9B9670937 /* HabitBoard.swift in Sources */,
 				7C33229B8B884E4A8722EE7D /* LogEntry.swift in Sources */,
 				10E00AF3464D4663A80A2612 /* VersionedSchema.swift in Sources */,
+				CF3B2C3D4E5F6A7B8C9D0E1F /* CheckInWriter.swift in Sources */,
 				92BC012896714130A1B029DB /* ModelContainerFactory.swift in Sources */,
 				FD032596119C457A8C650DD9 /* PersistenceError.swift in Sources */,
 				A97E09E4062B4BEFAE3D7418 /* DebugSeeder.swift in Sources */,

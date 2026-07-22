@@ -26,6 +26,7 @@ struct AddCheckInSheetView: View {
     @State private var amountText = ""
     @State private var notesText = ""
     @State private var isSubmitting = false
+    @State private var showSaveError = false
 
     private var parsedAmount: Double? {
         Double(amountText.trimmingCharacters(in: .whitespaces))
@@ -135,6 +136,11 @@ struct AddCheckInSheetView: View {
             }
             .navigationTitle("Add Check-in")
             .inlineNavigationTitleDisplay()
+            .alert("Couldn't Save Check-in", isPresented: $showSaveError) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("The check-in couldn't be saved. Please try again.")
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: { dismiss() })
@@ -156,60 +162,32 @@ struct AddCheckInSheetView: View {
 
     private func submitCheckIn() {
         guard isValid else { return }
-
         isSubmitting = true
 
-        // Combine date with selected time
         let calendar = Calendar.current
         var components = calendar.dateComponents([.year, .month, .day], from: selectedDate)
         components.hour = selectedHour
         components.minute = selectedMinute
         let timestamp = calendar.date(from: components) ?? selectedDate
 
-        // Determine value
-        let value: Double
-        if board.metric == .quantitative {
-            value = parsedAmount ?? 0
-        } else {
-            value = 1.0  // Binary habit
-        }
-
-        // Create log entry
-        let logEntry = LogEntry(
-            timestamp: timestamp,
-            value: value,
-            note: notesText.isEmpty ? nil : notesText,
-            boardID: board.id,
-            board: board
-        )
-        modelContext.insert(logEntry)
-
-        // The increment-only fast path is valid only when the entry is dated today
-        // (HabitBoard.updateStreak contract, C-2). A backdated or future entry changes a
-        // different day's completion, so it must go through a full recalculation instead.
-        let isToday = Calendar.current.isDateInToday(timestamp)
-        if isToday {
-            board.updateStreak(using: .current)
-        } else {
-            board.needsStreakRecalculation = true
-        }
+        let value: Double = board.metric == .quantitative ? (parsedAmount ?? 0) : 1.0
 
         do {
-            try modelContext.save()
-            if !isToday {
-                // Trigger the StreakMaintenanceCoordinator recalculation pass (T1 path).
-                NotificationCenter.default.post(name: .streakRecalculationRequested, object: nil)
-            }
+            try CheckInWriter.insert(
+                value: value,
+                timestamp: timestamp,
+                note: notesText.isEmpty ? nil : notesText,
+                board: board,
+                context: modelContext
+            )
             triggerConfirmationHaptic()
-            WidgetRefreshCoordinator.shared.scheduleReload()
-
             withAnimation(DS.Motion.confirm(reduceMotion: reduceMotion)) {
                 isSubmitting = false
                 dismiss()
             }
         } catch {
-            modelContext.rollback()
             isSubmitting = false
+            showSaveError = true
         }
     }
 

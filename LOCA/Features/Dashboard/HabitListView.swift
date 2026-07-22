@@ -24,6 +24,7 @@ struct HabitListView: View {
 
     @Environment(\.modelContext) private var modelContext
     @State private var showingCreateSheet = false
+    @State private var showCheckInError   = false
     @AppStorage("habitListLayout") private var layout: String = "list"
 
     /// Future: a HabitSortStrategy seam will allow pluggable sort modes.
@@ -72,6 +73,11 @@ struct HabitListView: View {
         }
         .sheet(isPresented: $showingCreateSheet) {
             HabitFormView(mode: .create)
+        }
+        .alert("Couldn't Save Check-in", isPresented: $showCheckInError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("The check-in couldn't be saved. Please try again.")
         }
     }
 
@@ -128,14 +134,10 @@ struct HabitListView: View {
     // MARK: - Actions
 
     private func checkInBinary(board: HabitBoard) {
-        let entry = LogEntry(value: 1.0, boardID: board.id, board: board)
-        modelContext.insert(entry)
-        board.updateStreak(using: .current)
         do {
-            try modelContext.save()
-            WidgetRefreshCoordinator.shared.scheduleReload()
+            try CheckInWriter.toggleBinary(board: board, context: modelContext)
         } catch {
-            modelContext.rollback()
+            showCheckInError = true
         }
     }
 }
