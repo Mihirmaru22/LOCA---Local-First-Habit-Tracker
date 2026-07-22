@@ -4,38 +4,59 @@ on:
   push:
   pull_request:
 
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+# cancel-in-progress removed: it can produce false "failure" conclusions in
+# GitHub's API when a run is cancelled before any job is assigned to a runner,
+# making the CI appear broken when it is merely being superseded.
 
 jobs:
   test:
     name: Build & Unit Test
-    runs-on: macos-14
+    # macos-15 is the current stable macOS runner as of Xcode 16 GA.
+    # macos-14 is kept as a fallback label comment; swap if 15 is unavailable.
+    runs-on: macos-15
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: List available Xcode installations
+        run: ls /Applications | grep -i xcode || echo "No Xcode found in /Applications"
+
       - name: Select Xcode 16
         run: |
-          ls /Applications | grep -i xcode || true
-          sudo xcode-select -s /Applications/Xcode_16.2.app 2>/dev/null \
+          sudo xcode-select -s /Applications/Xcode_16.3.app 2>/dev/null \
+            || sudo xcode-select -s /Applications/Xcode_16.2.app 2>/dev/null \
             || sudo xcode-select -s /Applications/Xcode_16.1.app 2>/dev/null \
+            || sudo xcode-select -s /Applications/Xcode_16.0.app 2>/dev/null \
             || sudo xcode-select -s /Applications/Xcode_16.app 2>/dev/null \
-            || true
+            || echo "WARNING: No Xcode 16 found; using system default"
           xcodebuild -version
           swift --version
 
-      - name: Pick an available iOS simulator
+      - name: List available simulators
+        run: xcrun simctl list runtimes available || true
+
+      - name: Pick an available iPhone simulator
         id: sim
         run: |
-          UDID=$(xcrun simctl list devices available -j | python3 -c "import json,sys
-data = json.load(sys.stdin)['devices']
-ids = [d['udid'] for rt in data for d in data[rt] if d.get('isAvailable') and 'iPhone' in d['name']]
-print(ids[0] if ids else '')")
-          if [ -z "$UDID" ]; then echo 'No available iPhone simulator'; exit 1; fi
-          echo "Using simulator $UDID"
+          UDID=$(xcrun simctl list devices available -j | python3 - <<'PYEOF'
+import json, sys
+data = json.load(sys.stdin)["devices"]
+ids = [
+    d["udid"]
+    for runtime_key in sorted(data.keys(), reverse=True)
+    for d in data[runtime_key]
+    if d.get("isAvailable") and "iPhone" in d.get("name", "")
+]
+print(ids[0] if ids else "")
+PYEOF
+)
+          if [ -z "$UDID" ]; then
+            echo "ERROR: No available iPhone simulator found."
+            xcrun simctl list devices
+            exit 1
+          fi
+          echo "Using simulator: $UDID"
           echo "udid=$UDID" >> "$GITHUB_OUTPUT"
 
       - name: Run unit tests
@@ -47,7 +68,8 @@ print(ids[0] if ids else '')")
             -destination "id=${{ steps.sim.outputs.udid }}" \
             -resultBundlePath TestResults.xcresult \
             CODE_SIGNING_ALLOWED=NO \
-            | tee xcodebuild.log
+            2>&1 | tee xcodebuild.log
+          echo "Exit code: $?"
 
       - name: Upload result bundle
         if: always()
@@ -55,4 +77,12 @@ print(ids[0] if ids else '')")
         with:
           name: TestResults
           path: TestResults.xcresult
+          if-no-files-found: ignore
+
+      - name: Upload xcodebuild log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-log
+          path: xcodebuild.log
           if-no-files-found: ignore
