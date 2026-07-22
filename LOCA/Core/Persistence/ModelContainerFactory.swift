@@ -190,9 +190,9 @@ enum ModelContainerFactory {
     // Constructed once per process on first access (Swift static-let guarantee).
     // Reused by every LogHabitIntent invocation and every WidgetKit timeline
     // refresh in the same App Extension process, avoiding repeated CloudKit
-    // stack construction. `nonisolated(unsafe)` is correct: the value is
-    // written exactly once (under Swift's lazy-init guarantee) then read-only.
-    nonisolated(unsafe) static let extensionContainer: ModelContainer? =
+    // stack construction. ModelContainer is Sendable, so no isolation annotation
+    // is needed — the compiler accepts plain static let.
+    static let extensionContainer: ModelContainer? =
         try? makeConfiguredContainer()
 
     // MARK: - In-Memory Container
