@@ -110,8 +110,8 @@ struct HeatmapProvider: AppIntentTimelineProvider {
         do {
             let fetched = try await MainActor.run {
                 () -> (snapshotFields: HeatmapEntry.BoardSnapshot, logs: [LogSnapshot], target: Double)? in
-                let container = ModelContainerFactory.extensionContainer
-                    ?? (try ModelContainerFactory.makeConfiguredContainer())
+                let container = try ModelContainerFactory.extensionContainer
+                    ?? ModelContainerFactory.makeConfiguredContainer()
                 let context = container.mainContext
 
                 let board: HabitBoard?
