@@ -23,6 +23,9 @@ struct HabitDetailView: View {
     @State private var suggestedHour: Int = 0
     @State private var suggestedMinute: Int = 0
     @State private var showReflectionPrompt: Bool? = nil
+    @State private var showGoalTuning: Bool? = nil
+    @State private var suggestedGoalValue: Double = 0
+    @State private var goalTuningReason: String = ""
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -68,6 +71,18 @@ struct HabitDetailView: View {
                                     board: board,
                                     onResponse: { sentiment in respondToReflection(sentiment) },
                                     onDismiss: { showReflectionPrompt = false }
+                                )
+                                .padding(.horizontal, 18)
+                            }
+
+                            if showGoalTuning == true && board.metric == .quantitative && board.targetValue != nil {
+                                GoalTuningCard(
+                                    board: board,
+                                    suggestedGoal: suggestedGoalValue,
+                                    currentGoal: board.targetValue ?? 1.0,
+                                    reason: goalTuningReason,
+                                    onAccept: { newGoal in acceptGoalTuning(newGoal) },
+                                    onDismiss: { showGoalTuning = false }
                                 )
                                 .padding(.horizontal, 18)
                             }
@@ -144,6 +159,7 @@ struct HabitDetailView: View {
             checkForGoalInference()
             checkForTimingSuggestion()
             checkForReflectionPrompt()
+            checkForGoalTuning()
         }
     }
 
@@ -232,6 +248,47 @@ struct HabitDetailView: View {
             showReflectionPrompt = false
         } catch {
             // Silent fail; reflection card remains visible for retry
+        }
+    }
+
+    private func checkForGoalTuning() {
+        guard showGoalTuning == nil else { return }
+        guard board.metric == .quantitative && board.targetValue != nil else {
+            showGoalTuning = false
+            return
+        }
+
+        let logs = board.logs ?? []
+        let snapshots = logs.map { LogSnapshot(from: $0) }
+
+        // For Session 3.2, use empty reflections array (rely on consistency signals only).
+        // Future enhancement: store and pass reflection history.
+        guard let suggestedGoal = GoalTuning.suggestAdjustment(
+            board: board,
+            logs: snapshots,
+            recentReflections: []
+        ) else {
+            showGoalTuning = false
+            return
+        }
+
+        suggestedGoalValue = suggestedGoal
+        let changePercent = Int(((suggestedGoal - board.targetValue!) / board.targetValue!) * 100)
+        if changePercent > 0 {
+            goalTuningReason = "You're consistently hitting your goal. Let's try a bit harder."
+        } else {
+            goalTuningReason = "This goal feels challenging. Let's ease up a bit."
+        }
+        showGoalTuning = true
+    }
+
+    private func acceptGoalTuning(_ newGoal: Double) {
+        board.targetValue = newGoal
+        do {
+            try modelContext.save()
+            showGoalTuning = false
+        } catch {
+            // Silent fail; goal tuning card remains visible for retry
         }
     }
 }
