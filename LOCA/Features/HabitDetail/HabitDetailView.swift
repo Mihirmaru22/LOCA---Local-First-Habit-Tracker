@@ -453,6 +453,8 @@ struct RefHeatCell: View {
     let totalCols: Int
     let cellSize: CGFloat
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     // Week-anchor date: locale's week-start of the column's week + dayIndex days.
     private var cellDate: Date? {
         let cal = Calendar.current
@@ -514,6 +516,8 @@ struct RefHeatCell: View {
                     .frame(width: cellSize, height: cellSize)
             }
         }
+        .transition(.opacity)
+        .animation(DS.Motion.settle(reduceMotion: reduceMotion), value: cellsByDate)
     }
 }
 

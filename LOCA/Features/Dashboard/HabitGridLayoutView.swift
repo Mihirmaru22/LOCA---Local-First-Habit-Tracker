@@ -179,6 +179,8 @@ private struct GridMiniCell: View {
     let totalWeeks: Int
     let size: CGFloat
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     // Week-anchor date: locale's week-start of the column's week + dayIndex days.
     private var cellDate: Date? {
         let cal = Calendar.current
@@ -232,6 +234,8 @@ private struct GridMiniCell: View {
                     .frame(width: size, height: size)
             }
         }
+        .transition(.opacity)
+        .animation(DS.Motion.settle(reduceMotion: reduceMotion), value: cellsByDate)
     }
 }
 
