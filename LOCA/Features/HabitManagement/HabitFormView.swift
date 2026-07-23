@@ -179,7 +179,7 @@ struct HabitFormView: View {
                     .multilineTextAlignment(.trailing)
                     .frame(width: 80)
                     .font(.system(.body, design: .rounded))
-                    .foregroundStyle(draft.parsedTarget != nil ? .primary : .red)
+                    .foregroundStyle(draft.parsedTarget != nil ? .primary : Color.red)
             }
 
             Picker("Unit", selection: $draft.unit) {
@@ -204,7 +204,7 @@ struct HabitFormView: View {
         } footer: {
             if draft.targetText.isEmpty {
                 Text("Enter an amount to enable Save.")
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Color.red)
             } else {
                 Text("Multiple check-ins on the same day add up.")
             }
