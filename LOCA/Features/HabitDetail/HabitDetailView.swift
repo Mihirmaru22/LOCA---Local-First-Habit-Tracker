@@ -180,7 +180,18 @@ struct RefHeatmapCard: View {
         // 182 days (26 weeks) covers the widest reasonable grid on any iPhone width.
         .task(id: "\(board.id)-\(board.logs?.count ?? -1)") {
             let snapshots = (board.logs ?? []).map(LogSnapshot.init(from:))
-            let target    = board.effectiveTarget
+            let logs = board.logs ?? []
+
+            // For quantitative habits without a goal, use average as intensity baseline.
+            // For binary or habits with explicit goals, use effectiveTarget.
+            let target: Double
+            if board.metric == .quantitative && board.targetValue == nil && !logs.isEmpty {
+                let average = logs.reduce(0.0) { $0 + $1.value } / Double(logs.count)
+                target = max(average, 1.0)  // Floor at 1.0 to avoid extreme intensity values
+            } else {
+                target = board.effectiveTarget
+            }
+
             let newCells  = await HeatmapDataProvider.buildDayGrid(
                 snapshots:  snapshots,
                 target:     target,

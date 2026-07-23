@@ -2,10 +2,11 @@
 //  SimpleHabitCreationView.swift
 //  LOCA
 //
-//  Phase 1.1 — Simplified Habit Creation
+//  Phase 2.1 — Habit Creation with Metric Type Selection
 //
-//  Minimal form for onboarding: name field only. Metric type (binary) and
-//  color are auto-assigned. User creates a habit and begins logging in ~10 seconds.
+//  Two-step form: (1) habit name, (2) metric type (binary or quantitative with unit).
+//  For quantitative, unit is inferred from name with ability to override.
+//  Total flow ~15 seconds.
 //
 
 import SwiftUI
@@ -17,8 +18,11 @@ struct SimpleHabitCreationView: View {
     @Environment(\.modelContext) private var modelContext
 
     @State private var habitName = ""
+    @State private var metricType: HabitBoard.MetricType = .binary
+    @State private var selectedUnit: UnitOption = .minutes
     @State private var isSaving = false
     @State private var showSaveError = false
+    @State private var step: Step = .name
     @FocusState private var nameFocused: Bool
 
     var onHabitCreated: ((UUID) -> Void)?
@@ -27,26 +31,23 @@ struct SimpleHabitCreationView: View {
         !habitName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
+    enum Step {
+        case name
+        case metricType
+    }
+
     var body: some View {
         NavigationStack {
             VStack(spacing: DS.Space.lg) {
                 Spacer()
 
                 VStack(spacing: DS.Space.md) {
-                    Text("What habit do you want to build?")
-                        .font(DS.Text.heading)
-                        .foregroundStyle(DS.Color.textPrimary)
-
-                    TextField("e.g. Morning run", text: $habitName)
-                        .font(DS.Text.body)
-                        .textFieldStyle(.roundedBorder)
-                        .focused($nameFocused)
-                        .submitLabel(.done)
-                        .onSubmit {
-                            if isValid {
-                                createHabit()
-                            }
-                        }
+                    switch step {
+                    case .name:
+                        nameStep
+                    case .metricType:
+                        metricTypeStep
+                    }
                 }
                 .padding(DS.Space.lg)
 
@@ -61,13 +62,18 @@ struct SimpleHabitCreationView: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Start") { createHabit() }
-                        .fontWeight(.semibold)
-                        .disabled(!isValid || isSaving)
+                    Button(step == .name ? "Next" : "Start") {
+                        if step == .name {
+                            advanceToMetricType()
+                        } else {
+                            createHabit()
+                        }
+                    }
+                    .fontWeight(.semibold)
+                    .disabled((step == .name && !isValid) || isSaving)
                 }
             }
             .task {
-                // Auto-focus after sheet animation completes (~400ms)
                 try? await Task.sleep(for: .milliseconds(400))
                 nameFocused = true
             }
@@ -79,18 +85,131 @@ struct SimpleHabitCreationView: View {
         }
     }
 
+    private var nameStep: some View {
+        VStack(spacing: DS.Space.md) {
+            Text("What habit do you want to build?")
+                .font(DS.Text.heading)
+                .foregroundStyle(DS.Color.textPrimary)
+
+            TextField("e.g. Morning run", text: $habitName)
+                .font(DS.Text.body)
+                .textFieldStyle(.roundedBorder)
+                .focused($nameFocused)
+                .submitLabel(.next)
+                .onSubmit {
+                    if isValid {
+                        advanceToMetricType()
+                    }
+                }
+        }
+    }
+
+    private var metricTypeStep: some View {
+        VStack(spacing: DS.Space.lg) {
+            Text("How do you want to track this?")
+                .font(DS.Text.heading)
+                .foregroundStyle(DS.Color.textPrimary)
+
+            VStack(spacing: DS.Space.md) {
+                Button(action: { metricType = .binary }) {
+                    HStack(spacing: DS.Space.md) {
+                        Image(systemName: metricType == .binary ? "checkmark.circle.fill" : "circle")
+                            .foregroundStyle(metricType == .binary ? ColorPalette[0] : .secondary)
+
+                        VStack(alignment: .leading, spacing: DS.Space.xs) {
+                            Text("Daily check-off")
+                                .font(DS.Text.body)
+                                .foregroundStyle(DS.Color.textPrimary)
+                            Text("Done or not done")
+                                .font(DS.Text.caption)
+                                .foregroundStyle(DS.Color.textSecondary)
+                        }
+
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(DS.Space.md)
+                    .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.control))
+                }
+                .buttonStyle(.plain)
+
+                Button(action: { metricType = .quantitative }) {
+                    HStack(spacing: DS.Space.md) {
+                        Image(systemName: metricType == .quantitative ? "checkmark.circle.fill" : "circle")
+                            .foregroundStyle(metricType == .quantitative ? ColorPalette[0] : .secondary)
+
+                        VStack(alignment: .leading, spacing: DS.Space.xs) {
+                            Text("Track an amount")
+                                .font(DS.Text.body)
+                                .foregroundStyle(DS.Color.textPrimary)
+                            Text("Miles, minutes, pages, etc.")
+                                .font(DS.Text.caption)
+                                .foregroundStyle(DS.Color.textSecondary)
+                        }
+
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(DS.Space.md)
+                    .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.control))
+                }
+                .buttonStyle(.plain)
+            }
+
+            if metricType == .quantitative {
+                VStack(alignment: .leading, spacing: DS.Space.sm) {
+                    Text("Unit")
+                        .font(DS.Text.body)
+                        .foregroundStyle(DS.Color.textPrimary)
+
+                    Menu {
+                        ForEach(UnitOption.Category.allCases, id: \.self) { category in
+                            Section(category.rawValue) {
+                                ForEach(category.units, id: \.self) { unit in
+                                    Button(unit.displayName) {
+                                        selectedUnit = unit
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        HStack {
+                            Text(selectedUnit.displayName)
+                                .foregroundStyle(DS.Color.textPrimary)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .foregroundStyle(DS.Color.textSecondary)
+                        }
+                        .font(DS.Text.body)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(DS.Space.md)
+                        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.control))
+                    }
+                }
+            }
+        }
+    }
+
+    private func advanceToMetricType() {
+        if let inferred = UnitInference.inferUnit(from: habitName) {
+            selectedUnit = inferred
+        }
+        step = .metricType
+    }
+
     private func createHabit() {
         guard isValid else { return }
         isSaving = true
 
         let trimmed = habitName.trimmingCharacters(in: .whitespacesAndNewlines)
         let nextColorIndex = nextColorIndexForNewHabit()
+        let unitLabel = metricType == .quantitative ? selectedUnit.label : nil
 
         let board = HabitBoard(
             name: trimmed,
-            metricType: HabitBoard.MetricType.binary.rawValue,
+            metricType: metricType.rawValue,
             targetValue: nil,
-            unitLabel: nil,
+            unitLabel: unitLabel,
             colorIndex: nextColorIndex
         )
 
@@ -109,7 +228,6 @@ struct SimpleHabitCreationView: View {
     }
 
     private func nextColorIndexForNewHabit() -> Int {
-        // Simple rotation: count existing habits and use modulo
         let existingCount = (try? modelContext.fetchCount(FetchDescriptor<HabitBoard>(predicate: #Predicate { $0.archivedAt == nil }))) ?? 0
         return existingCount % ColorPalette.count
     }
