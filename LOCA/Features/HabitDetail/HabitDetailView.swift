@@ -201,6 +201,10 @@ struct HabitDetailView: View {
         board.preferredReminderTime = timeString
         do {
             try modelContext.save()
+            // Schedule the reminder (Phase 3.1)
+            Task {
+                await ReminderScheduler.shared.scheduleReminder(for: board, time: timeString)
+            }
             showTimingSuggestion = false
         } catch {
             // Silent fail; timing suggestion card remains visible for retry

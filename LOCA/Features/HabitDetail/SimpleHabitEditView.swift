@@ -99,6 +99,10 @@ struct SimpleHabitEditView: View {
     private func deleteHabit() {
         do {
             try board.archive(in: modelContext)
+            // Cancel reminder when habit is archived (Phase 3.1)
+            Task {
+                await ReminderScheduler.shared.cancelReminder(for: board)
+            }
             NotificationCenter.default.post(name: .habitArchived, object: board)
             dismiss()
         } catch {
