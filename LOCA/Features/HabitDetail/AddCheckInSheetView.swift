@@ -28,6 +28,9 @@ struct AddCheckInSheetView: View {
     @State private var isSubmitting = false
     @State private var showSaveError = false
 
+    @FocusState private var amountFocused: Bool
+    @FocusState private var notesFocused: Bool
+
     private var parsedAmount: Double? {
         Double(amountText.trimmingCharacters(in: .whitespaces))
     }
@@ -100,6 +103,15 @@ struct AddCheckInSheetView: View {
                                     .font(DS.Text.body)
                                     .decimalKeyboard()
                                     .textFieldStyle(.roundedBorder)
+                                    .focused($amountFocused)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(
+                                                amountFocused ? ColorPalette[board.colorIndex] : Color.clear,
+                                                lineWidth: 2
+                                            )
+                                            .padding(-4)
+                                    )
 
                                 if let unitLabel = board.unitLabel, !unitLabel.isEmpty {
                                     Text(unitLabel)
@@ -126,8 +138,12 @@ struct AddCheckInSheetView: View {
                             .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
                             .overlay(
                                 RoundedRectangle(cornerRadius: DS.Radius.card)
-                                    .stroke(DS.Color.textTertiary.opacity(0.2), lineWidth: 1)
+                                    .stroke(
+                                        notesFocused ? ColorPalette[board.colorIndex] : DS.Color.textTertiary.opacity(0.2),
+                                        lineWidth: notesFocused ? 2 : 1
+                                    )
                             )
+                            .focused($notesFocused)
                             .onChange(of: notesText) { _, new in
                                 if new.count > 500 { notesText = String(new.prefix(500)) }
                             }

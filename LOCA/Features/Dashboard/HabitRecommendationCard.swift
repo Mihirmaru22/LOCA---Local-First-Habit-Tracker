@@ -71,6 +71,8 @@ struct HabitRecommendationCard: View {
                                 Circle()
                                     .fill(index == selectedIndex ? ColorPalette[0] : DS.Color.textTertiary.opacity(0.3))
                                     .frame(width: 4, height: 4)
+                                    .scaleEffect(index == selectedIndex ? 1.25 : 1.0)
+                                    .transition(.scale.combined(with: .opacity))
                             }
                         }
                     }
