@@ -12,10 +12,6 @@ import SwiftUI
 import SwiftData
 import Foundation
 
-extension Notification.Name {
-    static let habitArchived = Notification.Name("habitArchived")
-}
-
 struct SimpleHabitEditView: View {
 
     let board: HabitBoard

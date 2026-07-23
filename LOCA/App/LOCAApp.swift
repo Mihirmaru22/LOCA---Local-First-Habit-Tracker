@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import os.log
 
 // MARK: - LOCAApp
 
@@ -46,6 +47,7 @@ struct LOCAApp: App {
     private let container: ModelContainer?
     private let cloudKitCoordinator: CloudKitSyncCoordinator?
     private let streakMaintenanceCoordinator: StreakMaintenanceCoordinator?
+    nonisolated private let logger = Logger(subsystem: "com.loca.app", category: "app")
 
     init() {
         do {
@@ -128,6 +130,68 @@ struct LOCAApp: App {
                         // Monitor CloudKit sync status (Phase 3.5).
                         // Non-blocking: displays sync state to user without interruption.
                         await SyncStatusCoordinator.shared.start()
+                    }
+                    .task {
+                        // Generate and deliver reflections (Phase 4.1–4.4).
+                        // One honest sentence tied to progress, delivered as push.
+                        // Phase 4.4: Exit gate — if engagement < 30% over 20 reflections, suppress.
+                        while true {
+                            // Check if feature is still earning attention (Phase 4.4)
+                            let continueReflections = await ReflectionDelivery.shared.shouldContinueReflections()
+                            guard continueReflections else {
+                                logger.debug("Reflection feature suppressed due to low engagement")
+                                break
+                            }
+
+                            let fetchRequest = FetchDescriptor<HabitBoard>(
+                                predicate: #Predicate { $0.archivedAt == nil }
+                            )
+                            if let boards = try? container.mainContext.fetch(fetchRequest) {
+                                // Generate one reflection per active habit
+                                for board in boards {
+                                    let logs = (board.logs ?? []).map { LogSnapshot(from: $0) }
+                                    if let reflection = ReflectionGenerator.generateForHabit(board: board, logs: logs) {
+                                        await ReflectionDelivery.shared.deliverReflection(reflection)
+                                        // Limit to one reflection per app session to avoid noise
+                                        break
+                                    }
+                                }
+                            }
+
+                            // Wait ~24 hours before regenerating (Phase 4.1: rare).
+                            try? await Task.sleep(for: .seconds(24 * 60 * 60))
+                        }
+                    }
+                    .task {
+                        // Detect and deliver interventions (Phase 5.1–5.4).
+                        // High-confidence relapse warnings, delivered as push.
+                        // Phase 5.5: Exit gate — if effectiveness < 50% over 10 interventions, suppress.
+                        while true {
+                            // Check if feature is still effective (Phase 5.5)
+                            let continueInterventions = await InterventionDelivery.shared.shouldContinueInterventions()
+                            guard continueInterventions else {
+                                logger.debug("Intervention feature suppressed due to low effectiveness")
+                                break
+                            }
+
+                            let fetchRequest = FetchDescriptor<HabitBoard>(
+                                predicate: #Predicate { $0.archivedAt == nil }
+                            )
+                            if let boards = try? container.mainContext.fetch(fetchRequest) {
+                                // Detect relapse risk for each active habit
+                                for board in boards {
+                                    let logs = (board.logs ?? []).map { LogSnapshot(from: $0) }
+                                    if let prediction = RelapseDetector.detectRelapse(board: board, logs: logs) {
+                                        await InterventionDelivery.shared.deliverIntervention(prediction)
+                                        // Limit to one intervention per app session to avoid noise
+                                        break
+                                    }
+                                }
+                            }
+
+                            // Wait ~24 hours before re-checking (Phase 5: infrequent).
+                            try? await Task.sleep(for: .seconds(24 * 60 * 60))
+                        }
                     }
             } else {
                 ContainerUnavailableView()
