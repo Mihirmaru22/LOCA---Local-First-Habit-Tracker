@@ -157,9 +157,8 @@ struct HabitFormView: View {
                     .font(.body)
                     .accessibilityLabel("Habit name")
                     .onChange(of: draft.name) { _, new in
-                        if new.count > HabitBoardDraft.maxNameLength {
-                            draft.name = String(new.prefix(HabitBoardDraft.maxNameLength))
-                        }
+                        guard new.count > HabitBoardDraft.maxNameLength else { return }
+                        draft.name = String(new.prefix(HabitBoardDraft.maxNameLength))
                     }
 
                 HStack(spacing: 8) {
@@ -171,12 +170,14 @@ struct HabitFormView: View {
                         .multilineTextAlignment(.center)
                         .font(.title3)
                         .onChange(of: draft.emoji) { _, new in
-                            let first = String(new.trimmingCharacters(in: .whitespaces).prefix(1))
-                            let isValidEmoji = first.unicodeScalars.first.map {
-                                $0.properties.isEmoji && $0.value > 0x007F
-                            } ?? false
-                            let clamped = isValidEmoji ? first : ""
-                            if draft.emoji != clamped { draft.emoji = clamped }
+                            guard !new.isEmpty else { return }
+                            let first = String(new.prefix(1))
+                            guard first.unicodeScalars.first?.properties.isEmoji == true,
+                                  first.unicodeScalars.first?.value ?? 0 > 0x007F
+                            else {
+                                if !draft.emoji.isEmpty { draft.emoji = "" }
+                                return
+                            }
                         }
                     Spacer()
                 }
