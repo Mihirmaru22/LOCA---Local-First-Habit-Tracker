@@ -12,6 +12,19 @@
 import UserNotifications
 import Foundation
 
+/// A `Sendable` snapshot of the reminder-relevant fields of a habit.
+///
+/// `HabitBoard` is a SwiftData `@Model` and is not `Sendable`, so it cannot
+/// cross the `ReminderScheduler` actor boundary without risking a data race.
+/// Callers extract these plain value fields on the MainActor and hand the
+/// scheduler this immutable, `Sendable` struct instead.
+struct ReminderRequest: Sendable {
+    let id: UUID
+    let name: String
+    /// Time in HH:MM format (e.g., "06:30").
+    let time: String
+}
+
 actor ReminderScheduler {
 
     static let shared = ReminderScheduler()
@@ -27,26 +40,24 @@ actor ReminderScheduler {
     }
 
     /// Schedule a daily reminder for a habit.
-    /// - Parameters:
-    ///   - board: The habit to remind about
-    ///   - time: Time in HH:MM format (e.g., "06:30")
-    func scheduleReminder(for board: HabitBoard, time: String) async {
-        guard let (hour, minute) = parseTime(time) else { return }
+    /// - Parameter request: The `Sendable` reminder snapshot for the habit.
+    func scheduleReminder(_ request: ReminderRequest) async {
+        guard let (hour, minute) = parseTime(request.time) else { return }
 
         let center = UNUserNotificationCenter.current()
+        let identifier = request.id.uuidString
 
         // Remove any existing reminder for this habit
-        center.removePendingNotificationRequests(withIdentifiers: [board.id.uuidString])
+        center.removePendingNotificationRequests(withIdentifiers: [identifier])
 
         // Create the notification content
         let content = UNMutableNotificationContent()
         content.title = "Time to log"
-        content.body = "\(board.name) — tap to log your progress"
+        content.body = "\(request.name) — tap to log your progress"
         content.sound = .default
-        content.badge = NSNumber(value: (UIApplication.shared.applicationIconBadgeNumber) + 1)
 
         // Attach the habit ID so we can navigate to it
-        content.userInfo = ["habitID": board.id.uuidString]
+        content.userInfo = ["habitID": identifier]
 
         // Create a daily trigger at the specified time
         var dateComponents = DateComponents()
@@ -55,23 +66,23 @@ actor ReminderScheduler {
         let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
 
         // Create and schedule the request
-        let request = UNNotificationRequest(
-            identifier: board.id.uuidString,
+        let notificationRequest = UNNotificationRequest(
+            identifier: identifier,
             content: content,
             trigger: trigger
         )
 
         do {
-            try await center.add(request)
+            try await center.add(notificationRequest)
         } catch {
             // Silent fail; reminder scheduler is non-critical
         }
     }
 
     /// Cancel a reminder for a habit.
-    func cancelReminder(for board: HabitBoard) {
+    func cancelReminder(id: UUID) {
         UNUserNotificationCenter.current().removePendingNotificationRequests(
-            withIdentifiers: [board.id.uuidString]
+            withIdentifiers: [id.uuidString]
         )
     }
 
@@ -82,12 +93,13 @@ actor ReminderScheduler {
 
     /// Reschedule all reminders (e.g., on app launch).
     /// Called from LOCAApp to ensure reminders persist across app updates.
-    func rescheduleAllReminders(boards: [HabitBoard]) async {
+    /// - Parameter requests: `Sendable` snapshots for the active habits that
+    ///   have a reminder time set. The caller is responsible for filtering out
+    ///   archived habits and those without a `preferredReminderTime`.
+    func rescheduleAllReminders(_ requests: [ReminderRequest]) async {
         cancelAllReminders()
-        for board in boards where board.preferredReminderTime != nil && board.archivedAt == nil {
-            if let time = board.preferredReminderTime {
-                await scheduleReminder(for: board, time: time)
-            }
+        for request in requests {
+            await scheduleReminder(request)
         }
     }
 

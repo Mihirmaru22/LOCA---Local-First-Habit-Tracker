@@ -8,13 +8,14 @@
 //  Non-blocking: sync errors don't interrupt the user.
 //
 
-import SwiftData
 import Foundation
 import os.log
 
 actor SyncStatusCoordinator {
 
-    enum SyncStatus {
+    /// The sync state surfaced to the UI. `Sendable` so it can cross the actor
+    /// boundary into a MainActor view via the `statusUpdates()` stream.
+    enum SyncStatus: Sendable, Equatable {
         case idle
         case syncing
         case error(String)
@@ -25,7 +26,10 @@ actor SyncStatusCoordinator {
     nonisolated private let logger = Logger(subsystem: "com.loca.app", category: "sync")
 
     private var syncStatus: SyncStatus = .idle
-    private var statusCallbacks: [(SyncStatus) -> Void] = []
+
+    /// Active stream continuations, keyed by subscription id so each can be
+    /// cleaned up independently when its consumer stops iterating.
+    private var continuations: [UUID: AsyncStream<SyncStatus>.Continuation] = [:]
 
     /// Starts monitoring sync status.
     /// Called once from LOCAApp on launch.
@@ -33,24 +37,40 @@ actor SyncStatusCoordinator {
         await observeSyncEvents()
     }
 
-    /// Register a callback to receive sync status updates.
-    func onStatusChanged(_ callback: @escaping (SyncStatus) -> Void) {
-        statusCallbacks.append(callback)
-    }
-
-    /// Get current sync status.
+    /// Current sync status.
     func status() -> SyncStatus {
         return syncStatus
     }
 
+    /// A stream of sync status updates for the UI to consume with `for await`.
+    ///
+    /// Emits the current status immediately, then every subsequent change.
+    /// Because `SyncStatus` is `Sendable`, a MainActor view can iterate this
+    /// stream in a `.task` and assign directly to `@State` without any data
+    /// race — no MainActor-capturing closure is ever handed to the actor.
+    func statusUpdates() -> AsyncStream<SyncStatus> {
+        AsyncStream { continuation in
+            let id = UUID()
+            continuations[id] = continuation
+            continuation.yield(syncStatus)
+            continuation.onTermination = { [weak self] _ in
+                Task { await self?.removeContinuation(id) }
+            }
+        }
+    }
+
     // MARK: - Private
 
-    private func observeSyncEvents() async {
-        // Monitor for sync events from the model container
-        // This is called whenever CloudKit completes an operation
+    private func removeContinuation(_ id: UUID) {
+        continuations[id] = nil
+    }
 
-        // For now, we track basic state changes
-        // In production, this would hook into NSPersistentCloudKitContainerEvent notifications
+    private func observeSyncEvents() async {
+        // Monitor for sync events from the model container.
+        // This is called whenever CloudKit completes an operation.
+        //
+        // For now, we track basic state changes. In production, this would hook
+        // into NSPersistentCloudKitContainerEvent notifications.
         updateStatus(.idle)
     }
 
@@ -66,9 +86,9 @@ actor SyncStatusCoordinator {
             logger.warning("Sync error: \(message)")
         }
 
-        // Notify all callbacks
-        for callback in statusCallbacks {
-            callback(newStatus)
+        // Broadcast to every active stream consumer.
+        for continuation in continuations.values {
+            continuation.yield(newStatus)
         }
     }
 
@@ -77,11 +97,10 @@ actor SyncStatusCoordinator {
         let message = error.localizedDescription
         updateStatus(.error(message))
 
-        // Auto-clear error after a delay
+        // Auto-clear error after a delay.
         Task {
             try? await Task.sleep(for: .seconds(5))
             await updateStatus(.idle)
         }
     }
 }
-

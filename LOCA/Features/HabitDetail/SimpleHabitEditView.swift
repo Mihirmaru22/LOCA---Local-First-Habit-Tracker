@@ -99,9 +99,11 @@ struct SimpleHabitEditView: View {
     private func deleteHabit() {
         do {
             try board.archive(in: modelContext)
-            // Cancel reminder when habit is archived (Phase 3.1)
+            // Cancel reminder when habit is archived (Phase 3.1). Capture the id
+            // (a Sendable UUID) before crossing into the ReminderScheduler actor.
+            let boardID = board.id
             Task {
-                await ReminderScheduler.shared.cancelReminder(for: board)
+                await ReminderScheduler.shared.cancelReminder(id: boardID)
             }
             NotificationCenter.default.post(name: .habitArchived, object: board)
             dismiss()
@@ -111,21 +113,23 @@ struct SimpleHabitEditView: View {
     }
 }
 
-#Preview {
-    @MainActor
-    func makeContainer() -> (ModelContainer, HabitBoard) {
-        let schema = Schema([HabitBoard.self, LogEntry.self])
-        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-        let container = try! ModelContainer(for: schema, configurations: [config])
-        let board = HabitBoard(name: "Morning Run", metricType: 0, colorIndex: 0)
-        container.mainContext.insert(board)
-        try? container.mainContext.save()
-        return (container, board)
-    }
+// MARK: - Preview
 
-    let (container, board) = makeContainer()
+@MainActor
+private func makeHabitEditPreview() -> some View {
+    let schema = Schema([HabitBoard.self, LogEntry.self])
+    let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+    // try! is acceptable in a #Preview fixture (Engineering Principles §Previews).
+    let container = try! ModelContainer(for: schema, configurations: [config])
+    let board = HabitBoard(name: "Morning Run", metricType: 0, colorIndex: 0)
+    container.mainContext.insert(board)
+    try? container.mainContext.save()
     return NavigationStack {
         SimpleHabitEditView(board: board)
             .modelContainer(container)
     }
+}
+
+#Preview {
+    makeHabitEditPreview()
 }

@@ -109,11 +109,19 @@ struct LOCAApp: App {
                         // Reschedule all reminders on launch (Phase 3.1).
                         // Handles reminders that may have been cleared on system restart
                         // or prior app updates.
+                        //
+                        // HabitBoard is a non-Sendable SwiftData @Model, so we extract
+                        // Sendable ReminderRequest snapshots here on the MainActor before
+                        // handing them across the ReminderScheduler actor boundary.
                         let fetchRequest = FetchDescriptor<HabitBoard>(
                             predicate: #Predicate { $0.archivedAt == nil }
                         )
                         if let boards = try? container.mainContext.fetch(fetchRequest) {
-                            await ReminderScheduler.shared.rescheduleAllReminders(boards: boards)
+                            let requests: [ReminderRequest] = boards.compactMap { board in
+                                guard let time = board.preferredReminderTime else { return nil }
+                                return ReminderRequest(id: board.id, name: board.name, time: time)
+                            }
+                            await ReminderScheduler.shared.rescheduleAllReminders(requests)
                         }
                     }
                     .task {

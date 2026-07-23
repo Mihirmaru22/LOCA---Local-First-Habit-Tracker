@@ -397,16 +397,19 @@ struct SimpleHabitCreationView: View {
     }
 }
 
-#Preview {
-    @MainActor
-    func makePreviewContainer() -> ModelContainer {
-        let schema = Schema([HabitBoard.self, LogEntry.self])
-        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-        return try! ModelContainer(for: schema, configurations: [config])
-    }
+// MARK: - Preview
 
+@MainActor
+private func makeHabitCreationPreviewContainer() -> ModelContainer {
+    let schema = Schema([HabitBoard.self, LogEntry.self])
+    let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+    // try! is acceptable in a #Preview fixture (Engineering Principles §Previews).
+    return try! ModelContainer(for: schema, configurations: [config])
+}
+
+#Preview {
     NavigationStack {
         SimpleHabitCreationView()
-            .modelContainer(makePreviewContainer())
+            .modelContainer(makeHabitCreationPreviewContainer())
     }
 }
