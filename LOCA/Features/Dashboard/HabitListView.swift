@@ -36,6 +36,9 @@ struct HabitListView: View {
     @State private var showCheckInError   = false
     @State private var showUndoToast = false
     @State private var lastDeletedHabit: HabitBoard? = nil
+    @State private var showRecommendations = true
+    @State private var recommendations: [HabitRecommendation] = []
+    @State private var selectedRecommationTemplate: HabitTemplate?
     @AppStorage("habitListLayout") private var layout: String = "list"
 
     /// Future: a HabitSortStrategy seam will allow pluggable sort modes.
@@ -49,23 +52,38 @@ struct HabitListView: View {
             if displayBoards.isEmpty {
                 emptyStateView
             } else {
-                Group {
-                    switch layout {
-                    case "grid":
-                        HabitGridLayoutView(
-                            boardsWithState: boardsWithState,
-                            onCheckBinary: checkInBinary
+                VStack(spacing: DS.Space.lg) {
+                    Group {
+                        switch layout {
+                        case "grid":
+                            HabitGridLayoutView(
+                                boardsWithState: boardsWithState,
+                                onCheckBinary: checkInBinary
+                            )
+                        case "timeline":
+                            HabitTimelineLayoutView(
+                                boardsWithState: boardsWithState,
+                                onCheckBinary: checkInBinary
+                            )
+                        default: // "list"
+                            HabitListLayoutView(
+                                boardsWithState: boardsWithState,
+                                onCheckBinary: checkInBinary
+                            )
+                        }
+                    }
+
+                    // Show recommendations if few habits exist (Phase 3.4)
+                    if showRecommendations && !recommendations.isEmpty && displayBoards.count < 3 {
+                        HabitRecommendationCard(
+                            recommendations: recommendations,
+                            onSelect: { template in
+                                selectedRecommationTemplate = template
+                                showingCreateSheet = true
+                            },
+                            onDismiss: { showRecommendations = false }
                         )
-                    case "timeline":
-                        HabitTimelineLayoutView(
-                            boardsWithState: boardsWithState,
-                            onCheckBinary: checkInBinary
-                        )
-                    default: // "list"
-                        HabitListLayoutView(
-                            boardsWithState: boardsWithState,
-                            onCheckBinary: checkInBinary
-                        )
+                        .padding(DS.Space.lg)
                     }
                 }
             }
@@ -104,6 +122,19 @@ struct HabitListView: View {
                     showUndoToast = true
                 }
             }
+        }
+        .task(id: boards.count) {
+            // Generate recommendations based on existing habits (Phase 3.4)
+            let allLogs = boards.flatMap { board in
+                (board.logs ?? []).map { log in
+                    LogSnapshot(from: log)
+                }
+            }
+            recommendations = HabitRecommender.generateRecommendations(
+                existingBoards: displayBoards,
+                logs: allLogs,
+                maxRecommendations: 3
+            )
         }
     }
 
