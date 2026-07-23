@@ -469,7 +469,7 @@ struct CheckInEditorView: View {
     container.mainContext.insert(habit)
     try? container.mainContext.save()
 
-    return NavigationStack {
+    NavigationStack {
         CheckInEditorView(mode: .create, board: habit)
     }
     .modelContainer(container)

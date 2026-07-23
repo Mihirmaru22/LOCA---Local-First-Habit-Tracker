@@ -237,7 +237,7 @@ struct HabitTodaySection: View {
     container.mainContext.insert(entry)
     try? container.mainContext.save()
 
-    return VStack {
+    VStack {
         HabitTodaySection(board: habit)
             .padding(DS.Space.lg)
         Spacer()
