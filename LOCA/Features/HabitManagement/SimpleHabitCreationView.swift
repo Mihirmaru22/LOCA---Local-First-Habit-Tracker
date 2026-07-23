@@ -279,7 +279,7 @@ struct SimpleHabitCreationView: View {
                     HStack(spacing: DS.Space.md) {
                         Image(systemName: metricType == .binary ? "checkmark.circle.fill" : "circle")
                             .foregroundStyle(metricType == .binary ? ColorPalette[0] : .secondary)
-                            .contentTransition(.symbolVariant(.replace))
+                            .transition(.scale.combined(with: .opacity))
 
                         VStack(alignment: .leading, spacing: DS.Space.xs) {
                             Text("Daily check-off")
@@ -305,7 +305,7 @@ struct SimpleHabitCreationView: View {
                     HStack(spacing: DS.Space.md) {
                         Image(systemName: metricType == .quantitative ? "checkmark.circle.fill" : "circle")
                             .foregroundStyle(metricType == .quantitative ? ColorPalette[0] : .secondary)
-                            .contentTransition(.symbolVariant(.replace))
+                            .transition(.scale.combined(with: .opacity))
 
                         VStack(alignment: .leading, spacing: DS.Space.xs) {
                             Text("Track an amount")

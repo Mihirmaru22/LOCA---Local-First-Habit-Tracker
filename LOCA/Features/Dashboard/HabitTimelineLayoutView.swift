@@ -22,22 +22,112 @@ struct HabitTimelineLayoutView: View {
         }
     }
 
+    private var needsActionBoards: [(board: HabitBoard, state: HabitState)] {
+        sortedBoards.filter { $0.state == .needsAction }
+    }
+
+    private var inProgressBoards: [(board: HabitBoard, state: HabitState)] {
+        sortedBoards.filter { $0.state == .inProgress }
+    }
+
+    private var behindBoards: [(board: HabitBoard, state: HabitState)] {
+        sortedBoards.filter { $0.state == .behind }
+    }
+
+    private var doneBoards: [(board: HabitBoard, state: HabitState)] {
+        sortedBoards.filter { $0.state == .done }
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.lg) {
-            ForEach(sortedBoards, id: \.board.id) { item in
-                NavigationLink(destination: HabitDetailView(board: item.board)) {
-                    HabitTimelineCard(
-                        board: item.board,
-                        state: item.state,
-                        onCheckBinary: { onCheckBinary(item.board) }
-                    )
+        VStack(alignment: .leading, spacing: DS.Space.xxl) {
+
+            // NEEDS ACTION ZONE
+            if !needsActionBoards.isEmpty {
+                VStack(alignment: .leading, spacing: DS.Space.lg) {
+                    SectionHeader("To Do")
+
+                    VStack(spacing: DS.Space.md) {
+                        ForEach(needsActionBoards, id: \.board.id) { item in
+                            NavigationLink(destination: HabitDetailView(board: item.board)) {
+                                HabitTimelineCard(
+                                    board: item.board,
+                                    state: item.state,
+                                    onCheckBinary: { onCheckBinary(item.board) }
+                                )
+                            }
+                            .buttonStyle(.pressable)
+                        }
+                    }
                 }
-                .buttonStyle(.pressable)
+                .padding(.horizontal, DS.Space.lg)
+            }
+
+            // IN PROGRESS ZONE
+            if !inProgressBoards.isEmpty {
+                VStack(alignment: .leading, spacing: DS.Space.lg) {
+                    SectionHeader("In Progress")
+
+                    VStack(spacing: DS.Space.md) {
+                        ForEach(inProgressBoards, id: \.board.id) { item in
+                            NavigationLink(destination: HabitDetailView(board: item.board)) {
+                                HabitTimelineCard(
+                                    board: item.board,
+                                    state: item.state,
+                                    onCheckBinary: { onCheckBinary(item.board) }
+                                )
+                            }
+                            .buttonStyle(.pressable)
+                        }
+                    }
+                }
+                .padding(.horizontal, DS.Space.lg)
+            }
+
+            // BEHIND ZONE
+            if !behindBoards.isEmpty {
+                VStack(alignment: .leading, spacing: DS.Space.lg) {
+                    SectionHeader("Needs Attention")
+
+                    VStack(spacing: DS.Space.md) {
+                        ForEach(behindBoards, id: \.board.id) { item in
+                            NavigationLink(destination: HabitDetailView(board: item.board)) {
+                                HabitTimelineCard(
+                                    board: item.board,
+                                    state: item.state,
+                                    onCheckBinary: { onCheckBinary(item.board) }
+                                )
+                            }
+                            .buttonStyle(.pressable)
+                        }
+                    }
+                }
+                .padding(.horizontal, DS.Space.lg)
+            }
+
+            // DONE ZONE
+            if !doneBoards.isEmpty {
+                VStack(alignment: .leading, spacing: DS.Space.lg) {
+                    SectionHeader("Done Today")
+
+                    VStack(spacing: DS.Space.md) {
+                        ForEach(doneBoards, id: \.board.id) { item in
+                            NavigationLink(destination: HabitDetailView(board: item.board)) {
+                                HabitTimelineCard(
+                                    board: item.board,
+                                    state: item.state,
+                                    onCheckBinary: { onCheckBinary(item.board) }
+                                )
+                            }
+                            .buttonStyle(.pressable)
+                        }
+                    }
+                }
+                .padding(.horizontal, DS.Space.lg)
             }
 
             Spacer(minLength: DS.Space.xxxl)
         }
-        .padding(DS.Space.lg)
+        .padding(.vertical, DS.Space.xl)
     }
 }
 

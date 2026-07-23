@@ -131,15 +131,7 @@ struct HabitDetailView: View {
 
             // Toolbar
             HStack(spacing: 0) {
-                HStack(spacing: 24) {
-                    RefTabIcon(icon: "chart.line.uptrend.xyaxis",   active: selectedTab == .overview) { selectedTab = .overview }
-                    RefTabIcon(icon: "checklist",                   active: selectedTab == .checkIns) { selectedTab = .checkIns }
-                    RefTabIcon(icon: "doc.text",                    active: selectedTab == .journal) { selectedTab = .journal }
-                    RefTabIcon(icon: "chart.bar.xaxis.ascending",   active: selectedTab == .analytics) { selectedTab = .analytics }
-                }
-                .padding(.horizontal, 22)
-                .padding(.vertical, 16)
-                .background(DS.Color.surface, in: Capsule(style: .continuous))
+                HabitDetailTabBar(selectedTab: $selectedTab, reduceMotion: reduceMotion)
 
                 Spacer()
 
@@ -344,6 +336,51 @@ struct HabitDetailView: View {
 }
 
 // MARK: - Tab icon
+
+// MARK: - Animated Tab Bar
+
+private struct HabitDetailTabBar: View {
+    @Binding var selectedTab: HabitDetailTab
+    let reduceMotion: Bool
+
+    private let tabs: [(tab: HabitDetailTab, icon: String)] = [
+        (.overview, "chart.line.uptrend.xyaxis"),
+        (.checkIns, "checklist"),
+        (.journal, "doc.text"),
+        (.analytics, "chart.bar.xaxis.ascending")
+    ]
+
+    var body: some View {
+        ZStack(alignment: .leading) {
+            // Background pill that animates to the selected tab
+            GeometryReader { geo in
+                Capsule(style: .continuous)
+                    .fill(ColorPalette[0].opacity(0.15))
+                    .frame(width: geo.size.width / 4, height: geo.size.height)
+                    .offset(x: tabOffset(in: geo.size.width), y: 0)
+                    .animation(DS.Motion.settle(reduceMotion: reduceMotion), value: selectedTab)
+            }
+
+            // Tab icons
+            HStack(spacing: 24) {
+                ForEach(tabs, id: \.tab) { tab, icon in
+                    RefTabIcon(icon: icon, active: selectedTab == tab) {
+                        selectedTab = tab
+                    }
+                }
+            }
+            .padding(.horizontal, 22)
+            .padding(.vertical, 16)
+        }
+        .background(DS.Color.surface, in: Capsule(style: .continuous))
+    }
+
+    private func tabOffset(in width: CGFloat) -> CGFloat {
+        let tabWidth = width / 4
+        let selectedIndex = tabs.firstIndex { $0.tab == selectedTab } ?? 0
+        return CGFloat(selectedIndex) * tabWidth
+    }
+}
 
 private struct RefTabIcon: View {
     let icon: String

@@ -16,20 +16,108 @@ struct HabitGridLayoutView: View {
     let boardsWithState: [(board: HabitBoard, state: HabitState)]
     let onCheckBinary: (HabitBoard) -> Void
 
+    private var needsActionBoards: [(board: HabitBoard, state: HabitState)] {
+        boardsWithState.filter { $0.state == .needsAction }
+    }
+
+    private var inProgressBoards: [(board: HabitBoard, state: HabitState)] {
+        boardsWithState.filter { $0.state == .inProgress }
+    }
+
+    private var behindBoards: [(board: HabitBoard, state: HabitState)] {
+        boardsWithState.filter { $0.state == .behind }
+    }
+
+    private var doneBoards: [(board: HabitBoard, state: HabitState)] {
+        boardsWithState.filter { $0.state == .done }
+    }
+
     var body: some View {
-        LazyVGrid(
-            columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)],
-            spacing: 14
-        ) {
-            ForEach(boardsWithState, id: \.board.id) { item in
-                NavigationLink(destination: HabitDetailView(board: item.board)) {
-                    GridHabitCard(board: item.board, onCheck: { onCheckBinary(item.board) })
+        VStack(alignment: .leading, spacing: DS.Space.xxl) {
+
+            // NEEDS ACTION ZONE
+            if !needsActionBoards.isEmpty {
+                VStack(alignment: .leading, spacing: DS.Space.lg) {
+                    SectionHeader("To Do")
+
+                    LazyVGrid(
+                        columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)],
+                        spacing: 14
+                    ) {
+                        ForEach(needsActionBoards, id: \.board.id) { item in
+                            NavigationLink(destination: HabitDetailView(board: item.board)) {
+                                GridHabitCard(board: item.board, onCheck: { onCheckBinary(item.board) })
+                            }
+                            .buttonStyle(.pressable)
+                        }
+                    }
                 }
-                .buttonStyle(.pressable)
+                .padding(.horizontal, DS.Space.lg)
             }
+
+            // IN PROGRESS ZONE
+            if !inProgressBoards.isEmpty {
+                VStack(alignment: .leading, spacing: DS.Space.lg) {
+                    SectionHeader("In Progress")
+
+                    LazyVGrid(
+                        columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)],
+                        spacing: 14
+                    ) {
+                        ForEach(inProgressBoards, id: \.board.id) { item in
+                            NavigationLink(destination: HabitDetailView(board: item.board)) {
+                                GridHabitCard(board: item.board, onCheck: { onCheckBinary(item.board) })
+                            }
+                            .buttonStyle(.pressable)
+                        }
+                    }
+                }
+                .padding(.horizontal, DS.Space.lg)
+            }
+
+            // BEHIND ZONE
+            if !behindBoards.isEmpty {
+                VStack(alignment: .leading, spacing: DS.Space.lg) {
+                    SectionHeader("Needs Attention")
+
+                    LazyVGrid(
+                        columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)],
+                        spacing: 14
+                    ) {
+                        ForEach(behindBoards, id: \.board.id) { item in
+                            NavigationLink(destination: HabitDetailView(board: item.board)) {
+                                GridHabitCard(board: item.board, onCheck: { onCheckBinary(item.board) })
+                            }
+                            .buttonStyle(.pressable)
+                        }
+                    }
+                }
+                .padding(.horizontal, DS.Space.lg)
+            }
+
+            // DONE ZONE
+            if !doneBoards.isEmpty {
+                VStack(alignment: .leading, spacing: DS.Space.lg) {
+                    SectionHeader("Done Today")
+
+                    LazyVGrid(
+                        columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)],
+                        spacing: 14
+                    ) {
+                        ForEach(doneBoards, id: \.board.id) { item in
+                            NavigationLink(destination: HabitDetailView(board: item.board)) {
+                                GridHabitCard(board: item.board, onCheck: { onCheckBinary(item.board) })
+                            }
+                            .buttonStyle(.pressable)
+                        }
+                    }
+                }
+                .padding(.horizontal, DS.Space.lg)
+            }
+
+            Spacer(minLength: DS.Space.xxxl)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.vertical, DS.Space.xl)
     }
 }
 
