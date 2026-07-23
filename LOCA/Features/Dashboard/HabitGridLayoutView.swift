@@ -73,7 +73,7 @@ struct GridHabitCard: View {
             GridMiniHeatmap(board: board)
                 .padding(.horizontal, 10)
 
-            Spacer(minLength: 6)
+            Spacer(minLength: 16)
 
             // ── Check button ─────────────────────────────────────────
             GridCheckButton(
@@ -89,6 +89,7 @@ struct GridHabitCard: View {
                 }
             )
             .padding(.horizontal, 13)
+            .padding(.top, 8)
             .padding(.bottom, 13)
         }
         .frame(height: 236)
