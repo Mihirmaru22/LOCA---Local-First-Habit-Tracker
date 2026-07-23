@@ -263,19 +263,38 @@ struct RefHeatCell: View {
     }
 }
 
-// MARK: - Streak card
+// MARK: - Consistency card (reframed from "streak")
 
 struct RefStreakCard: View {
     let board: HabitBoard
 
+    private var totalLogged: Int {
+        (board.logs ?? []).count
+    }
+
+    private var lastSevenDays: (logged: Int, total: Int) {
+        let calendar = Calendar.current
+        var count = 0
+        for i in 0..<7 {
+            guard let date = calendar.date(byAdding: .day, value: -i, to: .now) else { continue }
+            let dayStart = calendar.startOfDay(for: date)
+            guard let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) else { continue }
+            let hasDayLog = (board.logs ?? []).contains { log in
+                log.timestamp >= dayStart && log.timestamp < dayEnd
+            }
+            if hasDayLog { count += 1 }
+        }
+        return (count, 7)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Header
+            // Header — informational, not threatening
             HStack(spacing: 5) {
-                Image(systemName: "flame")
+                Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(Color(white: 0.55))
-                Text("CURRENT STREAK")
+                Text("CONSISTENCY")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(Color(white: 0.55))
                     .tracking(0.5)
@@ -283,33 +302,30 @@ struct RefStreakCard: View {
 
             Spacer(minLength: 18)
 
-            // Dash or number
-            if board.currentStreak > 0 {
-                Text("\(board.currentStreak)")
+            // Total times logged (primary metric)
+            HStack(alignment: .lastTextBaseline, spacing: 4) {
+                Text("\(totalLogged)")
                     .font(.system(size: 42, weight: .bold, design: .rounded))
                     .foregroundStyle(ColorPalette[board.colorIndex])
-            } else {
-                // Two thick white dashes
-                HStack(spacing: 8) {
-                    Capsule()
-                        .fill(Color(white: 0.75))
-                        .frame(width: 28, height: 7)
-                    Capsule()
-                        .fill(Color(white: 0.75))
-                        .frame(width: 38, height: 7)
-                }
+                Text("times")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color(white: 0.50))
+                    .padding(.bottom, 6)
             }
 
             Spacer(minLength: 14)
 
-            // Longest
+            // Recent pattern (last 7 days)
             HStack(spacing: 4) {
-                Text("Longest:")
+                Text("Last 7:")
                     .font(.system(size: 13))
                     .foregroundStyle(Color(white: 0.45))
-                Text("\(board.longestStreak)")
+                Text("\(lastSevenDays.logged)")
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(.white)
+                Text("of 7")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color(white: 0.45))
             }
         }
         .frame(maxWidth: .infinity, minHeight: 158, alignment: .leading)
