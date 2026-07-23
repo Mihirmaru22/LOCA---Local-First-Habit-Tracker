@@ -25,6 +25,8 @@ struct HabitGridLayoutView: View {
                 NavigationLink(destination: HabitDetailView(board: item.board)) {
                     GridHabitCard(board: item.board, onCheck: { onCheckBinary(item.board) })
                 }
+                // Whole-card press state is applied holistically in P2.1 across all three
+                // layouts, where the nested check-button interaction is handled uniformly.
                 .buttonStyle(.plain)
             }
         }
@@ -57,11 +59,12 @@ struct GridHabitCard: View {
             HStack(alignment: .center, spacing: 7) {
                 if let emoji = board.emoji, !emoji.isEmpty {
                     Text(emoji)
-                        .font(.system(size: 16))
+                        .font(DS.Text.body)
                 }
                 Text(board.name)
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(.white)
+                    .font(DS.Text.body)
+                    .fontWeight(.bold)
+                    .foregroundStyle(DS.Color.textPrimary)
                     .lineLimit(1)
                     .truncationMode(.tail)
             }
@@ -92,18 +95,20 @@ struct GridHabitCard: View {
             .padding(.top, 8)
             .padding(.bottom, 13)
         }
-        .frame(height: 236)
+        // minHeight (not fixed height) so the card grows rather than clips at large
+        // Dynamic Type sizes; P7.1 verifies row symmetry across the pair.
+        .frame(minHeight: 236)
         .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
                 .fill(board.useColorBackground
                     ? ColorPalette[board.colorIndex].opacity(0.12)
-                    : Color(.systemGray6).opacity(0.6))
+                    : DS.Color.surface)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
                 .stroke(ColorPalette[board.colorIndex].opacity(0.18), lineWidth: 0.5)
         )
-        .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
         .sheet(isPresented: $showingCheckIn) {
             AddCheckInSheetView(board: board)
         }
@@ -216,7 +221,7 @@ private struct GridMiniCell: View {
 
             if isToday {
                 RoundedRectangle(cornerRadius: size * 0.27, style: .continuous)
-                    .stroke(Color.white.opacity(0.80), lineWidth: 1.2)
+                    .stroke(DS.Color.textPrimary.opacity(0.80), lineWidth: 1.2)
                     .frame(width: size, height: size)
             }
         }
@@ -235,27 +240,32 @@ private struct GridCheckButton: View {
         Button(action: onCheck) {
             Group {
                 if todayLogged {
-                    // Logged — habit color fill, dark content
+                    // Logged — solid accent fill. Content stays dark for contrast on the
+                    // saturated fill (consistent across light/dark since the accent is the
+                    // same hue in both).
                     HStack(spacing: 7) {
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(DS.Text.body)
                         if board.metric == .quantitative {
-                            Text(String(format: todayValue.truncatingRemainder(dividingBy: 1) == 0 ? "%.0f" : "%.1f", todayValue))
-                                .font(.system(size: 15, weight: .semibold))
+                            ValueText(
+                                String(format: todayValue.truncatingRemainder(dividingBy: 1) == 0 ? "%.0f" : "%.1f", todayValue),
+                                font: DS.Text.valueCompact
+                            )
                         }
                     }
                     .foregroundStyle(Color.black.opacity(0.85))
                     .frame(maxWidth: .infinity)
                     .frame(height: 46)
-                    .background(ColorPalette[board.colorIndex], in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .background(ColorPalette[board.colorIndex], in: RoundedRectangle(cornerRadius: DS.Radius.control, style: .continuous))
                 } else {
-                    // Unlogged — neutral dark fill, muted plus
+                    // Unlogged — recessed neutral control (concentric: control radius
+                    // inside a card radius), muted plus.
                     Image(systemName: "plus")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(Color(white: 0.45))
+                        .font(DS.Text.heading)
+                        .foregroundStyle(DS.Color.textSecondary)
                         .frame(maxWidth: .infinity)
                         .frame(height: 46)
-                        .background(Color(white: 0.15), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .background(DS.Color.textPrimary.opacity(0.06), in: RoundedRectangle(cornerRadius: DS.Radius.control, style: .continuous))
                 }
             }
         }

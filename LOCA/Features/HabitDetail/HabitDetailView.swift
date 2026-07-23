@@ -29,7 +29,7 @@ struct HabitDetailView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color.black.ignoresSafeArea()
+            DS.Color.background.ignoresSafeArea()
 
             Group {
                 switch selectedTab {
@@ -127,7 +127,7 @@ struct HabitDetailView: View {
                 }
                 .padding(.horizontal, 22)
                 .padding(.vertical, 16)
-                .background(Color(white: 0.13), in: Capsule(style: .continuous))
+                .background(DS.Color.surface, in: Capsule(style: .continuous))
 
                 Spacer()
 
@@ -135,10 +135,11 @@ struct HabitDetailView: View {
                 Button(action: { showingCheckIn = true }) {
                     Image(systemName: "plus")
                         .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(DS.Color.textPrimary)
                         .frame(width: 56, height: 56)
-                        .background(Color(white: 0.13), in: Circle())
+                        .background(DS.Color.surface, in: Circle())
                 }
+                .buttonStyle(.pressable)
             }
             .padding(.horizontal, 18)
             .padding(.bottom, 28)
@@ -151,9 +152,9 @@ struct HabitDetailView: View {
                 Button(action: { showingEditSheet = true }) {
                     Image(systemName: "pencil")
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(DS.Color.textPrimary)
                         .frame(width: 36, height: 36)
-                        .background(Color(white: 0.18), in: Circle())
+                        .background(DS.Color.surface, in: Circle())
                 }
             }
         }
@@ -340,7 +341,10 @@ private struct RefTabIcon: View {
         Button(action: action) {
             Image(systemName: icon)
                 .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(.white)
+                // Active/inactive weight is carried by color: the selected surface reads
+                // primary, the rest recede to secondary. The animated selection indicator
+                // is P3.1; this is the baseline hierarchy the reconcile requires.
+                .foregroundStyle(active ? DS.Color.textPrimary : DS.Color.textSecondary)
         }
         .buttonStyle(.plain)
     }
@@ -372,8 +376,8 @@ struct RefHeatmapCard: View {
                 ForEach(0..<7, id: \.self) { d in
                     HStack(spacing: gap) {
                         Text(dayLabels[d])
-                            .font(.system(size: 9, weight: .medium))
-                            .foregroundStyle(Color(white: 0.45))
+                            .font(DS.Text.footnote)
+                            .foregroundStyle(DS.Color.textSecondary)
                             .frame(width: labelW, alignment: .leading)
                         ForEach(0..<cols, id: \.self) { w in
                             RefHeatCell(
@@ -391,13 +395,12 @@ struct RefHeatmapCard: View {
             .padding(.horizontal, hPad)
             .padding(.vertical, vPad)
             .frame(width: geo.size.width, height: totalH)
+            // Neutral surface so the Overview heatmap reads identically to the one the
+            // Analytics tab renders inside a LOCACard — one heatmap presentation, not two.
+            // The contribution cells carry the accent; the container stays restrained.
             .background(
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .fill(ColorPalette[board.colorIndex].opacity(0.13))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .stroke(ColorPalette[board.colorIndex].opacity(0.25), lineWidth: 0.6)
+                RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
+                    .fill(DS.Color.surface)
             )
         }
         .frame(height: heatmapHeight())
@@ -488,10 +491,11 @@ struct RefHeatCell: View {
                 )
                 .frame(width: cellSize, height: cellSize)
 
-            // Today ring
+            // Today ring — adaptive so it reads on both light and dark surfaces
+            // (a hardcoded white ring vanished in light mode).
             if isToday {
                 RoundedRectangle(cornerRadius: cellSize * 0.27, style: .continuous)
-                    .stroke(Color.white.opacity(0.85), lineWidth: 1.5)
+                    .stroke(DS.Color.textPrimary.opacity(0.85), lineWidth: 1.5)
                     .frame(width: cellSize, height: cellSize)
             }
         }
@@ -524,14 +528,15 @@ struct RefStreakCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Header — informational, not threatening
+            // Header — this card's metric is total times logged, not consistency
+            // (the sibling card owns consistency). Relabelled to end the duplicate.
             HStack(spacing: 5) {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Color(white: 0.55))
-                Text("CONSISTENCY")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(Color(white: 0.55))
+                    .font(DS.Text.footnote)
+                    .foregroundStyle(DS.Color.textSecondary)
+                Text("TIMES LOGGED")
+                    .font(DS.Text.footnote)
+                    .foregroundStyle(DS.Color.textSecondary)
                     .tracking(0.5)
             }
 
@@ -539,12 +544,11 @@ struct RefStreakCard: View {
 
             // Total times logged (primary metric)
             HStack(alignment: .lastTextBaseline, spacing: 4) {
-                Text("\(totalLogged)")
-                    .font(.system(size: 42, weight: .bold, design: .rounded))
+                ValueText("\(totalLogged)", font: DS.Text.valueHero)
                     .foregroundStyle(ColorPalette[board.colorIndex])
                 Text("times")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Color(white: 0.50))
+                    .font(DS.Text.caption)
+                    .foregroundStyle(DS.Color.textSecondary)
                     .padding(.bottom, 6)
             }
 
@@ -553,19 +557,18 @@ struct RefStreakCard: View {
             // Recent pattern (last 7 days)
             HStack(spacing: 4) {
                 Text("Last 7:")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Color(white: 0.45))
-                Text("\(lastSevenDays.logged)")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(.white)
+                    .font(DS.Text.caption)
+                    .foregroundStyle(DS.Color.textSecondary)
+                ValueText("\(lastSevenDays.logged)", font: DS.Text.valueCompact)
+                    .foregroundStyle(DS.Color.textPrimary)
                 Text("of 7")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Color(white: 0.45))
+                    .font(DS.Text.caption)
+                    .foregroundStyle(DS.Color.textSecondary)
             }
         }
         .frame(maxWidth: .infinity, minHeight: 158, alignment: .leading)
         .padding(16)
-        .background(RoundedRectangle(cornerRadius: 26, style: .continuous).fill(Color(white: 0.105)))
+        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
     }
 }
 
@@ -593,22 +596,24 @@ struct RefConsistencyCard: View {
             // Header
             HStack(spacing: 5) {
                 Image(systemName: "leaf")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Color(white: 0.55))
+                    .font(DS.Text.footnote)
+                    .foregroundStyle(DS.Color.textSecondary)
                 Text("CONSISTENCY")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(Color(white: 0.55))
+                    .font(DS.Text.footnote)
+                    .foregroundStyle(DS.Color.textSecondary)
                     .tracking(0.5)
             }
 
             Spacer(minLength: 10)
 
-            // Open-bottom arc — stroke width 14, neutral greys
+            // Open-bottom arc — stroke width 14, deliberately neutral (not accent) so
+            // it doesn't compete with the accent-colored values elsewhere on the screen.
+            // Greys are now adaptive tokens rather than fixed white levels.
             ZStack {
                 // Track: open bottom (trim 0.125…0.875, rotated 90° = opens at bottom)
                 Circle()
                     .trim(from: 0.125, to: 0.875)
-                    .stroke(Color(white: 0.20),
+                    .stroke(DS.Color.textPrimary.opacity(0.12),
                             style: StrokeStyle(lineWidth: 14, lineCap: .round))
                     .rotationEffect(.degrees(90))
 
@@ -616,18 +621,17 @@ struct RefConsistencyCard: View {
                 if ratio > 0 {
                     Circle()
                         .trim(from: 0.125, to: 0.125 + 0.75 * min(1, ratio))
-                        .stroke(Color(white: 0.42),
+                        .stroke(DS.Color.textSecondary,
                                 style: StrokeStyle(lineWidth: 14, lineCap: .round))
                         .rotationEffect(.degrees(90))
                 }
 
                 VStack(spacing: 2) {
-                    Text("\(Int((ratio * 100).rounded()))%")
-                        .font(.system(.title3, design: .rounded, weight: .semibold))
-                        .foregroundStyle(Color(white: 0.70))
+                    ValueText("\(Int((ratio * 100).rounded()))%", font: DS.Text.value)
+                        .foregroundStyle(DS.Color.textPrimary)
                     Text("this month")
-                        .font(.caption2)
-                        .foregroundStyle(Color(white: 0.42))
+                        .font(DS.Text.footnote)
+                        .foregroundStyle(DS.Color.textSecondary)
                 }
             }
             .frame(height: 90)
@@ -637,7 +641,7 @@ struct RefConsistencyCard: View {
         }
         .frame(maxWidth: .infinity, minHeight: 158, alignment: .leading)
         .padding(16)
-        .background(RoundedRectangle(cornerRadius: 26, style: .continuous).fill(Color(white: 0.105)))
+        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
     }
 }
 
@@ -673,11 +677,11 @@ struct RefMonthCard: View {
             // Header
             HStack(spacing: 5) {
                 Image(systemName: "chart.bar")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Color(white: 0.55))
+                    .font(DS.Text.footnote)
+                    .foregroundStyle(DS.Color.textSecondary)
                 Text("CURRENT MONTH")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(Color(white: 0.55))
+                    .font(DS.Text.footnote)
+                    .foregroundStyle(DS.Color.textSecondary)
                     .tracking(0.5)
             }
 
@@ -687,15 +691,14 @@ struct RefMonthCard: View {
             HStack(alignment: .bottom, spacing: 0) {
                 // Big number
                 HStack(alignment: .lastTextBaseline, spacing: 5) {
-                    Text(String(format: "%.0f", monthTotal))
-                        .font(.system(size: 52, weight: .bold, design: .rounded))
+                    ValueText(String(format: "%.0f", monthTotal), font: DS.Text.valueHero)
                         .foregroundStyle(
-                            monthTotal > 0 ? ColorPalette[board.colorIndex] : Color(white: 0.28)
+                            monthTotal > 0 ? ColorPalette[board.colorIndex] : DS.Color.textTertiary
                         )
                     if let u = board.unitLabel, !u.isEmpty {
                         Text(u)
-                            .font(.system(size: 22, weight: .medium))
-                            .foregroundStyle(Color(white: 0.50))
+                            .font(DS.Text.heading)
+                            .foregroundStyle(DS.Color.textSecondary)
                             .padding(.bottom, 6)
                     }
                 }
@@ -718,8 +721,8 @@ struct RefMonthCard: View {
                                 isToday && v > 0
                                     ? ColorPalette[board.colorIndex]
                                     : isFut
-                                        ? Color(white: 0.13)
-                                        : Color(white: v > 0 ? 0.26 : 0.18)
+                                        ? DS.Color.textPrimary.opacity(0.08)
+                                        : (v > 0 ? DS.Color.textSecondary : DS.Color.textPrimary.opacity(0.12))
                             )
                             .frame(width: 16, height: barH)
                     }
@@ -731,26 +734,25 @@ struct RefMonthCard: View {
             // Footer
             HStack(spacing: 4) {
                 Text("Current week:")
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color(white: 0.40))
+                    .font(DS.Text.caption)
+                    .foregroundStyle(DS.Color.textSecondary)
                 if weekTotal > 0 {
-                    Text(String(format: "%.0f", weekTotal))
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.white)
+                    ValueText(String(format: "%.0f", weekTotal), font: DS.Text.valueSmall)
+                        .foregroundStyle(DS.Color.textPrimary)
                     if let u = board.unitLabel, !u.isEmpty {
                         Text(u)
-                            .font(.system(size: 12))
-                            .foregroundStyle(Color(white: 0.40))
+                            .font(DS.Text.caption)
+                            .foregroundStyle(DS.Color.textSecondary)
                     }
                 } else {
                     Text("–")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Color(white: 0.40))
+                        .font(DS.Text.caption)
+                        .foregroundStyle(DS.Color.textSecondary)
                 }
             }
         }
         .padding(16)
-        .background(RoundedRectangle(cornerRadius: 26, style: .continuous).fill(Color(white: 0.105)))
+        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
     }
 }
 

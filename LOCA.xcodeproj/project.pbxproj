@@ -14,6 +14,7 @@
 		126502F6A951AC2CD8F22DA0 /* WeeklyBarChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37119D6BF608C9E0EDFAA772 /* WeeklyBarChart.swift */; };
 		18249F7C9C57B3851AEC58CD /* UnitInference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 633111D4B01B739CA2804DCA /* UnitInference.swift */; };
 		1AFBD9A9BCBAED2CEF2354F4 /* TimingSuggestionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F822FA0B653D85D59C09E2 /* TimingSuggestionCard.swift */; };
+		1B55EB309A9A743191C1A991 /* PressableButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = C73F66E3D961FCE292C91914 /* PressableButtonStyle.swift */; };
 		1CB2E10ABA5B0C2C0D5BB59E /* ReflectionUnit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31F09F6CFAFE2E2F2B53FA5B /* ReflectionUnit.swift */; };
 		1DC4B5D5058FB91A88FEDA5E /* PredictionConfidence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08FE062CF468245B57185775 /* PredictionConfidence.swift */; };
 		1FB4B394E7334ADAAD65666E /* LOCAWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0F928C59F0243A385862E33 /* LOCAWidgetBundle.swift */; };
@@ -83,6 +84,7 @@
 		C24B1432A5A9499083D59C9B /* HeatmapDataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB921FD359F548A389FFA196 /* HeatmapDataProvider.swift */; };
 		C5AF61424E02410ABAB998C1 /* Date+Calendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CF2B6B9240E460892583CEC /* Date+Calendar.swift */; };
 		C925DCC8608E4CC8B96FB1BE /* HabitListLayoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30B7627F917F4D3E8569640B /* HabitListLayoutView.swift */; };
+		CAAB0DCEF011CD1E23F2675D /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B8D97F51AAB22F043F68040 /* Haptics.swift */; };
 		CBD30DA5769A21F46A99ACF0 /* GoalInference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 296A079808F2E17736C038C7 /* GoalInference.swift */; };
 		CCBD1D27BFEF796EFB9DFD39 /* DS+Motion.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2D47C4C19429A1E8AB3FB34 /* DS+Motion.swift */; };
 		CD444AE42731F450C8BB84C3 /* View+PlatformAdaptations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10298EDBEB3995D68C76C212 /* View+PlatformAdaptations.swift */; };
@@ -181,6 +183,7 @@
 		5F36A9584E32FB531F321E61 /* UnitOption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnitOption.swift; sourceTree = "<group>"; };
 		600C76F38C034B3080621640 /* LOCA.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LOCA.entitlements; sourceTree = "<group>"; };
 		633111D4B01B739CA2804DCA /* UnitInference.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UnitInference.swift; sourceTree = "<group>"; };
+		6B8D97F51AAB22F043F68040 /* Haptics.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
 		6E2A187171CA9C92C1E862CC /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayView.swift; sourceTree = "<group>"; };
 		75DE0767C9D0EA4F73A069DA /* HabitRecommendationCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HabitRecommendationCard.swift; sourceTree = "<group>"; };
 		75EA3DF789134654984688CB /* HabitDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitDetailView.swift; sourceTree = "<group>"; };
@@ -214,6 +217,7 @@
 		BF9D4A71D1F241B0A7075378 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		C2D47C4C19429A1E8AB3FB34 /* DS+Motion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DS+Motion.swift"; sourceTree = "<group>"; };
 		C3CFB3A1EC398091E63EF048 /* TimelineChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineChartView.swift; sourceTree = "<group>"; };
+		C73F66E3D961FCE292C91914 /* PressableButtonStyle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PressableButtonStyle.swift; sourceTree = "<group>"; };
 		C9F822FA0B653D85D59C09E2 /* TimingSuggestionCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TimingSuggestionCard.swift; sourceTree = "<group>"; };
 		CA23BF1816F44D92873A3FCD /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		CB921FD359F548A389FFA196 /* HeatmapDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeatmapDataProvider.swift; sourceTree = "<group>"; };
@@ -487,6 +491,8 @@
 				FE3AFDA24101174CA0C31F34 /* DSComponents.swift */,
 				37119D6BF608C9E0EDFAA772 /* WeeklyBarChart.swift */,
 				8430612562AB5270D58C46C7 /* ArcGaugeView.swift */,
+				C73F66E3D961FCE292C91914 /* PressableButtonStyle.swift */,
+				6B8D97F51AAB22F043F68040 /* Haptics.swift */,
 			);
 			path = DesignSystem;
 			sourceTree = "<group>";
@@ -753,6 +759,8 @@
 				06885DFB4FE24561E4822833 /* InterventionGenerator.swift in Sources */,
 				566D4E78C84AF0817BF99793 /* InterventionDelivery.swift in Sources */,
 				5A6690E66AB54A863226729E /* InterventionNarrator.swift in Sources */,
+				1B55EB309A9A743191C1A991 /* PressableButtonStyle.swift in Sources */,
+				CAAB0DCEF011CD1E23F2675D /* Haptics.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
