@@ -16,10 +16,6 @@ import SwiftUI
 import SwiftData
 import Foundation
 
-#if canImport(UIKit)
-import UIKit
-#endif
-
 extension Notification.Name {
     static let habitArchived = Notification.Name("habitArchived")
 }
@@ -32,6 +28,7 @@ struct HabitListView: View {
     private var boards: [HabitBoard]
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showingCreateSheet = false
     @State private var showCheckInError   = false
     @State private var showUndoToast = false
@@ -73,6 +70,8 @@ struct HabitListView: View {
                             )
                         }
                     }
+                    .transition(.opacity)
+                    .animation(DS.Motion.settle(reduceMotion: reduceMotion), value: layout)
 
                     // Show recommendations if few habits exist (Phase 3.4)
                     if showRecommendations && !recommendations.isEmpty && displayBoards.count < 3 {
@@ -120,7 +119,7 @@ struct HabitListView: View {
         .onReceive(NotificationCenter.default.publisher(for: .habitArchived)) { notif in
             if let habit = notif.object as? HabitBoard {
                 lastDeletedHabit = habit
-                withAnimation {
+                withAnimation(DS.Motion.settle(reduceMotion: reduceMotion)) {
                     showUndoToast = true
                 }
             }
@@ -131,7 +130,7 @@ struct HabitListView: View {
             // SyncStatus is Sendable, so nothing MainActor-isolated crosses into
             // the actor (Swift 6 complete concurrency).
             for await status in await SyncStatusCoordinator.shared.statusUpdates() {
-                withAnimation {
+                withAnimation(DS.Motion.settle(reduceMotion: reduceMotion)) {
                     syncStatus = status
                 }
             }
@@ -170,7 +169,7 @@ struct HabitListView: View {
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                 if showUndoToast { // Only auto-dismiss if user didn't undo
-                    withAnimation {
+                    withAnimation(DS.Motion.settle(reduceMotion: reduceMotion)) {
                         showUndoToast = false
                     }
                 }
@@ -182,7 +181,8 @@ struct HabitListView: View {
         habit.archivedAt = nil
         do {
             try modelContext.save()
-            withAnimation {
+            Haptics.impact(.light)
+            withAnimation(DS.Motion.settle(reduceMotion: reduceMotion)) {
                 showUndoToast = false
                 lastDeletedHabit = nil
             }
@@ -206,56 +206,30 @@ struct HabitListView: View {
     // MARK: - Empty State
 
     private var emptyStateView: some View {
-        VStack(spacing: DS.Space.lg) {
-            Spacer()
-
-            VStack(spacing: DS.Space.md) {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 48))
-                    .foregroundStyle(.secondary)
-
-                VStack(spacing: DS.Space.sm) {
-                    Text("All Set")
-                        .font(DS.Text.heading)
-
-                    Text("No habits yet. Create one to get started.")
-                        .font(DS.Text.caption)
-                        .foregroundStyle(DS.Color.textSecondary)
-                        .multilineTextAlignment(.center)
-                }
-            }
-
-            Spacer()
-
+        ContentUnavailableView {
+            Label("No Habits Yet", systemImage: "plus.circle")
+        } description: {
+            Text("Create your first habit to get started.")
+        } actions: {
             Button(action: { showingCreateSheet = true }) {
                 Text("Create Habit")
-                    .font(DS.Text.body)
-                    .frame(maxWidth: .infinity)
-                    .padding(DS.Space.lg)
-                    .background(ColorPalette[0])
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.control, style: .continuous))
             }
         }
-        .frame(maxWidth: .infinity)
-        .padding(DS.Space.xxl)
     }
 
     // MARK: - Actions
 
     private func checkInBinary(board: HabitBoard) {
         do {
-            try CheckInWriter.toggleBinary(board: board, context: modelContext)
-            triggerCheckInHaptic()
+            let isNowCheckedIn = try CheckInWriter.toggleBinary(board: board, context: modelContext)
+            Haptics.impact(.rigid)
+            // P4.2: Success haptic when checking in (goal completion for binary)
+            if isNowCheckedIn {
+                Haptics.notify(.success)
+            }
         } catch {
             showCheckInError = true
         }
-    }
-
-    private func triggerCheckInHaptic() {
-        #if canImport(UIKit)
-        UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
-        #endif
     }
 }
 

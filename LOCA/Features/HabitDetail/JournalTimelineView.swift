@@ -172,6 +172,7 @@ struct JournalTimelineView: View {
     private func delete(_ entry: LogEntry) {
         modelContext.delete(entry)
         try? modelContext.save()
+        Haptics.impact(.light)
     }
 }
 

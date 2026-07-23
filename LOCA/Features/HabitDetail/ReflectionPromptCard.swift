@@ -45,7 +45,10 @@ struct ReflectionPromptCard: View {
                     ("😰", "It's hard", "hard"),
                     ("🤔", "Not sure", "unsure")
                 ], id: \.2) { emoji, label, value in
-                    Button(action: { onResponse(value) }) {
+                    Button(action: {
+                        Haptics.selection()
+                        onResponse(value)
+                    }) {
                         HStack(spacing: DS.Space.md) {
                             Text(emoji)
                                 .font(.system(size: 18))

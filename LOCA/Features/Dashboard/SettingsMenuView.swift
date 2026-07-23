@@ -54,6 +54,7 @@ struct SettingsMenuView: View {
 
 struct LayoutPickerView: View {
     @Environment(\.dismiss) var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("habitListLayout") private var layout: String = "list"
 
     var body: some View {
@@ -63,7 +64,11 @@ struct LayoutPickerView: View {
 
                 VStack(spacing: DS.Space.md) {
                     ForEach(["list", "grid", "timeline"], id: \.self) { option in
-                        Button(action: { layout = option; dismiss() }) {
+                        Button(action: {
+                            layout = option
+                            Haptics.selection()
+                            dismiss()
+                        }) {
                             HStack {
                                 Image(systemName: layoutIcon(option))
                                     .font(.title3)
@@ -74,10 +79,12 @@ struct LayoutPickerView: View {
                                 if layout == option {
                                     Image(systemName: "checkmark")
                                         .foregroundStyle(ColorPalette[0])
+                                        .transition(.scale.combined(with: .opacity))
                                 }
                             }
                             .contentShape(Rectangle())
                             .foregroundStyle(DS.Color.textPrimary)
+                            .animation(DS.Motion.settle(reduceMotion: reduceMotion), value: layout)
                         }
                         .padding(DS.Space.md)
                         .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
@@ -129,18 +136,14 @@ struct ArchiveListView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: DS.Space.lg) {
-                if archivedBoards.isEmpty {
-                    VStack(spacing: DS.Space.md) {
-                        Image(systemName: "archivebox")
-                            .font(.title2)
-                            .foregroundStyle(.secondary)
-                        Text("No Archived Habits")
-                            .font(DS.Text.body)
-                            .foregroundStyle(DS.Color.textSecondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                } else {
+            if archivedBoards.isEmpty {
+                ContentUnavailableView {
+                    Label("No Archived Habits", systemImage: "archivebox")
+                } description: {
+                    Text("Habits you archive appear here.")
+                }
+            } else {
+                VStack(alignment: .leading, spacing: DS.Space.lg) {
                     VStack(spacing: DS.Space.md) {
                         ForEach(archivedBoards) { board in
                             HStack {
@@ -161,11 +164,11 @@ struct ArchiveListView: View {
                             .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
                         }
                     }
-                }
 
-                Spacer()
+                    Spacer()
+                }
+                .padding(DS.Space.lg)
             }
-            .padding(DS.Space.lg)
             .navigationTitle("Archive")
             .inlineNavigationTitleDisplay()
             .toolbar {
@@ -187,6 +190,7 @@ struct ArchiveListView: View {
 
 struct AppSettingsView: View {
     @Environment(\.dismiss) var dismiss
+    @AppStorage("hapticsEnabled") private var hapticsEnabled = true
 
     var body: some View {
         NavigationStack {
@@ -194,6 +198,15 @@ struct AppSettingsView: View {
                 SectionHeader("App Settings")
 
                 VStack(spacing: DS.Space.md) {
+                    HStack {
+                        Text("Haptics")
+                            .font(DS.Text.body)
+                        Spacer()
+                        Toggle("", isOn: $hapticsEnabled)
+                    }
+                    .padding(DS.Space.md)
+                    .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+
                     HStack {
                         Text("Version")
                             .font(DS.Text.body)

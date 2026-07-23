@@ -16,6 +16,7 @@ struct SimpleHabitCreationView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var habitName = ""
     @State private var metricType: HabitBoard.MetricType = .binary
@@ -151,7 +152,7 @@ struct SimpleHabitCreationView: View {
                     .padding(DS.Space.md)
                     .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.control))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
 
                 Button(action: { step = .template }) {
                     HStack(spacing: DS.Space.md) {
@@ -173,7 +174,7 @@ struct SimpleHabitCreationView: View {
                     .padding(DS.Space.md)
                     .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.control))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
         }
     }
@@ -267,10 +268,14 @@ struct SimpleHabitCreationView: View {
             }
 
             VStack(spacing: DS.Space.md) {
-                Button(action: { metricType = .binary }) {
+                Button(action: {
+                    metricType = .binary
+                    Haptics.selection()
+                }) {
                     HStack(spacing: DS.Space.md) {
                         Image(systemName: metricType == .binary ? "checkmark.circle.fill" : "circle")
                             .foregroundStyle(metricType == .binary ? ColorPalette[0] : .secondary)
+                            .transition(.scale.combined(with: .opacity))
 
                         VStack(alignment: .leading, spacing: DS.Space.xs) {
                             Text("Daily check-off")
@@ -287,12 +292,16 @@ struct SimpleHabitCreationView: View {
                     .padding(DS.Space.md)
                     .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.control))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
 
-                Button(action: { metricType = .quantitative }) {
+                Button(action: {
+                    metricType = .quantitative
+                    Haptics.selection()
+                }) {
                     HStack(spacing: DS.Space.md) {
                         Image(systemName: metricType == .quantitative ? "checkmark.circle.fill" : "circle")
                             .foregroundStyle(metricType == .quantitative ? ColorPalette[0] : .secondary)
+                            .transition(.scale.combined(with: .opacity))
 
                         VStack(alignment: .leading, spacing: DS.Space.xs) {
                             Text("Track an amount")
@@ -309,7 +318,7 @@ struct SimpleHabitCreationView: View {
                     .padding(DS.Space.md)
                     .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.control))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
 
             if metricType == .quantitative {

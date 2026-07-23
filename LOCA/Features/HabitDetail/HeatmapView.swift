@@ -171,9 +171,17 @@ private struct HeatmapCellView: View {
     let colorIndex: Int
     let unitLabel: String?
 
+    // Neutral adaptive token for empty cells — replaces emptyCellColor (systemGray6)
+    // which is indistinguishable from DS.Color.surface (also secondarySystemBackground)
+    // in both light and dark modes, causing cells to vanish into the card background.
+    private var cellFill: Color {
+        guard cell.intensity > 0 else { return DS.Color.heatmapCellEmpty }
+        return ColorPalette[colorIndex].opacity(max(0.15, min(1.0, cell.intensity)))
+    }
+
     var body: some View {
         RoundedRectangle(cornerRadius: HeatmapLayout.cellCornerRadius, style: .continuous)
-            .fill(ColorPalette.heatmapColor(forColorIndex: colorIndex, ratio: cell.intensity))
+            .fill(cellFill)
             .frame(width: HeatmapLayout.cellSize, height: HeatmapLayout.cellSize)
             .overlay {
                 if cell.isToday {

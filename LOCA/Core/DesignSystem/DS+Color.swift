@@ -87,5 +87,19 @@ extension DS {
             SwiftUI.Color(nsColor: .separatorColor)
             #endif
         }()
+
+        // MARK: Heatmap (contribution grid)
+
+        /// Inactive/empty heatmap cell — neutral adaptive tone visible in both
+        /// light and dark modes. Using a near-zero-opacity accent on a light surface
+        /// renders invisible; textPrimary at low opacity provides reliable contrast
+        /// independent of theme and card background. Matches the approach used by
+        /// Apple Calendar, GitHub contributions, and Apple Health activity rings:
+        /// empty cells are a neutral gray, not a near-invisible tint of the accent.
+        static let heatmapCellEmpty = SwiftUI.Color.primary.opacity(0.09)
+
+        /// Future (not-yet-reached) heatmap cell — visually recessed to convey
+        /// "not yet" without disappearing entirely.
+        static let heatmapCellFuture = SwiftUI.Color.primary.opacity(0.04)
     }
 }

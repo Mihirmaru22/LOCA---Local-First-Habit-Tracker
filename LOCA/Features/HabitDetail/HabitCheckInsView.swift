@@ -212,6 +212,7 @@ struct HabitCheckInsView: View {
                         ? ColorPalette[board.colorIndex]
                         : DS.Color.textSecondary
                 )
+                .contentTransition(.numericText())
 
                 if let unitLabel = board.unitLabel, !unitLabel.isEmpty {
                     Text("\(group.entries.count) \(group.entries.count == 1 ? "entry" : "entries") • \(unitLabel)")
@@ -282,6 +283,7 @@ struct HabitCheckInsView: View {
                             ? ColorPalette[board.colorIndex]
                             : DS.Color.textPrimary
                     )
+                    .contentTransition(.numericText())
 
                     if let unitLabel = board.unitLabel, !unitLabel.isEmpty {
                         Text(unitLabel)
@@ -310,7 +312,7 @@ struct HabitCheckInsView: View {
                 try CheckInWriter.insert(value: amount, board: board, context: modelContext)
                 quickLogAmount = ""
             }
-            triggerHaptic()
+            Haptics.impact(.light)
         } catch {
             showWriteError = true
         }
@@ -323,6 +325,7 @@ struct HabitCheckInsView: View {
     private func deleteEntry(_ entry: LogEntry) {
         do {
             try CheckInWriter.delete(entry, board: board, context: modelContext)
+            Haptics.impact(.light)
         } catch {
             showWriteError = true
         }
@@ -331,16 +334,10 @@ struct HabitCheckInsView: View {
     private func duplicateEntry(_ entry: LogEntry) {
         do {
             try CheckInWriter.insert(value: entry.value, note: entry.note, board: board, context: modelContext)
-            triggerHaptic()
+            Haptics.impact(.light)
         } catch {
             showWriteError = true
         }
-    }
-
-    private func triggerHaptic() {
-        #if canImport(UIKit)
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        #endif
     }
 }
 

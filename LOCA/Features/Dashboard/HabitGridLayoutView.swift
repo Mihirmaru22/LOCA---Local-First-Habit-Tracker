@@ -16,20 +16,108 @@ struct HabitGridLayoutView: View {
     let boardsWithState: [(board: HabitBoard, state: HabitState)]
     let onCheckBinary: (HabitBoard) -> Void
 
+    private var needsActionBoards: [(board: HabitBoard, state: HabitState)] {
+        boardsWithState.filter { $0.state == .needsAction }
+    }
+
+    private var inProgressBoards: [(board: HabitBoard, state: HabitState)] {
+        boardsWithState.filter { $0.state == .inProgress }
+    }
+
+    private var behindBoards: [(board: HabitBoard, state: HabitState)] {
+        boardsWithState.filter { $0.state == .behind }
+    }
+
+    private var doneBoards: [(board: HabitBoard, state: HabitState)] {
+        boardsWithState.filter { $0.state == .done }
+    }
+
     var body: some View {
-        LazyVGrid(
-            columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)],
-            spacing: 14
-        ) {
-            ForEach(boardsWithState, id: \.board.id) { item in
-                NavigationLink(destination: HabitDetailView(board: item.board)) {
-                    GridHabitCard(board: item.board, onCheck: { onCheckBinary(item.board) })
+        VStack(alignment: .leading, spacing: DS.Space.xxl) {
+
+            // NEEDS ACTION ZONE
+            if !needsActionBoards.isEmpty {
+                VStack(alignment: .leading, spacing: DS.Space.lg) {
+                    SectionHeader("To Do")
+
+                    LazyVGrid(
+                        columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)],
+                        spacing: 14
+                    ) {
+                        ForEach(needsActionBoards, id: \.board.id) { item in
+                            NavigationLink(destination: HabitDetailView(board: item.board)) {
+                                GridHabitCard(board: item.board, onCheck: { onCheckBinary(item.board) })
+                            }
+                            .buttonStyle(.pressable)
+                        }
+                    }
                 }
-                .buttonStyle(.plain)
+                .padding(.horizontal, DS.Space.lg)
             }
+
+            // IN PROGRESS ZONE
+            if !inProgressBoards.isEmpty {
+                VStack(alignment: .leading, spacing: DS.Space.lg) {
+                    SectionHeader("In Progress")
+
+                    LazyVGrid(
+                        columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)],
+                        spacing: 14
+                    ) {
+                        ForEach(inProgressBoards, id: \.board.id) { item in
+                            NavigationLink(destination: HabitDetailView(board: item.board)) {
+                                GridHabitCard(board: item.board, onCheck: { onCheckBinary(item.board) })
+                            }
+                            .buttonStyle(.pressable)
+                        }
+                    }
+                }
+                .padding(.horizontal, DS.Space.lg)
+            }
+
+            // BEHIND ZONE
+            if !behindBoards.isEmpty {
+                VStack(alignment: .leading, spacing: DS.Space.lg) {
+                    SectionHeader("Needs Attention")
+
+                    LazyVGrid(
+                        columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)],
+                        spacing: 14
+                    ) {
+                        ForEach(behindBoards, id: \.board.id) { item in
+                            NavigationLink(destination: HabitDetailView(board: item.board)) {
+                                GridHabitCard(board: item.board, onCheck: { onCheckBinary(item.board) })
+                            }
+                            .buttonStyle(.pressable)
+                        }
+                    }
+                }
+                .padding(.horizontal, DS.Space.lg)
+            }
+
+            // DONE ZONE
+            if !doneBoards.isEmpty {
+                VStack(alignment: .leading, spacing: DS.Space.lg) {
+                    SectionHeader("Done Today")
+
+                    LazyVGrid(
+                        columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)],
+                        spacing: 14
+                    ) {
+                        ForEach(doneBoards, id: \.board.id) { item in
+                            NavigationLink(destination: HabitDetailView(board: item.board)) {
+                                GridHabitCard(board: item.board, onCheck: { onCheckBinary(item.board) })
+                            }
+                            .buttonStyle(.pressable)
+                        }
+                    }
+                }
+                .padding(.horizontal, DS.Space.lg)
+            }
+
+            Spacer(minLength: DS.Space.xxxl)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.vertical, DS.Space.xl)
     }
 }
 
@@ -57,11 +145,12 @@ struct GridHabitCard: View {
             HStack(alignment: .center, spacing: 7) {
                 if let emoji = board.emoji, !emoji.isEmpty {
                     Text(emoji)
-                        .font(.system(size: 16))
+                        .font(DS.Text.body)
                 }
                 Text(board.name)
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(.white)
+                    .font(DS.Text.body)
+                    .fontWeight(.bold)
+                    .foregroundStyle(DS.Color.textPrimary)
                     .lineLimit(1)
                     .truncationMode(.tail)
             }
@@ -92,18 +181,20 @@ struct GridHabitCard: View {
             .padding(.top, 8)
             .padding(.bottom, 13)
         }
-        .frame(height: 236)
+        // minHeight (not fixed height) so the card grows rather than clips at large
+        // Dynamic Type sizes; P7.1 verifies row symmetry across the pair.
+        .frame(minHeight: 236)
         .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
                 .fill(board.useColorBackground
                     ? ColorPalette[board.colorIndex].opacity(0.12)
-                    : Color(.systemGray6).opacity(0.6))
+                    : DS.Color.surface)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
                 .stroke(ColorPalette[board.colorIndex].opacity(0.18), lineWidth: 0.5)
         )
-        .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
         .sheet(isPresented: $showingCheckIn) {
             AddCheckInSheetView(board: board)
         }
@@ -174,6 +265,8 @@ private struct GridMiniCell: View {
     let totalWeeks: Int
     let size: CGFloat
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     // Week-anchor date: locale's week-start of the column's week + dayIndex days.
     private var cellDate: Date? {
         let cal = Calendar.current
@@ -199,10 +292,9 @@ private struct GridMiniCell: View {
 
     private var cell: DayCell? { cellsByDate[cellDate ?? .distantPast] }
 
-    private var opacity: Double {
-        if isFuture { return 0.07 }
+    // Active-cell opacity tiers — applied only when intensity > 0
+    private var activeOpacity: Double {
         let intensity = cell?.intensity ?? 0
-        if intensity <= 0 { return 0.15 }
         if intensity >= 1.0 { return 1.0 }
         if intensity >= 0.5 { return 0.55 }
         return 0.30
@@ -211,15 +303,25 @@ private struct GridMiniCell: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: size * 0.27, style: .continuous)
-                .fill(ColorPalette[colorIndex].opacity(opacity))
+                .fill(
+                    isFuture
+                        // Future: neutral recessed tone — conveys "not yet" in both themes
+                        ? DS.Color.heatmapCellFuture
+                        : (cell?.intensity ?? 0) > 0
+                            ? ColorPalette[colorIndex].opacity(activeOpacity)
+                            // Inactive: neutral adaptive tone — visible in light and dark
+                            : DS.Color.heatmapCellEmpty
+                )
                 .frame(width: size, height: size)
 
             if isToday {
                 RoundedRectangle(cornerRadius: size * 0.27, style: .continuous)
-                    .stroke(Color.white.opacity(0.80), lineWidth: 1.2)
+                    .stroke(DS.Color.textPrimary.opacity(0.80), lineWidth: 1.2)
                     .frame(width: size, height: size)
             }
         }
+        .transition(.opacity)
+        .animation(DS.Motion.settle(reduceMotion: reduceMotion), value: cellsByDate)
     }
 }
 
@@ -235,27 +337,32 @@ private struct GridCheckButton: View {
         Button(action: onCheck) {
             Group {
                 if todayLogged {
-                    // Logged — habit color fill, dark content
+                    // Logged — solid accent fill. Content stays dark for contrast on the
+                    // saturated fill (consistent across light/dark since the accent is the
+                    // same hue in both).
                     HStack(spacing: 7) {
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(DS.Text.body)
                         if board.metric == .quantitative {
-                            Text(String(format: todayValue.truncatingRemainder(dividingBy: 1) == 0 ? "%.0f" : "%.1f", todayValue))
-                                .font(.system(size: 15, weight: .semibold))
+                            ValueText(
+                                String(format: todayValue.truncatingRemainder(dividingBy: 1) == 0 ? "%.0f" : "%.1f", todayValue),
+                                font: DS.Text.valueCompact
+                            )
                         }
                     }
                     .foregroundStyle(Color.black.opacity(0.85))
                     .frame(maxWidth: .infinity)
                     .frame(height: 46)
-                    .background(ColorPalette[board.colorIndex], in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .background(ColorPalette[board.colorIndex], in: RoundedRectangle(cornerRadius: DS.Radius.control, style: .continuous))
                 } else {
-                    // Unlogged — neutral dark fill, muted plus
+                    // Unlogged — recessed neutral control (concentric: control radius
+                    // inside a card radius), muted plus.
                     Image(systemName: "plus")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(Color(white: 0.45))
+                        .font(DS.Text.heading)
+                        .foregroundStyle(DS.Color.textSecondary)
                         .frame(maxWidth: .infinity)
                         .frame(height: 46)
-                        .background(Color(white: 0.15), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .background(DS.Color.textPrimary.opacity(0.06), in: RoundedRectangle(cornerRadius: DS.Radius.control, style: .continuous))
                 }
             }
         }

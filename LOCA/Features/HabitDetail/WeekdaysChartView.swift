@@ -15,6 +15,9 @@ struct WeekdaysChartView: View {
 
     let board: HabitBoard
 
+    @State private var hasAppeared = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     private var weekdayTotals: [Double] {
         var totals = [Double](repeating: 0, count: 7)  // Sun-Sat
 
@@ -116,6 +119,7 @@ struct WeekdaysChartView: View {
                         let weekdayAvg = (weekdayTotals[1...5].reduce(0, +)) / 5
                         ValueText(String(format: "%.1f", weekdayAvg), font: DS.Text.body)
                             .foregroundStyle(ColorPalette[board.colorIndex])
+                            .contentTransition(.numericText())
                     }
 
                     Divider()
@@ -128,12 +132,16 @@ struct WeekdaysChartView: View {
                         let weekendAvg = (weekdayTotals[0] + weekdayTotals[6]) / 2
                         ValueText(String(format: "%.1f", weekendAvg), font: DS.Text.body)
                             .foregroundStyle(DS.Color.textPrimary)
+                            .contentTransition(.numericText())
                     }
 
                     Spacer()
                 }
             }
             .padding(DS.Space.md)
+            .opacity(hasAppeared ? 1 : 0)
+            .animation(DS.Motion.settle(reduceMotion: reduceMotion), value: hasAppeared)
+            .onAppear { hasAppeared = true }
         }
     }
 }

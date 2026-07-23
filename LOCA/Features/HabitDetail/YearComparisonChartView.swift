@@ -15,6 +15,9 @@ struct YearComparisonChartView: View {
 
     let board: HabitBoard
 
+    @State private var hasAppeared = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     private var monthlyData: [(month: String, current: Double, previous: Double)] {
         var results: [(String, Double, Double)] = []
         let formatter = DateFormatter()
@@ -151,6 +154,9 @@ struct YearComparisonChartView: View {
                 }
             }
             .padding(DS.Space.md)
+            .opacity(hasAppeared ? 1 : 0)
+            .animation(DS.Motion.settle(reduceMotion: reduceMotion), value: hasAppeared)
+            .onAppear { hasAppeared = true }
         }
     }
 }

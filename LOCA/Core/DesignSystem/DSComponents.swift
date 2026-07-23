@@ -101,6 +101,7 @@ struct MetricTile: View {
                 .foregroundStyle(DS.Color.textPrimary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
+                .contentTransition(.numericText())
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .ignore)

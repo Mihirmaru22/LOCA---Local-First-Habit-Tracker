@@ -17,6 +17,8 @@ struct TimelineChartView: View {
     let board: HabitBoard
 
     @State private var selectedPeriod: Int = 30  // days
+    @State private var hasAppeared = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let periodOptions = [7, 30, 90, 365]
 
@@ -169,6 +171,9 @@ struct TimelineChartView: View {
                 }
             }
             .padding(DS.Space.md)
+            .opacity(hasAppeared ? 1 : 0)
+            .animation(DS.Motion.settle(reduceMotion: reduceMotion), value: hasAppeared)
+            .onAppear { hasAppeared = true }
         }
     }
 

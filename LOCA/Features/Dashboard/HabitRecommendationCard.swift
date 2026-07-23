@@ -17,6 +17,7 @@ struct HabitRecommendationCard: View {
     let onDismiss: () -> Void
 
     @State private var selectedIndex = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var currentRecommendation: HabitRecommendation {
         recommendations[selectedIndex % recommendations.count]
@@ -70,6 +71,8 @@ struct HabitRecommendationCard: View {
                                 Circle()
                                     .fill(index == selectedIndex ? ColorPalette[0] : DS.Color.textTertiary.opacity(0.3))
                                     .frame(width: 4, height: 4)
+                                    .scaleEffect(index == selectedIndex ? 1.25 : 1.0)
+                                    .transition(.scale.combined(with: .opacity))
                             }
                         }
                     }
@@ -97,7 +100,7 @@ struct HabitRecommendationCard: View {
         )
         .onTapGesture {
             if recommendations.count > 1 {
-                withAnimation {
+                withAnimation(DS.Motion.settle(reduceMotion: reduceMotion)) {
                     selectedIndex = (selectedIndex + 1) % recommendations.count
                 }
             }

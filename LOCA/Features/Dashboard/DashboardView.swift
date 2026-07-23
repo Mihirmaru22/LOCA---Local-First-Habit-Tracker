@@ -107,6 +107,7 @@ struct DashboardView: View {
         do {
             try board.archive(in: modelContext)
             if selection == board.id { selection = nil }
+            Haptics.impact(.light)
             logger.debug("Board archived: '\(board.name, privacy: .public)'.")
         } catch {
             logger.error("Board archive failed: \(error.localizedDescription, privacy: .public)")

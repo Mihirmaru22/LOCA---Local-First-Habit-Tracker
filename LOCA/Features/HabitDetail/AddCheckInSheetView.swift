@@ -28,6 +28,9 @@ struct AddCheckInSheetView: View {
     @State private var isSubmitting = false
     @State private var showSaveError = false
 
+    @FocusState private var amountFocused: Bool
+    @FocusState private var notesFocused: Bool
+
     private var parsedAmount: Double? {
         Double(amountText.trimmingCharacters(in: .whitespaces))
     }
@@ -43,56 +46,60 @@ struct AddCheckInSheetView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: DS.Space.lg) {
+                VStack(alignment: .leading, spacing: DS.Space.xxl) {
 
-                    // MARK: - Date Selector
-                    VStack(alignment: .leading, spacing: DS.Space.sm) {
-                        Text("Date")
+                    // MARK: - Date & Time (Secondary fields)
+                    VStack(alignment: .leading, spacing: DS.Space.lg) {
+                        Text("When")
                             .font(DS.Text.body)
-                            .foregroundStyle(DS.Color.textPrimary)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(DS.Color.textSecondary)
 
-                        DatePicker("", selection: $selectedDate, in: ...Date(), displayedComponents: .date)
-                            .datePickerStyle(.graphical)
-                            .tint(ColorPalette[board.colorIndex])
-                    }
+                        // Date Selector
+                        VStack(alignment: .leading, spacing: DS.Space.sm) {
+                            Text("Date")
+                                .font(DS.Text.caption)
+                                .foregroundStyle(DS.Color.textSecondary)
 
-                    Divider()
+                            DatePicker("", selection: $selectedDate, in: ...Date(), displayedComponents: .date)
+                                .datePickerStyle(.graphical)
+                                .tint(ColorPalette[board.colorIndex])
+                        }
 
-                    // MARK: - Time Picker
-                    VStack(alignment: .leading, spacing: DS.Space.sm) {
-                        Text("Time")
-                            .font(DS.Text.body)
-                            .foregroundStyle(DS.Color.textPrimary)
+                        // Time Picker
+                        VStack(alignment: .leading, spacing: DS.Space.sm) {
+                            Text("Time")
+                                .font(DS.Text.caption)
+                                .foregroundStyle(DS.Color.textSecondary)
 
-                        HStack(spacing: DS.Space.md) {
-                            Picker("Hour", selection: $selectedHour) {
-                                ForEach(0..<24, id: \.self) { h in
-                                    Text(String(format: "%02d", h)).tag(h)
+                            HStack(spacing: DS.Space.md) {
+                                Picker("Hour", selection: $selectedHour) {
+                                    ForEach(0..<24, id: \.self) { h in
+                                        Text(String(format: "%02d", h)).tag(h)
+                                    }
                                 }
-                            }
-                            .frame(maxWidth: 80)
+                                .frame(maxWidth: 80)
 
-                            Text(":")
-                                .font(DS.Text.body)
+                                Text(":")
+                                    .font(DS.Text.body)
 
-                            Picker("Minute", selection: $selectedMinute) {
-                                ForEach(Array(stride(from: 0, to: 60, by: 15)), id: \.self) { m in
-                                    Text(String(format: "%02d", m)).tag(m)
+                                Picker("Minute", selection: $selectedMinute) {
+                                    ForEach(Array(stride(from: 0, to: 60, by: 15)), id: \.self) { m in
+                                        Text(String(format: "%02d", m)).tag(m)
+                                    }
                                 }
-                            }
-                            .frame(maxWidth: 80)
+                                .frame(maxWidth: 80)
 
-                            Spacer()
+                                Spacer()
+                            }
                         }
                     }
 
-                    Divider()
-
-                    // MARK: - Amount (Quantitative Only)
+                    // MARK: - Amount (PRIMARY field for quantitative)
                     if board.metric == .quantitative {
                         VStack(alignment: .leading, spacing: DS.Space.sm) {
                             Text("Amount")
-                                .font(DS.Text.body)
+                                .font(DS.Text.heading)
                                 .foregroundStyle(DS.Color.textPrimary)
 
                             HStack(spacing: DS.Space.md) {
@@ -100,6 +107,15 @@ struct AddCheckInSheetView: View {
                                     .font(DS.Text.body)
                                     .decimalKeyboard()
                                     .textFieldStyle(.roundedBorder)
+                                    .focused($amountFocused)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(
+                                                amountFocused ? ColorPalette[board.colorIndex] : Color.clear,
+                                                lineWidth: 2
+                                            )
+                                            .padding(-4)
+                                    )
 
                                 if let unitLabel = board.unitLabel, !unitLabel.isEmpty {
                                     Text(unitLabel)
@@ -109,15 +125,16 @@ struct AddCheckInSheetView: View {
                                 }
                             }
                         }
-
-                        Divider()
                     }
 
-                    // MARK: - Notes
+                    // MARK: - Notes (Optional secondary)
                     VStack(alignment: .leading, spacing: DS.Space.sm) {
-                        Text("Notes (Optional)")
+                        Text("Notes")
                             .font(DS.Text.body)
-                            .foregroundStyle(DS.Color.textPrimary)
+                            .foregroundStyle(DS.Color.textSecondary)
+                        Text("Optional")
+                            .font(DS.Text.caption)
+                            .foregroundStyle(DS.Color.textTertiary)
 
                         TextEditor(text: $notesText)
                             .font(DS.Text.body)
@@ -126,8 +143,12 @@ struct AddCheckInSheetView: View {
                             .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
                             .overlay(
                                 RoundedRectangle(cornerRadius: DS.Radius.card)
-                                    .stroke(DS.Color.textTertiary.opacity(0.2), lineWidth: 1)
+                                    .stroke(
+                                        notesFocused ? ColorPalette[board.colorIndex] : DS.Color.textTertiary.opacity(0.2),
+                                        lineWidth: notesFocused ? 2 : 1
+                                    )
                             )
+                            .focused($notesFocused)
                             .onChange(of: notesText) { _, new in
                                 if new.count > 500 { notesText = String(new.prefix(500)) }
                             }
@@ -175,6 +196,12 @@ struct AddCheckInSheetView: View {
 
         let value: Double = board.metric == .quantitative ? (parsedAmount ?? 0) : 1.0
 
+        // P4.2: Detect goal crossing for success haptic
+        let isToday = calendar.isDateInToday(timestamp)
+        let oldTotal = isToday ? (board.logs ?? [])
+            .filter { calendar.isDateInToday($0.timestamp) }
+            .reduce(0) { $0 + $1.value } : 0
+
         do {
             try CheckInWriter.insert(
                 value: value,
@@ -183,7 +210,15 @@ struct AddCheckInSheetView: View {
                 board: board,
                 context: modelContext
             )
-            triggerConfirmationHaptic()
+            Haptics.impact(.rigid)
+
+            if isToday {
+                let newTotal = oldTotal + value
+                if oldTotal < board.effectiveTarget && newTotal >= board.effectiveTarget {
+                    Haptics.notify(.success)
+                }
+            }
+
             withAnimation(DS.Motion.confirm(reduceMotion: reduceMotion)) {
                 isSubmitting = false
                 dismiss()
@@ -194,11 +229,6 @@ struct AddCheckInSheetView: View {
         }
     }
 
-    private func triggerConfirmationHaptic() {
-        #if canImport(UIKit)
-        UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
-        #endif
-    }
 }
 
 #Preview {
