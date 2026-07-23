@@ -32,6 +32,7 @@ struct HabitListView: View {
     private var boards: [HabitBoard]
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showingCreateSheet = false
     @State private var showCheckInError   = false
     @State private var showUndoToast = false
@@ -73,6 +74,8 @@ struct HabitListView: View {
                             )
                         }
                     }
+                    .transition(.opacity)
+                    .animation(DS.Motion.settle(reduceMotion: reduceMotion), value: layout)
 
                     // Show recommendations if few habits exist (Phase 3.4)
                     if showRecommendations && !recommendations.isEmpty && displayBoards.count < 3 {
