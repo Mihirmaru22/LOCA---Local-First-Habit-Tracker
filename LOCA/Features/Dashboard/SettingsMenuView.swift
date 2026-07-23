@@ -136,38 +136,40 @@ struct ArchiveListView: View {
 
     var body: some View {
         NavigationStack {
-            if archivedBoards.isEmpty {
-                ContentUnavailableView {
-                    Label("No Archived Habits", systemImage: "archivebox")
-                } description: {
-                    Text("Habits you archive appear here.")
-                }
-            } else {
-                VStack(alignment: .leading, spacing: DS.Space.lg) {
-                    VStack(spacing: DS.Space.md) {
-                        ForEach(archivedBoards) { board in
-                            HStack {
-                                VStack(alignment: .leading, spacing: DS.Space.xs) {
-                                    Text(board.name)
-                                        .font(DS.Text.body)
-                                    Text("Archived")
-                                        .font(DS.Text.caption)
-                                        .foregroundStyle(DS.Color.textSecondary)
-                                }
-                                Spacer()
-                                Button(action: { unarchive(board) }) {
-                                    Image(systemName: "arrow.uturn.backward")
-                                        .foregroundStyle(ColorPalette[board.colorIndex])
-                                }
-                            }
-                            .padding(DS.Space.md)
-                            .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
-                        }
+            Group {
+                if archivedBoards.isEmpty {
+                    ContentUnavailableView {
+                        Label("No Archived Habits", systemImage: "archivebox")
+                    } description: {
+                        Text("Habits you archive appear here.")
                     }
+                } else {
+                    VStack(alignment: .leading, spacing: DS.Space.lg) {
+                        VStack(spacing: DS.Space.md) {
+                            ForEach(archivedBoards) { board in
+                                HStack {
+                                    VStack(alignment: .leading, spacing: DS.Space.xs) {
+                                        Text(board.name)
+                                            .font(DS.Text.body)
+                                        Text("Archived")
+                                            .font(DS.Text.caption)
+                                            .foregroundStyle(DS.Color.textSecondary)
+                                    }
+                                    Spacer()
+                                    Button(action: { unarchive(board) }) {
+                                        Image(systemName: "arrow.uturn.backward")
+                                            .foregroundStyle(ColorPalette[board.colorIndex])
+                                    }
+                                }
+                                .padding(DS.Space.md)
+                                .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+                            }
+                        }
 
-                    Spacer()
+                        Spacer()
+                    }
+                    .padding(DS.Space.lg)
                 }
-                .padding(DS.Space.lg)
             }
             .navigationTitle("Archive")
             .inlineNavigationTitleDisplay()
