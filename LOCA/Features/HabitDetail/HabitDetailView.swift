@@ -8,15 +8,25 @@
 import SwiftUI
 import SwiftData
 
+// MARK: - HabitDetail Tab Enum
+
+enum HabitDetailTab: Hashable {
+    case overview
+    case checkIns
+    case journal
+    case analytics
+}
+
 // MARK: - HabitDetailView
 
 struct HabitDetailView: View {
     let board: HabitBoard
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showingEditSheet    = false
     @State private var showingCheckIn      = false
-    @State private var selectedTab         = 0
+    @State private var selectedTab: HabitDetailTab = .overview
     @State private var showGoalInference: Bool?  // nil = not yet checked, true/false = decision made
     @State private var inferredGoal: Double = 0
     @State private var showTimingSuggestion: Bool? = nil
@@ -33,16 +43,16 @@ struct HabitDetailView: View {
 
             Group {
                 switch selectedTab {
-                case 1:
+                case .checkIns:
                     HabitCheckInsView(board: board)
                         .padding(.bottom, 80) // clear toolbar
-                case 2:
+                case .journal:
                     HabitJournalView(board: board)
                         .padding(.bottom, 80)
-                case 3:
+                case .analytics:
                     HabitAnalyticsView(board: board)
                         .padding(.bottom, 80)
-                default:
+                case .overview:
                     ScrollView {
                         VStack(alignment: .leading, spacing: 12) {
                             if showGoalInference == true && board.metric == .quantitative && board.targetValue == nil {
@@ -116,14 +126,16 @@ struct HabitDetailView: View {
                     }
                 }
             }
+            .transition(.opacity)
+            .animation(DS.Motion.settle(reduceMotion: reduceMotion), value: selectedTab)
 
             // Toolbar
             HStack(spacing: 0) {
                 HStack(spacing: 24) {
-                    RefTabIcon(icon: "chart.line.uptrend.xyaxis",   active: selectedTab == 0) { selectedTab = 0 }
-                    RefTabIcon(icon: "checklist",                   active: selectedTab == 1) { selectedTab = 1 }
-                    RefTabIcon(icon: "doc.text",                    active: selectedTab == 2) { selectedTab = 2 }
-                    RefTabIcon(icon: "chart.bar.xaxis.ascending",   active: selectedTab == 3) { selectedTab = 3 }
+                    RefTabIcon(icon: "chart.line.uptrend.xyaxis",   active: selectedTab == .overview) { selectedTab = .overview }
+                    RefTabIcon(icon: "checklist",                   active: selectedTab == .checkIns) { selectedTab = .checkIns }
+                    RefTabIcon(icon: "doc.text",                    active: selectedTab == .journal) { selectedTab = .journal }
+                    RefTabIcon(icon: "chart.bar.xaxis.ascending",   active: selectedTab == .analytics) { selectedTab = .analytics }
                 }
                 .padding(.horizontal, 22)
                 .padding(.vertical, 16)
