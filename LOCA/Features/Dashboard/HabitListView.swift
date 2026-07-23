@@ -14,6 +14,15 @@
 
 import SwiftUI
 import SwiftData
+import Foundation
+
+#if canImport(UIKit)
+import UIKit
+#endif
+
+extension Notification.Name {
+    static let habitArchived = Notification.Name("habitArchived")
+}
 
 // MARK: - HabitListView
 
@@ -25,7 +34,13 @@ struct HabitListView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var showingCreateSheet = false
     @State private var showCheckInError   = false
+    @State private var showUndoToast = false
+    @State private var lastDeletedHabit: HabitBoard? = nil
+    @State private var showRecommendations = true
+    @State private var recommendations: [HabitRecommendation] = []
+    @State private var selectedRecommationTemplate: HabitTemplate?
     @AppStorage("habitListLayout") private var layout: String = "list"
+    @State private var syncStatus: SyncStatusCoordinator.SyncStatus = .idle
 
     /// Future: a HabitSortStrategy seam will allow pluggable sort modes.
     /// Today: manual (stable, user-defined) order. No reordering by state.
@@ -38,23 +53,38 @@ struct HabitListView: View {
             if displayBoards.isEmpty {
                 emptyStateView
             } else {
-                Group {
-                    switch layout {
-                    case "grid":
-                        HabitGridLayoutView(
-                            boardsWithState: boardsWithState,
-                            onCheckBinary: checkInBinary
+                VStack(spacing: DS.Space.lg) {
+                    Group {
+                        switch layout {
+                        case "grid":
+                            HabitGridLayoutView(
+                                boardsWithState: boardsWithState,
+                                onCheckBinary: checkInBinary
+                            )
+                        case "timeline":
+                            HabitTimelineLayoutView(
+                                boardsWithState: boardsWithState,
+                                onCheckBinary: checkInBinary
+                            )
+                        default: // "list"
+                            HabitListLayoutView(
+                                boardsWithState: boardsWithState,
+                                onCheckBinary: checkInBinary
+                            )
+                        }
+                    }
+
+                    // Show recommendations if few habits exist (Phase 3.4)
+                    if showRecommendations && !recommendations.isEmpty && displayBoards.count < 3 {
+                        HabitRecommendationCard(
+                            recommendations: recommendations,
+                            onSelect: { template in
+                                selectedRecommationTemplate = template
+                                showingCreateSheet = true
+                            },
+                            onDismiss: { showRecommendations = false }
                         )
-                    case "timeline":
-                        HabitTimelineLayoutView(
-                            boardsWithState: boardsWithState,
-                            onCheckBinary: checkInBinary
-                        )
-                    default: // "list"
-                        HabitListLayoutView(
-                            boardsWithState: boardsWithState,
-                            onCheckBinary: checkInBinary
-                        )
+                        .padding(DS.Space.lg)
                     }
                 }
             }
@@ -64,6 +94,7 @@ struct HabitListView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 HStack(spacing: DS.Space.md) {
+                    SyncStatusIndicatorView(syncStatus: syncStatus)
                     SettingsMenuView()
                     Button(action: { showingCreateSheet = true }) {
                         Image(systemName: "plus")
@@ -72,12 +103,88 @@ struct HabitListView: View {
             }
         }
         .sheet(isPresented: $showingCreateSheet) {
-            HabitFormView(mode: .create)
+            SimpleHabitCreationView()
         }
         .alert("Couldn't Save Check-in", isPresented: $showCheckInError) {
             Button("OK", role: .cancel) {}
         } message: {
             Text("The check-in couldn't be saved. Please try again.")
+        }
+        .overlay(alignment: .bottom) {
+            if showUndoToast, let habit = lastDeletedHabit {
+                undoToast(habit: habit)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .padding(DS.Space.lg)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .habitArchived)) { notif in
+            if let habit = notif.object as? HabitBoard {
+                lastDeletedHabit = habit
+                withAnimation {
+                    showUndoToast = true
+                }
+            }
+        }
+        .task {
+            // Listen for sync status changes (Phase 3.5)
+            SyncStatusCoordinator.shared.onStatusChanged { status in
+                withAnimation {
+                    syncStatus = status
+                }
+            }
+        }
+        .task(id: boards.count) {
+            // Generate recommendations based on existing habits (Phase 3.4)
+            let allLogs = boards.flatMap { board in
+                (board.logs ?? []).map { log in
+                    LogSnapshot(from: log)
+                }
+            }
+            recommendations = HabitRecommender.generateRecommendations(
+                existingBoards: displayBoards,
+                logs: allLogs,
+                maxRecommendations: 3
+            )
+        }
+    }
+
+    private func undoToast(habit: HabitBoard) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Habit archived")
+                    .font(DS.Text.body)
+                    .foregroundStyle(DS.Color.textPrimary)
+            }
+
+            Spacer()
+
+            Button("Undo") { undoDelete(habit: habit) }
+                .fontWeight(.semibold)
+                .foregroundStyle(ColorPalette[habit.colorIndex])
+        }
+        .padding(DS.Space.lg)
+        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                if showUndoToast { // Only auto-dismiss if user didn't undo
+                    withAnimation {
+                        showUndoToast = false
+                    }
+                }
+            }
+        }
+    }
+
+    private func undoDelete(habit: HabitBoard) {
+        habit.archivedAt = nil
+        do {
+            try modelContext.save()
+            withAnimation {
+                showUndoToast = false
+                lastDeletedHabit = nil
+            }
+        } catch {
+            // Error handling - silent fail for now
         }
     }
 
@@ -136,9 +243,16 @@ struct HabitListView: View {
     private func checkInBinary(board: HabitBoard) {
         do {
             try CheckInWriter.toggleBinary(board: board, context: modelContext)
+            triggerCheckInHaptic()
         } catch {
             showCheckInError = true
         }
+    }
+
+    private func triggerCheckInHaptic() {
+        #if canImport(UIKit)
+        UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
+        #endif
     }
 }
 

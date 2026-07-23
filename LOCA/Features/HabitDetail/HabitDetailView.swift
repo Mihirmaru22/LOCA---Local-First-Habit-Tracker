@@ -13,9 +13,19 @@ import SwiftData
 struct HabitDetailView: View {
     let board: HabitBoard
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     @State private var showingEditSheet    = false
     @State private var showingCheckIn      = false
     @State private var selectedTab         = 0
+    @State private var showGoalInference: Bool?  // nil = not yet checked, true/false = decision made
+    @State private var inferredGoal: Double = 0
+    @State private var showTimingSuggestion: Bool? = nil
+    @State private var suggestedHour: Int = 0
+    @State private var suggestedMinute: Int = 0
+    @State private var showReflectionPrompt: Bool? = nil
+    @State private var showGoalTuning: Bool? = nil
+    @State private var suggestedGoalValue: Double = 0
+    @State private var goalTuningReason: String = ""
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -35,6 +45,59 @@ struct HabitDetailView: View {
                 default:
                     ScrollView {
                         VStack(alignment: .leading, spacing: 12) {
+                            if showGoalInference == true && board.metric == .quantitative && board.targetValue == nil {
+                                GoalInferenceCard(
+                                    board: board,
+                                    inferredGoal: inferredGoal,
+                                    onAccept: { acceptGoalInference($0) },
+                                    onDismiss: { showGoalInference = false }
+                                )
+                                .padding(.horizontal, 18)
+                            }
+
+                            if showTimingSuggestion == true && board.preferredReminderTime == nil {
+                                TimingSuggestionCard(
+                                    board: board,
+                                    suggestedHour: suggestedHour,
+                                    suggestedMinute: suggestedMinute,
+                                    onAccept: { hour, minute in acceptTimingSuggestion(hour, minute) },
+                                    onDismiss: { showTimingSuggestion = false }
+                                )
+                                .padding(.horizontal, 18)
+                            }
+
+                            if showReflectionPrompt == true {
+                                ReflectionPromptCard(
+                                    board: board,
+                                    onResponse: { sentiment in respondToReflection(sentiment) },
+                                    onDismiss: { showReflectionPrompt = false }
+                                )
+                                .padding(.horizontal, 18)
+                            }
+
+                            if showGoalTuning == true && board.metric == .quantitative && board.targetValue != nil {
+                                GoalTuningCard(
+                                    board: board,
+                                    suggestedGoal: suggestedGoalValue,
+                                    currentGoal: board.targetValue ?? 1.0,
+                                    reason: goalTuningReason,
+                                    onAccept: { newGoal in acceptGoalTuning(newGoal) },
+                                    onDismiss: { showGoalTuning = false }
+                                )
+                                .padding(.horizontal, 18)
+                            }
+
+                            // Weekly insight summary (Phase 3.3)
+                            if let (daysCompleted, consistency) = computeWeeklyStats() {
+                                WeeklyInsightCard(
+                                    board: board,
+                                    daysCompletedThisWeek: daysCompleted,
+                                    weeklyConsistency: consistency,
+                                    currentStreak: board.currentStreak
+                                )
+                                .padding(.horizontal, 18)
+                            }
+
                             RefHeatmapCard(board: board)
                                 .padding(.horizontal, 18)
 
@@ -95,7 +158,7 @@ struct HabitDetailView: View {
             }
         }
         .sheet(isPresented: $showingEditSheet) {
-            HabitFormView(mode: .edit(board), onBoardArchived: { dismiss() })
+            SimpleHabitEditView(board: board)
         }
         .onChange(of: board.archivedAt) { _, newValue in
             if newValue != nil { dismiss() }
@@ -103,6 +166,165 @@ struct HabitDetailView: View {
         .sheet(isPresented: $showingCheckIn) {
             AddCheckInSheetView(board: board)
         }
+        .task {
+            checkForGoalInference()
+            checkForTimingSuggestion()
+            checkForReflectionPrompt()
+            checkForGoalTuning()
+        }
+    }
+
+    private func checkForGoalInference() {
+        guard showGoalInference == nil else { return }
+        guard board.metric == .quantitative && board.targetValue == nil else {
+            showGoalInference = false
+            return
+        }
+
+        let logs = board.logs ?? []
+        let snapshots = logs.map { LogSnapshot(from: $0) }
+
+        guard let inferredValue = GoalInference.inferFromFirstWeek(logs: snapshots) else {
+            showGoalInference = false
+            return
+        }
+
+        inferredGoal = inferredValue
+        showGoalInference = true
+    }
+
+    private func acceptGoalInference(_ value: Double) {
+        board.targetValue = value
+        do {
+            try modelContext.save()
+            showGoalInference = false
+        } catch {
+            // Silent fail; goal inference card remains visible for retry
+        }
+    }
+
+    private func checkForTimingSuggestion() {
+        guard showTimingSuggestion == nil else { return }
+        guard board.preferredReminderTime == nil else {
+            showTimingSuggestion = false
+            return
+        }
+
+        let logs = board.logs ?? []
+        let snapshots = logs.map { LogSnapshot(from: $0) }
+
+        guard let (hour, minute) = TimingInference.inferLoggingTime(logs: snapshots) else {
+            showTimingSuggestion = false
+            return
+        }
+
+        suggestedHour = hour
+        suggestedMinute = minute
+        showTimingSuggestion = true
+    }
+
+    private func acceptTimingSuggestion(_ hour: Int, _ minute: Int) {
+        let timeString = String(format: "%02d:%02d", hour, minute)
+        board.preferredReminderTime = timeString
+        do {
+            try modelContext.save()
+            // Schedule the reminder (Phase 3.1)
+            Task {
+                await ReminderScheduler.shared.scheduleReminder(for: board, time: timeString)
+            }
+            showTimingSuggestion = false
+        } catch {
+            // Silent fail; timing suggestion card remains visible for retry
+        }
+    }
+
+    private func checkForReflectionPrompt() {
+        guard showReflectionPrompt == nil else { return }
+
+        let logs = board.logs ?? []
+        let snapshots = logs.map { LogSnapshot(from: $0) }
+
+        guard ReflectionPrompt.shouldOffer(board: board, logs: snapshots) else {
+            showReflectionPrompt = false
+            return
+        }
+
+        showReflectionPrompt = true
+    }
+
+    private func respondToReflection(_ sentiment: String) {
+        board.lastReflectionPromptTime = .now
+        do {
+            try modelContext.save()
+            showReflectionPrompt = false
+        } catch {
+            // Silent fail; reflection card remains visible for retry
+        }
+    }
+
+    private func checkForGoalTuning() {
+        guard showGoalTuning == nil else { return }
+        guard board.metric == .quantitative && board.targetValue != nil else {
+            showGoalTuning = false
+            return
+        }
+
+        let logs = board.logs ?? []
+        let snapshots = logs.map { LogSnapshot(from: $0) }
+
+        // For Session 3.2, use empty reflections array (rely on consistency signals only).
+        // Future enhancement: store and pass reflection history.
+        guard let suggestedGoal = GoalTuning.suggestAdjustment(
+            board: board,
+            logs: snapshots,
+            recentReflections: []
+        ) else {
+            showGoalTuning = false
+            return
+        }
+
+        suggestedGoalValue = suggestedGoal
+        let changePercent = Int(((suggestedGoal - board.targetValue!) / board.targetValue!) * 100)
+        if changePercent > 0 {
+            goalTuningReason = "You're consistently hitting your goal. Let's try a bit harder."
+        } else {
+            goalTuningReason = "This goal feels challenging. Let's ease up a bit."
+        }
+        showGoalTuning = true
+    }
+
+    private func acceptGoalTuning(_ newGoal: Double) {
+        board.targetValue = newGoal
+        do {
+            try modelContext.save()
+            showGoalTuning = false
+        } catch {
+            // Silent fail; goal tuning card remains visible for retry
+        }
+    }
+
+    private func computeWeeklyStats() -> (daysCompleted: Int, consistency: Double)? {
+        let logs = board.logs ?? []
+        guard !logs.isEmpty else { return nil }
+
+        let calendar = Calendar.current
+        let sevenDaysAgo = calendar.date(byAdding: .day, value: -7, to: .now) ?? .now
+        let thisWeekLogs = logs.filter { $0.timestamp >= sevenDaysAgo }
+
+        guard !thisWeekLogs.isEmpty else { return nil }
+
+        // Days with logs
+        let daysWithLogs = Set(thisWeekLogs.map { calendar.startOfDay(for: $0.timestamp) }).count
+
+        // Consistency: % of goal met
+        let dayTotals = Dictionary(grouping: thisWeekLogs, by: { calendar.startOfDay(for: $0.timestamp) })
+            .mapValues { $0.reduce(0.0) { $0 + $1.value } }
+
+        let goal = board.effectiveTarget
+        let accuracyPerDay = dayTotals.map { min(1.0, $0.value / goal) }
+        let averageAccuracy = accuracyPerDay.isEmpty ? 0.0 : accuracyPerDay.reduce(0.0, +) / Double(accuracyPerDay.count)
+
+        return (daysCompleted: daysWithLogs, consistency: averageAccuracy)
     }
 }
 
@@ -178,9 +400,20 @@ struct RefHeatmapCard: View {
         }
         .frame(height: heatmapHeight())
         // 182 days (26 weeks) covers the widest reasonable grid on any iPhone width.
-        .task(id: "\(board.id)-\(board.logs?.count ?? -1)") {
+        .task(id: "\(board.id)-\(board.logs?.count ?? -1)-\(board.targetValue ?? -1)") {
             let snapshots = (board.logs ?? []).map(LogSnapshot.init(from:))
-            let target    = board.effectiveTarget
+            let logs = board.logs ?? []
+
+            // For quantitative habits without a goal, use average as intensity baseline.
+            // For binary or habits with explicit goals, use effectiveTarget.
+            let target: Double
+            if board.metric == .quantitative && board.targetValue == nil && !logs.isEmpty {
+                let average = logs.reduce(0.0) { $0 + $1.value } / Double(logs.count)
+                target = max(average, 1.0)  // Floor at 1.0 to avoid extreme intensity values
+            } else {
+                target = board.effectiveTarget
+            }
+
             let newCells  = await HeatmapDataProvider.buildDayGrid(
                 snapshots:  snapshots,
                 target:     target,
@@ -263,19 +496,38 @@ struct RefHeatCell: View {
     }
 }
 
-// MARK: - Streak card
+// MARK: - Consistency card (reframed from "streak")
 
 struct RefStreakCard: View {
     let board: HabitBoard
 
+    private var totalLogged: Int {
+        (board.logs ?? []).count
+    }
+
+    private var lastSevenDays: (logged: Int, total: Int) {
+        let calendar = Calendar.current
+        var count = 0
+        for i in 0..<7 {
+            guard let date = calendar.date(byAdding: .day, value: -i, to: .now) else { continue }
+            let dayStart = calendar.startOfDay(for: date)
+            guard let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) else { continue }
+            let hasDayLog = (board.logs ?? []).contains { log in
+                log.timestamp >= dayStart && log.timestamp < dayEnd
+            }
+            if hasDayLog { count += 1 }
+        }
+        return (count, 7)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Header
+            // Header — informational, not threatening
             HStack(spacing: 5) {
-                Image(systemName: "flame")
+                Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(Color(white: 0.55))
-                Text("CURRENT STREAK")
+                Text("CONSISTENCY")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(Color(white: 0.55))
                     .tracking(0.5)
@@ -283,33 +535,30 @@ struct RefStreakCard: View {
 
             Spacer(minLength: 18)
 
-            // Dash or number
-            if board.currentStreak > 0 {
-                Text("\(board.currentStreak)")
+            // Total times logged (primary metric)
+            HStack(alignment: .lastTextBaseline, spacing: 4) {
+                Text("\(totalLogged)")
                     .font(.system(size: 42, weight: .bold, design: .rounded))
                     .foregroundStyle(ColorPalette[board.colorIndex])
-            } else {
-                // Two thick white dashes
-                HStack(spacing: 8) {
-                    Capsule()
-                        .fill(Color(white: 0.75))
-                        .frame(width: 28, height: 7)
-                    Capsule()
-                        .fill(Color(white: 0.75))
-                        .frame(width: 38, height: 7)
-                }
+                Text("times")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color(white: 0.50))
+                    .padding(.bottom, 6)
             }
 
             Spacer(minLength: 14)
 
-            // Longest
+            // Recent pattern (last 7 days)
             HStack(spacing: 4) {
-                Text("Longest:")
+                Text("Last 7:")
                     .font(.system(size: 13))
                     .foregroundStyle(Color(white: 0.45))
-                Text("\(board.longestStreak)")
+                Text("\(lastSevenDays.logged)")
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(.white)
+                Text("of 7")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color(white: 0.45))
             }
         }
         .frame(maxWidth: .infinity, minHeight: 158, alignment: .leading)

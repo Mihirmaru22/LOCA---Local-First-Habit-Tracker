@@ -100,6 +100,27 @@ struct LOCAApp: App {
                         // above rather than serially behind its never-returning loop.
                         await streakMaintenanceCoordinator?.start()
                     }
+                    .task {
+                        // Request notification permission for reminders (Phase 3.1).
+                        // Non-critical; silent fail if permission denied.
+                        _ = await ReminderScheduler.shared.requestNotificationPermission()
+                    }
+                    .task {
+                        // Reschedule all reminders on launch (Phase 3.1).
+                        // Handles reminders that may have been cleared on system restart
+                        // or prior app updates.
+                        let fetchRequest = FetchDescriptor<HabitBoard>(
+                            predicate: #Predicate { $0.archivedAt == nil }
+                        )
+                        if let boards = try? container.mainContext.fetch(fetchRequest) {
+                            await ReminderScheduler.shared.rescheduleAllReminders(boards: boards)
+                        }
+                    }
+                    .task {
+                        // Monitor CloudKit sync status (Phase 3.5).
+                        // Non-blocking: displays sync state to user without interruption.
+                        await SyncStatusCoordinator.shared.start()
+                    }
             } else {
                 ContainerUnavailableView()
             }
