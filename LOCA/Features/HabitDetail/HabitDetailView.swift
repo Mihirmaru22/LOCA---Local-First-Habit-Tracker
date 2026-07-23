@@ -172,8 +172,8 @@ struct HabitDetailView: View {
         }
         .sheet(isPresented: $showingCheckIn) {
             AddCheckInSheetView(board: board)
+                .presentationDetents([.medium, .large])
         }
-        .presentationDetents([.medium, .large])
         .overlay(alignment: .top) {
             if showToast {
                 VStack(spacing: DS.Space.sm) {

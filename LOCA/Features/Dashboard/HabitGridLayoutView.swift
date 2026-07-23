@@ -197,8 +197,8 @@ struct GridHabitCard: View {
         .contentShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
         .sheet(isPresented: $showingCheckIn) {
             AddCheckInSheetView(board: board)
+                .presentationDetents([.medium, .large])
         }
-        .presentationDetents([.medium, .large])
         .id("\(board.id)-\(board.logs?.count ?? -1)")
     }
 }

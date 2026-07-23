@@ -169,10 +169,11 @@ struct HabitCheckInsView: View {
         }
         .sheet(isPresented: $showingAddCheckIn) {
             AddCheckInSheetView(board: board)
+                .presentationDetents([.medium, .large])
         }
-        .presentationDetents([.medium, .large])
         .sheet(item: $editingEntry) { entry in
             EditCheckInSheetView(entry: entry, board: board)
+                .presentationDetents([.medium, .large])
         }
         .overlay(alignment: .bottomTrailing) {
             Button(action: { showingAddCheckIn = true }) {
