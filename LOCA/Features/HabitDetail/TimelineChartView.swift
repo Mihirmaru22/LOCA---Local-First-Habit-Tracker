@@ -65,7 +65,7 @@ struct TimelineChartView: View {
 
                     HStack(spacing: DS.Space.xs) {
                         ForEach(periodOptions, id: \.self) { period in
-                            Button(action: { withAnimation(.easeInOut(duration: 0.2)) { selectedPeriod = period } }) {
+                            Button(action: { withAnimation(DS.Motion.settle(reduceMotion: reduceMotion)) { selectedPeriod = period } }) {
                                 Text(periodLabel(period))
                                     .font(DS.Text.caption)
                                     .foregroundStyle(
