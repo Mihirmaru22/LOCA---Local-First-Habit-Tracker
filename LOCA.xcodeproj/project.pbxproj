@@ -14,6 +14,7 @@
 		18249F7C9C57B3851AEC58CD /* UnitInference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 633111D4B01B739CA2804DCA /* UnitInference.swift */; };
 		1AFBD9A9BCBAED2CEF2354F4 /* TimingSuggestionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F822FA0B653D85D59C09E2 /* TimingSuggestionCard.swift */; };
 		1CB2E10ABA5B0C2C0D5BB59E /* ReflectionUnit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31F09F6CFAFE2E2F2B53FA5B /* ReflectionUnit.swift */; };
+		1DC4B5D5058FB91A88FEDA5E /* PredictionConfidence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08FE062CF468245B57185775 /* PredictionConfidence.swift */; };
 		1FB4B394E7334ADAAD65666E /* LOCAWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0F928C59F0243A385862E33 /* LOCAWidgetBundle.swift */; };
 		20237B905F07F6FB68C1E84C /* YearComparisonChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EED539C8E562129FC1FEB9B /* YearComparisonChartView.swift */; };
 		21F090B2CE8B4E3FB9E4F6C6 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A18185A6B14A16B58268EB /* ColorPalette.swift */; };
@@ -40,6 +41,7 @@
 		44693FCE5D424FE2907A1040 /* Date+Calendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CF2B6B9240E460892583CEC /* Date+Calendar.swift */; };
 		4AA1CD25606B82324EBBAB89 /* LOCAShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F386776E75E86F3F6312296 /* LOCAShortcuts.swift */; };
 		50C2F3E507384D21B34EB939 /* VersionedSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1E3F118B00458FA0744867 /* VersionedSchema.swift */; };
+		553DC15342FAE21DA7615A4F /* RelapsePrediction.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC65406A0F36779DBF9E9AB5 /* RelapsePrediction.swift */; };
 		5A16ED2F33C94E529C637EF7 /* Animation+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35FC423A6DF845B191C059CB /* Animation+Extensions.swift */; };
 		5A83AE55776345929CB34BF7 /* WidgetRefreshCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2805490003546CEAA6A8872 /* WidgetRefreshCoordinator.swift */; };
 		6260B091F4A4695307795022 /* ReminderScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF26E3DDB17CA4EFB50AF326 /* ReminderScheduler.swift */; };
@@ -143,6 +145,7 @@
 /* Begin PBXFileReference section */
 		007029E177424E23BA4737C3 /* PersistenceError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceError.swift; sourceTree = "<group>"; };
 		04AD22D76419B8B94DE6EC40 /* SettingsMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsMenuView.swift; sourceTree = "<group>"; };
+		08FE062CF468245B57185775 /* PredictionConfidence.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PredictionConfidence.swift; sourceTree = "<group>"; };
 		096517002462A37880A6D164 /* ReflectionPromptCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReflectionPromptCard.swift; sourceTree = "<group>"; };
 		0BA21E06F27743599B0781EF /* LOCAWidget-Debug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "LOCAWidget-Debug.entitlements"; sourceTree = "<group>"; };
 		0C506D98C9E7920BBD755A67 /* GoalInferenceCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalInferenceCard.swift; sourceTree = "<group>"; };
@@ -215,6 +218,7 @@
 		D5A18185A6B14A16B58268EB /* ColorPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPalette.swift; sourceTree = "<group>"; };
 		D5A3C37C1571405F2721E526 /* HabitTemplate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HabitTemplate.swift; sourceTree = "<group>"; };
 		D61E8A43B9C46C5F8DB68C17 /* HabitBoardEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitBoardEntity.swift; sourceTree = "<group>"; };
+		DC65406A0F36779DBF9E9AB5 /* RelapsePrediction.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RelapsePrediction.swift; sourceTree = "<group>"; };
 		DEBB745C663B20E8B2CAA432 /* WeekdaysChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeekdaysChartView.swift; sourceTree = "<group>"; };
 		DF26E3DDB17CA4EFB50AF326 /* ReminderScheduler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReminderScheduler.swift; sourceTree = "<group>"; };
 		E0F928C59F0243A385862E33 /* LOCAWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LOCAWidgetBundle.swift; sourceTree = "<group>"; };
@@ -407,6 +411,8 @@
 				633111D4B01B739CA2804DCA /* UnitInference.swift */,
 				ABB47131688E7C5399681358 /* ReflectionGenerator.swift */,
 				CFAB227BB75B4669CD834FFA /* HabitCorrelation.swift */,
+				08FE062CF468245B57185775 /* PredictionConfidence.swift */,
+				DC65406A0F36779DBF9E9AB5 /* RelapsePrediction.swift */,
 			);
 			path = HabitManagement;
 			sourceTree = "<group>";
@@ -733,6 +739,8 @@
 				30AC380C40213C8A7775C4C9 /* ReflectionGenerator.swift in Sources */,
 				8D67DF5372FD877ED3AC585F /* ReflectionDelivery.swift in Sources */,
 				E82E0AFCE194B81C1D1412E3 /* HabitCorrelation.swift in Sources */,
+				1DC4B5D5058FB91A88FEDA5E /* PredictionConfidence.swift in Sources */,
+				553DC15342FAE21DA7615A4F /* RelapsePrediction.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
