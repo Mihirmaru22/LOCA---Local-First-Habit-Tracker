@@ -395,12 +395,14 @@ struct RefHeatmapCard: View {
             .padding(.horizontal, hPad)
             .padding(.vertical, vPad)
             .frame(width: geo.size.width, height: totalH)
-            // Neutral surface so the Overview heatmap reads identically to the one the
-            // Analytics tab renders inside a LOCACard — one heatmap presentation, not two.
-            // The contribution cells carry the accent; the container stays restrained.
+            // Heatmap background distinct from card surface to preserve cell opacity
+            // hierarchy across light and dark modes. The opacity tiers (0.07–1.0)
+            // were tuned for a dark background; using a surface-colored container in
+            // light mode collapses the inactive-cell visibility. heatmapBackground
+            // maintains scanability by providing consistent contrast in both themes.
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
-                    .fill(DS.Color.surface)
+                    .fill(DS.Color.heatmapBackground)
             )
         }
         .frame(height: heatmapHeight())

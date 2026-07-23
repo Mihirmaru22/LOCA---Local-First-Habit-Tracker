@@ -147,6 +147,8 @@ private struct GridMiniHeatmap: View {
                     }
                 }
             }
+            .padding(8)
+            .background(DS.Color.heatmapBackground, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
         }
         .frame(height: heatmapHeight())
         // 56 days covers all cells in the 8×7 grid regardless of day-of-week alignment.
