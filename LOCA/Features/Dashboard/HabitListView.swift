@@ -123,7 +123,7 @@ struct HabitListView: View {
         .onReceive(NotificationCenter.default.publisher(for: .habitArchived)) { notif in
             if let habit = notif.object as? HabitBoard {
                 lastDeletedHabit = habit
-                withAnimation {
+                withAnimation(DS.Motion.settle(reduceMotion: reduceMotion)) {
                     showUndoToast = true
                 }
             }
@@ -134,7 +134,7 @@ struct HabitListView: View {
             // SyncStatus is Sendable, so nothing MainActor-isolated crosses into
             // the actor (Swift 6 complete concurrency).
             for await status in await SyncStatusCoordinator.shared.statusUpdates() {
-                withAnimation {
+                withAnimation(DS.Motion.settle(reduceMotion: reduceMotion)) {
                     syncStatus = status
                 }
             }
@@ -173,7 +173,7 @@ struct HabitListView: View {
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                 if showUndoToast { // Only auto-dismiss if user didn't undo
-                    withAnimation {
+                    withAnimation(DS.Motion.settle(reduceMotion: reduceMotion)) {
                         showUndoToast = false
                     }
                 }
@@ -185,7 +185,7 @@ struct HabitListView: View {
         habit.archivedAt = nil
         do {
             try modelContext.save()
-            withAnimation {
+            withAnimation(DS.Motion.settle(reduceMotion: reduceMotion)) {
                 showUndoToast = false
                 lastDeletedHabit = nil
             }
