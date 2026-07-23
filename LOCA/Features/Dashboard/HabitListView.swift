@@ -14,10 +14,15 @@
 
 import SwiftUI
 import SwiftData
+import Foundation
 
 #if canImport(UIKit)
 import UIKit
 #endif
+
+extension Notification.Name {
+    static let habitArchived = Notification.Name("habitArchived")
+}
 
 // MARK: - HabitListView
 
@@ -29,6 +34,8 @@ struct HabitListView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var showingCreateSheet = false
     @State private var showCheckInError   = false
+    @State private var showUndoToast = false
+    @State private var lastDeletedHabit: HabitBoard? = nil
     @AppStorage("habitListLayout") private var layout: String = "list"
 
     /// Future: a HabitSortStrategy seam will allow pluggable sort modes.
@@ -82,6 +89,61 @@ struct HabitListView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text("The check-in couldn't be saved. Please try again.")
+        }
+        .overlay(alignment: .bottom) {
+            if showUndoToast, let habit = lastDeletedHabit {
+                undoToast(habit: habit)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .padding(DS.Space.lg)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .habitArchived)) { notif in
+            if let habit = notif.object as? HabitBoard {
+                lastDeletedHabit = habit
+                withAnimation {
+                    showUndoToast = true
+                }
+            }
+        }
+    }
+
+    private func undoToast(habit: HabitBoard) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Habit archived")
+                    .font(DS.Text.body)
+                    .foregroundStyle(DS.Color.textPrimary)
+            }
+
+            Spacer()
+
+            Button("Undo") { undoDelete(habit: habit) }
+                .fontWeight(.semibold)
+                .foregroundStyle(ColorPalette[habit.colorIndex])
+        }
+        .padding(DS.Space.lg)
+        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                if showUndoToast { // Only auto-dismiss if user didn't undo
+                    withAnimation {
+                        showUndoToast = false
+                    }
+                }
+            }
+        }
+    }
+
+    private func undoDelete(habit: HabitBoard) {
+        habit.archivedAt = nil
+        do {
+            try modelContext.save()
+            withAnimation {
+                showUndoToast = false
+                lastDeletedHabit = nil
+            }
+        } catch {
+            // Error handling - silent fail for now
         }
     }
 

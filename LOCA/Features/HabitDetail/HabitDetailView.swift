@@ -95,7 +95,7 @@ struct HabitDetailView: View {
             }
         }
         .sheet(isPresented: $showingEditSheet) {
-            HabitFormView(mode: .edit(board), onBoardArchived: { dismiss() })
+            SimpleHabitEditView(board: board)
         }
         .onChange(of: board.archivedAt) { _, newValue in
             if newValue != nil { dismiss() }
