@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import os.log
 
 // MARK: - LOCAApp
 
@@ -46,6 +47,7 @@ struct LOCAApp: App {
     private let container: ModelContainer?
     private let cloudKitCoordinator: CloudKitSyncCoordinator?
     private let streakMaintenanceCoordinator: StreakMaintenanceCoordinator?
+    nonisolated private let logger = Logger(subsystem: "com.loca.app", category: "app")
 
     init() {
         do {
@@ -130,26 +132,34 @@ struct LOCAApp: App {
                         await SyncStatusCoordinator.shared.start()
                     }
                     .task {
-                        // Generate and deliver reflections (Phase 4.1).
+                        // Generate and deliver reflections (Phase 4.1–4.4).
                         // One honest sentence tied to progress, delivered as push.
-                        // Returns nil if nothing's worth saying (Phase 4.3: guardrails).
-                        let fetchRequest = FetchDescriptor<HabitBoard>(
-                            predicate: #Predicate { $0.archivedAt == nil }
-                        )
-                        if let boards = try? container.mainContext.fetch(fetchRequest) {
-                            // Generate one reflection per active habit
-                            for board in boards {
-                                let logs = (board.logs ?? []).map { LogSnapshot(from: $0) }
-                                if let reflection = ReflectionGenerator.generateForHabit(board: board, logs: logs) {
-                                    await ReflectionDelivery.shared.deliverReflection(reflection)
-                                    // Limit to one reflection per app session to avoid noise
-                                    break
+                        // Phase 4.4: Exit gate — if engagement < 30% over 20 reflections, suppress.
+                        while true {
+                            // Check if feature is still earning attention (Phase 4.4)
+                            if !await ReflectionDelivery.shared.shouldContinueReflections() {
+                                logger.debug("Reflection feature suppressed due to low engagement")
+                                break
+                            }
+
+                            let fetchRequest = FetchDescriptor<HabitBoard>(
+                                predicate: #Predicate { $0.archivedAt == nil }
+                            )
+                            if let boards = try? container.mainContext.fetch(fetchRequest) {
+                                // Generate one reflection per active habit
+                                for board in boards {
+                                    let logs = (board.logs ?? []).map { LogSnapshot(from: $0) }
+                                    if let reflection = ReflectionGenerator.generateForHabit(board: board, logs: logs) {
+                                        await ReflectionDelivery.shared.deliverReflection(reflection)
+                                        // Limit to one reflection per app session to avoid noise
+                                        break
+                                    }
                                 }
                             }
-                        }
 
-                        // Wait ~24 hours before regenerating (Phase 4.1: rare).
-                        try? await Task.sleep(for: .hours(24))
+                            // Wait ~24 hours before regenerating (Phase 4.1: rare).
+                            try? await Task.sleep(for: .hours(24))
+                        }
                     }
             } else {
                 ContainerUnavailableView()

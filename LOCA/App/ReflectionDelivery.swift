@@ -73,11 +73,33 @@ actor ReflectionDelivery {
         }
     }
 
-    /// Get engagement metrics for the last N reflections.
-    /// Returns (total delivered, actually engaged).
-    func getEngagementMetrics(lastN: Int = 10) -> (delivered: Int, engaged: Int) {
+    /// Get engagement metrics for the last N reflections (Phase 4.4).
+    /// Returns (total delivered, actually engaged, engagement rate).
+    func getEngagementMetrics(lastN: Int = 10) -> (delivered: Int, engaged: Int, rate: Double) {
         let recent = recentReflections.suffix(lastN)
         let engaged = recent.filter { $0.wasEngaged }.count
-        return (recent.count, engaged)
+        let rate = recent.isEmpty ? 0 : Double(engaged) / Double(recent.count)
+        return (recent.count, engaged, rate)
+    }
+
+    /// Check if reflections are earning enough attention to continue (Phase 4.4).
+    /// Exit gate: if engagement rate < 30% over last 20 reflections, suppress.
+    /// Honest measurement: don't defend feature if users ignore it.
+    func shouldContinueReflections() -> Bool {
+        let (delivered, _, rate) = getEngagementMetrics(lastN: 20)
+
+        // Need minimum sample size
+        guard delivered >= 20 else { return true }
+
+        // If only 30%+ of reflections get engaged, continue; else suppress
+        return rate >= 0.3
+    }
+
+    /// Log delivery for tracking. Call this each time a reflection is sent.
+    func recordDelivery(_ reflection: ReflectionUnit) {
+        recentReflections.append(reflection)
+        if recentReflections.count > 50 {
+            recentReflections.removeFirst()
+        }
     }
 }

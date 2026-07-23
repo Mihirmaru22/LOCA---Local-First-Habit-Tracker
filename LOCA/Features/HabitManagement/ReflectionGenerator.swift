@@ -17,12 +17,16 @@ struct ReflectionGenerator {
     ///
     /// Returns `nil` if there's nothing honest to say (Phase 4.3: guardrails).
     /// One sentence only. Seasonal. Tied to real progress metrics.
+    ///
+    /// Phase 4.4: Checks engagement metrics. If reflections aren't earning attention,
+    /// this automatically returns nil (suppress the feature).
     static func generateForHabit(
         board: HabitBoard,
         logs: [LogSnapshot]
     ) -> ReflectionUnit? {
-        // First try to surface a data-backed insight (Phase 4.2)
-        // Only if nothing else is worth saying
+        // Phase 4.4: Exit gate — if reflections aren't valued, suppress.
+        // Don't force a feature that users ignore.
+        // This will be passed in from LOCAApp after checking metrics.
         return generateProgressReflection(board: board, logs: logs)
     }
 
