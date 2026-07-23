@@ -25,10 +25,11 @@ struct HabitCorrelation: Identifiable {
     /// Number of data points used to derive this correlation
     let dataPointCount: Int
 
-    /// Whether this insight is confident enough to surface to the user.
+    /// Whether this insight is confident enough to surface to the user (Phase 4.3: guardrails).
+    /// Requires both sufficient data AND strong confidence to avoid low-signal noise.
     var isSurfaceable: Bool {
-        // Require 10+ data points and 60%+ confidence
-        return dataPointCount >= 10 && confidence >= 0.6
+        // Require 15+ data points and 70%+ confidence for reflection-level certainty
+        return dataPointCount >= 15 && confidence >= 0.7
     }
 }
 

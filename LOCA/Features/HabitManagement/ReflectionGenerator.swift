@@ -46,6 +46,12 @@ struct ReflectionGenerator {
         board: HabitBoard,
         logs: [LogSnapshot]
     ) -> ReflectionUnit? {
+        // Phase 4.3: Guardrails
+        // Suppress during lapse/grief; suppress if low confidence
+        if shouldSuppressForGuardrails(board: board, logs: logs) {
+            return nil
+        }
+
         // Filter recent logs (last 30 days)
         let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: .now) ?? .now
         let recentLogs = logs.filter { $0.timestamp > thirtyDaysAgo }
@@ -165,5 +171,57 @@ struct ReflectionGenerator {
             return .consistency
         }
         return .evening
+    }
+
+    // MARK: - Phase 4.3: Guardrails
+
+    /// Check if we should suppress this reflection.
+    /// Returns true if:
+    /// - User is in a lapse/grief period (3+ days no logging)
+    /// - Confidence is low (not enough data)
+    /// - Nothing worth saying
+    private static func shouldSuppressForGuardrails(
+        board: HabitBoard,
+        logs: [LogSnapshot]
+    ) -> Bool {
+        // Suppress during lapse/grief: if last log was 3+ days ago
+        if isInLapsePeriod(logs: logs) {
+            return true
+        }
+
+        // Suppress if not enough data (low confidence)
+        if logs.count < 5 {
+            return true
+        }
+
+        // Suppress if nothing changed recently (user already knows the state)
+        if hasBeenReflectedRecently(board: board) {
+            return true
+        }
+
+        return false
+    }
+
+    /// Check if user is in a lapse/grief period (no logging for 3+ days).
+    /// During lapse, suppress reflections — user doesn't need judgment.
+    private static func isInLapsePeriod(logs: [LogSnapshot]) -> Bool {
+        guard !logs.isEmpty else { return true }
+
+        let sortedLogs = logs.sorted { $0.timestamp < $1.timestamp }
+        guard let lastLog = sortedLogs.last else { return true }
+
+        let daysSinceLastLog = Calendar.current.dateComponents([.day], from: lastLog.timestamp, to: .now).day ?? 0
+        return daysSinceLastLog >= 3
+    }
+
+    /// Check if we've already reflected on this habit recently.
+    /// Avoid repeating the same insight.
+    private static func hasBeenReflectedRecently(board: HabitBoard) -> Bool {
+        // In production, this would check the ReflectionDelivery history
+        // For now, check if lastReflectionPromptTime was < 3 days ago (different feature, but similar idea)
+        guard let lastReflection = board.lastReflectionPromptTime else { return false }
+
+        let daysSinceReflection = Calendar.current.dateComponents([.day], from: lastReflection, to: .now).day ?? 0
+        return daysSinceReflection < 3
     }
 }
