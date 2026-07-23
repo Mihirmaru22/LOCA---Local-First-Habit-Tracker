@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		052F419EE842417885F32906 /* Animation+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35FC423A6DF845B191C059CB /* Animation+Extensions.swift */; };
+		06885DFB4FE24561E4822833 /* InterventionGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8C92EBB9BE72C0D344BB2D0 /* InterventionGenerator.swift */; };
 		0EAD048982ABBBD69CB17340 /* ReflectionPromptCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 096517002462A37880A6D164 /* ReflectionPromptCard.swift */; };
 		10E00AF3464D4663A80A2612 /* VersionedSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1E3F118B00458FA0744867 /* VersionedSchema.swift */; };
 		126502F6A951AC2CD8F22DA0 /* WeeklyBarChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37119D6BF608C9E0EDFAA772 /* WeeklyBarChart.swift */; };
@@ -42,6 +43,7 @@
 		4AA1CD25606B82324EBBAB89 /* LOCAShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F386776E75E86F3F6312296 /* LOCAShortcuts.swift */; };
 		50C2F3E507384D21B34EB939 /* VersionedSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1E3F118B00458FA0744867 /* VersionedSchema.swift */; };
 		553DC15342FAE21DA7615A4F /* RelapsePrediction.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC65406A0F36779DBF9E9AB5 /* RelapsePrediction.swift */; };
+		566D4E78C84AF0817BF99793 /* InterventionDelivery.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8D44504DAFAD52283649ABE /* InterventionDelivery.swift */; };
 		5A16ED2F33C94E529C637EF7 /* Animation+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35FC423A6DF845B191C059CB /* Animation+Extensions.swift */; };
 		5A83AE55776345929CB34BF7 /* WidgetRefreshCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2805490003546CEAA6A8872 /* WidgetRefreshCoordinator.swift */; };
 		6260B091F4A4695307795022 /* ReminderScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF26E3DDB17CA4EFB50AF326 /* ReminderScheduler.swift */; };
@@ -202,6 +204,8 @@
 		AC2A0A306DFA5ED6612B1D4B /* SyncStatusCoordinator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SyncStatusCoordinator.swift; sourceTree = "<group>"; };
 		B23613967AF94542A106EAAA /* LOCA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LOCA.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B2CD94489A034908FA22613E /* HeatmapWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeatmapWidgetView.swift; sourceTree = "<group>"; };
+		B8C92EBB9BE72C0D344BB2D0 /* InterventionGenerator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InterventionGenerator.swift; sourceTree = "<group>"; };
+		B8D44504DAFAD52283649ABE /* InterventionDelivery.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InterventionDelivery.swift; sourceTree = "<group>"; };
 		BA7ECE49E75530F4636DA3CA /* HabitBoardDraft.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitBoardDraft.swift; sourceTree = "<group>"; };
 		BB8CDE96C66C4C29B7CBC6BD /* LOCAWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LOCAWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		BC030C237B1891FB7C73C581 /* ReflectionDelivery.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReflectionDelivery.swift; sourceTree = "<group>"; };
@@ -318,6 +322,7 @@
 				F2805490003546CEAA6A8872 /* WidgetRefreshCoordinator.swift */,
 				AC2A0A306DFA5ED6612B1D4B /* SyncStatusCoordinator.swift */,
 				BC030C237B1891FB7C73C581 /* ReflectionDelivery.swift */,
+				B8D44504DAFAD52283649ABE /* InterventionDelivery.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -413,6 +418,7 @@
 				CFAB227BB75B4669CD834FFA /* HabitCorrelation.swift */,
 				08FE062CF468245B57185775 /* PredictionConfidence.swift */,
 				DC65406A0F36779DBF9E9AB5 /* RelapsePrediction.swift */,
+				B8C92EBB9BE72C0D344BB2D0 /* InterventionGenerator.swift */,
 			);
 			path = HabitManagement;
 			sourceTree = "<group>";
@@ -741,6 +747,8 @@
 				E82E0AFCE194B81C1D1412E3 /* HabitCorrelation.swift in Sources */,
 				1DC4B5D5058FB91A88FEDA5E /* PredictionConfidence.swift in Sources */,
 				553DC15342FAE21DA7615A4F /* RelapsePrediction.swift in Sources */,
+				06885DFB4FE24561E4822833 /* InterventionGenerator.swift in Sources */,
+				566D4E78C84AF0817BF99793 /* InterventionDelivery.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
