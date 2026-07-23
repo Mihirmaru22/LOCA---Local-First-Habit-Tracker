@@ -102,6 +102,7 @@ struct SimpleHabitCreationView: View {
             dismiss()
             onHabitCreated?(createdID)
         } catch {
+            modelContext.rollback()
             isSaving = false
             showSaveError = true
         }
