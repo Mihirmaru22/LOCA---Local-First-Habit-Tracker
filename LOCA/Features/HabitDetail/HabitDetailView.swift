@@ -36,6 +36,8 @@ struct HabitDetailView: View {
     @State private var showGoalTuning: Bool? = nil
     @State private var suggestedGoalValue: Double = 0
     @State private var goalTuningReason: String = ""
+    @State private var toastMessage: String = ""
+    @State private var showToast = false
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -172,6 +174,26 @@ struct HabitDetailView: View {
             AddCheckInSheetView(board: board)
         }
         .presentationDetents([.medium, .large])
+        .overlay(alignment: .top) {
+            if showToast {
+                VStack(spacing: DS.Space.sm) {
+                    HStack(spacing: DS.Space.md) {
+                        Image(systemName: "exclamation.circle.fill")
+                            .font(DS.Text.body)
+                            .foregroundStyle(ColorPalette[9])
+                        Text(toastMessage)
+                            .font(DS.Text.caption)
+                            .foregroundStyle(DS.Color.textPrimary)
+                        Spacer()
+                    }
+                    .padding(DS.Space.md)
+                    .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.control))
+                    .padding(DS.Space.lg)
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .animation(DS.Motion.settle(reduceMotion: reduceMotion), value: showToast)
+            }
+        }
         .task {
             checkForGoalInference()
             checkForTimingSuggestion()
@@ -205,7 +227,8 @@ struct HabitDetailView: View {
             try modelContext.save()
             showGoalInference = false
         } catch {
-            // Silent fail; goal inference card remains visible for retry
+            showErrorToast("Couldn't save goal. Try again.")
+            Haptics.notify(.error)
         }
     }
 
@@ -242,7 +265,8 @@ struct HabitDetailView: View {
             }
             showTimingSuggestion = false
         } catch {
-            // Silent fail; timing suggestion card remains visible for retry
+            showErrorToast("Couldn't save reminder time. Try again.")
+            Haptics.notify(.error)
         }
     }
 
@@ -266,7 +290,8 @@ struct HabitDetailView: View {
             try modelContext.save()
             showReflectionPrompt = false
         } catch {
-            // Silent fail; reflection card remains visible for retry
+            showErrorToast("Couldn't save reflection. Try again.")
+            Haptics.notify(.error)
         }
     }
 
@@ -307,7 +332,20 @@ struct HabitDetailView: View {
             try modelContext.save()
             showGoalTuning = false
         } catch {
-            // Silent fail; goal tuning card remains visible for retry
+            showErrorToast("Couldn't save new goal. Try again.")
+            Haptics.notify(.error)
+        }
+    }
+
+    private func showErrorToast(_ message: String) {
+        toastMessage = message
+        withAnimation(DS.Motion.settle(reduceMotion: reduceMotion)) {
+            showToast = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            withAnimation(DS.Motion.settle(reduceMotion: reduceMotion)) {
+                showToast = false
+            }
         }
     }
 
