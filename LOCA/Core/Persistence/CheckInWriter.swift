@@ -10,6 +10,16 @@
 import SwiftData
 import Foundation
 
+// MARK: - Notification Names
+
+extension Notification.Name {
+    /// Posted after any non-today insert, delete, or update so the streak
+    /// recalculation pipeline can repair the cached streak values (C-2).
+    /// Defined here because CheckInWriter is the sole posting site and is
+    /// compiled into both the main app and the widget extension.
+    static let streakRecalculationRequested = Notification.Name("streakRecalculationRequested")
+}
+
 // MARK: - CheckInWriter
 
 /// Coordinates all check-in mutations: insert, delete, update, and binary toggle.

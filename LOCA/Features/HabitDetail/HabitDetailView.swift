@@ -372,10 +372,10 @@ struct RefConsistencyCard: View {
 
                 VStack(spacing: 2) {
                     Text("\(Int((ratio * 100).rounded()))%")
-                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                        .font(.system(.title3, design: .rounded, weight: .semibold))
                         .foregroundStyle(Color(white: 0.70))
                     Text("this month")
-                        .font(.system(size: 10))
+                        .font(.caption2)
                         .foregroundStyle(Color(white: 0.42))
                 }
             }

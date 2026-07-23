@@ -271,7 +271,9 @@ extension Notification.Name {
     /// Observed by `StreakMaintenanceCoordinator` alongside `cloudKitImportDidComplete`;
     /// both triggers simply re-run the recalculation pass, whose work list is the set of
     /// flagged boards.
-    static let streakRecalculationRequested = Notification.Name("streakRecalculationRequested")
+    ///
+    /// Defined in CheckInWriter.swift — the sole posting site — so the constant is
+    /// available in both the main app and the widget extension targets.
 }
 
 // MARK: - StreakMaintenanceCoordinator

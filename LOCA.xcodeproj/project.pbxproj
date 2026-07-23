@@ -18,6 +18,7 @@
 		92BC012896714130A1B029DB /* ModelContainerFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AE37A1D4A974FA396744088 /* ModelContainerFactory.swift */; };
 		9A14DA72010B4F2CA5E419E7 /* ModelContainerFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AE37A1D4A974FA396744088 /* ModelContainerFactory.swift */; };
 		CF3B2C3D4E5F6A7B8C9D0E1F /* CheckInWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF3A1B2C3D4E5F6A7B8C9D0E /* CheckInWriter.swift */; };
+		CF4D3E4F5A6B7C8D9E0F1A2B /* CheckInWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF3A1B2C3D4E5F6A7B8C9D0E /* CheckInWriter.swift */; };
 		FD032596119C457A8C650DD9 /* PersistenceError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 007029E177424E23BA4737C3 /* PersistenceError.swift */; };
 		FD67DA6924D0492880CEB1EA /* PersistenceError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 007029E177424E23BA4737C3 /* PersistenceError.swift */; };
 		A97E09E4062B4BEFAE3D7418 /* DebugSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E8D37FD0EAC4BBB8192F147 /* DebugSeeder.swift */; };
@@ -637,6 +638,7 @@
 				39E6C7226EBD1E6144C4B5F0 /* HeatmapWidgetView.swift in Sources */,
 				271E0C3C3B456E4E33894ADE /* HabitBoardEntity.swift in Sources */,
 				31FEB59889D5EE21963C1D9A /* LogHabitIntent.swift in Sources */,
+				CF4D3E4F5A6B7C8D9E0F1A2B /* CheckInWriter.swift in Sources */,
 				F18CA204FECB9D1C102ECADE /* WidgetRefreshCoordinator.swift in Sources */,
 				052F419EE842417885F32906 /* Animation+Extensions.swift in Sources */,
 			);
@@ -735,7 +737,7 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortraitUpsideDown";
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mihirmaru.loca;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -755,7 +757,7 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortraitUpsideDown";
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mihirmaru.loca;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -773,7 +775,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = LOCAWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "LOCA Widget";
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mihirmaru.loca.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -791,7 +793,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = LOCAWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "LOCA Widget";
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mihirmaru.loca.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -810,7 +812,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mihirmaru.loca.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -834,7 +836,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mihirmaru.loca.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;

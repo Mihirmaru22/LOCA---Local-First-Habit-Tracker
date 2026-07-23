@@ -287,10 +287,29 @@ Select the `LOCA` scheme → set `LOCAL_DEVELOPMENT` if on a personal team → b
 - [ ] Test on macOS — all layouts, no iOS-only crashes
 - [ ] Add widget to Home Screen, tap check-in button, verify sync to app
 
-### Accessibility
-- Dynamic Type: test at maximum scale
-- VoiceOver: all interactive elements reachable and labelled
-- Reduce Motion: all animations disabled gracefully
+### Accessibility (T16 pass — 2026-07-22)
+
+**VoiceOver**
+- All interactive list rows have `.accessibilityElement(children: .ignore)` + descriptive `.accessibilityLabel` (habit name, streak, today status).
+- FAB "+" button carries `.accessibilityLabel("New Habit")` / "New Check-in".
+- Swipe actions (Delete/Edit/Duplicate) are exposed via native `.swipeActions` — automatically reachable by VoiceOver's swipe-to-action gesture.
+- Form fields labelled: habit name, type picker, daily goal amount, color swatches.
+- Heatmap cells carry per-cell accessibility labels (date + value).
+
+**Dynamic Type**
+- All prose uses semantic `DS.Text` tokens (`Font.headline`, `Font.subheadline`, etc.) that scale automatically.
+- Fixed-size fonts in data-visualization elements (heatmap cells ≤12pt, chart axis labels ≤11pt) are intentional for layout integrity; these elements supplement rather than replace the labelled text data.
+- RefConsistencyCard percentage and label use `.system(.title3, …)` / `.caption2` (semantic — T16 fix).
+
+**Reduce Motion**
+- `@Environment(\.accessibilityReduceMotion)` is read in `HabitCheckInsView`; animations skip when set.
+
+**WCAG AA Contrast**
+- Dark mode: all 12 palette colors pass 4.5:1 vs dark surface. ✓
+- Light mode: palette indices 0, 2, 3, 6, 9, 10 pass 3:1 (UI-element threshold); 1, 4, 5, 7, 8, 11 fail vs pure white. Accents always render on dark DS.Color.surface cards in the current UI — no pure-white context exists today.
+
+**App Icon**
+- `AppIcon.appiconset` slot definitions are present for iOS (1024×1024 universal) and macOS (16–512pt scales). Image files must be supplied by the developer before submission.
 
 ---
 
