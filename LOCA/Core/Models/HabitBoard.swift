@@ -72,6 +72,10 @@ final class HabitBoard {
     /// `nil` if no reminder is set. Inferred from logging patterns in Phase 2.3.
     var preferredReminderTime: String? = nil
 
+    /// Timestamp of the last weekly reflection prompt shown to the user.
+    /// Used to throttle reflection prompts to once per week.
+    var lastReflectionPromptTime: Date? = nil
+
     /// The timestamp at which this board was first created.
     var createdAt: Date = Date()
 

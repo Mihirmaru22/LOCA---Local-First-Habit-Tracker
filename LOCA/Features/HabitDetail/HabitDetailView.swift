@@ -22,6 +22,7 @@ struct HabitDetailView: View {
     @State private var showTimingSuggestion: Bool? = nil
     @State private var suggestedHour: Int = 0
     @State private var suggestedMinute: Int = 0
+    @State private var showReflectionPrompt: Bool? = nil
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -58,6 +59,15 @@ struct HabitDetailView: View {
                                     suggestedMinute: suggestedMinute,
                                     onAccept: { hour, minute in acceptTimingSuggestion(hour, minute) },
                                     onDismiss: { showTimingSuggestion = false }
+                                )
+                                .padding(.horizontal, 18)
+                            }
+
+                            if showReflectionPrompt == true {
+                                ReflectionPromptCard(
+                                    board: board,
+                                    onResponse: { sentiment in respondToReflection(sentiment) },
+                                    onDismiss: { showReflectionPrompt = false }
                                 )
                                 .padding(.horizontal, 18)
                             }
@@ -133,6 +143,7 @@ struct HabitDetailView: View {
         .task {
             checkForGoalInference()
             checkForTimingSuggestion()
+            checkForReflectionPrompt()
         }
     }
 
@@ -193,6 +204,30 @@ struct HabitDetailView: View {
             showTimingSuggestion = false
         } catch {
             // Silent fail; timing suggestion card remains visible for retry
+        }
+    }
+
+    private func checkForReflectionPrompt() {
+        guard showReflectionPrompt == nil else { return }
+
+        let logs = board.logs ?? []
+        let snapshots = logs.map { LogSnapshot(from: $0) }
+
+        guard ReflectionPrompt.shouldOffer(board: board, logs: snapshots) else {
+            showReflectionPrompt = false
+            return
+        }
+
+        showReflectionPrompt = true
+    }
+
+    private func respondToReflection(_ sentiment: String) {
+        board.lastReflectionPromptTime = .now
+        do {
+            try modelContext.save()
+            showReflectionPrompt = false
+        } catch {
+            // Silent fail; reflection card remains visible for retry
         }
     }
 }
