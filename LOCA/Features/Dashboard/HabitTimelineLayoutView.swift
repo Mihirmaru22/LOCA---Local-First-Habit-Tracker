@@ -290,7 +290,7 @@ struct HabitTimelineCard: View {
     private var stateLabel: String {
         switch state {
         case .needsAction:
-            return "TODO"
+            return "TO DO"
         case .inProgress:
             return "IN PROGRESS"
         case .behind:
