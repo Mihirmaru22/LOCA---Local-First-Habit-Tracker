@@ -15,6 +15,10 @@
 import SwiftUI
 import SwiftData
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
 // MARK: - HabitListView
 
 struct HabitListView: View {
@@ -136,9 +140,16 @@ struct HabitListView: View {
     private func checkInBinary(board: HabitBoard) {
         do {
             try CheckInWriter.toggleBinary(board: board, context: modelContext)
+            triggerCheckInHaptic()
         } catch {
             showCheckInError = true
         }
+    }
+
+    private func triggerCheckInHaptic() {
+        #if canImport(UIKit)
+        UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
+        #endif
     }
 }
 
