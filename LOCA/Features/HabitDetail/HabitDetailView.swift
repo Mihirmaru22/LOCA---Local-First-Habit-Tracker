@@ -19,6 +19,9 @@ struct HabitDetailView: View {
     @State private var selectedTab         = 0
     @State private var showGoalInference: Bool?  // nil = not yet checked, true/false = decision made
     @State private var inferredGoal: Double = 0
+    @State private var showTimingSuggestion: Bool? = nil
+    @State private var suggestedHour: Int = 0
+    @State private var suggestedMinute: Int = 0
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -44,6 +47,17 @@ struct HabitDetailView: View {
                                     inferredGoal: inferredGoal,
                                     onAccept: { acceptGoalInference($0) },
                                     onDismiss: { showGoalInference = false }
+                                )
+                                .padding(.horizontal, 18)
+                            }
+
+                            if showTimingSuggestion == true && board.preferredReminderTime == nil {
+                                TimingSuggestionCard(
+                                    board: board,
+                                    suggestedHour: suggestedHour,
+                                    suggestedMinute: suggestedMinute,
+                                    onAccept: { hour, minute in acceptTimingSuggestion(hour, minute) },
+                                    onDismiss: { showTimingSuggestion = false }
                                 )
                                 .padding(.horizontal, 18)
                             }
@@ -118,6 +132,7 @@ struct HabitDetailView: View {
         }
         .task {
             checkForGoalInference()
+            checkForTimingSuggestion()
         }
     }
 
@@ -147,6 +162,37 @@ struct HabitDetailView: View {
             showGoalInference = false
         } catch {
             // Silent fail; goal inference card remains visible for retry
+        }
+    }
+
+    private func checkForTimingSuggestion() {
+        guard showTimingSuggestion == nil else { return }
+        guard board.preferredReminderTime == nil else {
+            showTimingSuggestion = false
+            return
+        }
+
+        let logs = board.logs ?? []
+        let snapshots = logs.map { LogSnapshot(from: $0) }
+
+        guard let (hour, minute) = TimingInference.inferLoggingTime(logs: snapshots) else {
+            showTimingSuggestion = false
+            return
+        }
+
+        suggestedHour = hour
+        suggestedMinute = minute
+        showTimingSuggestion = true
+    }
+
+    private func acceptTimingSuggestion(_ hour: Int, _ minute: Int) {
+        let timeString = String(format: "%02d:%02d", hour, minute)
+        board.preferredReminderTime = timeString
+        do {
+            try modelContext.save()
+            showTimingSuggestion = false
+        } catch {
+            // Silent fail; timing suggestion card remains visible for retry
         }
     }
 }

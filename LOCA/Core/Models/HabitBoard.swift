@@ -68,6 +68,10 @@ final class HabitBoard {
     /// If `nil`, a default icon is shown. Users set this via HabitFormView.
     var emoji: String? = nil
 
+    /// Preferred reminder time in HH:MM format (e.g., "06:30").
+    /// `nil` if no reminder is set. Inferred from logging patterns in Phase 2.3.
+    var preferredReminderTime: String? = nil
+
     /// The timestamp at which this board was first created.
     var createdAt: Date = Date()
 
