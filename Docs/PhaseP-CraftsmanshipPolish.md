@@ -7,9 +7,19 @@ changes, no business-logic changes**. It closes the gap between "works" and "fee
 like Apple built it," measured against `DESIGN_LANGUAGE.md` (the seven identity
 dimensions) and Apple's Human Interface Guidelines.
 
+**The objective is not beauty.** It is to make the application feel *inevitable* — as if
+every interaction could only ever have been designed this way. A polished screen invites
+admiration; an inevitable one goes unnoticed because nothing about it could be otherwise.
+Phase P succeeds when a change is invisible: the user never thinks "that's a nice
+animation," only moves through the app without friction. Decoration draws attention to
+itself and therefore fails this test by definition.
+
 **Governing rule for every task below:** an animation, haptic, or effect ships only
-if it improves *clarity* or *earned delight*. If it is decoration, it does not ship.
-Simplicity outranks spectacle. When in doubt, leave it calmer.
+if it improves *clarity* or makes an interaction feel more inevitable. If it is
+decoration — if it announces itself — it does not ship. Simplicity outranks spectacle.
+When in doubt, leave it calmer. This applies as much to P0's reconciliation (the detail
+screen should read as if it were never anything but DS-native) as to every animation
+that follows.
 
 ---
 
@@ -363,6 +373,82 @@ touching their layout or logic.
   screen against `DESIGN_LANGUAGE.md`'s seven dimensions; log any residual drift.
 - **P8.5** — Update `DESIGN_LANGUAGE.md` only if a token was added (e.g. a pressed-state
   style or a haptics contract), keeping the doc the source of truth.
+
+---
+
+## Part 3 — Cross-Cutting Dependencies & Sequencing *(freeze addendum)*
+
+Reviewed before implementation to avoid doing the same work twice. This section is
+part of the **frozen** roadmap; the subphase ordering (P0 → P8) is unchanged. What
+follows governs *how* the sequential work is executed, not *what order* the subphases
+run in.
+
+### The carry-forward rule
+
+When a subphase opens a file that a later frozen subphase will also edit **on the same
+element**, make both changes in that single pass and check the later item off early.
+No element is edited twice. Subphases remain sequential in intent; files are touched
+once. Any item pulled forward this way is annotated in the subphase it lands in, so the
+roadmap stays the record of what happened.
+
+### Shared primitives — build once, reuse everywhere
+
+Two primitives are consumed across many subphases and by surfaces that P0/P3 already
+restyle. They belong to the **design-system layer** (same tier as `LOCACard`,
+`MetricTile`, `ValueText`) and are therefore created up front so later subphases *apply*
+rather than *author* them:
+
+- **`PressableButtonStyle`** (formally introduced by P2.1) — created as a DS primitive
+  in P0; applied opportunistically wherever a `.buttonStyle(.plain)` currently strips the
+  platform press state (rows, grid/timeline cards, selection cards). When P0 reconciles
+  the Grid card and P3 regroups rows, the style is applied in the same pass.
+- **`Haptics` helper** (formally introduced by P4.1) — created the first time a haptic is
+  needed (that is **P2.3**, ahead of P4). P4 then extends and gates it; it does not
+  re-create it. All new haptics route through this helper; the three existing hand-written
+  `UIImpactFeedbackGenerator` sites (`HabitListView`, `HabitCheckInsView`,
+  `AddCheckInSheetView`) are folded into it when those files are next opened.
+
+Two more shared decisions, applied inline rather than as deferred passes:
+
+- **`contentTransition(.numericText())`** (P2.2) is attached during P0 wherever the number
+  is already being re-typed to a `DS.Text` token (month total, streak, grid values). P2.2
+  then only sweeps the numbers P0 did not touch.
+- **Reduce-motion fallback** (P7.4) is applied *inline* with every animation added in
+  P1/P2 via the existing `DS.Motion.confirm/settle(reduceMotion:)` tokens. P7.4 becomes a
+  verification checklist, not a re-touch of every animation.
+
+### Multi-touch files — one editing pass each
+
+These files are targeted by three or more subphases. All Phase P edits to each are made
+in a single pass, driven by the carry-forward rule:
+
+- **`HabitDetailView.swift`** — P0 (reconcile `Ref*` cards + background + tab-bar chrome),
+  P1.1 (tab-content crossfade), P1.5 (heatmap cell fade-in via `RefHeatmapCard`), P3.1
+  (tab-bar selection indicator), P4.3 (tab selection haptic). **Dependency A:** the
+  `selectedTab` `Int` → named-enum refactor (nominally P3.1) is performed with P1.1, since
+  both edit the same `switch`; only the animated indicator visual remains P3.1.
+- **The five `Canvas` charts** (`ConsistencyChartView`, `TimelineChartView`,
+  `StreaksChartView`, `YearComparisonChartView`, `WeekdaysChartView`) — P1.4 (draw-in),
+  P5.2 (low-data state), P7.2 (series memoization). Each chart file is opened once and all
+  three concerns are addressed together.
+- **`AddCheckInSheetView.swift`** — P2.5 (focus accent), P6.1 (detents), P6.2 (Save
+  spinner + success). One pass.
+- **`SimpleHabitCreationView.swift`** — P2.3 (metric-selection animation + first haptic),
+  P6.3 (step transitions). One pass.
+
+### Net effect on P0
+
+P0's task list gains two foundational primitives (created, not yet widely applied) so the
+rest of the phase consumes them:
+
+- **P0.7** — Add `PressableButtonStyle` as a DS primitive (subtle scale + opacity,
+  reduce-motion aware). Apply it to any `.buttonStyle(.plain)` surface P0 already opens
+  (Grid card); leave the remaining call sites for P2.1.
+- **P0.8** — Add a `Haptics` helper stub (UIKit-gated `impact/selection/notify`), not yet
+  gated on a setting. It exists so P2.3 (the first consumer) routes through it. Full
+  gating + call-site consolidation remains P4.
+
+Nothing else in P1–P8 changes. Roadmap is now **frozen**.
 
 ---
 
