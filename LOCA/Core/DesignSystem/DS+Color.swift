@@ -90,26 +90,16 @@ extension DS {
 
         // MARK: Heatmap (contribution grid)
 
-        /// Heatmap grid background — darker than surface to provide contrast for cell
-        /// opacity tiers. In light mode, a medium gray; in dark mode, very dark to
-        /// extend the dark theme that the opacity values were tuned for.
-        static let heatmapBackground: SwiftUI.Color = {
-            #if canImport(UIKit)
-            SwiftUI.Color(uiColor: .systemGray5).opacity(0.8)
-            #else
-            SwiftUI.Color(nsColor: .controlBackgroundColor)
-            #endif
-        }()
+        /// Inactive/empty heatmap cell — neutral adaptive tone visible in both
+        /// light and dark modes. Using a near-zero-opacity accent on a light surface
+        /// renders invisible; textPrimary at low opacity provides reliable contrast
+        /// independent of theme and card background. Matches the approach used by
+        /// Apple Calendar, GitHub contributions, and Apple Health activity rings:
+        /// empty cells are a neutral gray, not a near-invisible tint of the accent.
+        static let heatmapCellEmpty = SwiftUI.Color.primary.opacity(0.09)
 
-        /// Grid stroke / boundary — subtle visual separation between heatmap and
-        /// surrounding card. Invisible in dark mode (already separated by background
-        /// color), faint in light mode (helps define the grid boundary).
-        static let heatmapGridStroke: SwiftUI.Color = {
-            #if canImport(UIKit)
-            SwiftUI.Color(uiColor: .systemGray4).opacity(0.3)
-            #else
-            SwiftUI.Color(nsColor: .separatorColor)
-            #endif
-        }()
+        /// Future (not-yet-reached) heatmap cell — visually recessed to convey
+        /// "not yet" without disappearing entirely.
+        static let heatmapCellFuture = SwiftUI.Color.primary.opacity(0.04)
     }
 }

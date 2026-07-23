@@ -147,8 +147,6 @@ private struct GridMiniHeatmap: View {
                     }
                 }
             }
-            .padding(8)
-            .background(DS.Color.heatmapBackground, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
         }
         .frame(height: heatmapHeight())
         // 56 days covers all cells in the 8×7 grid regardless of day-of-week alignment.
@@ -206,10 +204,9 @@ private struct GridMiniCell: View {
 
     private var cell: DayCell? { cellsByDate[cellDate ?? .distantPast] }
 
-    private var opacity: Double {
-        if isFuture { return 0.07 }
+    // Active-cell opacity tiers — applied only when intensity > 0
+    private var activeOpacity: Double {
         let intensity = cell?.intensity ?? 0
-        if intensity <= 0 { return 0.15 }
         if intensity >= 1.0 { return 1.0 }
         if intensity >= 0.5 { return 0.55 }
         return 0.30
@@ -218,7 +215,15 @@ private struct GridMiniCell: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: size * 0.27, style: .continuous)
-                .fill(ColorPalette[colorIndex].opacity(opacity))
+                .fill(
+                    isFuture
+                        // Future: neutral recessed tone — conveys "not yet" in both themes
+                        ? DS.Color.heatmapCellFuture
+                        : (cell?.intensity ?? 0) > 0
+                            ? ColorPalette[colorIndex].opacity(activeOpacity)
+                            // Inactive: neutral adaptive tone — visible in light and dark
+                            : DS.Color.heatmapCellEmpty
+                )
                 .frame(width: size, height: size)
 
             if isToday {

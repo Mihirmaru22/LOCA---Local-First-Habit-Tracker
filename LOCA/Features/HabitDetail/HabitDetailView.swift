@@ -395,14 +395,12 @@ struct RefHeatmapCard: View {
             .padding(.horizontal, hPad)
             .padding(.vertical, vPad)
             .frame(width: geo.size.width, height: totalH)
-            // Heatmap background distinct from card surface to preserve cell opacity
-            // hierarchy across light and dark modes. The opacity tiers (0.07–1.0)
-            // were tuned for a dark background; using a surface-colored container in
-            // light mode collapses the inactive-cell visibility. heatmapBackground
-            // maintains scanability by providing consistent contrast in both themes.
+            // Surface background — inactive cells use DS.Color.heatmapCellEmpty
+            // (neutral adaptive tone) so the grid hierarchy holds in both themes
+            // without needing a distinct container background.
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
-                    .fill(DS.Color.heatmapBackground)
+                    .fill(DS.Color.surface)
             )
         }
         .frame(height: heatmapHeight())
@@ -486,10 +484,13 @@ struct RefHeatCell: View {
             RoundedRectangle(cornerRadius: cellSize * 0.27, style: .continuous)
                 .fill(
                     isFuture
-                        ? ColorPalette[colorIndex].opacity(0.07)
+                        // Future: neutral recessed tone (invisible in dark, faint in light)
+                        ? DS.Color.heatmapCellFuture
                         : (cell?.intensity ?? 0) > 0
+                            // Active: accent color at tiered opacity
                             ? ColorPalette[colorIndex].opacity(fillOpacity)
-                            : ColorPalette[colorIndex].opacity(0.13)
+                            // Inactive: neutral tone — adapts to theme, always visible
+                            : DS.Color.heatmapCellEmpty
                 )
                 .frame(width: cellSize, height: cellSize)
 
