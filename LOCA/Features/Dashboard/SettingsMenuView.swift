@@ -11,6 +11,10 @@
 import SwiftUI
 import SwiftData
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
 // MARK: - SettingsMenuView
 
 struct SettingsMenuView: View {
@@ -54,6 +58,7 @@ struct SettingsMenuView: View {
 
 struct LayoutPickerView: View {
     @Environment(\.dismiss) var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("habitListLayout") private var layout: String = "list"
 
     var body: some View {
@@ -63,7 +68,11 @@ struct LayoutPickerView: View {
 
                 VStack(spacing: DS.Space.md) {
                     ForEach(["list", "grid", "timeline"], id: \.self) { option in
-                        Button(action: { layout = option; dismiss() }) {
+                        Button(action: {
+                            layout = option
+                            triggerSelectionHaptic()
+                            dismiss()
+                        }) {
                             HStack {
                                 Image(systemName: layoutIcon(option))
                                     .font(.title3)
@@ -74,10 +83,12 @@ struct LayoutPickerView: View {
                                 if layout == option {
                                     Image(systemName: "checkmark")
                                         .foregroundStyle(ColorPalette[0])
+                                        .transition(.scale.combined(with: .opacity))
                                 }
                             }
                             .contentShape(Rectangle())
                             .foregroundStyle(DS.Color.textPrimary)
+                            .animation(DS.Motion.settle(reduceMotion: reduceMotion), value: layout)
                         }
                         .padding(DS.Space.md)
                         .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
@@ -111,6 +122,12 @@ struct LayoutPickerView: View {
         case "timeline": return "Timeline View"
         default: return "List View"
         }
+    }
+
+    private func triggerSelectionHaptic() {
+        #if canImport(UIKit)
+        UISelectionFeedbackGenerator().selectionChanged()
+        #endif
     }
 }
 

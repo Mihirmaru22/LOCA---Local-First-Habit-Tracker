@@ -12,10 +12,15 @@
 import SwiftUI
 import SwiftData
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
 struct SimpleHabitCreationView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var habitName = ""
     @State private var metricType: HabitBoard.MetricType = .binary
@@ -267,10 +272,14 @@ struct SimpleHabitCreationView: View {
             }
 
             VStack(spacing: DS.Space.md) {
-                Button(action: { metricType = .binary }) {
+                Button(action: {
+                    metricType = .binary
+                    triggerSelectionHaptic()
+                }) {
                     HStack(spacing: DS.Space.md) {
                         Image(systemName: metricType == .binary ? "checkmark.circle.fill" : "circle")
                             .foregroundStyle(metricType == .binary ? ColorPalette[0] : .secondary)
+                            .contentTransition(.symbolVariant(.replace))
 
                         VStack(alignment: .leading, spacing: DS.Space.xs) {
                             Text("Daily check-off")
@@ -289,10 +298,14 @@ struct SimpleHabitCreationView: View {
                 }
                 .buttonStyle(.pressable)
 
-                Button(action: { metricType = .quantitative }) {
+                Button(action: {
+                    metricType = .quantitative
+                    triggerSelectionHaptic()
+                }) {
                     HStack(spacing: DS.Space.md) {
                         Image(systemName: metricType == .quantitative ? "checkmark.circle.fill" : "circle")
                             .foregroundStyle(metricType == .quantitative ? ColorPalette[0] : .secondary)
+                            .contentTransition(.symbolVariant(.replace))
 
                         VStack(alignment: .leading, spacing: DS.Space.xs) {
                             Text("Track an amount")
@@ -394,6 +407,12 @@ struct SimpleHabitCreationView: View {
     private func nextColorIndexForNewHabit() -> Int {
         let existingCount = (try? modelContext.fetchCount(FetchDescriptor<HabitBoard>(predicate: #Predicate { $0.archivedAt == nil }))) ?? 0
         return existingCount % ColorPalette.count
+    }
+
+    private func triggerSelectionHaptic() {
+        #if canImport(UIKit)
+        UISelectionFeedbackGenerator().selectionChanged()
+        #endif
     }
 }
 
