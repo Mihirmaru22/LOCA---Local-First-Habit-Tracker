@@ -83,13 +83,24 @@ struct ConsistencyChartView: View {
                         .tracking(0.5)
                 }
 
-                // Canvas chart
-                Canvas { context, size in
-                    let width = size.width
-                    let height = size.height
-                    let padding: CGFloat = 12
-
-                    guard monthlyScores.count > 1 else { return }
+                // Canvas chart or low-data message
+                if monthlyScores.count <= 1 {
+                    VStack(spacing: DS.Space.md) {
+                        Image(systemName: "chart.line.uptrend.xyaxis")
+                            .font(.title2)
+                            .foregroundStyle(DS.Color.textTertiary)
+                        Text("Keep logging to see trends")
+                            .font(DS.Text.caption)
+                            .foregroundStyle(DS.Color.textSecondary)
+                    }
+                    .frame(height: 110)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, DS.Space.sm)
+                } else {
+                    Canvas { context, size in
+                        let width = size.width
+                        let height = size.height
+                        let padding: CGFloat = 12
 
                     let xStep = (width - padding * 2) / CGFloat(monthlyScores.count - 1)
                     let yScale = (height - padding * 2) / 100.0
@@ -146,9 +157,10 @@ struct ConsistencyChartView: View {
                             context.draw(text, at: CGPoint(x: x, y: height - 2), anchor: .top)
                         }
                     }
+                    }
+                    .frame(height: 110)
+                    .padding(.vertical, DS.Space.sm)
                 }
-                .frame(height: 110)
-                .padding(.vertical, DS.Space.sm)
 
                 // Stats
                 HStack(spacing: DS.Space.lg) {

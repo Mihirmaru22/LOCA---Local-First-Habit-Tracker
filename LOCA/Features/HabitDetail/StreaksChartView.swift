@@ -86,17 +86,30 @@ struct StreaksChartView: View {
                         .tracking(0.5)
                 }
 
-                // Canvas chart
-                Canvas { context, size in
-                    let width = size.width
-                    let height = size.height
-                    let padding: CGFloat = 8
-                    let barHeight: CGFloat = 16
+                // Canvas chart or low-data message
+                if monthStreaks.isEmpty || longestStreak == 0 {
+                    VStack(spacing: DS.Space.md) {
+                        Image(systemName: "flame.fill")
+                            .font(.title2)
+                            .foregroundStyle(DS.Color.textTertiary)
+                        Text("Keep logging to see streaks")
+                            .font(DS.Text.caption)
+                            .foregroundStyle(DS.Color.textSecondary)
+                    }
+                    .frame(height: 100)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, DS.Space.sm)
+                } else {
+                    Canvas { context, size in
+                        let width = size.width
+                        let height = size.height
+                        let padding: CGFloat = 8
+                        let barHeight: CGFloat = 16
 
-                    let maxStreak = max(board.effectiveTarget > 1 ? board.effectiveTarget : 10, Double(longestStreak))
-                    let yScale = (height - padding * 2) / maxStreak
+                        let maxStreak = max(board.effectiveTarget > 1 ? board.effectiveTarget : 10, Double(longestStreak))
+                        let yScale = (height - padding * 2) / maxStreak
 
-                    for (index, monthData) in monthStreaks.enumerated() {
+                        for (index, monthData) in monthStreaks.enumerated() {
                         let xStep = (width - padding * 2) / CGFloat(monthStreaks.count)
                         let x = padding + CGFloat(index) * xStep + xStep / 2 - barHeight / 2
                         let barLength = CGFloat(monthData.streak) * yScale
@@ -131,9 +144,10 @@ struct StreaksChartView: View {
                             context.draw(text, at: CGPoint(x: x, y: height - 2), anchor: .top)
                         }
                     }
+                    }
+                    .frame(height: 100)
+                    .padding(.vertical, DS.Space.sm)
                 }
-                .frame(height: 100)
-                .padding(.vertical, DS.Space.sm)
 
                 // Stats row
                 HStack(spacing: DS.Space.lg) {
