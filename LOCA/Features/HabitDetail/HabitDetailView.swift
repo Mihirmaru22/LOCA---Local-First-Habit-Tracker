@@ -390,8 +390,21 @@ private struct HabitDetailTabBar: View {
     ]
 
     var body: some View {
-        ZStack(alignment: .leading) {
-            // Background pill that animates to the selected tab
+        // Tab icons drive the layout size; GeometryReader is in .background()
+        // so it reads the HStack's natural size instead of the full offered space.
+        // A GeometryReader as a ZStack sibling accepts the full screen height,
+        // producing the full-screen blue pill overlay bug.
+        HStack(spacing: 24) {
+            ForEach(tabs, id: \.tab) { tab, icon in
+                RefTabIcon(icon: icon, active: selectedTab == tab) {
+                    selectedTab = tab
+                    Haptics.selection()
+                }
+            }
+        }
+        .padding(.horizontal, 22)
+        .padding(.vertical, 16)
+        .background(
             GeometryReader { geo in
                 Capsule(style: .continuous)
                     .fill(ColorPalette[0].opacity(0.15))
@@ -399,19 +412,7 @@ private struct HabitDetailTabBar: View {
                     .offset(x: tabOffset(in: geo.size.width), y: 0)
                     .animation(DS.Motion.settle(reduceMotion: reduceMotion), value: selectedTab)
             }
-
-            // Tab icons
-            HStack(spacing: 24) {
-                ForEach(tabs, id: \.tab) { tab, icon in
-                    RefTabIcon(icon: icon, active: selectedTab == tab) {
-                        selectedTab = tab
-                        Haptics.selection()
-                    }
-                }
-            }
-            .padding(.horizontal, 22)
-            .padding(.vertical, 16)
-        }
+        )
         .background(DS.Color.surface, in: Capsule(style: .continuous))
     }
 
