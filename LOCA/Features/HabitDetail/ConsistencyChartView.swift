@@ -15,6 +15,9 @@ struct ConsistencyChartView: View {
 
     let board: HabitBoard
 
+    @State private var hasAppeared = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     private var monthlyScores: [(month: String, score: Double)] {
         var results: [(String, Double)] = []
         let formatter = DateFormatter()
@@ -175,6 +178,9 @@ struct ConsistencyChartView: View {
                 }
             }
             .padding(DS.Space.md)
+            .opacity(hasAppeared ? 1 : 0)
+            .animation(DS.Motion.settle(reduceMotion: reduceMotion), value: hasAppeared)
+            .onAppear { hasAppeared = true }
         }
     }
 }

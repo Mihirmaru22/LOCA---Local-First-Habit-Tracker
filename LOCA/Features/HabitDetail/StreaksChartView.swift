@@ -16,6 +16,9 @@ struct StreaksChartView: View {
 
     let board: HabitBoard
 
+    @State private var hasAppeared = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     private var monthStreaks: [(month: Date, streak: Int)] {
         var results: [(Date, Int)] = []
         for monthsAgo in (0..<12).reversed() {
@@ -157,6 +160,9 @@ struct StreaksChartView: View {
                 }
             }
             .padding(DS.Space.md)
+            .opacity(hasAppeared ? 1 : 0)
+            .animation(DS.Motion.settle(reduceMotion: reduceMotion), value: hasAppeared)
+            .onAppear { hasAppeared = true }
         }
     }
 }

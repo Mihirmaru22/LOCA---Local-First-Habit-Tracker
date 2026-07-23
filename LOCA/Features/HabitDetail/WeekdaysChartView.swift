@@ -15,6 +15,9 @@ struct WeekdaysChartView: View {
 
     let board: HabitBoard
 
+    @State private var hasAppeared = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     private var weekdayTotals: [Double] {
         var totals = [Double](repeating: 0, count: 7)  // Sun-Sat
 
@@ -134,6 +137,9 @@ struct WeekdaysChartView: View {
                 }
             }
             .padding(DS.Space.md)
+            .opacity(hasAppeared ? 1 : 0)
+            .animation(DS.Motion.settle(reduceMotion: reduceMotion), value: hasAppeared)
+            .onAppear { hasAppeared = true }
         }
     }
 }
