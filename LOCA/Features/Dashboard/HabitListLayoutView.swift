@@ -48,7 +48,7 @@ struct HabitListLayoutView: View {
                                     onCheckBinary: { onCheckBinary(item.board) }
                                 )
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.pressable)
                         }
                     }
                 }
@@ -69,7 +69,7 @@ struct HabitListLayoutView: View {
                                     onCheckBinary: {}
                                 )
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.pressable)
                         }
                     }
                 }
@@ -90,7 +90,7 @@ struct HabitListLayoutView: View {
                                     onCheckBinary: { onCheckBinary(item.board) }
                                 )
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.pressable)
                         }
                     }
                 }
@@ -111,7 +111,7 @@ struct HabitListLayoutView: View {
                                     onCheckBinary: {}
                                 )
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.pressable)
                         }
                     }
                 }

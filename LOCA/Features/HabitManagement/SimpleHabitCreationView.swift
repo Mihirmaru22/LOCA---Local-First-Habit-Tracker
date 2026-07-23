@@ -151,7 +151,7 @@ struct SimpleHabitCreationView: View {
                     .padding(DS.Space.md)
                     .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.control))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
 
                 Button(action: { step = .template }) {
                     HStack(spacing: DS.Space.md) {
@@ -173,7 +173,7 @@ struct SimpleHabitCreationView: View {
                     .padding(DS.Space.md)
                     .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.control))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
         }
     }
@@ -287,7 +287,7 @@ struct SimpleHabitCreationView: View {
                     .padding(DS.Space.md)
                     .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.control))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
 
                 Button(action: { metricType = .quantitative }) {
                     HStack(spacing: DS.Space.md) {
@@ -309,7 +309,7 @@ struct SimpleHabitCreationView: View {
                     .padding(DS.Space.md)
                     .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.control))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
 
             if metricType == .quantitative {

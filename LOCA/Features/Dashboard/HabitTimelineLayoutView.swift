@@ -32,7 +32,7 @@ struct HabitTimelineLayoutView: View {
                         onCheckBinary: { onCheckBinary(item.board) }
                     )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
 
             Spacer(minLength: DS.Space.xxxl)

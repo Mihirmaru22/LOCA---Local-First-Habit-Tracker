@@ -25,9 +25,7 @@ struct HabitGridLayoutView: View {
                 NavigationLink(destination: HabitDetailView(board: item.board)) {
                     GridHabitCard(board: item.board, onCheck: { onCheckBinary(item.board) })
                 }
-                // Whole-card press state is applied holistically in P2.1 across all three
-                // layouts, where the nested check-button interaction is handled uniformly.
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
         }
         .padding(.horizontal, 16)
