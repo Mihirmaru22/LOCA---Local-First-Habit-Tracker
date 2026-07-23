@@ -85,7 +85,7 @@ actor ReflectionDelivery {
     /// Check if reflections are earning enough attention to continue (Phase 4.4).
     /// Exit gate: if engagement rate < 30% over last 20 reflections, suppress.
     /// Honest measurement: don't defend feature if users ignore it.
-    func shouldContinueReflections() -> Bool {
+    func shouldContinueReflections() async -> Bool {
         let (delivered, _, rate) = getEngagementMetrics(lastN: 20)
 
         // Need minimum sample size

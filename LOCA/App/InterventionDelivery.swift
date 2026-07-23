@@ -109,7 +109,7 @@ actor InterventionDelivery {
 
     /// Check if interventions are effective enough to continue.
     /// Exit gate: if trusted less than 50% of the time, suppress.
-    func shouldContinueInterventions() -> Bool {
+    func shouldContinueInterventions() async -> Bool {
         let (sent, _, _, rate) = getEffectiveness(lastN: 20)
 
         // Need sample size

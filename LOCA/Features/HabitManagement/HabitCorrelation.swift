@@ -49,10 +49,10 @@ struct InsightAnalyzer {
         // Analyze sleep vs. other performance habits
         // (In production, this would expand to other correlations)
         if let sleepBoard = boards.first(where: { $0.name.lowercased().contains("sleep") }) {
-            let sleepLogs = (sleepBoard.logs ?? []).map { LogSnapshot(from: $0) }
+            let sleepLogs = logs.filter { $0.boardID == sleepBoard.id }
 
             for board in boards where !board.name.lowercased().contains("sleep") {
-                let boardLogs = (board.logs ?? []).map { LogSnapshot(from: $0) }
+                let boardLogs = logs.filter { $0.boardID == board.id }
 
                 if let correlation = analyzeSleepPerformanceCorrelation(
                     habit: board.name,

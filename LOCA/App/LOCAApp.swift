@@ -137,7 +137,7 @@ struct LOCAApp: App {
                         // Phase 4.4: Exit gate — if engagement < 30% over 20 reflections, suppress.
                         while true {
                             // Check if feature is still earning attention (Phase 4.4)
-                            if !ReflectionDelivery.shared.shouldContinueReflections() {
+                            if !await ReflectionDelivery.shared.shouldContinueReflections() {
                                 logger.debug("Reflection feature suppressed due to low engagement")
                                 break
                             }
@@ -167,7 +167,7 @@ struct LOCAApp: App {
                         // Phase 5.5: Exit gate — if effectiveness < 50% over 10 interventions, suppress.
                         while true {
                             // Check if feature is still effective (Phase 5.5)
-                            if !InterventionDelivery.shared.shouldContinueInterventions() {
+                            if !await InterventionDelivery.shared.shouldContinueInterventions() {
                                 logger.debug("Intervention feature suppressed due to low effectiveness")
                                 break
                             }
