@@ -13,26 +13,31 @@ import SwiftUI
 struct SyncStatusIndicatorView: View {
 
     let syncStatus: SyncStatusCoordinator.SyncStatus
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        switch syncStatus {
-        case .idle:
-            EmptyView()
-        case .syncing:
-            ProgressView()
-                .scaleEffect(0.8)
-        case .error(let message):
-            HStack(spacing: DS.Space.sm) {
-                Image(systemName: "exclamationmark.circle.fill")
-                    .foregroundStyle(.red)
-                Text("Sync failed")
-                    .font(DS.Text.caption)
-                    .foregroundStyle(.red)
+        Group {
+            switch syncStatus {
+            case .idle:
+                EmptyView()
+            case .syncing:
+                ProgressView()
+                    .scaleEffect(0.8)
+            case .error(let message):
+                HStack(spacing: DS.Space.sm) {
+                    Image(systemName: "exclamationmark.circle.fill")
+                        .foregroundStyle(.red)
+                    Text("Sync failed")
+                        .font(DS.Text.caption)
+                        .foregroundStyle(.red)
+                }
+                .padding(.horizontal, DS.Space.md)
+                .padding(.vertical, DS.Space.xs)
+                .background(.red.opacity(0.1), in: RoundedRectangle(cornerRadius: DS.Radius.control))
             }
-            .padding(.horizontal, DS.Space.md)
-            .padding(.vertical, DS.Space.xs)
-            .background(.red.opacity(0.1), in: RoundedRectangle(cornerRadius: DS.Radius.control))
         }
+        .transition(.opacity)
+        .animation(DS.Motion.settle(reduceMotion: reduceMotion), value: syncStatus)
     }
 }
 
