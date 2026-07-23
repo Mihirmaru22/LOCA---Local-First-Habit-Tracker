@@ -25,7 +25,6 @@ struct SimpleHabitEditView: View {
 
     @State private var editedName = ""
     @State private var showSaveError = false
-    @State private var showDeleteConfirm = false
     @FocusState private var nameFocused: Bool
 
     var isValid: Bool {
@@ -52,7 +51,7 @@ struct SimpleHabitEditView: View {
 
                 Section {
                     Button("Delete Habit", role: .destructive) {
-                        showDeleteConfirm = true
+                        deleteHabit()
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -74,12 +73,6 @@ struct SimpleHabitEditView: View {
                 editedName = board.name
                 try? await Task.sleep(for: .milliseconds(400))
                 nameFocused = true
-            }
-            .alert("Delete Habit?", isPresented: $showDeleteConfirm) {
-                Button("Delete", role: .destructive) { deleteHabit() }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("The habit will be archived and can be restored later.")
             }
             .alert("Couldn't Save", isPresented: $showSaveError) {
                 Button("OK", role: .cancel) {}
