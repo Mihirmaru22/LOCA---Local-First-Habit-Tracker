@@ -22,7 +22,9 @@ struct SimpleHabitCreationView: View {
     @State private var selectedUnit: UnitOption = .minutes
     @State private var isSaving = false
     @State private var showSaveError = false
-    @State private var step: Step = .name
+    @State private var step: Step = .mode
+    @State private var selectedTemplate: HabitTemplate?
+    @State private var templateReminderTime: String?
     @FocusState private var nameFocused: Bool
 
     var onHabitCreated: ((UUID) -> Void)?
@@ -32,8 +34,10 @@ struct SimpleHabitCreationView: View {
     }
 
     enum Step {
+        case mode          // Choose: quick start or templates
         case name
         case metricType
+        case template      // Template customization
     }
 
     var body: some View {
@@ -43,10 +47,14 @@ struct SimpleHabitCreationView: View {
 
                 VStack(spacing: DS.Space.md) {
                     switch step {
+                    case .mode:
+                        modeStep
                     case .name:
                         nameStep
                     case .metricType:
                         metricTypeStep
+                    case .template:
+                        templateStep
                     }
                 }
                 .padding(DS.Space.lg)
@@ -62,15 +70,11 @@ struct SimpleHabitCreationView: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(step == .name ? "Next" : "Start") {
-                        if step == .name {
-                            advanceToMetricType()
-                        } else {
-                            createHabit()
-                        }
+                    Button(actionButtonLabel) {
+                        handleActionButton()
                     }
                     .fontWeight(.semibold)
-                    .disabled((step == .name && !isValid) || isSaving)
+                    .disabled(isActionDisabled || isSaving)
                 }
             }
             .task {
@@ -83,6 +87,109 @@ struct SimpleHabitCreationView: View {
                 Text("Please try again.")
             }
         }
+    }
+
+    private var actionButtonLabel: String {
+        switch step {
+        case .mode, .template:
+            return "Next"
+        case .name:
+            return "Next"
+        case .metricType:
+            return "Start"
+        }
+    }
+
+    private var isActionDisabled: Bool {
+        switch step {
+        case .mode:
+            return false
+        case .name:
+            return !isValid
+        case .metricType, .template:
+            return false
+        }
+    }
+
+    private func handleActionButton() {
+        switch step {
+        case .mode:
+            break  // Handled by button actions in modeStep
+        case .name:
+            advanceToMetricType()
+        case .metricType:
+            createHabit()
+        case .template:
+            createHabitFromTemplate()
+        }
+    }
+
+    private var modeStep: some View {
+        VStack(spacing: DS.Space.lg) {
+            Text("How would you like to start?")
+                .font(DS.Text.heading)
+                .foregroundStyle(DS.Color.textPrimary)
+
+            VStack(spacing: DS.Space.md) {
+                Button(action: { step = .name }) {
+                    HStack(spacing: DS.Space.md) {
+                        Image(systemName: "square.and.pencil")
+                            .foregroundStyle(ColorPalette[0])
+
+                        VStack(alignment: .leading, spacing: DS.Space.xs) {
+                            Text("Quick Start")
+                                .font(DS.Text.body)
+                                .foregroundStyle(DS.Color.textPrimary)
+                            Text("Create your own habit")
+                                .font(DS.Text.caption)
+                                .foregroundStyle(DS.Color.textSecondary)
+                        }
+
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(DS.Space.md)
+                    .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.control))
+                }
+                .buttonStyle(.plain)
+
+                Button(action: { step = .template }) {
+                    HStack(spacing: DS.Space.md) {
+                        Image(systemName: "sparkles")
+                            .foregroundStyle(ColorPalette[0])
+
+                        VStack(alignment: .leading, spacing: DS.Space.xs) {
+                            Text("Browse Templates")
+                                .font(DS.Text.body)
+                                .foregroundStyle(DS.Color.textPrimary)
+                            Text("Research-backed habits")
+                                .font(DS.Text.caption)
+                                .foregroundStyle(DS.Color.textSecondary)
+                        }
+
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(DS.Space.md)
+                    .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.control))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var templateStep: some View {
+        TemplatePickerView(
+            onSelect: { template in
+                selectedTemplate = template
+                habitName = template.name
+                metricType = template.metricType
+                selectedUnit = template.suggestedUnit ?? .minutes
+                templateReminderTime = template.suggestedReminderTime
+                step = .metricType
+            },
+            onDismiss: { step = .mode }
+        )
     }
 
     private var nameStep: some View {
@@ -106,9 +213,58 @@ struct SimpleHabitCreationView: View {
 
     private var metricTypeStep: some View {
         VStack(spacing: DS.Space.lg) {
-            Text("How do you want to track this?")
-                .font(DS.Text.heading)
-                .foregroundStyle(DS.Color.textPrimary)
+            if let template = selectedTemplate {
+                Text("Review template settings")
+                    .font(DS.Text.heading)
+                    .foregroundStyle(DS.Color.textPrimary)
+
+                VStack(alignment: .leading, spacing: DS.Space.md) {
+                    HStack {
+                        Text(template.emoji)
+                            .font(.system(size: 32))
+                        VStack(alignment: .leading, spacing: DS.Space.xs) {
+                            Text(habitName)
+                                .font(DS.Text.body)
+                                .fontWeight(.semibold)
+                            Text(template.description)
+                                .font(DS.Text.caption)
+                                .foregroundStyle(DS.Color.textSecondary)
+                        }
+                    }
+
+                    if let goal = template.suggestedGoal, let unit = template.suggestedUnit {
+                        HStack {
+                            Text("Goal:")
+                                .font(DS.Text.caption)
+                                .foregroundStyle(DS.Color.textSecondary)
+                            Spacer()
+                            Text("\(Int(goal)) \(unit.label) per day")
+                                .font(DS.Text.body)
+                                .fontWeight(.semibold)
+                        }
+                        .padding(DS.Space.md)
+                        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.control))
+                    }
+
+                    if let time = templateReminderTime {
+                        HStack {
+                            Text("Reminder:")
+                                .font(DS.Text.caption)
+                                .foregroundStyle(DS.Color.textSecondary)
+                            Spacer()
+                            Text(time)
+                                .font(DS.Text.body)
+                                .fontWeight(.semibold)
+                        }
+                        .padding(DS.Space.md)
+                        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.control))
+                    }
+                }
+            } else {
+                Text("How do you want to track this?")
+                    .font(DS.Text.heading)
+                    .foregroundStyle(DS.Color.textPrimary)
+            }
 
             VStack(spacing: DS.Space.md) {
                 Button(action: { metricType = .binary }) {
@@ -191,8 +347,10 @@ struct SimpleHabitCreationView: View {
     }
 
     private func advanceToMetricType() {
-        if let inferred = UnitInference.inferUnit(from: habitName) {
-            selectedUnit = inferred
+        if selectedTemplate == nil {
+            if let inferred = UnitInference.inferUnit(from: habitName) {
+                selectedUnit = inferred
+            }
         }
         step = .metricType
     }
@@ -208,11 +366,13 @@ struct SimpleHabitCreationView: View {
         let board = HabitBoard(
             name: trimmed,
             metricType: metricType.rawValue,
-            targetValue: nil,
+            targetValue: selectedTemplate?.suggestedGoal,
             unitLabel: unitLabel,
-            colorIndex: nextColorIndex
+            colorIndex: nextColorIndex,
+            createdAt: Date()
         )
 
+        board.preferredReminderTime = templateReminderTime
         modelContext.insert(board)
 
         do {
@@ -225,6 +385,10 @@ struct SimpleHabitCreationView: View {
             isSaving = false
             showSaveError = true
         }
+    }
+
+    private func createHabitFromTemplate() {
+        createHabit()
     }
 
     private func nextColorIndexForNewHabit() -> Int {
