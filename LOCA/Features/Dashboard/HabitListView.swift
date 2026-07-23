@@ -40,6 +40,7 @@ struct HabitListView: View {
     @State private var recommendations: [HabitRecommendation] = []
     @State private var selectedRecommationTemplate: HabitTemplate?
     @AppStorage("habitListLayout") private var layout: String = "list"
+    @State private var syncStatus: SyncStatusCoordinator.SyncStatus = .idle
 
     /// Future: a HabitSortStrategy seam will allow pluggable sort modes.
     /// Today: manual (stable, user-defined) order. No reordering by state.
@@ -93,6 +94,7 @@ struct HabitListView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 HStack(spacing: DS.Space.md) {
+                    SyncStatusIndicatorView(syncStatus: syncStatus)
                     SettingsMenuView()
                     Button(action: { showingCreateSheet = true }) {
                         Image(systemName: "plus")
@@ -120,6 +122,14 @@ struct HabitListView: View {
                 lastDeletedHabit = habit
                 withAnimation {
                     showUndoToast = true
+                }
+            }
+        }
+        .task {
+            // Listen for sync status changes (Phase 3.5)
+            syncStatusCoordinator.onStatusChanged { status in
+                withAnimation {
+                    syncStatus = status
                 }
             }
         }

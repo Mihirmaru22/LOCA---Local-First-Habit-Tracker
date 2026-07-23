@@ -116,6 +116,11 @@ struct LOCAApp: App {
                             await ReminderScheduler.shared.rescheduleAllReminders(boards: boards)
                         }
                     }
+                    .task {
+                        // Monitor CloudKit sync status (Phase 3.5).
+                        // Non-blocking: displays sync state to user without interruption.
+                        await syncStatusCoordinator.start()
+                    }
             } else {
                 ContainerUnavailableView()
             }
