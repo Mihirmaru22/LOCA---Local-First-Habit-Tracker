@@ -119,7 +119,7 @@ struct LOCAApp: App {
                     .task {
                         // Monitor CloudKit sync status (Phase 3.5).
                         // Non-blocking: displays sync state to user without interruption.
-                        await syncStatusCoordinator.start()
+                        await SyncStatusCoordinator.shared.start()
                     }
             } else {
                 ContainerUnavailableView()

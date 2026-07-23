@@ -127,7 +127,7 @@ struct HabitListView: View {
         }
         .task {
             // Listen for sync status changes (Phase 3.5)
-            syncStatusCoordinator.onStatusChanged { status in
+            SyncStatusCoordinator.shared.onStatusChanged { status in
                 withAnimation {
                     syncStatus = status
                 }

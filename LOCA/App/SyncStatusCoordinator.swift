@@ -20,6 +20,8 @@ actor SyncStatusCoordinator {
         case error(String)
     }
 
+    static let shared = SyncStatusCoordinator()
+
     nonisolated private let logger = Logger(subsystem: "com.loca.app", category: "sync")
 
     private var syncStatus: SyncStatus = .idle
@@ -83,6 +85,3 @@ actor SyncStatusCoordinator {
     }
 }
 
-// MARK: - Shared Instance
-
-let syncStatusCoordinator = SyncStatusCoordinator()
