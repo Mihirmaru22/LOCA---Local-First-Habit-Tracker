@@ -133,14 +133,13 @@ struct HabitBoardEntity: AppEntity {
 /// - **By string** (`entities(matching:)`) — match a spoken/typed habit name
 ///   for Siri and Shortcuts search.
 ///
-/// ## Own Context, No Singleton
-/// Every path fetches through `ModelContainerFactory.makeConfiguredContainer()`,
-/// creating an independent container over the shared App Group store — the same
-/// discipline the Widget `TimelineProvider` follows and the App Intents rule in
-/// the Engineering Principles verification checklist. It never reads the main
-/// app's injected container. `makeConfiguredContainer()` also honours the
-/// `LOCAL_DEVELOPMENT` switch (ADR-009), so a development build's intents read
-/// the same local store the app writes to, rather than an empty App Group store.
+/// ## Container Caching
+/// All paths use `ModelContainerFactory.extensionContainer` — the process-level
+/// cached static — rather than calling `makeConfiguredContainer()` each time.
+/// Creating a CloudKit-backed container is expensive; the cache ensures it pays
+/// that cost at most once per process, matching the pattern `LogHabitIntent` uses.
+/// It honours the `LOCAL_DEVELOPMENT` switch (ADR-009) automatically because
+/// `extensionContainer` itself calls `makeConfiguredContainer()`.
 ///
 /// ## Active Boards Only
 /// All paths filter through `HabitBoard.activePredicate` (`archivedAt == nil`),
@@ -155,24 +154,52 @@ struct HabitBoardEntityQuery: EntityStringQuery {
 
     // MARK: Fetch Helper
 
-    /// Fetches all active boards from an intent-owned context and snapshots them
-    /// into transport-safe entities, ordered by creation date to match the
-    /// app's own board ordering.
+    /// Fetches all active boards into transport-safe value snapshots.
     ///
-    /// `@MainActor`-isolated: `ModelContext.mainContext` access and `@Model`
-    /// property reads (inside `HabitBoardEntity(board:)`) are main-actor bound.
-    /// The single fetch is shared by all three query paths, which filter its
-    /// result in memory — the active-board set is small, so a per-path store
-    /// query would add cost without benefit.
-    @MainActor
+    /// ## Why not @MainActor
+    /// The AppIntents system calls the EntityQuery methods on the cooperative
+    /// thread pool. The previous @MainActor annotation caused every AppIntents
+    /// indexing pass (which runs ~1–2 s after each app launch) to block the
+    /// main thread with a full CloudKit ModelContainer initialization, producing
+    /// the first-interaction keyboard lag (Phase A.1 defect). Removing @MainActor
+    /// lets this work stay off the main thread entirely.
+    ///
+    /// ## Why ModelContext(container) not container.mainContext
+    /// `mainContext` is MainActor-bound. A background `ModelContext(container)`
+    /// can be created and used on any thread; objects fetched from it can be
+    /// read on that same thread. Since we immediately map to Sendable value
+    /// types (HabitBoardEntity) before returning, the context is never shared
+    /// across threads.
+    ///
+    /// ## Why extensionContainer
+    /// `makeConfiguredContainer()` initializes a full CloudKit stack on every
+    /// call — O(1) is not free when CloudKit is involved. `extensionContainer`
+    /// is a process-level cached static let initialized once per process lifetime,
+    /// matching the pattern LogHabitIntent already uses correctly.
     private static func activeBoardEntities() throws -> [HabitBoardEntity] {
-        let container = try ModelContainerFactory.makeConfiguredContainer()
+        let container: ModelContainer
+        if let cached = ModelContainerFactory.extensionContainer {
+            container = cached
+        } else {
+            container = try ModelContainerFactory.makeConfiguredContainer()
+        }
+        // Background context — not MainActor-bound.
+        let context = ModelContext(container)
         let descriptor = FetchDescriptor<HabitBoard>(
             predicate: HabitBoard.activePredicate,
             sortBy: [SortDescriptor(\.createdAt, order: .forward)]
         )
-        let boards = try container.mainContext.fetch(descriptor)
-        return boards.map(HabitBoardEntity.init(board:))
+        let boards = try context.fetch(descriptor)
+        // Map to value types here, on this thread, before the context goes out of scope.
+        return boards.map { board in
+            HabitBoardEntity(
+                id: board.id,
+                name: board.name,
+                metricType: board.metricType,
+                unitLabel: board.unitLabel,
+                effectiveTarget: board.effectiveTarget
+            )
+        }
     }
 
     // MARK: EntityQuery Conformance
@@ -185,13 +212,13 @@ struct HabitBoardEntityQuery: EntityStringQuery {
     /// than silently logging to a soft-deleted board.
     func entities(for identifiers: [UUID]) async throws -> [HabitBoardEntity] {
         let wanted = Set(identifiers)
-        return try await Self.activeBoardEntities().filter { wanted.contains($0.id) }
+        return try Self.activeBoardEntities().filter { wanted.contains($0.id) }
     }
 
     /// Supplies the full list of active habits for the Shortcuts parameter
     /// picker, in the app's creation-date order.
     func suggestedEntities() async throws -> [HabitBoardEntity] {
-        try await Self.activeBoardEntities()
+        try Self.activeBoardEntities()
     }
 
     // MARK: EntityStringQuery Conformance
@@ -201,7 +228,7 @@ struct HabitBoardEntityQuery: EntityStringQuery {
     /// name into a concrete selection. An empty query returns all active
     /// habits so the picker still populates.
     func entities(matching string: String) async throws -> [HabitBoardEntity] {
-        let all = try await Self.activeBoardEntities()
+        let all = try Self.activeBoardEntities()
         let needle = string.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !needle.isEmpty else { return all }
         return all.filter { $0.name.localizedCaseInsensitiveContains(needle) }

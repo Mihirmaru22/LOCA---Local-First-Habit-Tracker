@@ -4,11 +4,6 @@
 //
 //  Phase 7.1 — Habit Management: Create / Edit Form
 //
-//  A single form serving both create and edit. Presented as a `.sheet`:
-//  from the Dashboard "+" (create, Phase 7.1) and from HabitDetailView's
-//  "Edit" toolbar button (edit, Phase 7.2). Owns its own ModelContext for the
-//  insert/save, following the CheckInSheet pattern.
-//
 
 import SwiftUI
 import SwiftData
@@ -16,54 +11,31 @@ import os
 
 // MARK: - HabitFormView
 
-/// Modal form for creating a new `HabitBoard` or editing an existing one.
-///
-/// ## Modes
-/// `Mode.create` starts from an empty `HabitBoardDraft`; `Mode.edit(board)`
-/// pre-populates the draft from the board and writes changes back on save. The
-/// form UI is identical in both modes — only the initial draft, navigation
-/// title, and save action differ.
-///
-/// ## Persistence
-/// Mirrors `CheckInSheet`: a `NavigationStack`-hosted `Form` with Cancel /
-/// Save toolbar actions, its own `@Environment(\.modelContext)`, and a
-/// non-blocking save-error alert that keeps the sheet open on failure. Create
-/// inserts a new board; edit mutates in place. Both persist through the shared
-/// container, so the Dashboard's `@Query` reflects the change reactively with
-/// no data flow back to the parent.
 struct HabitFormView: View {
 
     // MARK: Mode
 
-    /// Whether the form creates a new board or edits an existing one.
     enum Mode {
         case create
         case edit(HabitBoard)
     }
 
     let mode: Mode
-
-    /// Called after a successful **create** save, with the new board's `UUID`.
-    /// The caller (Dashboard → RootNavigationView) sets `selectedBoardID` to
-    /// navigate straight to the new habit's detail view.
     var onBoardCreated: ((UUID) -> Void)?
     var onBoardArchived: (() -> Void)?
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var draft: HabitBoardDraft
     @State private var showSaveError = false
     @State private var showArchiveConfirmation = false
     @State private var showArchiveError = false
 
-    /// Auto-focuses the name field on create so the keyboard is immediately
-    /// available; edit mode leaves focus unset so the user sees the whole form.
     @FocusState private var nameFocused: Bool
+    @FocusState private var goalFocused: Bool
 
     private let logger = Logger(subsystem: "com.mihirmaru.loca", category: "HabitManagement")
-
     private let swatchColumns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 6)
 
     // MARK: Init
@@ -87,9 +59,7 @@ struct HabitFormView: View {
         return false
     }
 
-    private var navigationTitle: String {
-        isCreate ? "New Habit" : "Edit Habit"
-    }
+    private var navigationTitle: String { isCreate ? "New Habit" : "Edit Habit" }
 
     // MARK: Body
 
@@ -118,11 +88,33 @@ struct HabitFormView: View {
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
-                    Button("Done") { nameFocused = false }
+                    Button("Done") {
+                        nameFocused = false
+                        goalFocused = false
+                    }
                 }
             }
-            .onAppear { if isCreate { nameFocused = true } }
-            .animation(reduceMotion ? nil : .rippleSettle, value: draft.metric)
+            .task {
+                // Auto-focus the name field on create — but only AFTER the sheet's
+                // presentation animation completes.
+                //
+                // Assigning @FocusState in `.onAppear` fires while the sheet is still
+                // animating in, so `becomeFirstResponder` is requested against a text
+                // field not yet settled in the window. UIKit drops that request while
+                // SwiftUI's @FocusState latches `true`, desyncing SwiftUI's focus model
+                // from UIKit's real responder chain. That single desync is the root of
+                // this sheet's focus/keyboard failures: the first tap becomes a no-op
+                // (the binding is already `true`, so no re-focus is issued), the keyboard
+                // accessory toolbar installs against a transitioning window (floating/
+                // detached), and "Done" can't resign a responder SwiftUI never owned.
+                //
+                // Waiting out the present animation lets the first-responder handshake
+                // happen cleanly against a settled hierarchy. The delay must exceed the
+                // sheet present animation (~0.35s); 0.4s clears it with margin.
+                guard isCreate else { return }
+                try? await Task.sleep(for: .milliseconds(400))
+                nameFocused = true
+            }
             .alert("Couldn't Save Habit", isPresented: $showSaveError) {
                 Button("OK", role: .cancel) {}
             } message: {
@@ -142,45 +134,39 @@ struct HabitFormView: View {
         }
     }
 
-    // MARK: Name
+    // MARK: Name Section
 
     @ViewBuilder
     private var nameSection: some View {
-        Section {
-            HStack(spacing: 10) {
-                TextField("Emoji", text: $draft.emoji)
-                    .frame(width: 48)
-                    .multilineTextAlignment(.center)
-                    .font(.title2)
+        Section("Name") {
+            TextField("Habit name", text: $draft.name)
+                .focused($nameFocused)
+                .submitLabel(.done)
+                .onChange(of: draft.name) { _, new in
+                    guard new.count > HabitBoardDraft.maxNameLength else { return }
+                    draft.name = String(new.prefix(HabitBoardDraft.maxNameLength))
+                }
+
+            HStack {
+                Text("Emoji")
+                    .foregroundStyle(.secondary)
+                Spacer()
+                TextField("optional", text: $draft.emoji)
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 60)
                     .onChange(of: draft.emoji) { _, new in
-                        // Reduce to the first grapheme cluster (String.prefix(1) respects
-                        // multi-scalar sequences like 🏃‍♂️). Accept only non-ASCII emoji:
-                        // ASCII scalars (# * 0-9) have isEmoji==true but render as text.
-                        let first = String(new.trimmingCharacters(in: .whitespaces).prefix(1))
-                        let isValidEmoji = first.unicodeScalars.first.map {
-                            $0.properties.isEmoji && $0.value > 0x007F
-                        } ?? false
-                        let clamped = isValidEmoji ? first : ""
-                        if draft.emoji != clamped { draft.emoji = clamped }
-                    }
-                TextField("Habit name", text: $draft.name)
-                    .focused($nameFocused)
-                    .multilineTextAlignment(.leading)
-                    .accessibilityLabel("Habit name")
-                    .onChange(of: draft.name) { _, new in
-                        if new.count > HabitBoardDraft.maxNameLength {
-                            draft.name = String(new.prefix(HabitBoardDraft.maxNameLength))
-                        }
+                        guard !new.isEmpty else { return }
+                        let first = String(new.prefix(1))
+                        let scalar = first.unicodeScalars.first
+                        let valid = scalar.map { $0.properties.isEmoji && $0.value > 0x007F } ?? false
+                        if !valid { draft.emoji = "" }
+                        else if new.count > 1 { draft.emoji = first }
                     }
             }
-        } header: {
-            Text("Name")
-        } footer: {
-            Text("Add an optional emoji to represent this habit.")
         }
     }
 
-    // MARK: Metric Type
+    // MARK: Metric Section
 
     @ViewBuilder
     private var metricSection: some View {
@@ -190,7 +176,6 @@ struct HabitFormView: View {
                 Text("Track Amount").tag(HabitBoard.MetricType.quantitative)
             }
             .pickerStyle(.segmented)
-            .accessibilityLabel("Habit type")
         } header: {
             Text("Type")
         } footer: {
@@ -200,80 +185,72 @@ struct HabitFormView: View {
         }
     }
 
-    // MARK: Goal (Quantitative only)
-
-    // MARK: SF Pro Rounded for the goal value (Engineering Principles §3)
-    //
-    // The numeric goal field uses `.rounded` to match CheckInSheet's value
-    // field and the analytics numeric identity.
+    // MARK: Goal Section (quantitative only)
 
     @ViewBuilder
     private var goalSection: some View {
         Section {
-            HStack(spacing: 8) {
-                TextField("0", text: $draft.targetText)
+            HStack {
+                Text("Daily Goal")
+                Spacer()
+                TextField("Amount", text: $draft.targetText)
                     .decimalKeyboard()
+                    .focused($goalFocused)
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 80)
                     .font(.system(.body, design: .rounded))
-                    .multilineTextAlignment(.leading)
-                    .foregroundStyle(draft.parsedTarget != nil ? .primary : .secondary)
-                    .frame(maxWidth: 160)
-                    .accessibilityLabel("Daily goal amount")
+                    .foregroundStyle(draft.parsedTarget != nil ? .primary : Color.red)
+            }
 
-                Spacer(minLength: 0)
-
-                Picker("Unit", selection: $draft.unit) {
-                    ForEach(UnitOption.Category.allCases, id: \.self) { category in
-                        Section(category.rawValue) {
-                            ForEach(category.units) { option in
-                                Text(option.displayName).tag(option)
-                            }
+            Picker("Unit", selection: $draft.unit) {
+                ForEach(UnitOption.Category.allCases, id: \.self) { category in
+                    Section(category.rawValue) {
+                        ForEach(category.units) { option in
+                            Text(option.displayName).tag(option)
                         }
                     }
                 }
-                .labelsHidden()
-                .frame(maxWidth: 140)
             }
 
-            HStack(spacing: DS.Space.md) {
+            HStack {
                 Text("Custom Unit")
-                    .font(DS.Text.caption)
-                    .foregroundStyle(DS.Color.textSecondary)
-                TextField("or type your own", text: $draft.customUnitText)
-                    .font(DS.Text.body)
-                    .textFieldStyle(.roundedBorder)
+                Spacer()
+                TextField("e.g. pages", text: $draft.customUnitText)
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 120)
             }
         } header: {
             Text("Daily Goal")
         } footer: {
-            Text("The amount that completes a day. Multiple check-ins add up.")
+            if draft.targetText.isEmpty {
+                Text("Enter an amount to enable Save.")
+                    .foregroundStyle(Color.red)
+            } else {
+                Text("Multiple check-ins on the same day add up.")
+            }
         }
     }
 
-    // MARK: Color
+    // MARK: Color Section
 
     @ViewBuilder
     private var colorSection: some View {
-        Section {
+        Section("Color") {
             LazyVGrid(columns: swatchColumns, spacing: 12) {
                 ForEach(0 ..< ColorPalette.count, id: \.self) { index in
-                    ColorSwatch(
-                        color: ColorPalette[index],
-                        isSelected: draft.colorIndex == index
-                    )
-                    .contentShape(Circle())
-                    .onTapGesture { draft.colorIndex = index }
-                    .accessibilityLabel("Color \(index + 1)")
-                    .accessibilityAddTraits(
-                        draft.colorIndex == index ? [.isButton, .isSelected] : .isButton
-                    )
+                    ColorSwatch(color: ColorPalette[index], isSelected: draft.colorIndex == index)
+                        .contentShape(Circle())
+                        .onTapGesture { draft.colorIndex = index }
+                        .accessibilityLabel("Color \(index + 1)")
+                        .accessibilityAddTraits(
+                            draft.colorIndex == index ? [.isButton, .isSelected] : .isButton
+                        )
                 }
             }
             .padding(.vertical, 4)
+            .listRowSeparator(.hidden)
 
             Toggle("Tinted Background", isOn: $draft.useColorBackground)
-                .accessibilityLabel("Use habit color as background tint")
-        } header: {
-            Text("Color")
         }
     }
 
@@ -292,14 +269,7 @@ struct HabitFormView: View {
         }
     }
 
-    // MARK: Save
-
-    // MARK: Persistence Sequence
-    //
-    // Create: insert(makeBoard()) → save.
-    // Edit:   apply(to: board)    → save.
-    // On failure: rollback() discards the insert or in-place mutation
-    // atomically; the sheet stays open with a non-blocking alert (EP §4.1).
+    // MARK: Actions
 
     private func archiveBoard() {
         guard case .edit(let board) = mode else { return }
@@ -322,20 +292,12 @@ struct HabitFormView: View {
         case .edit(let board):
             draft.apply(to: board)
         }
-
         do {
             try modelContext.save()
-            logger.debug(
-                "Habit saved (\(isCreate ? "create" : "edit", privacy: .public)): '\(draft.trimmedName, privacy: .public)'."
-            )
             dismiss()
-            if let id = newBoardID {
-                onBoardCreated?(id)
-            }
+            if let id = newBoardID { onBoardCreated?(id) }
         } catch {
-            logger.error(
-                "Habit save failed: \(error.localizedDescription, privacy: .public)"
-            )
+            logger.error("Habit save failed: \(error.localizedDescription, privacy: .public)")
             modelContext.rollback()
             showSaveError = true
         }
@@ -344,11 +306,6 @@ struct HabitFormView: View {
 
 // MARK: - ColorSwatch
 
-/// A single selectable palette color in the form's color grid.
-///
-/// Renders a filled circle; the selected swatch gains a primary-colored ring
-/// and a checkmark for a clear, accessible selected state that does not rely on
-/// color alone.
 private struct ColorSwatch: View {
     let color: Color
     let isSelected: Bool
@@ -358,8 +315,7 @@ private struct ColorSwatch: View {
             .fill(color)
             .frame(height: 36)
             .overlay {
-                Circle()
-                    .strokeBorder(.primary, lineWidth: isSelected ? 3 : 0)
+                Circle().strokeBorder(.primary, lineWidth: isSelected ? 3 : 0)
             }
             .overlay {
                 if isSelected {
@@ -377,7 +333,6 @@ private struct ColorSwatch: View {
 private func makeFormContainer() -> ModelContainer {
     let schema = Schema([HabitBoard.self, LogEntry.self])
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-    // try! is acceptable in a #Preview fixture (Engineering Principles §Previews).
     return try! ModelContainer(for: schema, configurations: [config])
 }
 

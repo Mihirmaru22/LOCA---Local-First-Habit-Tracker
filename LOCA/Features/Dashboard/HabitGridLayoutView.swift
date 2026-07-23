@@ -73,7 +73,7 @@ struct GridHabitCard: View {
             GridMiniHeatmap(board: board)
                 .padding(.horizontal, 10)
 
-            Spacer(minLength: 0)
+            Spacer(minLength: 16)
 
             // ── Check button ─────────────────────────────────────────
             GridCheckButton(
@@ -89,13 +89,15 @@ struct GridHabitCard: View {
                 }
             )
             .padding(.horizontal, 13)
-            .padding(.top, 10)
+            .padding(.top, 8)
             .padding(.bottom, 13)
         }
         .frame(height: 236)
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(ColorPalette[board.colorIndex].opacity(0.12))
+                .fill(board.useColorBackground
+                    ? ColorPalette[board.colorIndex].opacity(0.12)
+                    : Color(.systemGray6).opacity(0.6))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
@@ -105,6 +107,7 @@ struct GridHabitCard: View {
         .sheet(isPresented: $showingCheckIn) {
             AddCheckInSheetView(board: board)
         }
+        .id("\(board.id)-\(board.logs?.count ?? -1)")
     }
 }
 
