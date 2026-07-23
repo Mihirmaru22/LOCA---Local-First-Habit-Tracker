@@ -136,18 +136,14 @@ struct ArchiveListView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: DS.Space.lg) {
-                if archivedBoards.isEmpty {
-                    VStack(spacing: DS.Space.md) {
-                        Image(systemName: "archivebox")
-                            .font(.title2)
-                            .foregroundStyle(.secondary)
-                        Text("No Archived Habits")
-                            .font(DS.Text.body)
-                            .foregroundStyle(DS.Color.textSecondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                } else {
+            if archivedBoards.isEmpty {
+                ContentUnavailableView {
+                    Label("No Archived Habits", systemImage: "archivebox")
+                } description: {
+                    Text("Habits you archive appear here.")
+                }
+            } else {
+                VStack(alignment: .leading, spacing: DS.Space.lg) {
                     VStack(spacing: DS.Space.md) {
                         ForEach(archivedBoards) { board in
                             HStack {
@@ -168,11 +164,11 @@ struct ArchiveListView: View {
                             .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
                         }
                     }
-                }
 
-                Spacer()
+                    Spacer()
+                }
+                .padding(DS.Space.lg)
             }
-            .padding(DS.Space.lg)
             .navigationTitle("Archive")
             .inlineNavigationTitleDisplay()
             .toolbar {

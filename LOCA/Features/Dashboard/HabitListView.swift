@@ -206,39 +206,15 @@ struct HabitListView: View {
     // MARK: - Empty State
 
     private var emptyStateView: some View {
-        VStack(spacing: DS.Space.lg) {
-            Spacer()
-
-            VStack(spacing: DS.Space.md) {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 48))
-                    .foregroundStyle(.secondary)
-
-                VStack(spacing: DS.Space.sm) {
-                    Text("All Set")
-                        .font(DS.Text.heading)
-
-                    Text("No habits yet. Create one to get started.")
-                        .font(DS.Text.caption)
-                        .foregroundStyle(DS.Color.textSecondary)
-                        .multilineTextAlignment(.center)
-                }
-            }
-
-            Spacer()
-
+        ContentUnavailableView {
+            Label("No Habits Yet", systemImage: "plus.circle")
+        } description: {
+            Text("Create your first habit to get started.")
+        } actions: {
             Button(action: { showingCreateSheet = true }) {
                 Text("Create Habit")
-                    .font(DS.Text.body)
-                    .frame(maxWidth: .infinity)
-                    .padding(DS.Space.lg)
-                    .background(ColorPalette[0])
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.control, style: .continuous))
             }
         }
-        .frame(maxWidth: .infinity)
-        .padding(DS.Space.xxl)
     }
 
     // MARK: - Actions

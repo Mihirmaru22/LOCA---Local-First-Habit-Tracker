@@ -312,7 +312,7 @@ struct HabitCheckInsView: View {
                 try CheckInWriter.insert(value: amount, board: board, context: modelContext)
                 quickLogAmount = ""
             }
-            triggerHaptic()
+            Haptics.impact(.light)
         } catch {
             showWriteError = true
         }
