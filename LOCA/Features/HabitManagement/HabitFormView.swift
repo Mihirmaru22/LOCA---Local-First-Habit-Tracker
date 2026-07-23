@@ -94,7 +94,27 @@ struct HabitFormView: View {
                     }
                 }
             }
-            .onAppear { if isCreate { nameFocused = true } }
+            .task {
+                // Auto-focus the name field on create — but only AFTER the sheet's
+                // presentation animation completes.
+                //
+                // Assigning @FocusState in `.onAppear` fires while the sheet is still
+                // animating in, so `becomeFirstResponder` is requested against a text
+                // field not yet settled in the window. UIKit drops that request while
+                // SwiftUI's @FocusState latches `true`, desyncing SwiftUI's focus model
+                // from UIKit's real responder chain. That single desync is the root of
+                // this sheet's focus/keyboard failures: the first tap becomes a no-op
+                // (the binding is already `true`, so no re-focus is issued), the keyboard
+                // accessory toolbar installs against a transitioning window (floating/
+                // detached), and "Done" can't resign a responder SwiftUI never owned.
+                //
+                // Waiting out the present animation lets the first-responder handshake
+                // happen cleanly against a settled hierarchy. The delay must exceed the
+                // sheet present animation (~0.35s); 0.4s clears it with margin.
+                guard isCreate else { return }
+                try? await Task.sleep(for: .milliseconds(400))
+                nameFocused = true
+            }
             .alert("Couldn't Save Habit", isPresented: $showSaveError) {
                 Button("OK", role: .cancel) {}
             } message: {
