@@ -137,7 +137,7 @@ struct LOCAApp: App {
                         // Phase 4.4: Exit gate — if engagement < 30% over 20 reflections, suppress.
                         while true {
                             // Check if feature is still earning attention (Phase 4.4)
-                            if !await ReflectionDelivery.shared.shouldContinueReflections() {
+                            if !ReflectionDelivery.shared.shouldContinueReflections() {
                                 logger.debug("Reflection feature suppressed due to low engagement")
                                 break
                             }
@@ -158,6 +158,36 @@ struct LOCAApp: App {
                             }
 
                             // Wait ~24 hours before regenerating (Phase 4.1: rare).
+                            try? await Task.sleep(for: .hours(24))
+                        }
+                    }
+                    .task {
+                        // Detect and deliver interventions (Phase 5.1–5.4).
+                        // High-confidence relapse warnings, delivered as push.
+                        // Phase 5.5: Exit gate — if effectiveness < 50% over 10 interventions, suppress.
+                        while true {
+                            // Check if feature is still effective (Phase 5.5)
+                            if !InterventionDelivery.shared.shouldContinueInterventions() {
+                                logger.debug("Intervention feature suppressed due to low effectiveness")
+                                break
+                            }
+
+                            let fetchRequest = FetchDescriptor<HabitBoard>(
+                                predicate: #Predicate { $0.archivedAt == nil }
+                            )
+                            if let boards = try? container.mainContext.fetch(fetchRequest) {
+                                // Detect relapse risk for each active habit
+                                for board in boards {
+                                    let logs = (board.logs ?? []).map { LogSnapshot(from: $0) }
+                                    if let prediction = RelapseDetector.detectRelapse(board: board, logs: logs) {
+                                        await InterventionDelivery.shared.deliverIntervention(prediction)
+                                        // Limit to one intervention per app session to avoid noise
+                                        break
+                                    }
+                                }
+                            }
+
+                            // Wait ~24 hours before re-checking (Phase 5: infrequent).
                             try? await Task.sleep(for: .hours(24))
                         }
                     }
