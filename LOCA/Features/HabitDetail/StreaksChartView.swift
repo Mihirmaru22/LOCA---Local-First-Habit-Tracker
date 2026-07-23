@@ -143,6 +143,7 @@ struct StreaksChartView: View {
                             .foregroundStyle(DS.Color.textSecondary)
                         ValueText("\(board.longestStreak)", font: DS.Text.body)
                             .foregroundStyle(ColorPalette[board.colorIndex])
+                            .contentTransition(.numericText())
                     }
 
                     Divider()
@@ -154,6 +155,7 @@ struct StreaksChartView: View {
                             .foregroundStyle(DS.Color.textSecondary)
                         ValueText("\(board.currentStreak)", font: DS.Text.body)
                             .foregroundStyle(DS.Color.textPrimary)
+                            .contentTransition(.numericText())
                     }
 
                     Spacer()

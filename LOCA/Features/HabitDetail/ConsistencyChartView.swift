@@ -159,6 +159,7 @@ struct ConsistencyChartView: View {
                         if let current = monthlyScores.last {
                             ValueText(String(format: "%.0f%%", current.score), font: DS.Text.body)
                                 .foregroundStyle(ColorPalette[board.colorIndex])
+                                .contentTransition(.numericText())
                         }
                     }
 
@@ -172,6 +173,7 @@ struct ConsistencyChartView: View {
                         let avg = monthlyScores.map { $0.score }.reduce(0, +) / Double(monthlyScores.count)
                         ValueText(String(format: "%.0f%%", avg), font: DS.Text.body)
                             .foregroundStyle(DS.Color.textPrimary)
+                            .contentTransition(.numericText())
                     }
 
                     Spacer()

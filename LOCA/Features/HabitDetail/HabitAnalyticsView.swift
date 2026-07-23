@@ -148,6 +148,7 @@ struct HabitAnalyticsView: View {
                                         font: DS.Text.value
                                     )
                                     .foregroundStyle(DS.Color.textPrimary)
+                                    .contentTransition(.numericText())
 
                                     if let unitLabel = board.unitLabel, !unitLabel.isEmpty {
                                         Text(unitLabel)

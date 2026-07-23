@@ -135,6 +135,7 @@ struct HabitTimelineCard: View {
                             ? ColorPalette[board.colorIndex]
                             : DS.Color.textSecondary
                     )
+                    .contentTransition(.numericText())
                 }
 
                 Divider()
@@ -150,6 +151,7 @@ struct HabitTimelineCard: View {
                         font: DS.Text.body
                     )
                     .foregroundStyle(ColorPalette[board.colorIndex])
+                    .contentTransition(.numericText())
                 }
 
                 Divider()
@@ -165,6 +167,7 @@ struct HabitTimelineCard: View {
                         font: DS.Text.body
                     )
                     .foregroundStyle(DS.Color.textPrimary)
+                    .contentTransition(.numericText())
                 }
 
                 Spacer()

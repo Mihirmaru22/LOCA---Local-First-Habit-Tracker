@@ -56,6 +56,7 @@ struct HabitListRow: View {
                             font: DS.Text.valueCompact
                         )
                         .foregroundStyle(rowSubtextColor)
+                        .contentTransition(.numericText())
 
                         Text(board.unitLabel ?? "")
                             .font(DS.Text.caption)
@@ -112,6 +113,7 @@ struct HabitListRow: View {
                 font: DS.Text.valueSmall
             )
             .foregroundStyle(rowSubtextColor)
+            .contentTransition(.numericText())
             .frame(width: 30, alignment: .trailing)
         }
     }

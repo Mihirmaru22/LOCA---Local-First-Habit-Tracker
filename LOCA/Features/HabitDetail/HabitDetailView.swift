@@ -565,6 +565,7 @@ struct RefStreakCard: View {
             HStack(alignment: .lastTextBaseline, spacing: 4) {
                 ValueText("\(totalLogged)", font: DS.Text.valueHero)
                     .foregroundStyle(ColorPalette[board.colorIndex])
+                    .contentTransition(.numericText())
                 Text("times")
                     .font(DS.Text.caption)
                     .foregroundStyle(DS.Color.textSecondary)
@@ -580,6 +581,7 @@ struct RefStreakCard: View {
                     .foregroundStyle(DS.Color.textSecondary)
                 ValueText("\(lastSevenDays.logged)", font: DS.Text.valueCompact)
                     .foregroundStyle(DS.Color.textPrimary)
+                    .contentTransition(.numericText())
                 Text("of 7")
                     .font(DS.Text.caption)
                     .foregroundStyle(DS.Color.textSecondary)
@@ -648,6 +650,7 @@ struct RefConsistencyCard: View {
                 VStack(spacing: 2) {
                     ValueText("\(Int((ratio * 100).rounded()))%", font: DS.Text.value)
                         .foregroundStyle(DS.Color.textPrimary)
+                        .contentTransition(.numericText())
                     Text("this month")
                         .font(DS.Text.footnote)
                         .foregroundStyle(DS.Color.textSecondary)
@@ -714,6 +717,7 @@ struct RefMonthCard: View {
                         .foregroundStyle(
                             monthTotal > 0 ? ColorPalette[board.colorIndex] : DS.Color.textTertiary
                         )
+                        .contentTransition(.numericText())
                     if let u = board.unitLabel, !u.isEmpty {
                         Text(u)
                             .font(DS.Text.heading)
@@ -758,6 +762,7 @@ struct RefMonthCard: View {
                 if weekTotal > 0 {
                     ValueText(String(format: "%.0f", weekTotal), font: DS.Text.valueSmall)
                         .foregroundStyle(DS.Color.textPrimary)
+                        .contentTransition(.numericText())
                     if let u = board.unitLabel, !u.isEmpty {
                         Text(u)
                             .font(DS.Text.caption)

@@ -212,6 +212,7 @@ struct HabitCheckInsView: View {
                         ? ColorPalette[board.colorIndex]
                         : DS.Color.textSecondary
                 )
+                .contentTransition(.numericText())
 
                 if let unitLabel = board.unitLabel, !unitLabel.isEmpty {
                     Text("\(group.entries.count) \(group.entries.count == 1 ? "entry" : "entries") • \(unitLabel)")
@@ -282,6 +283,7 @@ struct HabitCheckInsView: View {
                             ? ColorPalette[board.colorIndex]
                             : DS.Color.textPrimary
                     )
+                    .contentTransition(.numericText())
 
                     if let unitLabel = board.unitLabel, !unitLabel.isEmpty {
                         Text(unitLabel)
