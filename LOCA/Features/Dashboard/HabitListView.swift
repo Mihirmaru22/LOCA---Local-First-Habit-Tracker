@@ -126,8 +126,11 @@ struct HabitListView: View {
             }
         }
         .task {
-            // Listen for sync status changes (Phase 3.5)
-            SyncStatusCoordinator.shared.onStatusChanged { status in
+            // Listen for sync status changes (Phase 3.5). Iterating the actor's
+            // AsyncStream in this MainActor .task lets us assign @State directly:
+            // SyncStatus is Sendable, so nothing MainActor-isolated crosses into
+            // the actor (Swift 6 complete concurrency).
+            for await status in await SyncStatusCoordinator.shared.statusUpdates() {
                 withAnimation {
                     syncStatus = status
                 }

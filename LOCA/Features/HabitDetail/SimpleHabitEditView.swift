@@ -99,9 +99,11 @@ struct SimpleHabitEditView: View {
     private func deleteHabit() {
         do {
             try board.archive(in: modelContext)
-            // Cancel reminder when habit is archived (Phase 3.1)
+            // Cancel reminder when habit is archived (Phase 3.1). Capture the id
+            // (a Sendable UUID) before crossing into the ReminderScheduler actor.
+            let boardID = board.id
             Task {
-                await ReminderScheduler.shared.cancelReminder(for: board)
+                await ReminderScheduler.shared.cancelReminder(id: boardID)
             }
             NotificationCenter.default.post(name: .habitArchived, object: board)
             dismiss()

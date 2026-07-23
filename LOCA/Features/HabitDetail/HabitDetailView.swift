@@ -228,9 +228,11 @@ struct HabitDetailView: View {
         board.preferredReminderTime = timeString
         do {
             try modelContext.save()
-            // Schedule the reminder (Phase 3.1)
+            // Schedule the reminder (Phase 3.1). Capture a Sendable snapshot on
+            // the MainActor before crossing into the ReminderScheduler actor.
+            let request = ReminderRequest(id: board.id, name: board.name, time: timeString)
             Task {
-                await ReminderScheduler.shared.scheduleReminder(for: board, time: timeString)
+                await ReminderScheduler.shared.scheduleReminder(request)
             }
             showTimingSuggestion = false
         } catch {
