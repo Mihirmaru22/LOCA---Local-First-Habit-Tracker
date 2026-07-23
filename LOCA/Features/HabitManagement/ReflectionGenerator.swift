@@ -21,6 +21,31 @@ struct ReflectionGenerator {
         board: HabitBoard,
         logs: [LogSnapshot]
     ) -> ReflectionUnit? {
+        // First try to surface a data-backed insight (Phase 4.2)
+        // Only if nothing else is worth saying
+        return generateProgressReflection(board: board, logs: logs)
+    }
+
+    /// Generate a reflection with correlation insight for multiple habits.
+    /// Called when analyzing all habits together (less frequent, rare).
+    static func generateInsightReflection(
+        boards: [HabitBoard],
+        allLogs: [LogSnapshot]
+    ) -> ReflectionUnit? {
+        let correlations = InsightAnalyzer.findCorrelations(boards: boards, logs: allLogs)
+        guard let correlation = correlations.first else { return nil }
+
+        // Surface the insight as one sentence
+        let sentence = "You \(correlation.benefitingHabit.lowercased()) \(correlation.effectDescription)."
+        return ReflectionUnit(text: sentence, contextType: .pattern)
+    }
+
+    // MARK: - Private
+
+    private static func generateProgressReflection(
+        board: HabitBoard,
+        logs: [LogSnapshot]
+    ) -> ReflectionUnit? {
         // Filter recent logs (last 30 days)
         let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: .now) ?? .now
         let recentLogs = logs.filter { $0.timestamp > thirtyDaysAgo }
@@ -31,7 +56,7 @@ struct ReflectionGenerator {
         let recoveryStatus = computeRecoveryStatus(logs: recentLogs)
 
         // Generate the one sentence, or return nil if nothing's worth saying
-        if let sentence = generateSentence(
+        if let sentence = generateSentenceFromMetrics(
             habitName: board.name,
             streak: board.currentStreak,
             weeklyConsistency: weeklyStats.consistency,
@@ -84,7 +109,7 @@ struct ReflectionGenerator {
         return (false, 0)
     }
 
-    private static func generateSentence(
+    private static func generateSentenceFromMetrics(
         habitName: String,
         streak: Int,
         weeklyConsistency: Double,

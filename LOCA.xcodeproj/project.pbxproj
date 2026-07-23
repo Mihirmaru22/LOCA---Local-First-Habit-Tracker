@@ -90,6 +90,7 @@
 		D45B6400C4A988DB2D499E0E /* HeatmapWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98EC7081C1B9D172E1DB63DC /* HeatmapWidget.swift */; };
 		D73B09D65D15695BD06A83CB /* SettingsMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04AD22D76419B8B94DE6EC40 /* SettingsMenuView.swift */; };
 		D9F19BCA3572423D959CEEF5 /* HabitGridLayoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1722A0BDC804F11856E575D /* HabitGridLayoutView.swift */; };
+		E82E0AFCE194B81C1D1412E3 /* HabitCorrelation.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFAB227BB75B4669CD834FFA /* HabitCorrelation.swift */; };
 		E8A397AD3E3F43468E8BFF20 /* HabitDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EA3DF789134654984688CB /* HabitDetailView.swift */; };
 		E8ADDA453FAB3851AB3CB853 /* AddCheckInSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EC5E1C58596652E07B3FDB9 /* AddCheckInSheetView.swift */; };
 		E8F19F01F9AC07C3B4690A1F /* LogHabitIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F232FDAB6A6A9C3C9779C7B /* LogHabitIntent.swift */; };
@@ -208,6 +209,7 @@
 		CA23BF1816F44D92873A3FCD /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		CB921FD359F548A389FFA196 /* HeatmapDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeatmapDataProvider.swift; sourceTree = "<group>"; };
 		CF3A1B2C3D4E5F6A7B8C9D0E /* CheckInWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInWriter.swift; sourceTree = "<group>"; };
+		CFAB227BB75B4669CD834FFA /* HabitCorrelation.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HabitCorrelation.swift; sourceTree = "<group>"; };
 		D1722A0BDC804F11856E575D /* HabitGridLayoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitGridLayoutView.swift; sourceTree = "<group>"; };
 		D51B7D82991FFC42BE1EFA3C /* HabitFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitFormView.swift; sourceTree = "<group>"; };
 		D5A18185A6B14A16B58268EB /* ColorPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPalette.swift; sourceTree = "<group>"; };
@@ -404,6 +406,7 @@
 				5AA86358B6826E173A22E6FA /* TimingInference.swift */,
 				633111D4B01B739CA2804DCA /* UnitInference.swift */,
 				ABB47131688E7C5399681358 /* ReflectionGenerator.swift */,
+				CFAB227BB75B4669CD834FFA /* HabitCorrelation.swift */,
 			);
 			path = HabitManagement;
 			sourceTree = "<group>";
@@ -729,6 +732,7 @@
 				1CB2E10ABA5B0C2C0D5BB59E /* ReflectionUnit.swift in Sources */,
 				30AC380C40213C8A7775C4C9 /* ReflectionGenerator.swift in Sources */,
 				8D67DF5372FD877ED3AC585F /* ReflectionDelivery.swift in Sources */,
+				E82E0AFCE194B81C1D1412E3 /* HabitCorrelation.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
