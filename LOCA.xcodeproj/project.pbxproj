@@ -45,6 +45,7 @@
 		553DC15342FAE21DA7615A4F /* RelapsePrediction.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC65406A0F36779DBF9E9AB5 /* RelapsePrediction.swift */; };
 		566D4E78C84AF0817BF99793 /* InterventionDelivery.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8D44504DAFAD52283649ABE /* InterventionDelivery.swift */; };
 		5A16ED2F33C94E529C637EF7 /* Animation+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35FC423A6DF845B191C059CB /* Animation+Extensions.swift */; };
+		5A6690E66AB54A863226729E /* InterventionNarrator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03DE44BE8647C83B931B1001 /* InterventionNarrator.swift */; };
 		5A83AE55776345929CB34BF7 /* WidgetRefreshCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2805490003546CEAA6A8872 /* WidgetRefreshCoordinator.swift */; };
 		6260B091F4A4695307795022 /* ReminderScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF26E3DDB17CA4EFB50AF326 /* ReminderScheduler.swift */; };
 		62780CD2EA974EBA86115C30 /* LOCAApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80DC4E439C544786958675F7 /* LOCAApp.swift */; };
@@ -146,6 +147,7 @@
 
 /* Begin PBXFileReference section */
 		007029E177424E23BA4737C3 /* PersistenceError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceError.swift; sourceTree = "<group>"; };
+		03DE44BE8647C83B931B1001 /* InterventionNarrator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InterventionNarrator.swift; sourceTree = "<group>"; };
 		04AD22D76419B8B94DE6EC40 /* SettingsMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsMenuView.swift; sourceTree = "<group>"; };
 		08FE062CF468245B57185775 /* PredictionConfidence.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PredictionConfidence.swift; sourceTree = "<group>"; };
 		096517002462A37880A6D164 /* ReflectionPromptCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReflectionPromptCard.swift; sourceTree = "<group>"; };
@@ -419,6 +421,7 @@
 				08FE062CF468245B57185775 /* PredictionConfidence.swift */,
 				DC65406A0F36779DBF9E9AB5 /* RelapsePrediction.swift */,
 				B8C92EBB9BE72C0D344BB2D0 /* InterventionGenerator.swift */,
+				03DE44BE8647C83B931B1001 /* InterventionNarrator.swift */,
 			);
 			path = HabitManagement;
 			sourceTree = "<group>";
@@ -749,6 +752,7 @@
 				553DC15342FAE21DA7615A4F /* RelapsePrediction.swift in Sources */,
 				06885DFB4FE24561E4822833 /* InterventionGenerator.swift in Sources */,
 				566D4E78C84AF0817BF99793 /* InterventionDelivery.swift in Sources */,
+				5A6690E66AB54A863226729E /* InterventionNarrator.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
