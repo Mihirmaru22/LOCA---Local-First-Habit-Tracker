@@ -198,6 +198,7 @@ struct GridHabitCard: View {
         .sheet(isPresented: $showingCheckIn) {
             AddCheckInSheetView(board: board)
         }
+        .presentationDetents([.medium, .large])
         .id("\(board.id)-\(board.logs?.count ?? -1)")
     }
 }

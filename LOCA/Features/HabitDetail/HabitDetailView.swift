@@ -171,6 +171,7 @@ struct HabitDetailView: View {
         .sheet(isPresented: $showingCheckIn) {
             AddCheckInSheetView(board: board)
         }
+        .presentationDetents([.medium, .large])
         .task {
             checkForGoalInference()
             checkForTimingSuggestion()

@@ -27,6 +27,7 @@ struct AddCheckInSheetView: View {
     @State private var notesText = ""
     @State private var isSubmitting = false
     @State private var showSaveError = false
+    @State private var showSuccess = false
 
     @FocusState private var amountFocused: Bool
     @FocusState private var notesFocused: Bool
@@ -171,12 +172,21 @@ struct AddCheckInSheetView: View {
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(action: { submitCheckIn() }) {
-                        Text("Save")
-                            .fontWeight(.semibold)
+                    if showSuccess {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(ColorPalette[board.colorIndex])
+                            .font(.title3)
+                    } else if isSubmitting {
+                        ProgressView()
+                            .tint(ColorPalette[board.colorIndex])
+                    } else {
+                        Button(action: { submitCheckIn() }) {
+                            Text("Save")
+                                .fontWeight(.semibold)
+                        }
+                        .disabled(!isValid)
+                        .opacity(isValid ? 1.0 : 0.5)
                     }
-                    .disabled(!isValid || isSubmitting)
-                    .opacity(isValid ? 1.0 : 0.5)
                 }
             }
         }
@@ -221,6 +231,11 @@ struct AddCheckInSheetView: View {
 
             withAnimation(DS.Motion.confirm(reduceMotion: reduceMotion)) {
                 isSubmitting = false
+                showSuccess = true
+            }
+
+            // Brief success acknowledgment before dismiss
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                 dismiss()
             }
         } catch {

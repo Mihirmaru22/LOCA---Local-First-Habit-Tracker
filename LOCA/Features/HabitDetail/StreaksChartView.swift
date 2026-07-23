@@ -177,7 +177,7 @@ struct StreaksChartView: View {
             }
             .padding(DS.Space.md)
             .opacity(hasAppeared && longestStreak > 0 ? 1 : 0.5)
-            .animation(DS.Motion.settle(reduceMotion: reduceMotion), value: hasAppeared || longestStreak)
+            .animation(DS.Motion.settle(reduceMotion: reduceMotion), value: longestStreak)
             .onAppear { hasAppeared = true }
         }
     }
