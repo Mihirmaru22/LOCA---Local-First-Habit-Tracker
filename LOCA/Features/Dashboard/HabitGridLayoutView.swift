@@ -94,7 +94,9 @@ struct GridHabitCard: View {
         .frame(height: 236)
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(ColorPalette[board.colorIndex].opacity(0.12))
+                .fill(board.useColorBackground
+                    ? ColorPalette[board.colorIndex].opacity(0.12)
+                    : Color(.systemGray6).opacity(0.6))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 20, style: .continuous)

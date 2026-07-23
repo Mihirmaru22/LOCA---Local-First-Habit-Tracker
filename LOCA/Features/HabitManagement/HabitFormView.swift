@@ -147,36 +147,38 @@ struct HabitFormView: View {
     @ViewBuilder
     private var nameSection: some View {
         Section {
-            HStack(spacing: 10) {
-                TextField("Emoji", text: $draft.emoji)
-                    .frame(width: 48)
-                    .multilineTextAlignment(.center)
-                    .font(.title2)
-                    .onChange(of: draft.emoji) { _, new in
-                        // Reduce to the first grapheme cluster (String.prefix(1) respects
-                        // multi-scalar sequences like 🏃‍♂️). Accept only non-ASCII emoji:
-                        // ASCII scalars (# * 0-9) have isEmoji==true but render as text.
-                        let first = String(new.trimmingCharacters(in: .whitespaces).prefix(1))
-                        let isValidEmoji = first.unicodeScalars.first.map {
-                            $0.properties.isEmoji && $0.value > 0x007F
-                        } ?? false
-                        let clamped = isValidEmoji ? first : ""
-                        if draft.emoji != clamped { draft.emoji = clamped }
-                    }
+            VStack(alignment: .leading, spacing: 8) {
                 TextField("Habit name", text: $draft.name)
                     .focused($nameFocused)
-                    .multilineTextAlignment(.leading)
+                    .font(.body)
                     .accessibilityLabel("Habit name")
                     .onChange(of: draft.name) { _, new in
                         if new.count > HabitBoardDraft.maxNameLength {
                             draft.name = String(new.prefix(HabitBoardDraft.maxNameLength))
                         }
                     }
+
+                HStack(spacing: 8) {
+                    Text("Emoji (optional)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    TextField("", text: $draft.emoji)
+                        .frame(width: 32)
+                        .multilineTextAlignment(.center)
+                        .font(.title3)
+                        .onChange(of: draft.emoji) { _, new in
+                            let first = String(new.trimmingCharacters(in: .whitespaces).prefix(1))
+                            let isValidEmoji = first.unicodeScalars.first.map {
+                                $0.properties.isEmoji && $0.value > 0x007F
+                            } ?? false
+                            let clamped = isValidEmoji ? first : ""
+                            if draft.emoji != clamped { draft.emoji = clamped }
+                        }
+                    Spacer()
+                }
             }
         } header: {
             Text("Name")
-        } footer: {
-            Text("Add an optional emoji to represent this habit.")
         }
     }
 
@@ -210,37 +212,55 @@ struct HabitFormView: View {
     @ViewBuilder
     private var goalSection: some View {
         Section {
-            HStack(spacing: 8) {
-                TextField("0", text: $draft.targetText)
-                    .decimalKeyboard()
-                    .font(.system(.body, design: .rounded))
-                    .multilineTextAlignment(.leading)
-                    .foregroundStyle(draft.parsedTarget != nil ? .primary : .secondary)
-                    .frame(maxWidth: 160)
-                    .accessibilityLabel("Daily goal amount")
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 8) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Daily Goal")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        TextField("0", text: $draft.targetText)
+                            .decimalKeyboard()
+                            .font(.system(.body, design: .rounded))
+                            .multilineTextAlignment(.leading)
+                            .foregroundStyle(draft.parsedTarget != nil ? .primary : .secondary)
+                            .accessibilityLabel("Daily goal amount")
+                    }
+                    .frame(maxWidth: 100)
 
-                Spacer(minLength: 0)
-
-                Picker("Unit", selection: $draft.unit) {
-                    ForEach(UnitOption.Category.allCases, id: \.self) { category in
-                        Section(category.rawValue) {
-                            ForEach(category.units) { option in
-                                Text(option.displayName).tag(option)
+                    Picker("Unit", selection: $draft.unit) {
+                        ForEach(UnitOption.Category.allCases, id: \.self) { category in
+                            Section(category.rawValue) {
+                                ForEach(category.units) { option in
+                                    Text(option.displayName).tag(option)
+                                }
                             }
                         }
                     }
+                    .labelsHidden()
                 }
-                .labelsHidden()
-                .frame(maxWidth: 140)
-            }
 
-            HStack(spacing: DS.Space.md) {
-                Text("Custom Unit")
-                    .font(DS.Text.caption)
-                    .foregroundStyle(DS.Color.textSecondary)
-                TextField("or type your own", text: $draft.customUnitText)
-                    .font(DS.Text.body)
-                    .textFieldStyle(.roundedBorder)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Custom Unit")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    TextField("or type your own", text: $draft.customUnitText)
+                        .font(DS.Text.body)
+                        .textFieldStyle(.roundedBorder)
+                }
+
+                if draft.targetText.isEmpty {
+                    HStack(spacing: 6) {
+                        Image(systemName: "info.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                        Text("Enter a daily goal to save")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
+                    .padding(8)
+                    .background(Color.orange.opacity(0.1))
+                    .cornerRadius(6)
+                }
             }
         } header: {
             Text("Daily Goal")
@@ -254,24 +274,42 @@ struct HabitFormView: View {
     @ViewBuilder
     private var colorSection: some View {
         Section {
-            LazyVGrid(columns: swatchColumns, spacing: 12) {
-                ForEach(0 ..< ColorPalette.count, id: \.self) { index in
-                    ColorSwatch(
-                        color: ColorPalette[index],
-                        isSelected: draft.colorIndex == index
-                    )
-                    .contentShape(Circle())
-                    .onTapGesture { draft.colorIndex = index }
-                    .accessibilityLabel("Color \(index + 1)")
-                    .accessibilityAddTraits(
-                        draft.colorIndex == index ? [.isButton, .isSelected] : .isButton
-                    )
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Choose a color")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                LazyVGrid(columns: swatchColumns, spacing: 12) {
+                    ForEach(0 ..< ColorPalette.count, id: \.self) { index in
+                        ColorSwatch(
+                            color: ColorPalette[index],
+                            isSelected: draft.colorIndex == index
+                        )
+                        .contentShape(Circle())
+                        .onTapGesture { draft.colorIndex = index }
+                        .accessibilityLabel("Color \(index + 1)")
+                        .accessibilityAddTraits(
+                            draft.colorIndex == index ? [.isButton, .isSelected] : .isButton
+                        )
+                    }
+                }
+
+                Divider()
+                    .padding(.vertical, 4)
+
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Tinted Background")
+                            .font(.body)
+                        Text("Apply habit color to the card background")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Toggle("", isOn: $draft.useColorBackground)
+                        .labelsHidden()
+                        .accessibilityLabel("Use habit color as background tint")
                 }
             }
-            .padding(.vertical, 4)
-
-            Toggle("Tinted Background", isOn: $draft.useColorBackground)
-                .accessibilityLabel("Use habit color as background tint")
         } header: {
             Text("Color")
         }
