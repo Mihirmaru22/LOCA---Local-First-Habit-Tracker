@@ -72,7 +72,7 @@ struct HabitListView: View {
             }
         }
         .sheet(isPresented: $showingCreateSheet) {
-            HabitFormView(mode: .create)
+            SimpleHabitCreationView()
         }
         .alert("Couldn't Save Check-in", isPresented: $showCheckInError) {
             Button("OK", role: .cancel) {}
