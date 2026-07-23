@@ -158,7 +158,7 @@ struct LOCAApp: App {
                             }
 
                             // Wait ~24 hours before regenerating (Phase 4.1: rare).
-                            try? await Task.sleep(for: .hours(24))
+                            try? await Task.sleep(for: .seconds(24 * 60 * 60))
                         }
                     }
                     .task {
@@ -188,7 +188,7 @@ struct LOCAApp: App {
                             }
 
                             // Wait ~24 hours before re-checking (Phase 5: infrequent).
-                            try? await Task.sleep(for: .hours(24))
+                            try? await Task.sleep(for: .seconds(24 * 60 * 60))
                         }
                     }
             } else {
