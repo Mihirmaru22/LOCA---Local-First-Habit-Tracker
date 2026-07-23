@@ -197,6 +197,7 @@ struct GridHabitCard: View {
         .contentShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
         .sheet(isPresented: $showingCheckIn) {
             AddCheckInSheetView(board: board)
+                .presentationDetents([.medium, .large])
         }
         .id("\(board.id)-\(board.logs?.count ?? -1)")
     }
@@ -212,6 +213,7 @@ private struct GridMiniHeatmap: View {
 
     // Pre-aggregated off-main; O(1) lookup per cell at render time.
     @State private var cellsByDate: [Date: DayCell] = [:]
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         GeometryReader { geo in
@@ -235,6 +237,8 @@ private struct GridMiniHeatmap: View {
             }
         }
         .frame(height: heatmapHeight())
+        .opacity(cellsByDate.isEmpty ? 0.5 : 1.0)
+        .animation(DS.Motion.settle(reduceMotion: reduceMotion), value: cellsByDate.isEmpty)
         // 56 days covers all cells in the 8×7 grid regardless of day-of-week alignment.
         .task(id: "\(board.id)-\(board.logs?.count ?? -1)") {
             let snapshots = (board.logs ?? []).map(LogSnapshot.init(from:))

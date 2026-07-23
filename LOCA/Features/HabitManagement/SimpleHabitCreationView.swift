@@ -44,18 +44,40 @@ struct SimpleHabitCreationView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: DS.Space.lg) {
+                if step != .mode {
+                    stepIndicator
+                        .padding(.top, DS.Space.md)
+                        .transition(.opacity)
+                }
+
                 Spacer()
 
                 VStack(spacing: DS.Space.md) {
                     switch step {
                     case .mode:
                         modeStep
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .trailing).combined(with: .opacity),
+                                removal: .move(edge: .trailing).combined(with: .opacity)
+                            ))
                     case .name:
                         nameStep
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .trailing).combined(with: .opacity),
+                                removal: .move(edge: .leading).combined(with: .opacity)
+                            ))
                     case .metricType:
                         metricTypeStep
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .trailing).combined(with: .opacity),
+                                removal: .move(edge: .trailing).combined(with: .opacity)
+                            ))
                     case .template:
                         templateStep
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .trailing).combined(with: .opacity),
+                                removal: .move(edge: .trailing).combined(with: .opacity)
+                            ))
                     }
                 }
                 .padding(DS.Space.lg)
@@ -68,7 +90,13 @@ struct SimpleHabitCreationView: View {
             .inlineNavigationTitleDisplay()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    if step == .mode {
+                        Button("Cancel") { dismiss() }
+                    } else {
+                        Button(action: goBack) {
+                            Image(systemName: "chevron.left")
+                        }
+                    }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(actionButtonLabel) {
@@ -86,6 +114,52 @@ struct SimpleHabitCreationView: View {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text("Please try again.")
+            }
+        }
+    }
+
+    private var stepIndicator: some View {
+        HStack(spacing: DS.Space.sm) {
+            ForEach(0..<2, id: \.self) { index in
+                Circle()
+                    .fill(isStepActive(index) ? ColorPalette[0] : DS.Color.textTertiary.opacity(0.2))
+                    .frame(width: 8, height: 8)
+                    .animation(DS.Motion.settle(reduceMotion: reduceMotion), value: step)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, DS.Space.lg)
+    }
+
+    private func isStepActive(_ index: Int) -> Bool {
+        switch step {
+        case .mode:
+            return false
+        case .name, .template:
+            return index == 0
+        case .metricType:
+            return true
+        }
+    }
+
+    private func goBack() {
+        let animation = DS.Motion.settle(reduceMotion: reduceMotion)
+        withAnimation(animation) {
+            switch step {
+            case .mode:
+                break
+            case .name:
+                step = .mode
+            case .metricType:
+                if selectedTemplate != nil {
+                    selectedTemplate = nil
+                    metricType = .binary
+                    step = .mode
+                } else {
+                    step = .name
+                }
+            case .template:
+                step = .mode
             }
         }
     }
