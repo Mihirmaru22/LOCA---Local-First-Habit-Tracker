@@ -129,6 +129,28 @@ struct LOCAApp: App {
                         // Non-blocking: displays sync state to user without interruption.
                         await SyncStatusCoordinator.shared.start()
                     }
+                    .task {
+                        // Generate and deliver reflections (Phase 4.1).
+                        // One honest sentence tied to progress, delivered as push.
+                        // Returns nil if nothing's worth saying (Phase 4.3: guardrails).
+                        let fetchRequest = FetchDescriptor<HabitBoard>(
+                            predicate: #Predicate { $0.archivedAt == nil }
+                        )
+                        if let boards = try? container.mainContext.fetch(fetchRequest) {
+                            // Generate one reflection per active habit
+                            for board in boards {
+                                let logs = (board.logs ?? []).map { LogSnapshot(from: $0) }
+                                if let reflection = ReflectionGenerator.generateForHabit(board: board, logs: logs) {
+                                    await ReflectionDelivery.shared.deliverReflection(reflection)
+                                    // Limit to one reflection per app session to avoid noise
+                                    break
+                                }
+                            }
+                        }
+
+                        // Wait ~24 hours before regenerating (Phase 4.1: rare).
+                        try? await Task.sleep(for: .hours(24))
+                    }
             } else {
                 ContainerUnavailableView()
             }
