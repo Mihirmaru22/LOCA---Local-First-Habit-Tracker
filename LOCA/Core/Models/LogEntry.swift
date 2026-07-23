@@ -51,8 +51,6 @@ final class LogEntry {
     ///
     /// Full timestamp (not date-only) preserves time-of-day information used by
     /// `JournalListView` and for ordering multiple same-day entries.
-    /// Indexed for efficient chronological queries.
-    @Attribute(.indexed)
     var timestamp: Date = Date()
 
     /// The amount logged for this entry.
@@ -105,8 +103,6 @@ final class LogEntry {
     /// The property default (`UUID()`) satisfies CloudKit's "all properties must
     /// have a default" requirement. In practice it is always overwritten by the
     /// designated initialiser, which requires `boardID` as a non-defaulted parameter.
-    /// Indexed for efficient queries by board.
-    @Attribute(.indexed)
     var boardID: UUID = UUID()
 
     // MARK: - Relationship
