@@ -61,6 +61,7 @@ struct HabitFormView: View {
     /// Auto-focuses the name field on create so the keyboard is immediately
     /// available; edit mode leaves focus unset so the user sees the whole form.
     @FocusState private var nameFocused: Bool
+    @FocusState private var anyFieldFocused: Bool
 
     private let logger = Logger(subsystem: "com.mihirmaru.loca", category: "HabitManagement")
 
@@ -118,7 +119,10 @@ struct HabitFormView: View {
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
-                    Button("Done") { nameFocused = false }
+                    Button("Done") {
+                        nameFocused = false
+                        anyFieldFocused = false
+                    }
                 }
             }
             .onAppear { if isCreate { nameFocused = true } }
@@ -220,6 +224,7 @@ struct HabitFormView: View {
                             .foregroundStyle(.secondary)
                         TextField("0", text: $draft.targetText)
                             .decimalKeyboard()
+                            .focused($anyFieldFocused)
                             .font(.system(.body, design: .rounded))
                             .multilineTextAlignment(.leading)
                             .foregroundStyle(draft.parsedTarget != nil ? .primary : .secondary)
@@ -244,6 +249,7 @@ struct HabitFormView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     TextField("or type your own", text: $draft.customUnitText)
+                        .focused($anyFieldFocused)
                         .font(DS.Text.body)
                         .textFieldStyle(.roundedBorder)
                 }
