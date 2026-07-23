@@ -26,25 +26,13 @@ jobs:
           xcodebuild -version
           swift --version
 
-      - name: Pick an available iPhone simulator
-        id: sim
-        run: |
-          UDID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; data=json.load(sys.stdin)["devices"]; ids=[d["udid"] for rt in sorted(data,reverse=True) for d in data[rt] if d.get("isAvailable") and "iPhone" in d.get("name","")]; print(ids[0] if ids else "")')
-          if [ -z "$UDID" ]; then
-            echo "ERROR: No available iPhone simulator found."
-            xcrun simctl list devices
-            exit 1
-          fi
-          echo "Using simulator: $UDID"
-          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
-
       - name: Run unit tests
         run: |
           set -o pipefail
           xcodebuild test \
             -project LOCA.xcodeproj \
             -scheme LOCA \
-            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -destination "platform=macOS" \
             -resultBundlePath TestResults.xcresult \
             CODE_SIGNING_ALLOWED=NO \
             2>&1 | tee xcodebuild.log
