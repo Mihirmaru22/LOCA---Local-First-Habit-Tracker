@@ -13,9 +13,12 @@ import SwiftData
 struct HabitDetailView: View {
     let board: HabitBoard
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     @State private var showingEditSheet    = false
     @State private var showingCheckIn      = false
     @State private var selectedTab         = 0
+    @State private var showGoalInference: Bool?  // nil = not yet checked, true/false = decision made
+    @State private var inferredGoal: Double = 0
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -35,6 +38,16 @@ struct HabitDetailView: View {
                 default:
                     ScrollView {
                         VStack(alignment: .leading, spacing: 12) {
+                            if showGoalInference == true && board.metric == .quantitative && board.targetValue == nil {
+                                GoalInferenceCard(
+                                    board: board,
+                                    inferredGoal: inferredGoal,
+                                    onAccept: { acceptGoalInference($0) },
+                                    onDismiss: { showGoalInference = false }
+                                )
+                                .padding(.horizontal, 18)
+                            }
+
                             RefHeatmapCard(board: board)
                                 .padding(.horizontal, 18)
 
@@ -102,6 +115,38 @@ struct HabitDetailView: View {
         }
         .sheet(isPresented: $showingCheckIn) {
             AddCheckInSheetView(board: board)
+        }
+        .task {
+            checkForGoalInference()
+        }
+    }
+
+    private func checkForGoalInference() {
+        guard showGoalInference == nil else { return }
+        guard board.metric == .quantitative && board.targetValue == nil else {
+            showGoalInference = false
+            return
+        }
+
+        let logs = board.logs ?? []
+        let snapshots = logs.map { LogSnapshot(from: $0) }
+
+        guard let inferredValue = GoalInference.inferFromFirstWeek(logs: snapshots) else {
+            showGoalInference = false
+            return
+        }
+
+        inferredGoal = inferredValue
+        showGoalInference = true
+    }
+
+    private func acceptGoalInference(_ value: Double) {
+        board.targetValue = value
+        do {
+            try modelContext.save()
+            showGoalInference = false
+        } catch {
+            // Silent fail; goal inference card remains visible for retry
         }
     }
 }
@@ -178,7 +223,7 @@ struct RefHeatmapCard: View {
         }
         .frame(height: heatmapHeight())
         // 182 days (26 weeks) covers the widest reasonable grid on any iPhone width.
-        .task(id: "\(board.id)-\(board.logs?.count ?? -1)") {
+        .task(id: "\(board.id)-\(board.logs?.count ?? -1)-\(board.targetValue ?? -1)") {
             let snapshots = (board.logs ?? []).map(LogSnapshot.init(from:))
             let logs = board.logs ?? []
 
