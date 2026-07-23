@@ -2,17 +2,12 @@
 //  Haptics.swift
 //  LOCA
 //
-//  Phase P.0.8 — The haptics contract.
+//  Phase P.0.8 / P4.5 — The haptics contract.
 //
 //  One path for all haptic feedback so call sites stop hand-writing
-//  UIImpactFeedbackGenerator inline (the pattern currently duplicated in
-//  HabitListView, HabitCheckInsView, and AddCheckInSheetView). UIKit-gated; a no-op
-//  on platforms without it, so callers never write `#if canImport(UIKit)` themselves.
-//
-//  Sequencing (see Docs/PhaseP-CraftsmanshipPolish.md): created here in P0 because
-//  P2.3 is the first new consumer. P4 extends this with a user-facing enable/disable
-//  setting and folds in the three existing hand-written sites. Until P4 these fire
-//  unconditionally on iOS — the enable check lives in exactly one place when it lands.
+//  UIImpactFeedbackGenerator inline. UIKit-gated; a no-op on platforms without it
+//  so callers never write `#if canImport(UIKit)` themselves.
+//  Gated by @AppStorage("hapticsEnabled"); defaults to true.
 //
 
 import Foundation
@@ -31,8 +26,10 @@ enum Haptics {
         case light, rigid, soft
     }
 
-    /// Fire a physical impact. No-op where UIKit is unavailable.
+    /// Fire a physical impact. Gated by user setting (default on); no-op where UIKit is unavailable.
     static func impact(_ style: Impact) {
+        guard UserDefaults.standard.object(forKey: "hapticsEnabled") == nil
+              || UserDefaults.standard.bool(forKey: "hapticsEnabled") else { return }
         #if canImport(UIKit)
         let generator: UIImpactFeedbackGenerator
         switch style {
@@ -45,7 +42,10 @@ enum Haptics {
     }
 
     /// A discrete selection changed — a tab, a layout, a picker value.
+    /// Gated by user setting (default on); no-op where UIKit is unavailable.
     static func selection() {
+        guard UserDefaults.standard.object(forKey: "hapticsEnabled") == nil
+              || UserDefaults.standard.bool(forKey: "hapticsEnabled") else { return }
         #if canImport(UIKit)
         UISelectionFeedbackGenerator().selectionChanged()
         #endif
@@ -57,7 +57,10 @@ enum Haptics {
     }
 
     /// Fire an outcome notification — e.g. `.success` when a check-in crosses its goal.
+    /// Gated by user setting (default on); no-op where UIKit is unavailable.
     static func notify(_ type: Notify) {
+        guard UserDefaults.standard.object(forKey: "hapticsEnabled") == nil
+              || UserDefaults.standard.bool(forKey: "hapticsEnabled") else { return }
         #if canImport(UIKit)
         let generator = UINotificationFeedbackGenerator()
         switch type {

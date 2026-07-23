@@ -196,6 +196,12 @@ struct AddCheckInSheetView: View {
 
         let value: Double = board.metric == .quantitative ? (parsedAmount ?? 0) : 1.0
 
+        // P4.2: Detect goal crossing for success haptic
+        let isToday = calendar.isDateInToday(timestamp)
+        let oldTotal = isToday ? (board.logs ?? [])
+            .filter { calendar.isDateInToday($0.timestamp) }
+            .reduce(0) { $0 + $1.value } : 0
+
         do {
             try CheckInWriter.insert(
                 value: value,
@@ -204,7 +210,15 @@ struct AddCheckInSheetView: View {
                 board: board,
                 context: modelContext
             )
-            triggerConfirmationHaptic()
+            Haptics.impact(.rigid)
+
+            if isToday {
+                let newTotal = oldTotal + value
+                if oldTotal < board.effectiveTarget && newTotal >= board.effectiveTarget {
+                    Haptics.notify(.success)
+                }
+            }
+
             withAnimation(DS.Motion.confirm(reduceMotion: reduceMotion)) {
                 isSubmitting = false
                 dismiss()
@@ -215,11 +229,6 @@ struct AddCheckInSheetView: View {
         }
     }
 
-    private func triggerConfirmationHaptic() {
-        #if canImport(UIKit)
-        UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
-        #endif
-    }
 }
 
 #Preview {

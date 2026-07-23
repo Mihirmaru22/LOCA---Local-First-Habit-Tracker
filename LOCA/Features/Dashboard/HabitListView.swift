@@ -16,10 +16,6 @@ import SwiftUI
 import SwiftData
 import Foundation
 
-#if canImport(UIKit)
-import UIKit
-#endif
-
 extension Notification.Name {
     static let habitArchived = Notification.Name("habitArchived")
 }
@@ -185,6 +181,7 @@ struct HabitListView: View {
         habit.archivedAt = nil
         do {
             try modelContext.save()
+            Haptics.impact(.light)
             withAnimation(DS.Motion.settle(reduceMotion: reduceMotion)) {
                 showUndoToast = false
                 lastDeletedHabit = nil
@@ -248,17 +245,15 @@ struct HabitListView: View {
 
     private func checkInBinary(board: HabitBoard) {
         do {
-            try CheckInWriter.toggleBinary(board: board, context: modelContext)
-            triggerCheckInHaptic()
+            let isNowCheckedIn = try CheckInWriter.toggleBinary(board: board, context: modelContext)
+            Haptics.impact(.rigid)
+            // P4.2: Success haptic when checking in (goal completion for binary)
+            if isNowCheckedIn {
+                Haptics.notify(.success)
+            }
         } catch {
             showCheckInError = true
         }
-    }
-
-    private func triggerCheckInHaptic() {
-        #if canImport(UIKit)
-        UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
-        #endif
     }
 }
 

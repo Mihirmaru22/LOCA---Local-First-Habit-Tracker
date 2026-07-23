@@ -11,10 +11,6 @@
 import SwiftUI
 import SwiftData
 
-#if canImport(UIKit)
-import UIKit
-#endif
-
 // MARK: - SettingsMenuView
 
 struct SettingsMenuView: View {
@@ -70,7 +66,7 @@ struct LayoutPickerView: View {
                     ForEach(["list", "grid", "timeline"], id: \.self) { option in
                         Button(action: {
                             layout = option
-                            triggerSelectionHaptic()
+                            Haptics.selection()
                             dismiss()
                         }) {
                             HStack {
@@ -122,12 +118,6 @@ struct LayoutPickerView: View {
         case "timeline": return "Timeline View"
         default: return "List View"
         }
-    }
-
-    private func triggerSelectionHaptic() {
-        #if canImport(UIKit)
-        UISelectionFeedbackGenerator().selectionChanged()
-        #endif
     }
 }
 
@@ -204,6 +194,7 @@ struct ArchiveListView: View {
 
 struct AppSettingsView: View {
     @Environment(\.dismiss) var dismiss
+    @AppStorage("hapticsEnabled") private var hapticsEnabled = true
 
     var body: some View {
         NavigationStack {
@@ -211,6 +202,15 @@ struct AppSettingsView: View {
                 SectionHeader("App Settings")
 
                 VStack(spacing: DS.Space.md) {
+                    HStack {
+                        Text("Haptics")
+                            .font(DS.Text.body)
+                        Spacer()
+                        Toggle("", isOn: $hapticsEnabled)
+                    }
+                    .padding(DS.Space.md)
+                    .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+
                     HStack {
                         Text("Version")
                             .font(DS.Text.body)

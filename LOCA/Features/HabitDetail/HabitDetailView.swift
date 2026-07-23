@@ -366,6 +366,7 @@ private struct HabitDetailTabBar: View {
                 ForEach(tabs, id: \.tab) { tab, icon in
                     RefTabIcon(icon: icon, active: selectedTab == tab) {
                         selectedTab = tab
+                        Haptics.selection()
                     }
                 }
             }

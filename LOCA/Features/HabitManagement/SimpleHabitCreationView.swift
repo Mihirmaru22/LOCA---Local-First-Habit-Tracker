@@ -12,10 +12,6 @@
 import SwiftUI
 import SwiftData
 
-#if canImport(UIKit)
-import UIKit
-#endif
-
 struct SimpleHabitCreationView: View {
 
     @Environment(\.dismiss) private var dismiss
@@ -274,7 +270,7 @@ struct SimpleHabitCreationView: View {
             VStack(spacing: DS.Space.md) {
                 Button(action: {
                     metricType = .binary
-                    triggerSelectionHaptic()
+                    Haptics.selection()
                 }) {
                     HStack(spacing: DS.Space.md) {
                         Image(systemName: metricType == .binary ? "checkmark.circle.fill" : "circle")
@@ -300,7 +296,7 @@ struct SimpleHabitCreationView: View {
 
                 Button(action: {
                     metricType = .quantitative
-                    triggerSelectionHaptic()
+                    Haptics.selection()
                 }) {
                     HStack(spacing: DS.Space.md) {
                         Image(systemName: metricType == .quantitative ? "checkmark.circle.fill" : "circle")
@@ -407,12 +403,6 @@ struct SimpleHabitCreationView: View {
     private func nextColorIndexForNewHabit() -> Int {
         let existingCount = (try? modelContext.fetchCount(FetchDescriptor<HabitBoard>(predicate: #Predicate { $0.archivedAt == nil }))) ?? 0
         return existingCount % ColorPalette.count
-    }
-
-    private func triggerSelectionHaptic() {
-        #if canImport(UIKit)
-        UISelectionFeedbackGenerator().selectionChanged()
-        #endif
     }
 }
 

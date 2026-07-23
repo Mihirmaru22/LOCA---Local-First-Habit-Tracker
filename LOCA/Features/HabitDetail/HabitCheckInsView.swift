@@ -325,6 +325,7 @@ struct HabitCheckInsView: View {
     private func deleteEntry(_ entry: LogEntry) {
         do {
             try CheckInWriter.delete(entry, board: board, context: modelContext)
+            Haptics.impact(.light)
         } catch {
             showWriteError = true
         }
@@ -333,16 +334,10 @@ struct HabitCheckInsView: View {
     private func duplicateEntry(_ entry: LogEntry) {
         do {
             try CheckInWriter.insert(value: entry.value, note: entry.note, board: board, context: modelContext)
-            triggerHaptic()
+            Haptics.impact(.light)
         } catch {
             showWriteError = true
         }
-    }
-
-    private func triggerHaptic() {
-        #if canImport(UIKit)
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        #endif
     }
 }
 
