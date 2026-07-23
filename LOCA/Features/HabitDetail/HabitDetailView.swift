@@ -87,6 +87,17 @@ struct HabitDetailView: View {
                                 .padding(.horizontal, 18)
                             }
 
+                            // Weekly insight summary (Phase 3.3)
+                            if let (daysCompleted, consistency) = computeWeeklyStats() {
+                                WeeklyInsightCard(
+                                    board: board,
+                                    daysCompletedThisWeek: daysCompleted,
+                                    weeklyConsistency: consistency,
+                                    currentStreak: board.currentStreak
+                                )
+                                .padding(.horizontal, 18)
+                            }
+
                             RefHeatmapCard(board: board)
                                 .padding(.horizontal, 18)
 
@@ -290,6 +301,30 @@ struct HabitDetailView: View {
         } catch {
             // Silent fail; goal tuning card remains visible for retry
         }
+    }
+
+    private func computeWeeklyStats() -> (daysCompleted: Int, consistency: Double)? {
+        let logs = board.logs ?? []
+        guard !logs.isEmpty else { return nil }
+
+        let calendar = Calendar.current
+        let sevenDaysAgo = calendar.date(byAdding: .day, value: -7, to: .now) ?? .now
+        let thisWeekLogs = logs.filter { $0.timestamp >= sevenDaysAgo }
+
+        guard !thisWeekLogs.isEmpty else { return nil }
+
+        // Days with logs
+        let daysWithLogs = Set(thisWeekLogs.map { calendar.startOfDay(for: $0.timestamp) }).count
+
+        // Consistency: % of goal met
+        let dayTotals = Dictionary(grouping: thisWeekLogs, by: { calendar.startOfDay(for: $0.timestamp) })
+            .mapValues { $0.reduce(0.0) { $0 + $1.value } }
+
+        let goal = board.effectiveTarget
+        let accuracyPerDay = dayTotals.map { min(1.0, $0.value / goal) }
+        let averageAccuracy = accuracyPerDay.isEmpty ? 0.0 : accuracyPerDay.reduce(0.0, +) / Double(accuracyPerDay.count)
+
+        return (daysCompleted: daysWithLogs, consistency: averageAccuracy)
     }
 }
 
