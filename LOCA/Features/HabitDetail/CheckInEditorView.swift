@@ -474,7 +474,7 @@ struct CheckInEditorView: View {
     }
 
     let (container, habit) = makeContainer()
-    return NavigationStack {
+    NavigationStack {
         CheckInEditorView(mode: .create, board: habit)
     }
     .modelContainer(container)

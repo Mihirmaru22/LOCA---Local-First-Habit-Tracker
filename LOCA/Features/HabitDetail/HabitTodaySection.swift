@@ -242,7 +242,7 @@ struct HabitTodaySection: View {
     }
 
     let (container, habit) = makeContainer()
-    return VStack {
+    VStack {
         HabitTodaySection(board: habit)
             .padding(DS.Space.lg)
         Spacer()
