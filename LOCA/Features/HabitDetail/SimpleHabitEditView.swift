@@ -113,21 +113,23 @@ struct SimpleHabitEditView: View {
     }
 }
 
-#Preview {
-    @MainActor
-    func makeContainer() -> (ModelContainer, HabitBoard) {
-        let schema = Schema([HabitBoard.self, LogEntry.self])
-        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-        let container = try! ModelContainer(for: schema, configurations: [config])
-        let board = HabitBoard(name: "Morning Run", metricType: 0, colorIndex: 0)
-        container.mainContext.insert(board)
-        try? container.mainContext.save()
-        return (container, board)
-    }
+// MARK: - Preview
 
-    let (container, board) = makeContainer()
+@MainActor
+private func makeHabitEditPreview() -> some View {
+    let schema = Schema([HabitBoard.self, LogEntry.self])
+    let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+    // try! is acceptable in a #Preview fixture (Engineering Principles §Previews).
+    let container = try! ModelContainer(for: schema, configurations: [config])
+    let board = HabitBoard(name: "Morning Run", metricType: 0, colorIndex: 0)
+    container.mainContext.insert(board)
+    try? container.mainContext.save()
     return NavigationStack {
         SimpleHabitEditView(board: board)
             .modelContainer(container)
     }
+}
+
+#Preview {
+    makeHabitEditPreview()
 }
