@@ -57,6 +57,10 @@ struct HabitDetailView: View {
                 case .overview:
                     ScrollView {
                         VStack(alignment: .leading, spacing: 12) {
+                            // Quick-log section
+                            HabitTodaySection(board: board)
+                                .padding(.horizontal, 18)
+
                             if showGoalInference == true && board.metric == .quantitative && board.targetValue == nil {
                                 GoalInferenceCard(
                                     board: board,
@@ -171,7 +175,7 @@ struct HabitDetailView: View {
             if newValue != nil { dismiss() }
         }
         .sheet(isPresented: $showingCheckIn) {
-            AddCheckInSheetView(board: board)
+            CheckInEditorView(mode: .create, board: board)
                 .presentationDetents([.medium, .large])
         }
         .overlay(alignment: .top) {
