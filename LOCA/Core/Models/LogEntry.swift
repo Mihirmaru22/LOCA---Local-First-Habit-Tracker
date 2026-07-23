@@ -6,15 +6,20 @@ import Foundation
 /// A single recorded instance of a habit being performed.
 ///
 /// `LogEntry` records are **append-only**. Once inserted and saved, a `LogEntry`
-/// is never mutated or hard-deleted. This constraint serves two purposes:
+/// is never mutated. Deletion uses soft-delete (set `archivedAt` to current date)
+/// rather than hard-delete. This design serves three purposes:
 ///
 /// 1. **CloudKit conflict safety.** CloudKit's last-write-wins merge resolves
 ///    concurrent writes by discarding one. For a mutable log record, this silently
 ///    drops user-entered data with no error. An append-only model means every
 ///    write is a new record; nothing is ever overwritten.
 ///
-/// 2. **Orphan containment.** If the owning `HabitBoard` is archived before all
-///    associated `LogEntry` tombstones propagate through CloudKit, the entries become
+/// 2. **Audit trail.** Soft-deleted entries remain in the database, enabling
+///    5-second undo windows and historical audits. Hard-delete would lose this
+///    information permanently.
+///
+/// 3. **Orphan containment.** If the owning `HabitBoard` is archived before all
+///    associated `LogEntry` records propagate through CloudKit, the entries become
 ///    temporarily orphaned (board == nil). Because entries are never hard-deleted,
 ///    this state is benign and self-corrects when sync completes.
 ///
@@ -46,6 +51,8 @@ final class LogEntry {
     ///
     /// Full timestamp (not date-only) preserves time-of-day information used by
     /// `JournalListView` and for ordering multiple same-day entries.
+    /// Indexed for efficient chronological queries.
+    @Attribute(.indexed)
     var timestamp: Date = Date()
 
     /// The amount logged for this entry.
@@ -60,6 +67,18 @@ final class LogEntry {
     /// Entries with a non-`nil` `note` surface in `JournalListView`. The presence
     /// of a note does not affect streak or heatmap computation.
     var note: String? = nil
+
+    // MARK: - Soft Delete
+
+    /// Timestamp when this entry was marked as deleted (soft delete).
+    ///
+    /// When `nil` (default): Entry is active and visible in all UI.
+    /// When set to a `Date`: Entry is logically deleted but retained in database
+    /// for audit trail and undo operations (5-second undo window).
+    ///
+    /// All queries exclude entries where `archivedAt != nil`.
+    /// To restore a soft-deleted entry, set `archivedAt = nil` and save.
+    var archivedAt: Date? = nil
 
     // MARK: - Denormalized Board Reference
 
@@ -86,6 +105,8 @@ final class LogEntry {
     /// The property default (`UUID()`) satisfies CloudKit's "all properties must
     /// have a default" requirement. In practice it is always overwritten by the
     /// designated initialiser, which requires `boardID` as a non-defaulted parameter.
+    /// Indexed for efficient queries by board.
+    @Attribute(.indexed)
     var boardID: UUID = UUID()
 
     // MARK: - Relationship
