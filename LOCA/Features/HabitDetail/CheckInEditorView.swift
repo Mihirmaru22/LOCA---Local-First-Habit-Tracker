@@ -420,21 +420,3 @@ struct CheckInEditorView: View {
         }
     }
 }
-
-// MARK: - Preview
-
-struct CheckInEditorViewPreview: PreviewProvider {
-    static var previews: some View {
-        let schema = Schema([HabitBoard.self, LogEntry.self])
-        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-        let container = try! ModelContainer(for: schema, configurations: [config])
-        let habit = HabitBoard(name: "Running", metricType: 1, targetValue: 5, unitLabel: "km", colorIndex: 0)
-        container.mainContext.insert(habit)
-        try? container.mainContext.save()
-
-        return NavigationStack {
-            CheckInEditorView(mode: .create, board: habit)
-        }
-        .modelContainer(container)
-    }
-}
