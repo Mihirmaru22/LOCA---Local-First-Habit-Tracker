@@ -21,12 +21,16 @@ class HealthKitManager: NSObject {
     // MARK: - Authorization
 
     private func requestAuthorization() {
-        let typesToRead: Set<HKObjectType> = [
-            HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!,
-            HKObjectType.quantityType(forIdentifier: .heartRateVariabilitySDNN)!,
-            HKObjectType.quantityType(forIdentifier: .stepCount)!,
-            HKObjectType.quantityType(forIdentifier: .restingHeartRate)!
-        ]
+        let typesToRead: Set<HKObjectType> = Set(
+            [
+                HKObjectType.categoryType(forIdentifier: .sleepAnalysis),
+                HKObjectType.quantityType(forIdentifier: .heartRateVariabilitySDNN),
+                HKObjectType.quantityType(forIdentifier: .stepCount),
+                HKObjectType.quantityType(forIdentifier: .restingHeartRate),
+            ].compactMap { $0 }
+        )
+
+        guard !typesToRead.isEmpty else { return }
 
         healthStore.requestAuthorization(toShare: nil, read: typesToRead) { [weak self] success, _ in
             DispatchQueue.main.async {
