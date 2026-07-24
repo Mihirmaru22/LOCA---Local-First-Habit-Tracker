@@ -44,7 +44,7 @@ class LocationManager: NSObject {
 
 // MARK: - Delegate (non-isolated)
 
-private final class LocationDelegate: NSObject, CLLocationManagerDelegate, Sendable {
+private final class LocationDelegate: NSObject, CLLocationManagerDelegate, @unchecked Sendable {
     private weak var owner: LocationManager?
 
     init(owner: LocationManager) {
