@@ -47,6 +47,7 @@ struct LOCAApp: App {
     private let container: ModelContainer?
     private let cloudKitCoordinator: CloudKitSyncCoordinator?
     private let streakMaintenanceCoordinator: StreakMaintenanceCoordinator?
+    private let signalCollectionCoordinator: SignalCollectionCoordinator?
     nonisolated private let logger = Logger(subsystem: "com.loca.app", category: "app")
 
     init() {
@@ -62,6 +63,9 @@ struct LOCAApp: App {
             // CloudKitSyncCoordinator flags boards after an import; this repairs
             // their cached streaks from the full log history and clears the flag.
             self.streakMaintenanceCoordinator = StreakMaintenanceCoordinator(container: container)
+            // Signal collection coordinator (Phase 4.1): on-device learning engine
+            // ingests passive signals from HealthKit, Calendar, Location, device activity
+            self.signalCollectionCoordinator = SignalCollectionCoordinator.shared
 
             // DEBUG-only: seeds minimal sample data so HabitDetailView,
             // HeatmapView, and AnalyticsCardsView can be exercised before
@@ -79,6 +83,7 @@ struct LOCAApp: App {
             self.container = nil
             self.cloudKitCoordinator = nil
             self.streakMaintenanceCoordinator = nil
+            self.signalCollectionCoordinator = nil
         }
     }
 
@@ -130,6 +135,13 @@ struct LOCAApp: App {
                         // Monitor CloudKit sync status (Phase 3.5).
                         // Non-blocking: displays sync state to user without interruption.
                         await SyncStatusCoordinator.shared.start()
+                    }
+                    .task {
+                        // Initialize and start signal collection (Phase 4.1).
+                        // On-device passive signal ingestion from HealthKit, Calendar, Location, etc.
+                        // Non-critical; continues silently if permissions denied.
+                        await signalCollectionCoordinator?.initialize(modelContext: container.mainContext)
+                        await signalCollectionCoordinator?.start()
                     }
                     .task {
                         // Generate and deliver reflections (Phase 4.1–4.4).
