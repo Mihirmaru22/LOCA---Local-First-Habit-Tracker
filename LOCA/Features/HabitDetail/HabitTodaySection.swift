@@ -288,14 +288,6 @@ struct HabitTodaySection: View {
                 context: modelContext
             )
 
-            if Calendar.current.isDateInToday(Date()) {
-                board.updateStreak(using: .current)
-            } else {
-                board.needsStreakRecalculation = true
-            }
-
-            try modelContext.save()
-
             Haptics.notify(.success)
             withAnimation(DS.Motion.settle(reduceMotion: reduceMotion)) {
                 showInlineQuantitative = false

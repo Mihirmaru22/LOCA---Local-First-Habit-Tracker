@@ -329,11 +329,12 @@ struct CheckInEditorView: View {
         do {
             if isEditMode, let existing = entry {
                 try CheckInWriter.update(
-                    existing,
-                    value: amount,
+                    entry: existing,
                     timestamp: timestamp,
+                    value: amount,
                     note: note.isEmpty ? nil : note,
-                    in: modelContext
+                    board: board,
+                    context: modelContext
                 )
             } else {
                 try CheckInWriter.insert(
@@ -343,12 +344,6 @@ struct CheckInEditorView: View {
                     board: board,
                     context: modelContext
                 )
-
-                if Calendar.current.isDateInToday(timestamp) {
-                    board.updateStreak(using: .current)
-                } else {
-                    board.needsStreakRecalculation = true
-                }
             }
 
             Haptics.notify(.success)
@@ -370,9 +365,7 @@ struct CheckInEditorView: View {
         guard let entry = entry else { return }
 
         do {
-            try CheckInWriter.delete(entryID: entry.id, context: modelContext)
-            board.needsStreakRecalculation = true
-            try modelContext.save()
+            try CheckInWriter.delete(entry, board: board, context: modelContext)
 
             Haptics.notify(.success)
             dismiss()
