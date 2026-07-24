@@ -108,17 +108,29 @@ struct CheckInEditorView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Space.lg) {
-                    if !isBinary {
-                        amountSection
+                    // MARK: - Primary Path (Common Case)
+
+                    if !isReadOnly {
+                        if !isBinary {
+                            amountSection
+                        }
                     }
 
-                    if showAdvancedOptions {
-                        dateTimeSection
-                        notesSection
-                    } else if !isEditMode {
-                        summaryRow
-                    } else if isEditMode && isBinary {
-                        notesSection
+                    // MARK: - Advanced Options (Hidden by Default in Create Mode)
+
+                    if isEditMode || showAdvancedOptions {
+                        advancedOptionsSection
+                    } else {
+                        advancedOptionsButton
+                    }
+
+                    // MARK: - Delete Button (Edit Mode + Binary Only)
+
+                    if isEditMode && isBinary {
+                        Button("Delete", role: .destructive) {
+                            showDeleteConfirmation = true
+                        }
+                        .frame(maxWidth: .infinity)
                     }
 
                     Spacer(minLength: DS.Space.xxxl)
@@ -191,6 +203,38 @@ struct CheckInEditorView: View {
                         .frame(minWidth: 50, alignment: .leading)
                 }
             }
+        }
+    }
+
+    private var advancedOptionsButton: some View {
+        Button(action: { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            showAdvancedOptions.toggle()
+        }}) {
+            HStack {
+                Text("Advanced Options")
+                    .font(DS.Text.body)
+                    .foregroundStyle(DS.Color.textPrimary)
+                Spacer()
+                Image(systemName: "chevron.down")
+                    .foregroundStyle(ColorPalette[board.colorIndex])
+                    .font(.caption)
+                    .rotationEffect(.degrees(showAdvancedOptions ? 180 : 0))
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 44)
+            .padding(.horizontal, DS.Space.md)
+            .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: DS.Radius.control))
+        }
+    }
+
+    private var advancedOptionsSection: some View {
+        VStack(alignment: .leading, spacing: DS.Space.lg) {
+            if !isEditMode {
+                advancedOptionsButton
+            }
+
+            dateTimeSection
+            notesSection
         }
     }
 
