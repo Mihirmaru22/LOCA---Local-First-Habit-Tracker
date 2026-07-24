@@ -47,7 +47,7 @@ struct GoalInferenceCard: View {
                 HStack(spacing: DS.Space.md) {
                     TextField("Goal", text: $adjustedValue)
                         .font(DS.Text.body)
-                        .keyboardType(.decimalPad)
+                        .decimalKeyboard()
                         .textFieldStyle(.roundedBorder)
 
                     Text(board.unitLabel ?? "")
