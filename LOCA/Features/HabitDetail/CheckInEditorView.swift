@@ -117,9 +117,7 @@ struct CheckInEditorView: View {
                         notesSection
                     } else if !isEditMode {
                         summaryRow
-                    }
-
-                    if isEditMode && isBinary {
+                    } else if isEditMode && isBinary {
                         notesSection
                     }
 
