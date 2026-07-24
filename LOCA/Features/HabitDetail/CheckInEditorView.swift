@@ -62,7 +62,7 @@ enum TimeSelectionMode: Equatable {
 struct CheckInEditorView: View {
     let mode: CheckInMode
     let board: HabitBoard
-    let entry: LogEntry?
+    let entry: LogEntry? = nil
 
     var onSave: (LogEntry) -> Void = { _ in }
     var onDelete: () -> Void = { }
