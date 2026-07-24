@@ -140,6 +140,9 @@ struct PersonalLifeListView: View {
                 ExploreCard(title: "Traits", subtitle: "Your dispositions", icon: "person.fill") {
                     TraitSummaryView()
                 }
+                ExploreCard(title: "Connections", subtitle: "What moves together", icon: "point.3.connected.trianglepath.dotted") {
+                    RelationshipGraphView()
+                }
             }
             .padding(.horizontal, DS.Space.lg)
         }
