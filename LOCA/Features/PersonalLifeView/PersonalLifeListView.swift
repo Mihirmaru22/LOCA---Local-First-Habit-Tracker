@@ -112,18 +112,13 @@ struct PersonalLifeListView: View {
     }
 
     private func loadComposedViews() {
-        do {
-            let descriptor = FetchDescriptor<ComposedView>(
-                predicate: #Predicate { view in
-                    view.timestamp >= Date().addingTimeInterval(-365 * 86400)
-                }
-            )
-
-            composedViews = (try? modelContext.fetch(descriptor)) ?? []
-        } catch {
-            // Silent fail; show empty state
-            composedViews = []
-        }
+        let cutoff = Date().addingTimeInterval(-365 * 86400)
+        let descriptor = FetchDescriptor<ComposedView>(
+            predicate: #Predicate { view in
+                view.timestamp >= cutoff
+            }
+        )
+        composedViews = (try? modelContext.fetch(descriptor)) ?? []
     }
 
     private func handleNewQuestion() {
@@ -172,7 +167,7 @@ private struct EmptyStateView: View {
         VStack(spacing: DS.Space.lg) {
             Image(systemName: "eye.fill")
                 .font(.system(size: 48))
-                .foregroundStyle(.accentColor)
+                .foregroundStyle(.tint)
 
             VStack(spacing: DS.Space.sm) {
                 Text("No Perspectives Yet")
@@ -192,7 +187,7 @@ private struct EmptyStateView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(DS.Space.md)
-                .background(.accentColor, in: RoundedRectangle(cornerRadius: DS.Radius.control))
+                .background(.tint, in: RoundedRectangle(cornerRadius: DS.Radius.control))
                 .foregroundStyle(.white)
             }
 

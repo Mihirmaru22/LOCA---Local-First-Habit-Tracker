@@ -113,12 +113,13 @@ class PersonalLifeValidator: NSObject, ObservableObject {
             }
 
             // Request permissions (non-blocking)
-            let permissionsGranted = await coordinator.requestPermissions()
+            _ = await coordinator.requestPermissions()
 
             // Check for signals in past day
+            let dayAgo = Date().addingTimeInterval(-86400)
             let descriptor = FetchDescriptor<SignalEvent>(
                 predicate: #Predicate { signal in
-                    signal.timestamp >= Date().addingTimeInterval(-86400)
+                    signal.timestamp >= dayAgo
                 }
             )
 
@@ -158,9 +159,10 @@ class PersonalLifeValidator: NSObject, ObservableObject {
             await engine.inferStatesForPastDay(modelContext: modelContext)
 
             // Check that states were generated
+            let dayAgo = Date().addingTimeInterval(-86400)
             let descriptor = FetchDescriptor<InferredState>(
                 predicate: #Predicate { state in
-                    state.timestamp >= Date().addingTimeInterval(-86400)
+                    state.timestamp >= dayAgo
                 }
             )
 
@@ -279,24 +281,18 @@ class PersonalLifeValidator: NSObject, ObservableObject {
 
         let startTime = Date()
 
-        do {
-            let validator = UncertaintyValidator()
+        let validator = UncertaintyValidator()
+        let result = validator.validateUncertaintyCalibration(modelContext: modelContext)
 
-            let result = validator.validateUncertaintyCalibration(modelContext: modelContext)
-
-            if result.isValid {
-                test.status = .passed
-                test.message = "✓ Energy: \(String(format: "%.2f", result.energyCalibration))"
-            } else {
-                test.status = .failed
-                test.message = "Uncertainties need recalibration"
-            }
-
-            test.duration = Date().timeIntervalSince(startTime)
-        } catch {
+        if result.isValid {
+            test.status = .passed
+            test.message = "✓ Energy: \(String(format: "%.2f", result.energyCalibration))"
+        } else {
             test.status = .failed
-            test.message = "Error: \(error.localizedDescription)"
+            test.message = "Uncertainties need recalibration"
         }
+
+        test.duration = Date().timeIntervalSince(startTime)
 
         return test
     }
@@ -309,50 +305,45 @@ class PersonalLifeValidator: NSObject, ObservableObject {
 
         let startTime = Date()
 
-        do {
-            // 1. Check signals exist
-            let signalDescriptor = FetchDescriptor<SignalEvent>()
-            let signals = (try? modelContext.fetch(signalDescriptor)) ?? []
+        // 1. Check signals exist
+        let signalDescriptor = FetchDescriptor<SignalEvent>()
+        let signals = (try? modelContext.fetch(signalDescriptor)) ?? []
 
-            if signals.isEmpty {
-                test.status = .failed
-                test.message = "No signals (check collection)"
-                test.duration = Date().timeIntervalSince(startTime)
-                return test
-            }
-
-            // 2. Check states exist
-            let stateDescriptor = FetchDescriptor<InferredState>()
-            let states = (try? modelContext.fetch(stateDescriptor)) ?? []
-
-            if states.isEmpty {
-                test.status = .failed
-                test.message = "No states (check inference)"
-                test.duration = Date().timeIntervalSince(startTime)
-                return test
-            }
-
-            // 3. Check events exist (optional; may be empty if no shifts)
-            let eventDescriptor = FetchDescriptor<LifeEvent>()
-            let events = (try? modelContext.fetch(eventDescriptor)) ?? []
-
-            // 4. Check views exist (or can be composed)
-            let viewDescriptor = FetchDescriptor<ComposedView>()
-            let views = (try? modelContext.fetch(viewDescriptor)) ?? []
-
-            if views.isEmpty {
-                test.status = .passed
-                test.message = "Pipeline ready (compose first view)"
-            } else {
-                test.status = .passed
-                test.message = "✓ Full pipeline: \(signals.count) signals → \(states.count) states → \(events.count) events → \(views.count) views"
-            }
-
-            test.duration = Date().timeIntervalSince(startTime)
-        } catch {
+        if signals.isEmpty {
             test.status = .failed
-            test.message = "Error: \(error.localizedDescription)"
+            test.message = "No signals (check collection)"
+            test.duration = Date().timeIntervalSince(startTime)
+            return test
         }
+
+        // 2. Check states exist
+        let stateDescriptor = FetchDescriptor<InferredState>()
+        let states = (try? modelContext.fetch(stateDescriptor)) ?? []
+
+        if states.isEmpty {
+            test.status = .failed
+            test.message = "No states (check inference)"
+            test.duration = Date().timeIntervalSince(startTime)
+            return test
+        }
+
+        // 3. Check events exist (optional; may be empty if no shifts)
+        let eventDescriptor = FetchDescriptor<LifeEvent>()
+        let events = (try? modelContext.fetch(eventDescriptor)) ?? []
+
+        // 4. Check views exist (or can be composed)
+        let viewDescriptor = FetchDescriptor<ComposedView>()
+        let views = (try? modelContext.fetch(viewDescriptor)) ?? []
+
+        if views.isEmpty {
+            test.status = .passed
+            test.message = "Pipeline ready (compose first view)"
+        } else {
+            test.status = .passed
+            test.message = "✓ Full pipeline: \(signals.count) signals → \(states.count) states → \(events.count) events → \(views.count) views"
+        }
+
+        test.duration = Date().timeIntervalSince(startTime)
 
         return test
     }
@@ -415,7 +406,7 @@ struct ValidationResultsView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding(DS.Space.md)
-                        .background(.accentColor, in: RoundedRectangle(cornerRadius: DS.Radius.control))
+                        .background(.tint, in: RoundedRectangle(cornerRadius: DS.Radius.control))
                         .foregroundStyle(.white)
                     }
                 }
@@ -478,7 +469,7 @@ private struct TestResultRow: View {
             if !test.message.isEmpty {
                 Text(test.message)
                     .font(.caption)
-                    .foregroundStyle(.accentColor)
+                    .foregroundStyle(.tint)
                     .padding(.leading, 28)
             }
         }
@@ -508,6 +499,6 @@ private struct TestResultRow: View {
 // MARK: - Preview
 
 #Preview {
-    @State var validator = PersonalLifeValidator.shared
-    return ValidationResultsView(validator: validator)
+    @Previewable @State var validator = PersonalLifeValidator.shared
+    ValidationResultsView(validator: validator)
 }

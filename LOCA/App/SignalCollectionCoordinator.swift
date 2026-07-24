@@ -72,11 +72,13 @@ class SignalCollectionCoordinator: NSObject, ObservableObject {
     }
 
     private func requestHealthKitPermission() async -> Bool {
-        let typesToRead: Set<HKObjectType> = [
-            HKObjectType.categoryType(forIdentifier: .sleepAnalysis) ?? HKObjectType(),
-            HKObjectType.quantityType(forIdentifier: .heartRateVariabilitySDNN) ?? HKObjectType(),
-            HKObjectType.quantityType(forIdentifier: .stepCount) ?? HKObjectType(),
-        ].filter { $0 != HKObjectType() }
+        let typesToRead: Set<HKObjectType> = Set(
+            [
+                HKObjectType.categoryType(forIdentifier: .sleepAnalysis),
+                HKObjectType.quantityType(forIdentifier: .heartRateVariabilitySDNN),
+                HKObjectType.quantityType(forIdentifier: .stepCount),
+            ].compactMap { $0 }
+        )
 
         guard !typesToRead.isEmpty else { return false }
 
@@ -155,7 +157,8 @@ class SignalCollectionCoordinator: NSObject, ObservableObject {
         logger.info("Signal collection coordinator stopped")
     }
 
-    deinit {
-        stop()
-    }
+    // No `deinit { stop() }` here: the singleton lives for the app process's
+    // entire lifetime, so its deinit never actually runs. Wiring one would
+    // require an unsafe cross-actor hop from the nonisolated deinit into
+    // @MainActor's `stop()` for no observable benefit.
 }

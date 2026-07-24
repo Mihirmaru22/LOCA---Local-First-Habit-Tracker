@@ -29,7 +29,7 @@ class AnomalyDetector {
             )
 
             if anomalyScore > anomalyThreshold {
-                var anomalousWeek = currentWeek
+                let anomalousWeek = currentWeek
                 anomalousWeek.anomalyScore = anomalyScore
                 anomalousWeeks.append(anomalousWeek)
             }

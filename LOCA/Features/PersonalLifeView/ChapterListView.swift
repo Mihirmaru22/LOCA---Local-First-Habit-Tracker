@@ -106,7 +106,7 @@ struct ChapterCard: View {
                         Text("CURRENT")
                             .font(.caption2)
                             .fontWeight(.bold)
-                            .foregroundStyle(.accentColor)
+                            .foregroundStyle(.tint)
                     }
 
                     Text(chapter.name)
@@ -224,7 +224,7 @@ struct ChapterDetailView: View {
                         if chapter.isCurrentChapter {
                             Text("Ongoing")
                                 .font(.caption)
-                                .foregroundStyle(.accentColor)
+                                .foregroundStyle(.tint)
                         }
                     }
                     .font(DS.Text.caption)
@@ -340,7 +340,7 @@ private struct CharacterRow: View {
 
                     RoundedRectangle(cornerRadius: 2)
                         .frame(width: geo.size.width * displayValue, height: 4)
-                        .foregroundStyle(.accentColor)
+                        .foregroundStyle(.tint)
                 }
             }
             .frame(height: 4)

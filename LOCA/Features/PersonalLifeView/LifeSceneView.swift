@@ -268,7 +268,7 @@ private struct ChapterSceneCard: View {
                         Text("NOW")
                             .font(.caption2)
                             .fontWeight(.bold)
-                            .foregroundStyle(.accentColor)
+                            .foregroundStyle(.tint)
                     }
                     Text(snapshot.chapter.name)
                         .font(DS.Text.body)
