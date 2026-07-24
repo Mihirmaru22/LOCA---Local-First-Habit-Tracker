@@ -138,7 +138,7 @@ struct CheckInEditorView: View {
                 .padding(DS.Space.lg)
             }
             .navigationTitle(navigationTitle)
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitleDisplay()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
@@ -190,7 +190,7 @@ struct CheckInEditorView: View {
             HStack(spacing: DS.Space.md) {
                 TextField("0", text: $amountText)
                     .font(DS.Text.body)
-                    .keyboardType(.decimalPad)
+                    .decimalKeyboard()
                     .focused($amountFocused)
                     .frame(height: 44)
                     .padding(.horizontal, DS.Space.md)
@@ -418,23 +418,5 @@ struct CheckInEditorView: View {
             showSaveError = true
             Haptics.notify(.error)
         }
-    }
-}
-
-// MARK: - Preview
-
-struct CheckInEditorViewPreview: PreviewProvider {
-    static var previews: some View {
-        let schema = Schema([HabitBoard.self, LogEntry.self])
-        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-        let container = try! ModelContainer(for: schema, configurations: [config])
-        let habit = HabitBoard(name: "Running", metricType: 1, targetValue: 5, unitLabel: "km", colorIndex: 0)
-        container.mainContext.insert(habit)
-        try? container.mainContext.save()
-
-        return NavigationStack {
-            CheckInEditorView(mode: .create, board: habit)
-        }
-        .modelContainer(container)
     }
 }
