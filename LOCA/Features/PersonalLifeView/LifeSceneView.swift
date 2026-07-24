@@ -77,7 +77,7 @@ struct LifeSceneView: View {
 
     private func insightsSection(_ insights: [SceneInsight]) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.sm) {
-            SectionHeader(title: "Patterns", icon: "sparkles")
+            LifeSceneSectionHeader(title: "Patterns", icon: "sparkles")
 
             VStack(spacing: DS.Space.sm) {
                 ForEach(Array(insights.prefix(4).enumerated()), id: \.offset) { _, insight in
@@ -89,7 +89,7 @@ struct LifeSceneView: View {
 
     private func chapterTimelineSection(_ chapters: [ChapterSnapshot]) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.sm) {
-            SectionHeader(title: "Chapters", icon: "book.pages")
+            LifeSceneSectionHeader(title: "Chapters", icon: "book.pages")
 
             VStack(spacing: DS.Space.sm) {
                 ForEach(chapters, id: \.chapter.id) { snapshot in
@@ -101,7 +101,7 @@ struct LifeSceneView: View {
 
     private func traitsSection(_ traits: [TraitSnapshot]) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.sm) {
-            SectionHeader(title: "Your Traits", icon: "person.fill")
+            LifeSceneSectionHeader(title: "Your Traits", icon: "person.fill")
 
             VStack(spacing: DS.Space.sm) {
                 ForEach(traits, id: \.traitType) { trait in
@@ -115,7 +115,7 @@ struct LifeSceneView: View {
 
     private func peopleSection(_ snapshots: [PersonSnapshot]) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.sm) {
-            SectionHeader(title: "People", icon: "person.2.fill")
+            LifeSceneSectionHeader(title: "People", icon: "person.2.fill")
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: DS.Space.sm) {
@@ -183,7 +183,7 @@ struct LifeSceneView: View {
 
 // MARK: - Section Header
 
-private struct SectionHeader: View {
+private struct LifeSceneSectionHeader: View {
     let title: String
     let icon: String
 
