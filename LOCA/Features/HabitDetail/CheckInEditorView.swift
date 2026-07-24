@@ -138,7 +138,7 @@ struct CheckInEditorView: View {
                 .padding(DS.Space.lg)
             }
             .navigationTitle(navigationTitle)
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitleDisplay()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
@@ -190,7 +190,7 @@ struct CheckInEditorView: View {
             HStack(spacing: DS.Space.md) {
                 TextField("0", text: $amountText)
                     .font(DS.Text.body)
-                    .keyboardType(.decimalPad)
+                    .decimalKeyboard()
                     .focused($amountFocused)
                     .frame(height: 44)
                     .padding(.horizontal, DS.Space.md)
