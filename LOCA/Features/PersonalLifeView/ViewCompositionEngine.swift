@@ -115,9 +115,7 @@ class ViewCompositionEngine {
         endDate: Date,
         modelContext: ModelContext
     ) async throws -> ComposedView {
-        guard let ctx = self.modelContext ?? modelContext else {
-            throw ViewCompositionError.noContext
-        }
+        let ctx = self.modelContext ?? modelContext
 
         // Fetch inferred states in range
         let statesDescriptor = FetchDescriptor<InferredState>(
@@ -274,7 +272,7 @@ class ViewCompositionEngine {
         to view: ComposedView,
         variable: String
     ) -> ComposedView {
-        var modifiedView = view
+        let modifiedView = view
         modifiedView.counterfactualVariable = variable
         modifiedView.isShowingCounterfactual = true
 

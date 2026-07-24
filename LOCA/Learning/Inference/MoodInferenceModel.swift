@@ -30,9 +30,6 @@ class MoodInferenceModel {
         aggregates: [SignalSource: AggregatedValue],
         timestamp: Date
     ) -> InferenceResult {
-        let calendar = Calendar.current
-        let hour = calendar.component(.hour, from: timestamp)
-
         var uncertaintyTerms: [Double] = []
         var moodComponents: [Double] = []
 

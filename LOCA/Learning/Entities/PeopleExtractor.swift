@@ -74,8 +74,7 @@ class PeopleExtractor {
     // MARK: - Calendar Mining
 
     private func mineCalendarTitles(since start: Date) async -> [(String, RelationshipContext)] {
-        guard EKEventStore.authorizationStatus(for: .event) == .authorized ||
-              EKEventStore.authorizationStatus(for: .event) == .fullAccess else {
+        guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else {
             return []
         }
 
@@ -111,11 +110,12 @@ class PeopleExtractor {
     private func mineLoggedNotes(since start: Date, modelContext: ModelContext) throws -> [String] {
         let descriptor = FetchDescriptor<SignalEvent>(
             predicate: #Predicate { signal in
-                signal.timestamp >= start && signal.source == .explicitLog
+                signal.timestamp >= start
             }
         )
 
-        let logs = try modelContext.fetch(descriptor)
+        let allSignals = try modelContext.fetch(descriptor)
+        let logs = allSignals.filter { $0.source == .explicitLog }
         var names: [String] = []
 
         for log in logs {

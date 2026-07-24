@@ -90,7 +90,7 @@ class FocusInferenceModel {
         var appSwitches = 0
 
         for signal in deviceSignals {
-            if let dominantApp = signal.metadata["dominant_app"] {
+            if signal.metadata["dominant_app"] != nil {
                 if let screenTime = Double(signal.metadata["dominant_app_time"] ?? "0") {
                     let hourlySeconds = 3600.0
                     singleAppDominance = min(1.0, screenTime / hourlySeconds)
