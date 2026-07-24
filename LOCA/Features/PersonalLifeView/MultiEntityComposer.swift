@@ -210,7 +210,7 @@ class MultiEntityComposer {
                let salience = topPerson.salienceInChapter, salience > 0.3 {
                 insights.append(SceneInsight(
                     type: .personPresence,
-                    text: "\(topPerson.person.name) was notably present during "\(snapshot.chapter.name)"",
+                    text: "\(topPerson.person.name) was notably present during \(snapshot.chapter.name)",
                     confidence: min(0.9, salience),
                     entities: [topPerson.person.name, snapshot.chapter.name]
                 ))
@@ -248,7 +248,7 @@ class MultiEntityComposer {
 
             insights.append(SceneInsight(
                 type: .traitShift,
-                text: "\(currTrait.traitType.displayName) \(direction) between "\(prev.chapter.name)" and "\(curr.chapter.name)"",
+                text: "\(currTrait.traitType.displayName) \(direction) between \(prev.chapter.name) and \(curr.chapter.name)",
                 confidence: confidence,
                 entities: [currTrait.traitType.rawValue, prev.chapter.name, curr.chapter.name]
             ))
