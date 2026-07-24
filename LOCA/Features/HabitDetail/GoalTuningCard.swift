@@ -57,8 +57,8 @@ struct GoalTuningCard: View {
                 HStack(spacing: DS.Space.md) {
                     TextField("Goal", text: $adjustedValue)
                         .font(DS.Text.body)
-                        .textFieldStyle(.roundedBorder)
                         .keyboardType(.decimalPad)
+                        .textFieldStyle(.roundedBorder)
 
                     Text(board.unitLabel ?? "")
                         .font(DS.Text.caption)
