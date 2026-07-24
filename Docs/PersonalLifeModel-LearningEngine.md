@@ -1,5 +1,11 @@
 # The Learning Engine — Passive Understanding as the Primary Objective
 
+> **⚠ SUPERSEDED by `LOCA-Founding-Manifesto.md`.** The debt/asset framing below created
+> a calibration paradox (a model that avoids labels cannot know when it is wrong) and,
+> deeper, mis-located the beneficiary — it priced the *user's own voice* as debt. The
+> manifesto resolves both: questions that serve the user's clarity are a gift, not a
+> tax, and the label economy inverts. Retained as history.
+
 ## Phase P — Session P2 · Optimizing Inference, Not Interrogation
 
 > *No UI. No SwiftUI. No code. This document reorients Phase P. `PersonalLifeModel.md`

@@ -1,5 +1,10 @@
 # The Life Events Engine — Change Points as First-Class Anchors
 
+> **⚠ SUPERSEDED by `LOCA-Founding-Manifesto.md`.** The insight here survives — turning
+> points are structure, not noise — but in the manifesto's ontology, life events are
+> absorbed as the boundaries of **Chapters** (the meaningful eras between them) rather
+> than a standalone fifth entity. Retained as history.
+
 ## Phase P — Session P3 · The Fifth Entity
 
 > *No UI. No SwiftUI. No code. This session adds a subsystem the first two documents
