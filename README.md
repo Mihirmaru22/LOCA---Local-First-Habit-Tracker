@@ -2,6 +2,11 @@
 
 A high-performance, local-first habit tracker for iOS 17+ and macOS 14+. Built with SwiftUI, SwiftData, and CloudKit — no custom backend, no REST APIs, no network dependency for core functionality.
 
+> ⭐ **Read first after the roadmap:** [`Docs/THE-CENTRAL-QUESTION.md`](Docs/THE-CENTRAL-QUESTION.md)
+> — the honest Phase 6 assessment and the one question the whole product is a bet on:
+> *"Does LOCA let me **see** my life, or does it just **show me data** about my life?"*
+> Revisit it at the end of Phase 8 and Phase 10 before building anything new.
+
 ---
 
 ## Philosophy

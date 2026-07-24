@@ -188,6 +188,41 @@ enum LifeSeeder {
             )
         }
 
+        // MARK: Direction + Fork
+
+        // The Direction was articulated at the start of the internship chapter.
+        // Two forks: one resolved (took the offer), one still open (team change).
+        let direction = Direction(
+            statement: "Growing into the internship — figuring out what kind of work I actually want to do",
+            values: ["deep work", "clarity", "building things that matter"],
+            intentions: ["ship something I'm proud of", "understand what energizes me"],
+            settledness: 0.45,
+            chapterId: internship.id
+        )
+        direction.capturedAt = date(forDay: eventDay + 2, hour: 20)
+        direction.updatedAt  = date(forDay: eventDay + 2, hour: 20)
+        context.insert(direction)
+
+        let forkTookOffer = Fork(
+            statement: "Decided to take the internship offer instead of staying in school",
+            kind: .decision,
+            directionId: direction.id,
+            chapterId: before.id
+        )
+        forkTookOffer.timestamp = date(forDay: eventDay - 10, hour: 19)
+        forkTookOffer.resolved = true
+        forkTookOffer.resolution = "Took it. Harder than expected in week one, but settling."
+        context.insert(forkTookOffer)
+
+        let forkTeamChange = Fork(
+            statement: "Should I ask to move to the other team?",
+            kind: .question,
+            directionId: direction.id,
+            chapterId: internship.id
+        )
+        forkTeamChange.timestamp = date(forDay: eventDay + 45, hour: 21)
+        context.insert(forkTeamChange)
+
         // MARK: Signals (recent, for realism + validation surfaces)
 
         for day in (totalDays - 14)..<totalDays {

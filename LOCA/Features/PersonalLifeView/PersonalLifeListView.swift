@@ -143,6 +143,9 @@ struct PersonalLifeListView: View {
                 ExploreCard(title: "Connections", subtitle: "What moves together", icon: "point.3.connected.trianglepath.dotted") {
                     RelationshipGraphView()
                 }
+                ExploreCard(title: "Direction", subtitle: "Where you're headed", icon: "arrow.forward.circle") {
+                    DirectionView()
+                }
             }
             .padding(.horizontal, DS.Space.lg)
         }
