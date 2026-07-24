@@ -88,6 +88,11 @@ extension DS {
             #endif
         }()
 
+        /// Card / control border. Same underlying color as `separator` but named
+        /// for the stroke role so callers reading `.stroke(DS.Color.border, ...)`
+        /// document intent. Introduced when Phase 5 views expected this alias.
+        static let border: SwiftUI.Color = separator
+
         // MARK: Heatmap (contribution grid)
 
         /// Inactive/empty heatmap cell — neutral adaptive tone visible in both

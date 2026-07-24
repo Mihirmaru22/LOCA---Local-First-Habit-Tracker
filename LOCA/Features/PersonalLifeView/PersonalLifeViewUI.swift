@@ -130,8 +130,8 @@ private struct StressUnderlayView: View {
             // Gradient background (stress intensity)
             LinearGradient(
                 gradient: Gradient(colors: [
-                    Color(hex: "#FEE2E2").withAlphaComponent(0.1),
-                    Color(hex: "#EF4444").withAlphaComponent(0.2)
+                    Color(hex: "#FEE2E2").opacity(0.1),
+                    Color(hex: "#EF4444").opacity(0.2)
                 ]),
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -170,11 +170,11 @@ private struct EnergyTimelineView: View {
     let timeline: [TimelinePoint]
 
     var body: some View {
-        Canvas { context in
+        Canvas { context, size in
             guard timeline.count > 1 else { return }
 
-            let width = context.size.width
-            let height = context.size.height
+            let width = size.width
+            let height = size.height
             let points = timeline
 
             // Draw line
@@ -282,7 +282,7 @@ private struct EventMarkerRow: View {
                 HStack(spacing: 4) {
                     Circle()
                         .frame(width: 8, height: 8)
-                        .foregroundStyle(.accentColor)
+                        .foregroundStyle(.tint)
 
                     Text(marker.label)
                         .font(.caption)
