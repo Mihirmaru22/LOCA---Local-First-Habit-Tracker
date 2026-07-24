@@ -223,19 +223,3 @@ struct HabitTodaySection: View {
         }
     }
 }
-
-// MARK: - Preview
-
-#Preview("HabitTodaySection with Logged Entry") {
-    let schema = Schema([HabitBoard.self, LogEntry.self])
-    let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(for: schema, configurations: [config])
-    let habit = HabitBoard(name: "Running", metricType: 1, targetValue: 5, unitLabel: "km", colorIndex: 0)
-    let entry = LogEntry(value: 3.2, boardID: habit.id, board: habit)
-    container.mainContext.insert(habit)
-    container.mainContext.insert(entry)
-    try? container.mainContext.save()
-    return HabitTodaySection(board: habit)
-        .padding(DS.Space.lg)
-        .modelContainer(container)
-}

@@ -458,19 +458,3 @@ struct CheckInEditorView: View {
         }
     }
 }
-
-// MARK: - Preview
-
-#Preview("CheckInEditor – Create Mode") {
-    let schema = Schema([HabitBoard.self, LogEntry.self])
-    let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(for: schema, configurations: [config])
-    let habit = HabitBoard(name: "Running", metricType: 1, targetValue: 5, unitLabel: "km", colorIndex: 0)
-    container.mainContext.insert(habit)
-    try? container.mainContext.save()
-
-    NavigationStack {
-        CheckInEditorView(mode: .create, board: habit)
-    }
-    .modelContainer(container)
-}
