@@ -455,7 +455,7 @@ private struct ForkCard: View {
         HStack(alignment: .top, spacing: DS.Space.md) {
             Image(systemName: fork.resolved ? "checkmark.circle.fill" : fork.kind.icon)
                 .font(.callout)
-                .foregroundStyle(fork.resolved ? DS.Color.textTertiary : .tint)
+                .foregroundStyle(fork.resolved ? DS.Color.textTertiary : Color.accentColor)
                 .frame(width: 24)
 
             VStack(alignment: .leading, spacing: DS.Space.xs) {
