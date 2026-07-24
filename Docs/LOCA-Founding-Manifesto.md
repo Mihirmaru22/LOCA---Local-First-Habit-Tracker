@@ -102,28 +102,49 @@ found that is honest across a whole life.
 ## The ontology
 
 Not a flat list of things to track — that is a database, and it has no subject. LOCA's
-model has a subject and a direction. Six kinds of thing, arranged as an agent, not a
-schema:
+model has a subject and a direction. Eight kinds of thing, arranged as an agent, not a
+schema, and grouped by the facet of a life they belong to:
 
-- **Moments** — the lived record. Gathered quietly, mostly on their own. The trail, not
-  the model.
-- **Patterns** — everything LOCA has learned about *how you work*, from a mood this
-  afternoon to a lifelong rhythm. One kind of thing at every timescale — not sliced into
-  separate boxes, because they are not separate: they are the same knowledge held with
-  more or less stability.
+**The trail — what a life leaves behind**
+- **Moments** — the lived record. Gathered quietly, mostly on their own. The sediment,
+  not the model.
+
+**The self — how you work**
+- **States** — the fast weather of you: stress this afternoon, energy tonight, focus
+  this morning. They rise and fall within hours and decay quickly.
+- **Traits** — the slow climate of you: chronotype, baseline temperament, how contact
+  with people recharges or drains you. They move over months and years and are stable
+  once learned.
+
+  *States and Traits may share one mechanism underneath — latent variables at different
+  time-constants — but they are exposed as separate concepts, deliberately. They decay
+  differently, are learned differently, are asked about differently, and are seen
+  differently. Merging them is elegant in code and wrong in the product: a person
+  experiences "I'm tense today" and "I'm a night owl" as two different kinds of knowing
+  about themselves, and the instrument must honor that difference.*
+
+**The world — who and where**
 - **People** — the relationships that shape you, each with its own history, closeness,
   and weather. First-class, because a person is not a place, and people are the largest
   cause of nearly everything else.
 - **Places** — the settings and contexts a life moves through.
-- **Chapters** — the meaningful eras, divided by the turning points that end one and
-  begin the next. The shape of the trajectory, made legible. This is where a life reads
-  as a life and not a log.
+
+**Time — the shape of the trajectory**
+- **Life Events** — the turning points. Atomic: a promotion, a move, a loss, a wedding.
+  A point on the line where one thing ends and another begins.
+- **Chapters** — the eras between the turning points. An interval: *working at that
+  company*, *the year after the move*, *the hard winter*. A Life Event is the pivot; the
+  Chapter is the span it opens. They are not the same object and neither absorbs the
+  other — the event is the door, the chapter is the room.
+
+**The telos — where it's going**
 - **Direction** — what you value, what you're moving toward, who you're becoming. The
-  first-person telos the old model had no place for. Without it, we were describing a
+  first-person aim the old model had no place for. Without it, we were describing a
   marionette. With it, we describe the hand.
 
-The self is **Direction and Patterns**. It moves through time as **Chapters**. It moves
-among **People and Places**. It leaves **Moments** behind. That is the whole shape.
+The self is **Direction, States, and Traits**. It moves through time by way of **Life
+Events** (the pivots) and the **Chapters** they open. It moves among **People and
+Places**. It leaves **Moments** behind. That is the whole shape.
 
 ## How LOCA stays honest for decades
 
