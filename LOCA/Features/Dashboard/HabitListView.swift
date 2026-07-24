@@ -108,8 +108,10 @@ struct HabitListView: View {
         .sheet(isPresented: $showingCreateSheet) {
             SimpleHabitCreationView()
         }
-        .sheet(isPresented: $showingPersonalLife) {
-            PersonalLifeListView()
+        .fullScreenCover(isPresented: $showingPersonalLife) {
+            NavigationStack {
+                PresentView()
+            }
         }
         .alert("Couldn't Save Check-in", isPresented: $showCheckInError) {
             Button("OK", role: .cancel) {}
