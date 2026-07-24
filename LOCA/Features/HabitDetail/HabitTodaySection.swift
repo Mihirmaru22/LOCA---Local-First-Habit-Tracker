@@ -21,6 +21,7 @@ struct HabitTodaySection: View {
     @State private var quantitativeInput: String = ""
     @State private var isLoggingQuick = false
     @State private var showSuccessBadge = false
+    @FocusState private var quantitativeFocused: Bool
 
     private var todaysTotal: Double {
         (board.logs ?? [])
@@ -156,6 +157,7 @@ struct HabitTodaySection: View {
                         TextField("0", text: $quantitativeInput)
                             .font(DS.Text.body)
                             .keyboardType(.decimalPad)
+                            .focused($quantitativeFocused)
                             .frame(height: 44)
                             .padding(.horizontal, DS.Space.md)
                             .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: DS.Radius.control))
@@ -228,6 +230,9 @@ struct HabitTodaySection: View {
         }
         .padding(DS.Space.md)
         .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+        .onChange(of: showInlineQuantitative) { _, newValue in
+            quantitativeFocused = newValue
+        }
     }
 
     // MARK: - Computed
