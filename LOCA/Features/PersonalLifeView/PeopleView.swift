@@ -1,0 +1,252 @@
+//
+//  PeopleView.swift
+//  LOCA
+//
+//  Phase 5 — People in Your Life view
+//  Shows recurring people sorted by salience, with context and mood correlation
+//
+
+import SwiftUI
+import SwiftData
+
+struct PeopleView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \Person.salience, order: .reverse) private var people: [Person]
+
+    var body: some View {
+        Group {
+            if people.isEmpty {
+                emptyState
+            } else {
+                peopleList
+            }
+        }
+        .navigationTitle("People")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button(action: refreshPeople) {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                }
+            }
+        }
+    }
+
+    // MARK: - People List
+
+    private var peopleList: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: DS.Space.md) {
+                Text("Recurring people in your calendar and notes")
+                    .font(DS.Text.caption)
+                    .foregroundStyle(DS.Color.textSecondary)
+                    .padding(.horizontal, DS.Space.lg)
+                    .padding(.top, DS.Space.md)
+
+                ForEach(people) { person in
+                    PersonCard(person: person)
+                        .padding(.horizontal, DS.Space.lg)
+                }
+
+                Spacer(minLength: DS.Space.xxxl)
+            }
+        }
+    }
+
+    // MARK: - Empty State
+
+    private var emptyState: some View {
+        VStack(spacing: DS.Space.lg) {
+            Image(systemName: "person.2")
+                .font(.system(size: 48))
+                .foregroundStyle(DS.Color.textTertiary)
+
+            VStack(spacing: DS.Space.sm) {
+                Text("No People Yet")
+                    .font(.headline)
+                    .foregroundStyle(DS.Color.textPrimary)
+
+                Text("LOCA detects recurring people from your calendar events and notes. Grant calendar access in Settings to enable this.")
+                    .font(.caption)
+                    .foregroundStyle(DS.Color.textSecondary)
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .padding(DS.Space.xl)
+        .frame(maxHeight: .infinity, alignment: .center)
+    }
+
+    // MARK: - Refresh
+
+    private func refreshPeople() {
+        Task {
+            try? await PeopleExtractor.shared.extractPeople(modelContext: modelContext)
+        }
+    }
+}
+
+// MARK: - Person Card
+
+struct PersonCard: View {
+    let person: Person
+
+    var body: some View {
+        HStack(alignment: .top, spacing: DS.Space.md) {
+            PersonAvatar(initials: person.initials, context: person.primaryContext)
+
+            VStack(alignment: .leading, spacing: DS.Space.xs) {
+                HStack {
+                    Text(person.name)
+                        .font(DS.Text.body)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(DS.Color.textPrimary)
+
+                    Spacer()
+
+                    ContextBadge(context: person.primaryContext)
+                }
+
+                SalienceBar(salience: person.salience, uncertainty: person.salienceUncertainty)
+
+                HStack(spacing: DS.Space.md) {
+                    Text("\(person.appearanceCount) appearances")
+                        .font(.caption2)
+                        .foregroundStyle(DS.Color.textTertiary)
+
+                    if let correlation = person.moodCorrelation, person.moodCorrelationSampleCount >= 5 {
+                        MoodCorrelationTag(correlation: correlation)
+                    }
+                }
+            }
+        }
+        .padding(DS.Space.md)
+        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+        .overlay(
+            RoundedRectangle(cornerRadius: DS.Radius.card)
+                .stroke(DS.Color.border, lineWidth: 1)
+        )
+    }
+}
+
+// MARK: - Person Avatar
+
+private struct PersonAvatar: View {
+    let initials: String
+    let context: RelationshipContext
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .frame(width: 44, height: 44)
+                .foregroundStyle(context.color.opacity(0.15))
+
+            Text(initials)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(context.color)
+        }
+    }
+}
+
+// MARK: - Context Badge
+
+private struct ContextBadge: View {
+    let context: RelationshipContext
+
+    var body: some View {
+        Text(context.displayName)
+            .font(.caption2)
+            .foregroundStyle(context.color)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 2)
+            .background(context.color.opacity(0.12), in: Capsule())
+    }
+}
+
+// MARK: - Salience Bar
+
+private struct SalienceBar: View {
+    let salience: Double
+    let uncertainty: Double
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 2)
+                    .frame(height: 4)
+                    .foregroundStyle(DS.Color.surfaceRecessed)
+
+                let haloStart = max(0, salience - uncertainty * 0.5)
+                let haloEnd = min(1, salience + uncertainty * 0.5)
+                RoundedRectangle(cornerRadius: 2)
+                    .frame(width: geo.size.width * (haloEnd - haloStart), height: 4)
+                    .offset(x: geo.size.width * haloStart)
+                    .foregroundStyle(Color.accentColor.opacity(0.2))
+
+                RoundedRectangle(cornerRadius: 2)
+                    .frame(width: geo.size.width * salience, height: 4)
+                    .foregroundStyle(Color.accentColor)
+            }
+        }
+        .frame(height: 4)
+    }
+}
+
+// MARK: - Mood Correlation Tag
+
+private struct MoodCorrelationTag: View {
+    let correlation: Double
+
+    private var label: String {
+        if correlation > 0.2 { return "Uplifting" }
+        if correlation < -0.2 { return "Stressful" }
+        return "Neutral"
+    }
+
+    private var color: Color {
+        if correlation > 0.2 { return Color(hex: "#10B981") }
+        if correlation < -0.2 { return Color(hex: "#EF4444") }
+        return DS.Color.textTertiary
+    }
+
+    var body: some View {
+        HStack(spacing: 3) {
+            Image(systemName: correlation > 0.2 ? "arrow.up.circle" : correlation < -0.2 ? "arrow.down.circle" : "minus.circle")
+                .font(.caption2)
+            Text(label)
+                .font(.caption2)
+        }
+        .foregroundStyle(color)
+    }
+}
+
+// MARK: - RelationshipContext Extensions
+
+extension RelationshipContext {
+    var displayName: String {
+        switch self {
+        case .work:      return "Work"
+        case .social:    return "Social"
+        case .family:    return "Family"
+        case .recurring: return "Recurring"
+        case .unknown:   return "Unknown"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .work:      return Color(hex: "#3B82F6")
+        case .social:    return Color(hex: "#F59E0B")
+        case .family:    return Color(hex: "#10B981")
+        case .recurring: return Color(hex: "#8B5CF6")
+        case .unknown:   return Color(hex: "#6B7280")
+        }
+    }
+}
+
+// MARK: - Preview
+
+#Preview {
+    NavigationStack {
+        PeopleView()
+    }
+}
