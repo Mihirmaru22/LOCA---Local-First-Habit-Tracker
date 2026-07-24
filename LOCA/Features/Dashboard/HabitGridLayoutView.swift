@@ -127,7 +127,13 @@ struct GridHabitCard: View {
     let board: HabitBoard
     let onCheck: () -> Void
 
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     @State private var showingCheckIn = false
+    @State private var isLoggingQuick = false
+    @State private var showSuccessBadge = false
+    @State private var successValue: Double = 0
 
     // Today's logged value
     private var todayValue: Double {
@@ -169,11 +175,14 @@ struct GridHabitCard: View {
                 board: board,
                 todayLogged: todayLogged,
                 todayValue: todayValue,
+                isLogging: isLoggingQuick,
+                showSuccess: showSuccessBadge,
+                successValue: successValue,
                 onCheck: {
                     if board.metric == .binary {
-                        onCheck()           // direct DB write via HabitListView
+                        logBinaryQuick()
                     } else {
-                        showingCheckIn = true   // open sheet for amount
+                        showingCheckIn = true
                     }
                 }
             )
@@ -196,10 +205,38 @@ struct GridHabitCard: View {
         )
         .contentShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
         .sheet(isPresented: $showingCheckIn) {
-            AddCheckInSheetView(board: board)
+            CheckInEditorView(mode: .create, board: board)
                 .presentationDetents([.medium, .large])
         }
         .id("\(board.id)-\(board.logs?.count ?? -1)")
+    }
+
+    private func logBinaryQuick() {
+        isLoggingQuick = true
+        Haptics.impact(.light)
+
+        do {
+            let isNowLogged = try CheckInWriter.toggleBinary(board: board, context: modelContext)
+            if isNowLogged {
+                Haptics.notify(.success)
+                withAnimation(DS.Motion.settle(reduceMotion: reduceMotion)) {
+                    showSuccessBadge = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                    withAnimation(DS.Motion.settle(reduceMotion: reduceMotion)) {
+                        showSuccessBadge = false
+                    }
+                    isLoggingQuick = false
+                }
+            } else {
+                withAnimation(DS.Motion.settle(reduceMotion: reduceMotion)) {
+                    isLoggingQuick = false
+                }
+            }
+        } catch {
+            isLoggingQuick = false
+            Haptics.notify(.error)
+        }
     }
 }
 
@@ -335,12 +372,31 @@ private struct GridCheckButton: View {
     let board: HabitBoard
     let todayLogged: Bool
     let todayValue: Double
+    let isLogging: Bool
+    let showSuccess: Bool
+    let successValue: Double
     let onCheck: () -> Void
 
     var body: some View {
         Button(action: onCheck) {
             Group {
-                if todayLogged {
+                if showSuccess && board.metric == .binary {
+                    // Success state: checkmark for binary
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(DS.Text.body)
+                        .foregroundStyle(Color.black.opacity(0.85))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 46)
+                        .background(ColorPalette[board.colorIndex], in: RoundedRectangle(cornerRadius: DS.Radius.control, style: .continuous))
+                        .scaleEffect(1.0)
+                } else if isLogging {
+                    // Loading state: spinner
+                    ProgressView()
+                        .tint(DS.Color.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 46)
+                        .background(DS.Color.textPrimary.opacity(0.06), in: RoundedRectangle(cornerRadius: DS.Radius.control, style: .continuous))
+                } else if todayLogged {
                     // Logged — solid accent fill. Content stays dark for contrast on the
                     // saturated fill (consistent across light/dark since the accent is the
                     // same hue in both).
@@ -371,6 +427,7 @@ private struct GridCheckButton: View {
             }
         }
         .buttonStyle(.plain)
+        .disabled(isLogging)
     }
 }
 

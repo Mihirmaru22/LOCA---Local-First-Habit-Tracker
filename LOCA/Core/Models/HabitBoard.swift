@@ -161,6 +161,16 @@ final class HabitBoard {
     @Relationship(deleteRule: .nullify, inverse: \LogEntry.board)
     var logs: [LogEntry]? = nil
 
+    /// Active (non-archived) log entries for this board.
+    ///
+    /// Filters `logs` to include only entries where `archivedAt == nil`.
+    /// Use this computed property in all UI and calculation sites to exclude
+    /// soft-deleted entries from streaks, heatmaps, and progress calculations.
+    /// Archived entries remain queryable via the full `logs` array for audit purposes.
+    var activeLogs: [LogEntry] {
+        (logs ?? []).filter { $0.archivedAt == nil }
+    }
+
     // MARK: - Initialiser
 
     /// Creates a new `HabitBoard` with the given configuration.

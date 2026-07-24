@@ -138,6 +138,13 @@ struct HabitTimelineCard: View {
     let state: HabitState
     let onCheckBinary: () -> Void
 
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    @State private var showingCheckIn = false
+    @State private var isLoggingQuick = false
+    @State private var showSuccessBadge = false
+
     private var todaysTotal: Double {
         (board.logs ?? [])
             .filter { $0.timestamp.isToday() }
@@ -149,6 +156,10 @@ struct HabitTimelineCard: View {
         return (board.logs ?? [])
             .filter { $0.timestamp >= sevenDaysAgo }
             .count
+    }
+
+    private var todayLogged: Bool {
+        (board.logs ?? []).contains { Calendar.current.isDateInToday($0.timestamp) }
     }
 
     private var stateColor: Color {
@@ -200,9 +211,25 @@ struct HabitTimelineCard: View {
                 Spacer()
 
                 // Quick action
-                if state == .needsAction && board.metricType == 0 {
-                    Button(action: onCheckBinary) {
-                        Image(systemName: "checkmark.circle.fill")
+                if !todayLogged && board.metric == .binary {
+                    Button(action: logBinaryQuick) {
+                        if showSuccessBadge {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.title3)
+                                .foregroundStyle(ColorPalette[board.colorIndex])
+                        } else if isLoggingQuick {
+                            ProgressView()
+                                .tint(ColorPalette[board.colorIndex])
+                        } else {
+                            Image(systemName: "checkmark.circle")
+                                .font(.title3)
+                                .foregroundStyle(ColorPalette[board.colorIndex])
+                        }
+                    }
+                    .disabled(isLoggingQuick)
+                } else if board.metric == .quantitative && state == .needsAction {
+                    Button(action: { showingCheckIn = true }) {
+                        Image(systemName: "plus.circle.fill")
                             .font(.title3)
                             .foregroundStyle(ColorPalette[board.colorIndex])
                     }
@@ -285,6 +312,38 @@ struct HabitTimelineCard: View {
         }
         .padding(DS.Space.md)
         .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+        .sheet(isPresented: $showingCheckIn) {
+            CheckInEditorView(mode: .create, board: board)
+                .presentationDetents([.medium, .large])
+        }
+    }
+
+    private func logBinaryQuick() {
+        isLoggingQuick = true
+        Haptics.impact(.light)
+
+        do {
+            let isNowLogged = try CheckInWriter.toggleBinary(board: board, context: modelContext)
+            if isNowLogged {
+                Haptics.notify(.success)
+                withAnimation(DS.Motion.settle(reduceMotion: reduceMotion)) {
+                    showSuccessBadge = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                    withAnimation(DS.Motion.settle(reduceMotion: reduceMotion)) {
+                        showSuccessBadge = false
+                    }
+                    isLoggingQuick = false
+                }
+            } else {
+                withAnimation(DS.Motion.settle(reduceMotion: reduceMotion)) {
+                    isLoggingQuick = false
+                }
+            }
+        } catch {
+            isLoggingQuick = false
+            Haptics.notify(.error)
+        }
     }
 
     private var stateLabel: String {

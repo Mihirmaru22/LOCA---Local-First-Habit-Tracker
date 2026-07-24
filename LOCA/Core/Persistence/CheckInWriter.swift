@@ -68,15 +68,33 @@ enum CheckInWriter {
         }
     }
 
-    // MARK: - Delete
+    // MARK: - Delete (Soft-Delete)
 
-    /// Deletes `entry` and saves. Always flags for full streak recalculation.
+    /// Soft-deletes `entry` by marking it archived (sets `archivedAt` to now) and saves.
+    /// Always flags for full streak recalculation. The entry remains in the database
+    /// for audit trail and undo operations (5-second window via `restore()`).
     static func delete(
         _ entry: LogEntry,
         board: HabitBoard,
         context: ModelContext
     ) throws {
-        context.delete(entry)
+        entry.archivedAt = Date()
+        board.needsStreakRecalculation = true
+        try saveAndReload(context: context)
+        NotificationCenter.default.post(name: .streakRecalculationRequested, object: nil)
+    }
+
+    // MARK: - Restore (Undo Soft-Delete)
+
+    /// Restores a soft-deleted entry by clearing `archivedAt` and saves.
+    /// Flags for full streak recalculation. Called from undo actions within
+    /// a 5-second window after soft-delete.
+    static func restore(
+        _ entry: LogEntry,
+        board: HabitBoard,
+        context: ModelContext
+    ) throws {
+        entry.archivedAt = nil
         board.needsStreakRecalculation = true
         try saveAndReload(context: context)
         NotificationCenter.default.post(name: .streakRecalculationRequested, object: nil)

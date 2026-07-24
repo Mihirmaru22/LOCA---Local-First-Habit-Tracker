@@ -100,6 +100,8 @@
 		E82E0AFCE194B81C1D1412E3 /* HabitCorrelation.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFAB227BB75B4669CD834FFA /* HabitCorrelation.swift */; };
 		E8A397AD3E3F43468E8BFF20 /* HabitDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EA3DF789134654984688CB /* HabitDetailView.swift */; };
 		E8ADDA453FAB3851AB3CB853 /* AddCheckInSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EC5E1C58596652E07B3FDB9 /* AddCheckInSheetView.swift */; };
+		D0F3656FC370429484FB91EC /* CheckInEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC2D75102E6C46F7B46CBDD6 /* CheckInEditorView.swift */; };
+		834D8725E2144BB48585F998 /* HabitTodaySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40D93675C4A941A7B7202A88 /* HabitTodaySection.swift */; };
 		E8F19F01F9AC07C3B4690A1F /* LogHabitIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F232FDAB6A6A9C3C9779C7B /* LogHabitIntent.swift */; };
 		E9AD5D5A79294D419351145A /* HabitTimelineLayoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4F66C1B540B481B99AD752F /* HabitTimelineLayoutView.swift */; };
 		EA67B446FFD340ECBF1E9F6D /* Double+Clamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13289E001E014999A9EFB063 /* Double+Clamp.swift */; };
@@ -171,6 +173,8 @@
 		37119D6BF608C9E0EDFAA772 /* WeeklyBarChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyBarChart.swift; sourceTree = "<group>"; };
 		39AAEC2D33ABC3ABB90525E4 /* HabitListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitListView.swift; sourceTree = "<group>"; };
 		3EC5E1C58596652E07B3FDB9 /* AddCheckInSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddCheckInSheetView.swift; sourceTree = "<group>"; };
+		DC2D75102E6C46F7B46CBDD6 /* CheckInEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInEditorView.swift; sourceTree = "<group>"; };
+		40D93675C4A941A7B7202A88 /* HabitTodaySection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitTodaySection.swift; sourceTree = "<group>"; };
 		3F232FDAB6A6A9C3C9779C7B /* LogHabitIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogHabitIntent.swift; sourceTree = "<group>"; };
 		4B85B29ECA2A1A5FA09F0EC6 /* GoalTuningCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalTuningCard.swift; sourceTree = "<group>"; };
 		4CE91B0C5D88414094E4DD05 /* HeatmapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeatmapView.swift; sourceTree = "<group>"; };
@@ -348,6 +352,8 @@
 				DEBB745C663B20E8B2CAA432 /* WeekdaysChartView.swift */,
 				3EC5E1C58596652E07B3FDB9 /* AddCheckInSheetView.swift */,
 				F1A2B3C4D5E6F7A8B9C0D1E2 /* EditCheckInSheetView.swift */,
+				DC2D75102E6C46F7B46CBDD6 /* CheckInEditorView.swift */,
+				40D93675C4A941A7B7202A88 /* HabitTodaySection.swift */,
 				2CEB70E6A1F742B4A1F35A2F /* JournalTimelineView.swift */,
 				0C506D98C9E7920BBD755A67 /* GoalInferenceCard.swift */,
 				4B85B29ECA2A1A5FA09F0EC6 /* GoalTuningCard.swift */,
@@ -718,6 +724,8 @@
 				36720AD2F22A64170387C940 /* WeekdaysChartView.swift in Sources */,
 				E8ADDA453FAB3851AB3CB853 /* AddCheckInSheetView.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F2 /* EditCheckInSheetView.swift in Sources */,
+				D0F3656FC370429484FB91EC /* CheckInEditorView.swift in Sources */,
+				834D8725E2144BB48585F998 /* HabitTodaySection.swift in Sources */,
 				37DA6E005EE84382B6E2B538 /* JournalTimelineView.swift in Sources */,
 				42A8AE7D0252462CA1F5A2D2 /* DashboardView.swift in Sources */,
 				B45CB1ED59D240ED8D9DA386 /* HabitCardView.swift in Sources */,
