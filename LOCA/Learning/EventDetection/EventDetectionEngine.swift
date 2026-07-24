@@ -68,6 +68,23 @@ class EventDetectionEngine: NSObject, ObservableObject {
                         regimes: weeklyRegimes
                     )
 
+                    // Only insert high-confidence events, and only if we haven't
+                    // already recorded one near this time. This detector re-scans the
+                    // whole past month every run; the proximity guard keeps it
+                    // idempotent and preserves each event's stable identity across
+                    // runs, so Chapters (which link events by id) don't duplicate.
+                    guard classification.confidence >= 0.7 else { continue }
+
+                    let windowStart = eventTimestamp.addingTimeInterval(-3 * 86400)
+                    let windowEnd = eventTimestamp.addingTimeInterval(3 * 86400)
+                    let nearbyDescriptor = FetchDescriptor<LifeEvent>(
+                        predicate: #Predicate { existing in
+                            existing.timestamp >= windowStart && existing.timestamp <= windowEnd
+                        }
+                    )
+                    let alreadyRecorded = !((try? ctx.fetch(nearbyDescriptor)) ?? []).isEmpty
+                    guard !alreadyRecorded else { continue }
+
                     let event = LifeEvent(
                         timestamp: eventTimestamp,
                         eventType: classification.eventType,
@@ -77,11 +94,7 @@ class EventDetectionEngine: NSObject, ObservableObject {
                         classificationScore: classification.confidence,
                         metadata: classification.metadata
                     )
-
-                    // Only insert if confidence ≥ 0.7
-                    if event.confidence >= 0.7 {
-                        ctx.insert(event)
-                    }
+                    ctx.insert(event)
                 }
             }
 

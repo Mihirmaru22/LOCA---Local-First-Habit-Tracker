@@ -75,6 +75,11 @@ struct LOCAApp: App {
             // would fail to compile against a symbol that doesn't exist there.
             #if DEBUG
             DebugSeeder.seedIfNeeded(context: container.mainContext)
+            // Seeds a deterministic ~180-day life (states, one Life Event, two
+            // chapters, people, traits) so the Personal Life Model — including the
+            // Phase 6.4 relationship graph — is visible without weeks of real
+            // sensor data. DEBUG-only; no-ops if a life model already exists.
+            LifeSeeder.seedIfNeeded(context: container.mainContext)
             #endif
         } catch {
             // ModelContainerFactory has already logged the underlying error.
