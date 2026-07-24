@@ -63,7 +63,8 @@ final class Chapter {
         self.socialEngagement = 0.5
         self.scheduleRegularity = 0.5
         self.volatility = 0.2
-        self.isCurrentChapter = endDate == nil
+        self.endDate = nil
+        self.isCurrentChapter = true
     }
 
     var duration: TimeInterval {
