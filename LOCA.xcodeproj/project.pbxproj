@@ -71,7 +71,6 @@
 		9BC55CE15C7D2A795DDDD331 /* HabitListRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86A9A6A783B46023591EB5D0 /* HabitListRow.swift */; };
 		9DC743F9D675419D924F051E /* LogEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C8098FD69D64D2CB7E400BD /* LogEntry.swift */; };
 		A169E81FE1EABCE6473FBFF6 /* DS+Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100D7CA1E16B5BF2CFB3774E /* DS+Typography.swift */; };
-		A1B2C3D4E5F6A7B8C9D0E1F2 /* EditCheckInSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7A8B9C0D1E2 /* EditCheckInSheetView.swift */; };
 		A525006224AC0F6ABBCED925 /* TemplatePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78ACA3A35FBB512911C19D43 /* TemplatePickerView.swift */; };
 		A97E09E4062B4BEFAE3D7418 /* DebugSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E8D37FD0EAC4BBB8192F147 /* DebugSeeder.swift */; };
 		B060EF1136D5B9B2214B6BA8 /* GoalTuningCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B85B29ECA2A1A5FA09F0EC6 /* GoalTuningCard.swift */; };
@@ -99,7 +98,6 @@
 		D9F19BCA3572423D959CEEF5 /* HabitGridLayoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1722A0BDC804F11856E575D /* HabitGridLayoutView.swift */; };
 		E82E0AFCE194B81C1D1412E3 /* HabitCorrelation.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFAB227BB75B4669CD834FFA /* HabitCorrelation.swift */; };
 		E8A397AD3E3F43468E8BFF20 /* HabitDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EA3DF789134654984688CB /* HabitDetailView.swift */; };
-		E8ADDA453FAB3851AB3CB853 /* AddCheckInSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EC5E1C58596652E07B3FDB9 /* AddCheckInSheetView.swift */; };
 		D0F3656FC370429484FB91EC /* CheckInEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC2D75102E6C46F7B46CBDD6 /* CheckInEditorView.swift */; };
 		834D8725E2144BB48585F998 /* HabitTodaySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40D93675C4A941A7B7202A88 /* HabitTodaySection.swift */; };
 		E8F19F01F9AC07C3B4690A1F /* LogHabitIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F232FDAB6A6A9C3C9779C7B /* LogHabitIntent.swift */; };
@@ -172,7 +170,6 @@
 		35FC423A6DF845B191C059CB /* Animation+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Animation+Extensions.swift"; sourceTree = "<group>"; };
 		37119D6BF608C9E0EDFAA772 /* WeeklyBarChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyBarChart.swift; sourceTree = "<group>"; };
 		39AAEC2D33ABC3ABB90525E4 /* HabitListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitListView.swift; sourceTree = "<group>"; };
-		3EC5E1C58596652E07B3FDB9 /* AddCheckInSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddCheckInSheetView.swift; sourceTree = "<group>"; };
 		DC2D75102E6C46F7B46CBDD6 /* CheckInEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInEditorView.swift; sourceTree = "<group>"; };
 		40D93675C4A941A7B7202A88 /* HabitTodaySection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitTodaySection.swift; sourceTree = "<group>"; };
 		3F232FDAB6A6A9C3C9779C7B /* LogHabitIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogHabitIntent.swift; sourceTree = "<group>"; };
@@ -238,7 +235,6 @@
 		E0F928C59F0243A385862E33 /* LOCAWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LOCAWidgetBundle.swift; sourceTree = "<group>"; };
 		F014D8500214470FA09E8D5D /* LOCAWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LOCAWidget.entitlements; sourceTree = "<group>"; };
 		F0A5A06DC0E2402C8577EA8C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		F1A2B3C4D5E6F7A8B9C0D1E2 /* EditCheckInSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditCheckInSheetView.swift; sourceTree = "<group>"; };
 		F2805490003546CEAA6A8872 /* WidgetRefreshCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetRefreshCoordinator.swift; sourceTree = "<group>"; };
 		F4F66C1B540B481B99AD752F /* HabitTimelineLayoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitTimelineLayoutView.swift; sourceTree = "<group>"; };
 		F739E79F8F2F66D5828791E1 /* WeeklyInsightCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WeeklyInsightCard.swift; sourceTree = "<group>"; };
@@ -350,8 +346,6 @@
 				7EED539C8E562129FC1FEB9B /* YearComparisonChartView.swift */,
 				FC3230A263C5088C154C34B8 /* ConsistencyChartView.swift */,
 				DEBB745C663B20E8B2CAA432 /* WeekdaysChartView.swift */,
-				3EC5E1C58596652E07B3FDB9 /* AddCheckInSheetView.swift */,
-				F1A2B3C4D5E6F7A8B9C0D1E2 /* EditCheckInSheetView.swift */,
 				DC2D75102E6C46F7B46CBDD6 /* CheckInEditorView.swift */,
 				40D93675C4A941A7B7202A88 /* HabitTodaySection.swift */,
 				2CEB70E6A1F742B4A1F35A2F /* JournalTimelineView.swift */,
@@ -722,8 +716,6 @@
 				20237B905F07F6FB68C1E84C /* YearComparisonChartView.swift in Sources */,
 				CD4E8274A62B0E5B6C75D6C1 /* ConsistencyChartView.swift in Sources */,
 				36720AD2F22A64170387C940 /* WeekdaysChartView.swift in Sources */,
-				E8ADDA453FAB3851AB3CB853 /* AddCheckInSheetView.swift in Sources */,
-				A1B2C3D4E5F6A7B8C9D0E1F2 /* EditCheckInSheetView.swift in Sources */,
 				D0F3656FC370429484FB91EC /* CheckInEditorView.swift in Sources */,
 				834D8725E2144BB48585F998 /* HabitTodaySection.swift in Sources */,
 				37DA6E005EE84382B6E2B538 /* JournalTimelineView.swift in Sources */,

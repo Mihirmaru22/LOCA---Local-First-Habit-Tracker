@@ -2,7 +2,8 @@
 //  HabitTodaySection.swift
 //  LOCA
 //
-//  Phase X.4 — Quick-log section in habit detail header
+//  Phase L — Quick-log section in habit detail header
+//  Implements inline confirmation (binary) and inline input (quantitative)
 //
 
 import SwiftUI
@@ -16,9 +17,11 @@ struct HabitTodaySection: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @State private var showingCheckIn = false
+    @State private var showInlineQuantitative = false
+    @State private var quantitativeInput: String = ""
     @State private var isLoggingQuick = false
     @State private var showSuccessBadge = false
+    @FocusState private var quantitativeFocused: Bool
 
     private var todaysTotal: Double {
         (board.logs ?? [])
@@ -49,100 +52,138 @@ struct HabitTodaySection: View {
                 .foregroundStyle(DS.Color.textPrimary)
 
             // ── Progress & Status ────────────────────────────
-            HStack(spacing: DS.Space.lg) {
-                // Arc progress (binary or quantitative)
-                ZStack {
-                    ArcProgressView(
-                        fraction: progressFraction,
-                        color: ColorPalette[board.colorIndex],
-                        size: 56
-                    )
+            VStack(spacing: DS.Space.md) {
+                HStack(spacing: DS.Space.lg) {
+                    // Arc progress (binary or quantitative)
+                    ZStack {
+                        ArcProgressView(
+                            fraction: progressFraction,
+                            color: ColorPalette[board.colorIndex],
+                            size: 56
+                        )
 
-                    switch board.metric {
-                    case .binary:
-                        if todayLogged {
-                            Image(systemName: "checkmark")
-                                .font(.body.bold())
+                        switch board.metric {
+                        case .binary:
+                            if todayLogged {
+                                Image(systemName: "checkmark")
+                                    .font(.body.bold())
+                                    .foregroundStyle(ColorPalette[board.colorIndex])
+                            }
+                        case .quantitative:
+                            Text(String(Int((progressFraction * 100).rounded())) + "%")
+                                .font(.system(.caption, design: .rounded, weight: .bold))
                                 .foregroundStyle(ColorPalette[board.colorIndex])
                         }
-                    case .quantitative:
-                        Text(String(Int((progressFraction * 100).rounded())) + "%")
-                            .font(.system(.caption, design: .rounded, weight: .bold))
-                            .foregroundStyle(ColorPalette[board.colorIndex])
                     }
-                }
-                .frame(width: 56, height: 56)
+                    .frame(width: 56, height: 56)
 
-                // Status text + progress details
-                VStack(alignment: .leading, spacing: DS.Space.xs) {
-                    switch board.metric {
-                    case .binary:
-                        if todayLogged {
-                            Text("Done Today")
+                    // Status text + progress details
+                    VStack(alignment: .leading, spacing: DS.Space.xs) {
+                        switch board.metric {
+                        case .binary:
+                            if todayLogged {
+                                Text("Done Today")
+                                    .font(DS.Text.body)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(DS.Color.textPrimary)
+                            } else {
+                                Text("Check off daily")
+                                    .font(DS.Text.body)
+                                    .foregroundStyle(DS.Color.textSecondary)
+                            }
+                        case .quantitative:
+                            Text(String(format: todaysTotal.truncatingRemainder(dividingBy: 1) == 0 ? "%.0f" : "%.1f", todaysTotal)
+                                 + " / " + String(format: "%.0f", board.effectiveTarget)
+                                 + (board.unitLabel.map { " \($0)" } ?? ""))
                                 .font(DS.Text.body)
                                 .fontWeight(.semibold)
-                                .foregroundStyle(DS.Color.textPrimary)
-                        } else {
-                            Text("Check off daily")
-                                .font(DS.Text.body)
-                                .foregroundStyle(DS.Color.textSecondary)
-                        }
-                    case .quantitative:
-                        Text(String(format: todaysTotal.truncatingRemainder(dividingBy: 1) == 0 ? "%.0f" : "%.1f", todaysTotal)
-                             + " / " + String(format: "%.0f", board.effectiveTarget)
-                             + (board.unitLabel.map { " \($0)" } ?? ""))
-                            .font(DS.Text.body)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(
-                                progressFraction >= 1 ? ColorPalette[board.colorIndex] : DS.Color.textSecondary
-                            )
+                                .foregroundStyle(
+                                    progressFraction >= 1 ? ColorPalette[board.colorIndex] : DS.Color.textSecondary
+                                )
 
-                        Text(progressFraction >= 1 ? "Goal met ✓" : "Keep going")
-                            .font(DS.Text.caption)
-                            .foregroundStyle(
-                                progressFraction >= 1 ? ColorPalette[board.colorIndex] : DS.Color.textSecondary
-                            )
+                            Text(progressFraction >= 1 ? "Goal met ✓" : "Keep going")
+                                .font(DS.Text.caption)
+                                .foregroundStyle(
+                                    progressFraction >= 1 ? ColorPalette[board.colorIndex] : DS.Color.textSecondary
+                                )
+                        }
+                    }
+
+                    Spacer()
+
+                    // Binary: inline confirmation button
+                    if board.metric == .binary {
+                        Button(action: logBinaryQuick) {
+                            if showSuccessBadge {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.title3)
+                                    .foregroundStyle(Color.white)
+                            } else if isLoggingQuick {
+                                ProgressView()
+                                    .tint(ColorPalette[board.colorIndex])
+                            } else if todayLogged {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.title3)
+                                    .foregroundStyle(ColorPalette[board.colorIndex])
+                            } else {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.title3)
+                                    .foregroundStyle(ColorPalette[board.colorIndex])
+                            }
+                        }
+                        .frame(width: 44, height: 44)
+                        .background(showSuccessBadge ? ColorPalette[board.colorIndex] : DS.Color.surfaceRecessed, in: Circle())
+                        .disabled(isLoggingQuick)
+                    } else {
+                        // Quantitative: toggle inline input
+                        Button(action: { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            if showInlineQuantitative {
+                                quantitativeInput = ""
+                            }
+                            showInlineQuantitative.toggle()
+                        }}) {
+                            Image(systemName: showInlineQuantitative ? "chevron.up.circle.fill" : "plus.circle.fill")
+                                .font(.title3)
+                                .foregroundStyle(ColorPalette[board.colorIndex])
+                                .frame(width: 44, height: 44)
+                                .background(DS.Color.surfaceRecessed, in: Circle())
+                        }
                     }
                 }
 
-                Spacer()
+                // Quantitative: inline input (revealed on tap)
+                if board.metric == .quantitative && showInlineQuantitative {
+                    HStack(spacing: DS.Space.md) {
+                        TextField("0", text: $quantitativeInput)
+                            .font(DS.Text.body)
+                            .keyboardType(.decimalPad)
+                            .focused($quantitativeFocused)
+                            .frame(height: 44)
+                            .padding(.horizontal, DS.Space.md)
+                            .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: DS.Radius.control))
 
-                // Quick log button
-                if board.metric == .binary {
-                    Button(action: logBinaryQuick) {
-                        if showSuccessBadge {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.title3)
-                                .foregroundStyle(Color.white)
-                                .frame(width: 44, height: 44)
-                                .background(ColorPalette[board.colorIndex], in: Circle())
-                        } else if isLoggingQuick {
-                            ProgressView()
-                                .tint(ColorPalette[board.colorIndex])
-                                .frame(width: 44, height: 44)
-                                .background(DS.Color.surfaceRecessed, in: Circle())
-                        } else if todayLogged {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.title3)
-                                .foregroundStyle(ColorPalette[board.colorIndex])
-                                .frame(width: 44, height: 44)
-                                .background(DS.Color.surfaceRecessed, in: Circle())
-                        } else {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.title3)
-                                .foregroundStyle(ColorPalette[board.colorIndex])
-                                .frame(width: 44, height: 44)
-                                .background(DS.Color.surfaceRecessed, in: Circle())
+                        if let unit = board.unitLabel, !unit.isEmpty {
+                            Text(unit)
+                                .font(DS.Text.caption)
+                                .foregroundStyle(DS.Color.textSecondary)
+                                .frame(minWidth: 50, alignment: .leading)
                         }
-                    }
-                    .disabled(isLoggingQuick)
-                } else {
-                    Button(action: { showingCheckIn = true }) {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title3)
-                            .foregroundStyle(ColorPalette[board.colorIndex])
-                            .frame(width: 44, height: 44)
-                            .background(DS.Color.surfaceRecessed, in: Circle())
+
+                        Button(action: logQuantitativeQuick) {
+                            if isLoggingQuick {
+                                ProgressView()
+                                    .tint(ColorPalette[board.colorIndex])
+                            } else {
+                                Text("Log")
+                                    .font(DS.Text.caption)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(Color.white)
+                            }
+                        }
+                        .frame(height: 44)
+                        .frame(minWidth: 50)
+                        .background(ColorPalette[board.colorIndex], in: RoundedRectangle(cornerRadius: DS.Radius.control))
+                        .disabled(isLoggingQuick || !isAmountValid)
                     }
                 }
             }
@@ -189,11 +230,19 @@ struct HabitTodaySection: View {
         }
         .padding(DS.Space.md)
         .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
-        .sheet(isPresented: $showingCheckIn) {
-            CheckInEditorView(mode: .create, board: board)
-                .presentationDetents([.medium, .large])
+        .onChange(of: showInlineQuantitative) { _, newValue in
+            quantitativeFocused = newValue
         }
     }
+
+    // MARK: - Computed
+
+    private var isAmountValid: Bool {
+        guard let amount = Double(quantitativeInput.trimmingCharacters(in: .whitespaces)), amount > 0, amount <= 999.9 else { return false }
+        return true
+    }
+
+    // MARK: - Actions
 
     private func logBinaryQuick() {
         isLoggingQuick = true
@@ -217,6 +266,34 @@ struct HabitTodaySection: View {
                     isLoggingQuick = false
                 }
             }
+        } catch {
+            isLoggingQuick = false
+            Haptics.notify(.error)
+        }
+    }
+
+    private func logQuantitativeQuick() {
+        guard isAmountValid else { return }
+        isLoggingQuick = true
+        Haptics.impact(.light)
+
+        let amount = Double(quantitativeInput.trimmingCharacters(in: .whitespaces)) ?? 0
+
+        do {
+            try CheckInWriter.insert(
+                value: amount,
+                timestamp: Date(),
+                note: nil,
+                board: board,
+                context: modelContext
+            )
+
+            Haptics.notify(.success)
+            withAnimation(DS.Motion.settle(reduceMotion: reduceMotion)) {
+                showInlineQuantitative = false
+                quantitativeInput = ""
+            }
+            isLoggingQuick = false
         } catch {
             isLoggingQuick = false
             Haptics.notify(.error)

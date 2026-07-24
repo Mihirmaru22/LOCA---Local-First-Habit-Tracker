@@ -168,11 +168,11 @@ struct HabitCheckInsView: View {
             Text("The check-in couldn't be saved. Please try again.")
         }
         .sheet(isPresented: $showingAddCheckIn) {
-            AddCheckInSheetView(board: board)
+            CheckInEditorView(mode: .create, board: board)
                 .presentationDetents([.medium, .large])
         }
         .sheet(item: $editingEntry) { entry in
-            EditCheckInSheetView(entry: entry, board: board)
+            CheckInEditorView(mode: .edit, board: board, entry: entry)
                 .presentationDetents([.medium, .large])
         }
         .overlay(alignment: .bottomTrailing) {

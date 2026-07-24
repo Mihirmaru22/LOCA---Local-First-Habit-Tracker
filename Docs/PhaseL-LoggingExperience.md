@@ -193,34 +193,68 @@ Each is testable and traceable to the philosophy or Apple's HIG.
 
 ---
 
-## 5. Product decisions L1 proposes (assumptions to kill)
+## 5. Logging Principles — the constitution for Phase L
 
-These are decisions about the *problem*, not the UI — commitments L2's interaction
-models must respect. Each answers a "challenge every component" question.
+Before L2 explores interaction models, these principles define non-negotiable
+values. Every model must satisfy them; none are debatable.
 
-- **"When?" leaves the primary path.** Today+now is assumed; date/time is
-  disclosure-only, reached deliberately. *(Confidence: high.)*
-- **No "Save" for logging.** The act of logging *is* the commit. *(High.)*
-- **Binary needs no sheet, ever.** A check-off is a single confirming gesture with
-  live, in-place feedback. *(High.)*
-- **Drop minute-level time precision from the primary path.** Store the real moment;
-  never make the user set it. Coarse buckets only if ever shown. *(High.)*
-- **Future dates are not loggable in the primary path.** You cannot acknowledge a
-  not-yet-done thing; the philosophy is witnessing what happened. *(Medium — confirm.)*
-- **The calendar is not visible by default.** It appears only when the user has
-  chosen to change the day. *(High.)*
-- **The number is the only thing a quantitative log asks for** — and it should offer
-  smart defaults (target value, last amount) so even that is often one tap. *(Medium.)*
-- **Notes are opt-in and out of the default path.** *(High.)*
-- **Undo is a first-class, always-present affordance,** not a buried edit flow.
-  *(High.)*
+1. **Logging confirms reality, not author it.** Every log is a report of an event
+   that already happened. The UX must reflect this — never make it feel like data
+   entry or composition.
+2. **Optimize for the common case (95%).** Today, now, no note, one entry. The
+   uncommon case (backdate, edit, note) must exist but never shape the primary path.
+3. **Defaults are preferable to questions.** Assume today. Assume now. Assume no note.
+   Ask for nothing that can be inferred.
+4. **Metadata should stay out of the primary path.** Date, time, and notes are
+   metadata. They matter, but not during the completion acknowledgment.
+5. **Undo is preferable to confirmation whenever safe.** Let the log land instantly;
+   make it trivially reversible. Removes "did it save?" anxiety.
+6. **Speed is a feature.** Each extra tap or second is paid across hundreds of logs.
+   Interaction cost compounds.
+7. **Every additional tap requires justification.** If the data's entropy doesn't
+   warrant the interaction, cut it.
+8. **Never sacrifice accuracy for convenience.** Always store the precise moment,
+   even if the UI only offers coarse buckets or shortcuts.
+9. **The interface should disappear behind the habit.** On success, the software
+   recedes. No lingering sheet, no forced next step.
+10. **The common path should feel effortless while uncommon paths remain available.**
+    No hidden affordances; just graceful progression.
 
 ---
 
-## 6. Evaluation rubric (defined now, applied in L2)
+## 6. Open design questions for L2
 
-Every interaction model proposed in L2 is scored on the criteria from the brief,
-against explicit targets for the **common case** so grading isn't subjective:
+L1 defines the problem and principles. L2 explores interaction models. These
+questions remain **unanswered** in L1 — they are L2's scope.
+
+- **How much should today+now be assumed vs. offered as a default?** Does the UI
+  show "logging today at 3:45pm" and let users tap to change, or hide date/time
+  entirely until requested?
+- **What form should the primary confirmation take?** One tap on a button? A gesture?
+  A long-press? A swipe? Does it vary by metric type?
+- **When does a "Save" button (or equivalent commit step) appear, if ever?** Can
+  logging be instant and undoable, or does the mental model require confirmation?
+- **How should binary and quantitative habits differ in their primary path?** Same
+  flow with a conditional, or fully separate flows?
+- **Where should the log land in the view hierarchy?** In-place on a card? A bottom
+  sheet? An inline expansion? A floating control?
+- **What progressive disclosure pattern serves the uncommon case?** How do users
+  reach backdate, notes, delete, edit without it cluttering the primary path?
+- **Can time precision be coarser than minutes in the UI without sacrificing accuracy
+  in storage?** (E.g., UI offers "now, 10m ago, 30m ago, 1h ago"; storage records
+  the precise timestamp.)
+- **What role does haptic/visual feedback play in reinforcement?** Should goal
+  crossings speak, or stay silent? Should every log have haptic, or only milestones?
+
+All of these are design decisions, not principles. L2 proposes multiple answers and
+compares them.
+
+---
+
+## 7. Evaluation criteria for L2 models
+
+Every interaction model proposed in L2 will be scored on these dimensions against
+explicit targets for the **common case**. Scoring is objective, not subjective:
 
 | Criterion | Target — binary (common) | Target — quantitative (common) |
 |---|---|---|
@@ -232,20 +266,43 @@ against explicit targets for the **common case** so grading isn't subjective:
 | **Accessibility** | ≥44pt, VoiceOver one element, Dynamic Type, Reduce Motion | + labeled value field, no wheel-only input |
 | **Error recovery** | Instant undo / re-tap | Instant undo + easy correct |
 | **Apple HIG** | Progressive disclosure, forgiving, ergonomic | same |
-| **LOCA philosophy** | Disappears; speaks only on milestones | same |
+| **L1 principles** | Satisfies principles 1–10 above | same |
 
-The bookkeeping path (backdate, edit, delete, note) is scored separately and is
-allowed to be richer — but only ever reached deliberately.
+**Rejection criterion:** Models failing more than one common-case target are rejected.
+
+**Uncommon path** (backdate, edit, delete, note): scored separately; allowed to be richer, but must require deliberate action to reach.
 
 ---
 
-## 7. What L1 deliberately does **not** decide
+## 8. L2 scope and expectations
 
-Per the constraints, L1 proposes **no** interaction model, bottom sheet, gesture,
-inline control, or layout. Those are L2's job. L1 fixes only the problem definition,
-the case frequencies, the pain, the principles, and the product decisions above — the
-frame inside which L2 must "explore, reject, compare" multiple fundamentally different
-models (progressive disclosure, bottom sheet, inline, floating card, one-screen quick
-logger, gesture-first, and others), then converge.
+L1 is foundational but **not frozen**. Feedback on principles, the common/uncommon
+split, or case frequencies is welcome before L2 begins.
 
-**Gate:** proceed to L2 only after this foundation is approved.
+### Expectations for L2 (Phase L, Session L2)
+
+Once L1 is approved (no more changes), L2 will:
+
+1. **Propose at least 5 fundamentally different logging interaction models.**
+   Examples: progressive disclosure, inline logging, adaptive bottom sheet, gesture-first,
+   context-aware logger. (Not variations on a theme — genuine design alternatives.)
+
+2. **Describe each model in prose and interaction flow** (no code, no wireframes yet).
+   - How does the user initiate a log?
+   - What appears? Where?
+   - How many taps to completion?
+   - What does error recovery look like?
+   - Where does the uncommon case (backdate, notes) live?
+
+3. **Score each model against the §7 evaluation criteria.**
+   - Which taps? Cognitive load? One-handed? Learnability? Accessibility? Error recovery?
+   - How well does it satisfy the 10 principles?
+   - Is it rejected or promising?
+
+4. **Compare models side-by-side.**
+   - Which one(s) dominate the trade-offs?
+   - Which has the clearest path to implementation?
+   - Which best reflects LOCA's philosophy?
+
+5. **Only after exploration, converge** — recommend one direction (or two finalists)
+   for L3 (implementation).
