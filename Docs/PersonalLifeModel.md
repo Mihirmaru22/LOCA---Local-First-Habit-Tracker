@@ -21,6 +21,15 @@
 research base, the model, the question economy, and the interaction primitives.
 Later sessions converge on schema and implementation. Nothing here prescribes UI.
 
+> **Emphasis correction (see `PersonalLifeModel-LearningEngine.md`, Session P2):**
+> P1 centered the *question economy* — the system that decides what to ask. That
+> made an efficient asker the protagonist. P2 corrects the center of gravity: the
+> **learning engine** is primary, and questioning is demoted to a debt-financed
+> residual that fires only when passive inference is genuinely exhausted. Read P1's
+> §5–§6 through that lens: the scheduler still governs *which* question if one must
+> be asked, but a passive-inference gate now sits in front of it. **Passive
+> understanding is always preferred over active questioning.**
+
 **Scope:** A new vertical alongside the habit system. It reuses LOCA's local-first
 architecture (the device is the server; all inference is on-device; CloudKit is the
 silent sync layer) and consumes the habit engine's outputs as priors.
