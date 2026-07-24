@@ -312,6 +312,7 @@ struct CheckInEditorView: View {
             }
 
             noteText = entry.note ?? ""
+            showAdvancedOptions = true
         } else if !isBinary {
             amountFocused = true
         }
