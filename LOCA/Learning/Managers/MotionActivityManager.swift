@@ -19,7 +19,7 @@ class MotionActivityManager: NSObject {
     }
 
     private func setupMotionDetection() {
-        if CMMotionManager.isAccelerometerAvailable() {
+        if motionManager.isAccelerometerAvailable {
             motionManager.accelerometerUpdateInterval = 60
         }
     }

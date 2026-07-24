@@ -44,8 +44,8 @@ final class InferredState {
         moodUncertainty: Double
     ) {
         self.timestamp = timestamp
-        self.hourStart = Calendar.current.dateComponents([.year, .month, .day, .hour], from: timestamp)
-            .flatMap { Calendar.current.date(from: $0) } ?? timestamp
+        let comps = Calendar.current.dateComponents([.year, .month, .day, .hour], from: timestamp)
+        self.hourStart = Calendar.current.date(from: comps) ?? timestamp
         self.energy = Self.clamp(energy)
         self.energyUncertainty = Self.clamp(energyUncertainty)
         self.stress = Self.clamp(stress)
@@ -86,7 +86,7 @@ class StateInferenceEngine: NSObject, ObservableObject {
     // MARK: - Main Inference Loop
 
     func inferStatesForPastDay(modelContext: ModelContext) async {
-        guard let ctx = self.modelContext ?? modelContext else { return }
+        let ctx = self.modelContext ?? modelContext
 
         do {
             let calendar = Calendar.current
