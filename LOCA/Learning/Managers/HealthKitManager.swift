@@ -48,8 +48,6 @@ class HealthKitManager: NSObject {
             options: .strictStartDate
         )
 
-        var signals: [SignalEvent] = []
-
         return await withCheckedContinuation { continuation in
             let query = HKSampleQuery(
                 sampleType: sleepType,
@@ -62,11 +60,11 @@ class HealthKitManager: NSObject {
                     return
                 }
 
+                var signals: [SignalEvent] = []
                 for sample in samples {
                     let duration = sample.endDate.timeIntervalSince(sample.startDate)
                     let hoursSleep = duration / 3600
-                    let targetHours = 8.0
-                    let sleepScore = min(1.0, hoursSleep / targetHours)
+                    let sleepScore = min(1.0, hoursSleep / 8.0)
 
                     let signal = SignalEvent(
                         timestamp: sample.endDate,
@@ -77,11 +75,10 @@ class HealthKitManager: NSObject {
                     )
                     signals.append(signal)
                 }
-
                 continuation.resume(returning: signals)
             }
 
-            healthStore.execute(query)
+            self.healthStore.execute(query)
         }
     }
 
@@ -98,8 +95,6 @@ class HealthKitManager: NSObject {
             options: .strictStartDate
         )
 
-        var signals: [SignalEvent] = []
-
         return await withCheckedContinuation { continuation in
             let query = HKSampleQuery(
                 sampleType: hrvType,
@@ -112,8 +107,9 @@ class HealthKitManager: NSObject {
                     return
                 }
 
+                var signals: [SignalEvent] = []
                 for sample in samples {
-                    let hrv = sample.quantity.doubleValue(for: HKUnit.count())
+                    let hrv = sample.quantity.doubleValue(for: HKUnit(from: "ms"))
                     let normalized = min(1.0, hrv / 150)
 
                     let signal = SignalEvent(
@@ -125,11 +121,10 @@ class HealthKitManager: NSObject {
                     )
                     signals.append(signal)
                 }
-
                 continuation.resume(returning: signals)
             }
 
-            healthStore.execute(query)
+            self.healthStore.execute(query)
         }
     }
 
@@ -146,7 +141,8 @@ class HealthKitManager: NSObject {
         let now = Date()
         let thirtyDaysAgo = calendar.date(byAdding: .day, value: -30, to: now)!
 
-        var signals: [SignalEvent] = []
+        var intervalComponents = DateComponents()
+        intervalComponents.hour = 1
 
         return await withCheckedContinuation { continuation in
             let query = HKStatisticsCollectionQuery(
@@ -157,32 +153,34 @@ class HealthKitManager: NSObject {
                     options: .strictStartDate
                 ),
                 options: .cumulativeSum,
-                interval: NSDateComponents(hour: 1),
-                initialResultsHandler: { _, results, error in
-                    guard let results = results, error == nil else {
-                        continuation.resume(returning: [])
-                        return
-                    }
-
-                    results.enumerateStatistics(from: thirtyDaysAgo, to: now) { statistics, _ in
-                        let stepCount = statistics.sumQuantity()?.doubleValue(for: HKUnit.count()) ?? 0
-                        let normalized = min(1.0, stepCount / 1000)
-
-                        let signal = SignalEvent(
-                            timestamp: statistics.startDate,
-                            source: .motionActivity,
-                            value: normalized,
-                            uncertainty: 0.1,
-                            metadata: ["steps": String(Int(stepCount))]
-                        )
-                        signals.append(signal)
-                    }
-
-                    continuation.resume(returning: signals)
-                }
+                anchorDate: thirtyDaysAgo,
+                intervalComponents: intervalComponents
             )
 
-            healthStore.execute(query)
+            query.initialResultsHandler = { _, results, error in
+                guard let results, error == nil else {
+                    continuation.resume(returning: [])
+                    return
+                }
+
+                var signals: [SignalEvent] = []
+                results.enumerateStatistics(from: thirtyDaysAgo, to: now) { statistics, _ in
+                    let stepCount = statistics.sumQuantity()?.doubleValue(for: HKUnit.count()) ?? 0
+                    let normalized = min(1.0, stepCount / 1000)
+
+                    let signal = SignalEvent(
+                        timestamp: statistics.startDate,
+                        source: .motionActivity,
+                        value: normalized,
+                        uncertainty: 0.1,
+                        metadata: ["steps": String(Int(stepCount))]
+                    )
+                    signals.append(signal)
+                }
+                continuation.resume(returning: signals)
+            }
+
+            self.healthStore.execute(query)
         }
     }
 }

@@ -37,7 +37,8 @@ class CalendarManager: NSObject {
 
         let predicate = eventStore.predicateForEvents(
             withStart: thirtyDaysAgo,
-            end: now
+            end: now,
+            calendars: nil
         )
 
         let events = eventStore.events(matching: predicate)

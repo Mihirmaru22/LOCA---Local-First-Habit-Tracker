@@ -19,7 +19,7 @@ class MotionActivityManager: NSObject {
     }
 
     private func setupMotionDetection() {
-        if CMMotionManager.isAccelerometerAvailable() {
+        if motionManager.isAccelerometerAvailable {
             motionManager.accelerometerUpdateInterval = 60
         }
     }
@@ -27,8 +27,6 @@ class MotionActivityManager: NSObject {
     // MARK: - Motion Collection
 
     func collectMotion() async throws -> [SignalEvent] {
-        var signals: [SignalEvent] = []
-
         let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: Date())!
         let now = Date()
 
@@ -58,9 +56,8 @@ class MotionActivityManager: NSObject {
                         "avg_per_hour": String(format: "%.0f", avgStepsPerHour)
                     ]
                 )
-                signals.append(signal)
 
-                continuation.resume(returning: signals)
+                continuation.resume(returning: [signal])
             }
         }
     }

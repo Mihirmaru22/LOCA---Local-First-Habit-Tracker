@@ -25,7 +25,7 @@ class CalibrationManager {
     // MARK: - Weekly Calibration Loop
 
     func calibrateModels(modelContext: ModelContext) async {
-        guard let ctx = modelContext as? ModelContext? ?? self.modelContext else { return }
+        let ctx = self.modelContext ?? modelContext
 
         let calendar = Calendar.current
         let now = Date()
@@ -34,12 +34,13 @@ class CalibrationManager {
         // Fetch logged user check-ins with ground truth
         let descriptor = FetchDescriptor<SignalEvent>(
             predicate: #Predicate { event in
-                event.source == .explicitLog &&
                 event.timestamp >= sevenDaysAgo && event.timestamp <= now
             }
         )
 
-        guard let logs = try? ctx.fetch(descriptor), !logs.isEmpty else { return }
+        let allEvents = (try? ctx.fetch(descriptor)) ?? []
+        let logs = allEvents.filter { $0.source == .explicitLog }
+        guard !logs.isEmpty else { return }
 
         // Fetch inferred states for same period
         let statesDescriptor = FetchDescriptor<InferredState>(

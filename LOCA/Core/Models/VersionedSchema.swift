@@ -31,10 +31,26 @@ enum RippleSchemaV1: VersionedSchema {
     /// A `@Model` type absent from this array is invisible to the `ModelContainer`
     /// and causes a runtime crash during container initialisation. Update this list
     /// whenever a new `@Model` type is introduced to the project.
+    ///
+    /// The Personal Life Model entities (`SignalEvent`, `InferredState`, `LifeEvent`,
+    /// `WeeklyRegime`, `Chapter`, `Trait`, `Person`, `PersonAppearance`,
+    /// `UncertaintyRecord`, `ComposedView`) were added in Phases 3–5 before the
+    /// first production CloudKit sync, so appending them here does not violate the
+    /// post-release immutability rule documented above.
     static var models: [any PersistentModel.Type] {
         [
             HabitBoard.self,
             LogEntry.self,
+            SignalEvent.self,
+            InferredState.self,
+            LifeEvent.self,
+            WeeklyRegime.self,
+            Chapter.self,
+            Trait.self,
+            Person.self,
+            PersonAppearance.self,
+            UncertaintyRecord.self,
+            ComposedView.self,
         ]
     }
 }

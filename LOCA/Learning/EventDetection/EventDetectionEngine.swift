@@ -29,7 +29,7 @@ class EventDetectionEngine: NSObject, ObservableObject {
     // MARK: - Main Detection Loop
 
     func detectEventsForPastMonth(modelContext: ModelContext) async {
-        guard let ctx = self.modelContext ?? modelContext else { return }
+        let ctx = self.modelContext ?? modelContext
 
         do {
             let calendar = Calendar.current
@@ -185,12 +185,13 @@ class EventDetectionEngine: NSObject, ObservableObject {
 
         let descriptor = FetchDescriptor<SignalEvent>(
             predicate: #Predicate { event in
-                event.source == .location &&
                 event.timestamp >= weekStart && event.timestamp <= weekEnd
             }
         )
 
-        guard let events = try? modelContext.fetch(descriptor), !events.isEmpty else { return 0.5 }
+        let allLocationEvents = (try? modelContext.fetch(descriptor)) ?? []
+        let events = allLocationEvents.filter { $0.source == .location }
+        guard !events.isEmpty else { return 0.5 }
 
         var uniquePlaces = Set<String>()
         for event in events {
@@ -208,12 +209,13 @@ class EventDetectionEngine: NSObject, ObservableObject {
 
         let descriptor = FetchDescriptor<SignalEvent>(
             predicate: #Predicate { event in
-                event.source == .calendar &&
                 event.timestamp >= weekStart && event.timestamp <= weekEnd
             }
         )
 
-        guard let events = try? modelContext.fetch(descriptor), !events.isEmpty else { return 0.5 }
+        let allCalendarEvents = (try? modelContext.fetch(descriptor)) ?? []
+        let events = allCalendarEvents.filter { $0.source == .calendar }
+        guard !events.isEmpty else { return 0.5 }
 
         var socialEventCount = 0
         for event in events {
@@ -230,12 +232,13 @@ class EventDetectionEngine: NSObject, ObservableObject {
 
         let descriptor = FetchDescriptor<SignalEvent>(
             predicate: #Predicate { event in
-                event.source == .motionActivity &&
                 event.timestamp >= weekStart && event.timestamp <= weekEnd
             }
         )
 
-        guard let events = try? modelContext.fetch(descriptor), !events.isEmpty else { return 0.5 }
+        let allActivityEvents = (try? modelContext.fetch(descriptor)) ?? []
+        let events = allActivityEvents.filter { $0.source == .motionActivity }
+        guard !events.isEmpty else { return 0.5 }
 
         let avgActivity = events.map { $0.value }.reduce(0, +) / Double(events.count)
         return avgActivity

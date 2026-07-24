@@ -1,0 +1,63 @@
+//
+//  InferredStateModel.swift
+//  LOCA
+//
+//  Phase 3 — Inferred State entity (SwiftData @Model)
+//  Extracted from StateInferenceEngine.swift so this file can be included in
+//  every target whose ModelContainer registers RippleSchemaV1 (Main App + Widget)
+//  without pulling the @MainActor engine class and its inference-model
+//  dependencies into extension targets.
+//
+
+import Foundation
+import SwiftData
+
+@Model
+final class InferredState {
+    var id: UUID = UUID()
+    var timestamp: Date
+    var hourStart: Date
+
+    var energy: Double  // 0–1
+    var energyUncertainty: Double
+
+    var stress: Double  // 0–1
+    var stressUncertainty: Double
+
+    var focus: Double  // 0–1
+    var focusUncertainty: Double
+
+    var mood: Double  // 0–1
+    var moodUncertainty: Double
+
+    var isCalibrated: Bool = false
+    var calibrationError: Double?
+
+    init(
+        timestamp: Date,
+        energy: Double,
+        energyUncertainty: Double,
+        stress: Double,
+        stressUncertainty: Double,
+        focus: Double,
+        focusUncertainty: Double,
+        mood: Double,
+        moodUncertainty: Double
+    ) {
+        self.timestamp = timestamp
+        let comps = Calendar.current.dateComponents([.year, .month, .day, .hour], from: timestamp)
+        self.hourStart = Calendar.current.date(from: comps) ?? timestamp
+        self.energy = Self.clamp(energy)
+        self.energyUncertainty = Self.clamp(energyUncertainty)
+        self.stress = Self.clamp(stress)
+        self.stressUncertainty = Self.clamp(stressUncertainty)
+        self.focus = Self.clamp(focus)
+        self.focusUncertainty = Self.clamp(focusUncertainty)
+        self.mood = Self.clamp(mood)
+        self.moodUncertainty = Self.clamp(moodUncertainty)
+    }
+
+    private static func clamp(_ value: Double) -> Double {
+        max(0, min(1, value))
+    }
+}

@@ -114,6 +114,54 @@
 		FD6101E26D004E2C8AA1ADD5 /* HabitBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C709F0147F14CE0AEDACAE8 /* HabitBoard.swift */; };
 		FD67DA6924D0492880CEB1EA /* PersistenceError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 007029E177424E23BA4737C3 /* PersistenceError.swift */; };
 		FE1C77B02737FF7D02B147F9 /* DSComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE3AFDA24101174CA0C31F34 /* DSComponents.swift */; };
+		0523E49AAE5243F995956550 /* SignalCollectionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B3B92460BE743CFADF3C6DE /* SignalCollectionCoordinator.swift */; };
+		243DF5BB4534442BAE4CAA1F /* ChapterListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA5DC44C46F541A3BDC55226 /* ChapterListView.swift */; };
+		D4299A41A8464082A3FE9B4F /* LifeSceneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B46892C881A4E868F105317 /* LifeSceneView.swift */; };
+		1F430BDCCCFA4A3C9B922712 /* MultiEntityComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9871402E3D394DAB818D2D83 /* MultiEntityComposer.swift */; };
+		AD8C8D7F055F47C3904427AF /* PeopleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47334E5DAB804ED49D6E573F /* PeopleView.swift */; };
+		2CFB92818593426EBED0AF43 /* PersonalLifeListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81139E15C57243C89D3BF541 /* PersonalLifeListView.swift */; };
+		C2C67C2B18CB4157B1BA33C2 /* PersonalLifeValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC531F8F7F24B14829AA3B6 /* PersonalLifeValidation.swift */; };
+		DCFB2912F8A34AE79CC6DAB3 /* PersonalLifeViewUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C33A4D4C6EE4EC6804620D6 /* PersonalLifeViewUI.swift */; };
+		F3EEFE6DE7594FACA63F1BB0 /* TraitSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E78DF6BCC124F6EA5C653EF /* TraitSummaryView.swift */; };
+		051587161C4246C9A9239035 /* ViewCompositionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = E64F904AABAC4554B7B20EBA /* ViewCompositionEngine.swift */; };
+		52550F5555DD45B3AE9E3410 /* SignalCollectionStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EF39B9BE4644225B12B98C9 /* SignalCollectionStatusView.swift */; };
+		D82ED360B9674E1BA53018BD /* ChapterBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B3BE72F49504B60836C746D /* ChapterBuilder.swift */; };
+		B50218B1D1A54AB68A40FBF6 /* ChapterModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86BB7A0D33C447FB8707EA34 /* ChapterModel.swift */; };
+		96E063DD36EB43399AFA0BF7 /* PeopleExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65A7F2853AAF486B8EF5F0A9 /* PeopleExtractor.swift */; };
+		0BF22EFB288A4CDF88663999 /* PersonModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 226D81B014DD44DE80D93BB4 /* PersonModel.swift */; };
+		CC1423EE289542DB8E517FE3 /* TraitInferenceEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDF5D0F2E2E440EA90A108EE /* TraitInferenceEngine.swift */; };
+		D8151D4CE5264FA8AB09BDC7 /* TraitModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 897271B11E814E59B5C885B9 /* TraitModel.swift */; };
+		E06D17FC11E04391AC6EBEFE /* AnomalyDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE07B2B823DA4E2398F1027A /* AnomalyDetector.swift */; };
+		DBCFA44522BF49D293AF3CC8 /* EventClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC844D85A9FD4ECF9D89F145 /* EventClassifier.swift */; };
+		16F708C81EA942FAA91F5452 /* EventDetectionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD40BE633CE54E419A4EF713 /* EventDetectionEngine.swift */; };
+		54C2471DD4294A9F928AD82E /* LifeEventModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C5D8BAD568F45938AF6725C /* LifeEventModels.swift */; };
+		C0E9F32F198346EB9594666C /* RegimePersistenceChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F8BC6E762E54E1B8E9521D1 /* RegimePersistenceChecker.swift */; };
+		01E8EF1FCDA54E0BBC16C974 /* CalibrationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A69413C28A84339B74B0055 /* CalibrationManager.swift */; };
+		4430DB9C52844ABB84932C8C /* EnergyInferenceModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCECBBB41DE8467FAE7C21CB /* EnergyInferenceModel.swift */; };
+		44905AC223B74A5F83482B08 /* FocusInferenceModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710CC3A3E6F44B77B813D4D6 /* FocusInferenceModel.swift */; };
+		211E063B030E45AEBA658532 /* MoodInferenceModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F51567A57345B58FDEEA69 /* MoodInferenceModel.swift */; };
+		064377980C6F45DBB5CC4A41 /* StateInferenceEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 128F5204A29A40D69E2B41B6 /* StateInferenceEngine.swift */; };
+		CC952E37F0884B38A0F30C69 /* StressInferenceModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07BC26C094C44A98BDD3B7D0 /* StressInferenceModel.swift */; };
+		807062DE124B45279CDF5B69 /* CalendarManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD761CD7D2024B2AAB343DA8 /* CalendarManager.swift */; };
+		24DE42FD010E430386C1D8BB /* DeviceActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01A7B9F0356748038FFA4595 /* DeviceActivityManager.swift */; };
+		4FA60F6B0763449DA612813A /* HealthKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57F41BC5CD854A20A6D4D140 /* HealthKitManager.swift */; };
+		E1512F7874A947D78642C616 /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 866A1B52FC0F4202822A0DE8 /* LocationManager.swift */; };
+		7B3E5B9BCBF2416B83277B58 /* MotionActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29BD4C07E8D7423E994BE833 /* MotionActivityManager.swift */; };
+		E90091F4530042528F3D326F /* SignalManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2B6F24F5644421B9C7DE2A2 /* SignalManager.swift */; };
+		79978C55F37D44D988F02540 /* SignalModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47CE243A75594807A935F050 /* SignalModels.swift */; };
+		9426896D3B89443EA3F342BD /* UncertaintyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D7E106DBFD4436CB57012CD /* UncertaintyModels.swift */; };
+		252DBB9DA99B4BB09950A0FF /* UncertaintyValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD70FA3CF4D34DD1ADE3F040 /* UncertaintyValidator.swift */; };
+		DC4EDB80F8D24BAFAD6F52A4 /* ViewRenderingSpecification.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40136964818440CB183624C /* ViewRenderingSpecification.swift */; };
+		3ACB9A8F2533403292FD6037 /* SignalModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47CE243A75594807A935F050 /* SignalModels.swift */; };
+		B60336F098644039ACA597FD /* UncertaintyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D7E106DBFD4436CB57012CD /* UncertaintyModels.swift */; };
+		BC8047FE689A47BB85E02F3E /* LifeEventModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C5D8BAD568F45938AF6725C /* LifeEventModels.swift */; };
+		118DAEF8F3154CD39D9D2C7E /* ChapterModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86BB7A0D33C447FB8707EA34 /* ChapterModel.swift */; };
+		E801EFE5D014433B8BD86123 /* TraitModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 897271B11E814E59B5C885B9 /* TraitModel.swift */; };
+		B76A92589DB44C2F8361FF95 /* PersonModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 226D81B014DD44DE80D93BB4 /* PersonModel.swift */; };
+		E48388FCBA37469DAE5986DB /* InferredStateModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 126D0D524CF043C7B04C4E5C /* InferredStateModel.swift */; };
+		55D99B761F0B4A719C759206 /* InferredStateModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 126D0D524CF043C7B04C4E5C /* InferredStateModel.swift */; };
+		1FE9F6B42363404BB74AC56A /* ComposedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA052AE8F12E4A9D82739619 /* ComposedViewModel.swift */; };
+		848B1F9D35DC470B991C3EF8 /* ComposedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA052AE8F12E4A9D82739619 /* ComposedViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -247,6 +295,46 @@
 		FADE00000000000000000013 /* HeatmapDataProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeatmapDataProviderTests.swift; sourceTree = "<group>"; };
 		FC3230A263C5088C154C34B8 /* ConsistencyChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConsistencyChartView.swift; sourceTree = "<group>"; };
 		FE3AFDA24101174CA0C31F34 /* DSComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSComponents.swift; sourceTree = "<group>"; };
+		5B3B92460BE743CFADF3C6DE /* SignalCollectionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalCollectionCoordinator.swift; sourceTree = "<group>"; };
+		CA5DC44C46F541A3BDC55226 /* ChapterListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChapterListView.swift; sourceTree = "<group>"; };
+		8B46892C881A4E868F105317 /* LifeSceneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeSceneView.swift; sourceTree = "<group>"; };
+		9871402E3D394DAB818D2D83 /* MultiEntityComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiEntityComposer.swift; sourceTree = "<group>"; };
+		47334E5DAB804ED49D6E573F /* PeopleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleView.swift; sourceTree = "<group>"; };
+		81139E15C57243C89D3BF541 /* PersonalLifeListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalLifeListView.swift; sourceTree = "<group>"; };
+		6DC531F8F7F24B14829AA3B6 /* PersonalLifeValidation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalLifeValidation.swift; sourceTree = "<group>"; };
+		8C33A4D4C6EE4EC6804620D6 /* PersonalLifeViewUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalLifeViewUI.swift; sourceTree = "<group>"; };
+		0E78DF6BCC124F6EA5C653EF /* TraitSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TraitSummaryView.swift; sourceTree = "<group>"; };
+		E64F904AABAC4554B7B20EBA /* ViewCompositionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewCompositionEngine.swift; sourceTree = "<group>"; };
+		6EF39B9BE4644225B12B98C9 /* SignalCollectionStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalCollectionStatusView.swift; sourceTree = "<group>"; };
+		5B3BE72F49504B60836C746D /* ChapterBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChapterBuilder.swift; sourceTree = "<group>"; };
+		86BB7A0D33C447FB8707EA34 /* ChapterModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChapterModel.swift; sourceTree = "<group>"; };
+		65A7F2853AAF486B8EF5F0A9 /* PeopleExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleExtractor.swift; sourceTree = "<group>"; };
+		226D81B014DD44DE80D93BB4 /* PersonModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonModel.swift; sourceTree = "<group>"; };
+		FDF5D0F2E2E440EA90A108EE /* TraitInferenceEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TraitInferenceEngine.swift; sourceTree = "<group>"; };
+		897271B11E814E59B5C885B9 /* TraitModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TraitModel.swift; sourceTree = "<group>"; };
+		CE07B2B823DA4E2398F1027A /* AnomalyDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnomalyDetector.swift; sourceTree = "<group>"; };
+		BC844D85A9FD4ECF9D89F145 /* EventClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventClassifier.swift; sourceTree = "<group>"; };
+		CD40BE633CE54E419A4EF713 /* EventDetectionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventDetectionEngine.swift; sourceTree = "<group>"; };
+		8C5D8BAD568F45938AF6725C /* LifeEventModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeEventModels.swift; sourceTree = "<group>"; };
+		0F8BC6E762E54E1B8E9521D1 /* RegimePersistenceChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegimePersistenceChecker.swift; sourceTree = "<group>"; };
+		4A69413C28A84339B74B0055 /* CalibrationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalibrationManager.swift; sourceTree = "<group>"; };
+		DCECBBB41DE8467FAE7C21CB /* EnergyInferenceModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnergyInferenceModel.swift; sourceTree = "<group>"; };
+		710CC3A3E6F44B77B813D4D6 /* FocusInferenceModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusInferenceModel.swift; sourceTree = "<group>"; };
+		D1F51567A57345B58FDEEA69 /* MoodInferenceModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodInferenceModel.swift; sourceTree = "<group>"; };
+		128F5204A29A40D69E2B41B6 /* StateInferenceEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateInferenceEngine.swift; sourceTree = "<group>"; };
+		07BC26C094C44A98BDD3B7D0 /* StressInferenceModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StressInferenceModel.swift; sourceTree = "<group>"; };
+		FD761CD7D2024B2AAB343DA8 /* CalendarManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarManager.swift; sourceTree = "<group>"; };
+		01A7B9F0356748038FFA4595 /* DeviceActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceActivityManager.swift; sourceTree = "<group>"; };
+		57F41BC5CD854A20A6D4D140 /* HealthKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitManager.swift; sourceTree = "<group>"; };
+		866A1B52FC0F4202822A0DE8 /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
+		29BD4C07E8D7423E994BE833 /* MotionActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionActivityManager.swift; sourceTree = "<group>"; };
+		E2B6F24F5644421B9C7DE2A2 /* SignalManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalManager.swift; sourceTree = "<group>"; };
+		47CE243A75594807A935F050 /* SignalModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalModels.swift; sourceTree = "<group>"; };
+		8D7E106DBFD4436CB57012CD /* UncertaintyModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UncertaintyModels.swift; sourceTree = "<group>"; };
+		BD70FA3CF4D34DD1ADE3F040 /* UncertaintyValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UncertaintyValidator.swift; sourceTree = "<group>"; };
+		D40136964818440CB183624C /* ViewRenderingSpecification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewRenderingSpecification.swift; sourceTree = "<group>"; };
+		126D0D524CF043C7B04C4E5C /* InferredStateModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InferredStateModel.swift; sourceTree = "<group>"; };
+		EA052AE8F12E4A9D82739619 /* ComposedViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposedViewModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -324,6 +412,7 @@
 			isa = PBXGroup;
 			children = (
 				80DC4E439C544786958675F7 /* LOCAApp.swift */,
+				5B3B92460BE743CFADF3C6DE /* SignalCollectionCoordinator.swift */,
 				1F4E506745484B71A76301BD /* CloudKitSyncCoordinator.swift */,
 				F2805490003546CEAA6A8872 /* WidgetRefreshCoordinator.swift */,
 				AC2A0A306DFA5ED6612B1D4B /* SyncStatusCoordinator.swift */,
@@ -394,6 +483,7 @@
 			isa = PBXGroup;
 			children = (
 				7AF58577C2234442B1B894B8 /* Analytics */,
+				AA11000000000000000001AB /* Learning */,
 				6F74932D21B24EAEAD2C0AF6 /* App */,
 				7217A5FC0D2E4084AA1CCF76 /* Core */,
 				EC014690E49B49D88F75E7F7 /* Features */,
@@ -475,6 +565,8 @@
 			isa = PBXGroup;
 			children = (
 				C98301DF1FB24E4484DAFE03 /* Dashboard */,
+				AA11000000000000000007AB /* PersonalLifeView */,
+				AA11000000000000000008AB /* Settings */,
 				707B3ADA96F94C6090385589 /* HabitDetail */,
 				B325876734E272C06C77D326 /* HabitManagement */,
 			);
@@ -505,6 +597,106 @@
 				FADE00000000000000000013 /* HeatmapDataProviderTests.swift */,
 			);
 			path = LOCATests;
+			sourceTree = "<group>";
+		};
+		AA11000000000000000002AB /* Entities */ = {
+			isa = PBXGroup;
+			children = (
+				5B3BE72F49504B60836C746D /* ChapterBuilder.swift */,
+				86BB7A0D33C447FB8707EA34 /* ChapterModel.swift */,
+				65A7F2853AAF486B8EF5F0A9 /* PeopleExtractor.swift */,
+				226D81B014DD44DE80D93BB4 /* PersonModel.swift */,
+				FDF5D0F2E2E440EA90A108EE /* TraitInferenceEngine.swift */,
+				897271B11E814E59B5C885B9 /* TraitModel.swift */,
+			);
+			path = Entities;
+			sourceTree = "<group>";
+		};
+		AA11000000000000000003AB /* EventDetection */ = {
+			isa = PBXGroup;
+			children = (
+				CE07B2B823DA4E2398F1027A /* AnomalyDetector.swift */,
+				BC844D85A9FD4ECF9D89F145 /* EventClassifier.swift */,
+				CD40BE633CE54E419A4EF713 /* EventDetectionEngine.swift */,
+				8C5D8BAD568F45938AF6725C /* LifeEventModels.swift */,
+				0F8BC6E762E54E1B8E9521D1 /* RegimePersistenceChecker.swift */,
+			);
+			path = EventDetection;
+			sourceTree = "<group>";
+		};
+		AA11000000000000000004AB /* Inference */ = {
+			isa = PBXGroup;
+			children = (
+				4A69413C28A84339B74B0055 /* CalibrationManager.swift */,
+				DCECBBB41DE8467FAE7C21CB /* EnergyInferenceModel.swift */,
+				710CC3A3E6F44B77B813D4D6 /* FocusInferenceModel.swift */,
+				D1F51567A57345B58FDEEA69 /* MoodInferenceModel.swift */,
+				128F5204A29A40D69E2B41B6 /* StateInferenceEngine.swift */,
+				07BC26C094C44A98BDD3B7D0 /* StressInferenceModel.swift */,
+				126D0D524CF043C7B04C4E5C /* InferredStateModel.swift */,
+			);
+			path = Inference;
+			sourceTree = "<group>";
+		};
+		AA11000000000000000005AB /* Managers */ = {
+			isa = PBXGroup;
+			children = (
+				FD761CD7D2024B2AAB343DA8 /* CalendarManager.swift */,
+				01A7B9F0356748038FFA4595 /* DeviceActivityManager.swift */,
+				57F41BC5CD854A20A6D4D140 /* HealthKitManager.swift */,
+				866A1B52FC0F4202822A0DE8 /* LocationManager.swift */,
+				29BD4C07E8D7423E994BE833 /* MotionActivityManager.swift */,
+				E2B6F24F5644421B9C7DE2A2 /* SignalManager.swift */,
+			);
+			path = Managers;
+			sourceTree = "<group>";
+		};
+		AA11000000000000000006AB /* LearningModels */ = {
+			isa = PBXGroup;
+			children = (
+				47CE243A75594807A935F050 /* SignalModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		AA11000000000000000001AB /* Learning */ = {
+			isa = PBXGroup;
+			children = (
+				AA11000000000000000002AB /* Entities */,
+				AA11000000000000000003AB /* EventDetection */,
+				AA11000000000000000004AB /* Inference */,
+				AA11000000000000000005AB /* Managers */,
+				AA11000000000000000006AB /* Models */,
+				8D7E106DBFD4436CB57012CD /* UncertaintyModels.swift */,
+				BD70FA3CF4D34DD1ADE3F040 /* UncertaintyValidator.swift */,
+				D40136964818440CB183624C /* ViewRenderingSpecification.swift */,
+			);
+			path = Learning;
+			sourceTree = "<group>";
+		};
+		AA11000000000000000007AB /* PersonalLifeView */ = {
+			isa = PBXGroup;
+			children = (
+				CA5DC44C46F541A3BDC55226 /* ChapterListView.swift */,
+				8B46892C881A4E868F105317 /* LifeSceneView.swift */,
+				9871402E3D394DAB818D2D83 /* MultiEntityComposer.swift */,
+				47334E5DAB804ED49D6E573F /* PeopleView.swift */,
+				81139E15C57243C89D3BF541 /* PersonalLifeListView.swift */,
+				6DC531F8F7F24B14829AA3B6 /* PersonalLifeValidation.swift */,
+				8C33A4D4C6EE4EC6804620D6 /* PersonalLifeViewUI.swift */,
+				0E78DF6BCC124F6EA5C653EF /* TraitSummaryView.swift */,
+				E64F904AABAC4554B7B20EBA /* ViewCompositionEngine.swift */,
+				EA052AE8F12E4A9D82739619 /* ComposedViewModel.swift */,
+			);
+			path = PersonalLifeView;
+			sourceTree = "<group>";
+		};
+		AA11000000000000000008AB /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				6EF39B9BE4644225B12B98C9 /* SignalCollectionStatusView.swift */,
+			);
+			path = Settings;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -671,6 +863,14 @@
 				CF4D3E4F5A6B7C8D9E0F1A2B /* CheckInWriter.swift in Sources */,
 				F18CA204FECB9D1C102ECADE /* WidgetRefreshCoordinator.swift in Sources */,
 				052F419EE842417885F32906 /* Animation+Extensions.swift in Sources */,
+				3ACB9A8F2533403292FD6037 /* SignalModels.swift in Sources */,
+				B60336F098644039ACA597FD /* UncertaintyModels.swift in Sources */,
+				BC8047FE689A47BB85E02F3E /* LifeEventModels.swift in Sources */,
+				118DAEF8F3154CD39D9D2C7E /* ChapterModel.swift in Sources */,
+				E801EFE5D014433B8BD86123 /* TraitModel.swift in Sources */,
+				B76A92589DB44C2F8361FF95 /* PersonModel.swift in Sources */,
+				55D99B761F0B4A719C759206 /* InferredStateModel.swift in Sources */,
+				848B1F9D35DC470B991C3EF8 /* ComposedViewModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -761,6 +961,46 @@
 				5A6690E66AB54A863226729E /* InterventionNarrator.swift in Sources */,
 				1B55EB309A9A743191C1A991 /* PressableButtonStyle.swift in Sources */,
 				CAAB0DCEF011CD1E23F2675D /* Haptics.swift in Sources */,
+				0523E49AAE5243F995956550 /* SignalCollectionCoordinator.swift in Sources */,
+				243DF5BB4534442BAE4CAA1F /* ChapterListView.swift in Sources */,
+				D4299A41A8464082A3FE9B4F /* LifeSceneView.swift in Sources */,
+				1F430BDCCCFA4A3C9B922712 /* MultiEntityComposer.swift in Sources */,
+				AD8C8D7F055F47C3904427AF /* PeopleView.swift in Sources */,
+				2CFB92818593426EBED0AF43 /* PersonalLifeListView.swift in Sources */,
+				C2C67C2B18CB4157B1BA33C2 /* PersonalLifeValidation.swift in Sources */,
+				DCFB2912F8A34AE79CC6DAB3 /* PersonalLifeViewUI.swift in Sources */,
+				F3EEFE6DE7594FACA63F1BB0 /* TraitSummaryView.swift in Sources */,
+				051587161C4246C9A9239035 /* ViewCompositionEngine.swift in Sources */,
+				52550F5555DD45B3AE9E3410 /* SignalCollectionStatusView.swift in Sources */,
+				D82ED360B9674E1BA53018BD /* ChapterBuilder.swift in Sources */,
+				B50218B1D1A54AB68A40FBF6 /* ChapterModel.swift in Sources */,
+				96E063DD36EB43399AFA0BF7 /* PeopleExtractor.swift in Sources */,
+				0BF22EFB288A4CDF88663999 /* PersonModel.swift in Sources */,
+				CC1423EE289542DB8E517FE3 /* TraitInferenceEngine.swift in Sources */,
+				D8151D4CE5264FA8AB09BDC7 /* TraitModel.swift in Sources */,
+				E06D17FC11E04391AC6EBEFE /* AnomalyDetector.swift in Sources */,
+				DBCFA44522BF49D293AF3CC8 /* EventClassifier.swift in Sources */,
+				16F708C81EA942FAA91F5452 /* EventDetectionEngine.swift in Sources */,
+				54C2471DD4294A9F928AD82E /* LifeEventModels.swift in Sources */,
+				C0E9F32F198346EB9594666C /* RegimePersistenceChecker.swift in Sources */,
+				01E8EF1FCDA54E0BBC16C974 /* CalibrationManager.swift in Sources */,
+				4430DB9C52844ABB84932C8C /* EnergyInferenceModel.swift in Sources */,
+				44905AC223B74A5F83482B08 /* FocusInferenceModel.swift in Sources */,
+				211E063B030E45AEBA658532 /* MoodInferenceModel.swift in Sources */,
+				064377980C6F45DBB5CC4A41 /* StateInferenceEngine.swift in Sources */,
+				CC952E37F0884B38A0F30C69 /* StressInferenceModel.swift in Sources */,
+				807062DE124B45279CDF5B69 /* CalendarManager.swift in Sources */,
+				24DE42FD010E430386C1D8BB /* DeviceActivityManager.swift in Sources */,
+				4FA60F6B0763449DA612813A /* HealthKitManager.swift in Sources */,
+				E1512F7874A947D78642C616 /* LocationManager.swift in Sources */,
+				7B3E5B9BCBF2416B83277B58 /* MotionActivityManager.swift in Sources */,
+				E90091F4530042528F3D326F /* SignalManager.swift in Sources */,
+				79978C55F37D44D988F02540 /* SignalModels.swift in Sources */,
+				9426896D3B89443EA3F342BD /* UncertaintyModels.swift in Sources */,
+				252DBB9DA99B4BB09950A0FF /* UncertaintyValidator.swift in Sources */,
+				DC4EDB80F8D24BAFAD6F52A4 /* ViewRenderingSpecification.swift in Sources */,
+				E48388FCBA37469DAE5986DB /* InferredStateModel.swift in Sources */,
+				1FE9F6B42363404BB74AC56A /* ComposedViewModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
