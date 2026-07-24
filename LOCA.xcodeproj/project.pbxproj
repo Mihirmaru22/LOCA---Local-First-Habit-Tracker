@@ -142,6 +142,7 @@
 		B20E25D2D2EB410CB6FB99C3 /* ReachView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 531BE0CE95E040FDAE7D53BB /* ReachView.swift */; };
 		541E0FB6494542E09848C63A /* AskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39158669CE3E4B559D032FE4 /* AskView.swift */; };
 		78B4D940544F4F6988723F5A /* DirectionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CD3EF36A4504EC2B092EDD8 /* DirectionModel.swift */; };
+		FA11FA11FA11FA11FA11FA11 /* DirectionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CD3EF36A4504EC2B092EDD8 /* DirectionModel.swift */; };
 		CC0FA28CBF7F4C7997328A4F /* DirectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46B7109E93264DE9A5FAB54E /* DirectionView.swift */; };
 		DEC886610E32444B8AE7435B /* DirectionCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94E2C16D6CB34D8FB7CB8680 /* DirectionCaptureView.swift */; };
 		5E58547710E44338B0203784 /* RelationshipGraphEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11954C214BE34D96BB07C1B9 /* RelationshipGraphEngine.swift */; };
@@ -910,6 +911,7 @@
 				118DAEF8F3154CD39D9D2C7E /* ChapterModel.swift in Sources */,
 				E801EFE5D014433B8BD86123 /* TraitModel.swift in Sources */,
 				B76A92589DB44C2F8361FF95 /* PersonModel.swift in Sources */,
+				FA11FA11FA11FA11FA11FA11 /* DirectionModel.swift in Sources */,
 				55D99B761F0B4A719C759206 /* InferredStateModel.swift in Sources */,
 				848B1F9D35DC470B991C3EF8 /* ComposedViewModel.swift in Sources */,
 			);
