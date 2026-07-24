@@ -153,7 +153,6 @@ struct HabitCardView: View {
 
 // MARK: - Preview
 
-#if false  // TEMP (Phase-L build isolation): disabled to isolate swift-frontend #Preview macro crash.
 #Preview {
     let q = HabitBoard(name: "Running", metricType: 1, targetValue: 5, unitLabel: "mi", colorIndex: 0)
     q.currentStreak = 5; q.longestStreak = 12
@@ -173,5 +172,4 @@ struct HabitCardView: View {
     }
     .listStyle(.sidebar)
 }
-#endif
 
