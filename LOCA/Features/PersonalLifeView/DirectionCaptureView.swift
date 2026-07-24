@@ -176,7 +176,7 @@ struct DirectionCaptureView: View {
     }
 
     private var settledColor: Color {
-        settledness < 0.4 ? DS.Color.textTertiary : .tint
+        settledness < 0.4 ? DS.Color.textTertiary : Color.accentColor
     }
 
     // MARK: - Action Row

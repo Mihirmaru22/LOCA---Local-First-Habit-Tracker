@@ -126,7 +126,7 @@ struct DirectionView: View {
     private func valuesIntentionsSection(_ dir: Direction) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.md) {
             if !dir.values.isEmpty {
-                TokenSection(label: "What matters", tokens: dir.values, color: .tint)
+                TokenSection(label: "What matters", tokens: dir.values, color: .accentColor)
             }
             if !dir.intentions.isEmpty {
                 TokenSection(label: "Moving toward", tokens: dir.intentions, color: DS.Color.textSecondary)
@@ -340,7 +340,7 @@ struct DirectionView: View {
     // MARK: - Helpers
 
     private func settledColor(_ v: Double) -> Color {
-        v < 0.4 ? DS.Color.textTertiary : .tint
+        v < 0.4 ? DS.Color.textTertiary : Color.accentColor
     }
 
     private func settledLabel(_ v: Double) -> String {
