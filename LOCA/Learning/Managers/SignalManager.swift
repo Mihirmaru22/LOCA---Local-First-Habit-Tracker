@@ -93,12 +93,49 @@ class SignalManager: NSObject, ObservableObject {
 
             await aggregateSignals(modelContext: modelContext)
 
+            // Derive higher-level structure from the raw signals just collected.
+            // This is the seam `aggregateSignals` always pointed at: signals →
+            // states → events → chapters/traits/people. Each stage is idempotent,
+            // so it is safe to run on every collection cycle.
+            await runLifeModelPipeline(modelContext: modelContext)
+
             lastUpdateTime = now
             collectionError = nil
 
         } catch {
             collectionError = error.localizedDescription
         }
+    }
+
+    // MARK: - Life Model Pipeline
+
+    /// Runs the inference and structure pipeline over the signals in `modelContext`,
+    /// in dependency order. Every stage guards against empty inputs and is
+    /// idempotent, so a fresh device (no permissions, no signals) produces nothing
+    /// and repeated runs converge rather than accumulate.
+    ///
+    /// The engines are `@MainActor` by design (they hold the `ModelContext`
+    /// directly), so the pipeline runs on the main actor. Each stage's work is
+    /// bounded — a day of signals for inference, a month of states for detection.
+    private func runLifeModelPipeline(modelContext: ModelContext) async {
+        // 1. Raw signals → hourly States (energy, stress, focus, mood).
+        let stateEngine = StateInferenceEngine.shared
+        stateEngine.setModelContext(modelContext)
+        await stateEngine.inferStatesForPastDay(modelContext: modelContext)
+
+        // 2. States → Life Events (coordinated, sustained regime shifts).
+        let eventEngine = EventDetectionEngine.shared
+        eventEngine.setModelContext(modelContext)
+        await eventEngine.detectEventsForPastMonth(modelContext: modelContext)
+
+        // 3. Life Events → Chapters (named intervals with regime-scoped baselines).
+        try? ChapterBuilder.shared.buildChapters(modelContext: modelContext)
+
+        // 4. States → Traits (slow-moving dispositions).
+        try? TraitInferenceEngine.shared.updateTraits(modelContext: modelContext)
+
+        // 5. Calendar / logged notes → People (relationships accruing over time).
+        try? await PeopleExtractor.shared.extractPeople(modelContext: modelContext)
     }
 
     // MARK: - Aggregation

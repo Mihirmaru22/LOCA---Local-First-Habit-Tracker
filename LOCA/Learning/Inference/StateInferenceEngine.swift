@@ -53,6 +53,21 @@ class StateInferenceEngine: NSObject, ObservableObject {
 
             guard let signals = try? ctx.fetch(descriptor) else { return }
 
+            // Idempotent recompute: this method rebuilds the past day's hourly
+            // states from scratch every run, so clear any states already stored in
+            // the window first. Without this, running on a collection cadence would
+            // insert duplicate InferredStates for the same hours indefinitely.
+            let staleStatesDescriptor = FetchDescriptor<InferredState>(
+                predicate: #Predicate { state in
+                    state.timestamp >= yesterday && state.timestamp <= now
+                }
+            )
+            if let staleStates = try? ctx.fetch(staleStatesDescriptor) {
+                for state in staleStates {
+                    ctx.delete(state)
+                }
+            }
+
             // Group signals by hour
             let hourlySignals = groupSignalsByHour(signals)
 

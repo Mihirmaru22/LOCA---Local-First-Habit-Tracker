@@ -47,47 +47,59 @@ struct PersonalLifeListView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                if composedViews.isEmpty && !isLoading {
-                    EmptyStateView(
-                        action: { showNewQuestionSheet = true }
-                    )
-                } else {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: DS.Space.lg) {
-                            // MARK: - Header
-                            VStack(alignment: .leading, spacing: DS.Space.sm) {
-                                Text("Personal Life")
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                                    .foregroundStyle(DS.Color.textPrimary)
+            ScrollView {
+                VStack(alignment: .leading, spacing: DS.Space.lg) {
+                    // MARK: - Header
+                    VStack(alignment: .leading, spacing: DS.Space.sm) {
+                        Text("Personal Life")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundStyle(DS.Color.textPrimary)
 
-                                Text("See your life as you do—through your own lens, not ours.")
-                                    .font(.caption)
-                                    .foregroundStyle(DS.Color.textSecondary)
-                            }
-                            .padding(DS.Space.lg)
+                        Text("See your life as you do—through your own lens, not ours.")
+                            .font(.caption)
+                            .foregroundStyle(DS.Color.textSecondary)
+                    }
+                    .padding(.horizontal, DS.Space.lg)
+                    .padding(.top, DS.Space.md)
 
-                            // MARK: - Views List
-                            if isLoading {
-                                ProgressView()
-                                    .frame(maxWidth: .infinity, alignment: .center)
-                                    .padding(DS.Space.lg)
-                            } else {
-                                ForEach(composedViews, id: \.id) { view in
-                                    NavigationLink(destination: {
-                                        PersonalLifeViewUI(composedView: view)
-                                    }) {
-                                        ViewCard(composedView: view)
-                                    }
+                    // MARK: - Explore (the auto-built structure)
+                    exploreSection
+
+                    Divider()
+                        .padding(.horizontal, DS.Space.lg)
+
+                    // MARK: - Questions (Ask → View)
+                    VStack(alignment: .leading, spacing: DS.Space.md) {
+                        Text("Your Questions")
+                            .font(DS.Text.caption)
+                            .foregroundStyle(DS.Color.textSecondary)
+                            .textCase(.uppercase)
+                            .padding(.horizontal, DS.Space.lg)
+
+                        if isLoading {
+                            ProgressView()
+                                .frame(maxWidth: .infinity, alignment: .center)
+                                .padding(DS.Space.lg)
+                        } else if composedViews.isEmpty {
+                            questionsEmptyState
+                        } else {
+                            ForEach(composedViews, id: \.id) { view in
+                                NavigationLink {
+                                    PersonalLifeViewUI(composedView: view)
+                                } label: {
+                                    ViewCard(composedView: view)
                                 }
+                                .buttonStyle(.plain)
+                                .padding(.horizontal, DS.Space.lg)
                             }
-
-                            Spacer(minLength: DS.Space.xxxl)
                         }
                     }
+
+                    Spacer(minLength: DS.Space.xxxl)
                 }
             }
+            .navigationTitle("Personal Life")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -109,6 +121,50 @@ struct PersonalLifeListView: View {
                 loadComposedViews()
             }
         }
+    }
+
+    // MARK: - Explore Section
+
+    private var exploreSection: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: DS.Space.md) {
+                ExploreCard(title: "Your Life", subtitle: "The whole picture", icon: "telescope") {
+                    LifeSceneView()
+                }
+                ExploreCard(title: "Chapters", subtitle: "Life in intervals", icon: "book.pages") {
+                    ChapterListView()
+                }
+                ExploreCard(title: "People", subtitle: "Who's around you", icon: "person.2.fill") {
+                    PeopleView()
+                }
+                ExploreCard(title: "Traits", subtitle: "Your dispositions", icon: "person.fill") {
+                    TraitSummaryView()
+                }
+            }
+            .padding(.horizontal, DS.Space.lg)
+        }
+    }
+
+    // MARK: - Questions Empty State
+
+    private var questionsEmptyState: some View {
+        VStack(alignment: .leading, spacing: DS.Space.sm) {
+            Text("Ask a question about your life and LOCA will show you the answer, not tell it.")
+                .font(.caption)
+                .foregroundStyle(DS.Color.textSecondary)
+
+            Button(action: { showNewQuestionSheet = true }) {
+                HStack {
+                    Image(systemName: "plus")
+                    Text("Ask a Question")
+                }
+                .frame(maxWidth: .infinity)
+                .padding(DS.Space.md)
+                .background(.tint, in: RoundedRectangle(cornerRadius: DS.Radius.control))
+                .foregroundStyle(.white)
+            }
+        }
+        .padding(.horizontal, DS.Space.lg)
     }
 
     private func loadComposedViews() {
@@ -158,43 +214,44 @@ struct PersonalLifeListView: View {
     }
 }
 
-// MARK: - Empty State
+// MARK: - Explore Card
 
-private struct EmptyStateView: View {
-    let action: () -> Void
+/// A tappable card in the horizontal Explore row that pushes one of the
+/// auto-built structure surfaces (Life Scene, Chapters, People, Traits).
+private struct ExploreCard<Destination: View>: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    @ViewBuilder let destination: () -> Destination
 
     var body: some View {
-        VStack(spacing: DS.Space.lg) {
-            Image(systemName: "eye.fill")
-                .font(.system(size: 48))
-                .foregroundStyle(.tint)
+        NavigationLink {
+            destination()
+        } label: {
+            VStack(alignment: .leading, spacing: DS.Space.xs) {
+                Image(systemName: icon)
+                    .font(.title3)
+                    .foregroundStyle(.tint)
 
-            VStack(spacing: DS.Space.sm) {
-                Text("No Perspectives Yet")
-                    .font(.headline)
+                Text(title)
+                    .font(DS.Text.body)
+                    .fontWeight(.semibold)
                     .foregroundStyle(DS.Color.textPrimary)
 
-                Text("Ask a question about your life. LOCA will show you the answer, not tell it.")
-                    .font(.caption)
+                Text(subtitle)
+                    .font(.caption2)
                     .foregroundStyle(DS.Color.textSecondary)
-                    .multilineTextAlignment(.center)
+                    .lineLimit(1)
             }
-
-            Button(action: action) {
-                HStack {
-                    Image(systemName: "plus")
-                    Text("Ask a Question")
-                }
-                .frame(maxWidth: .infinity)
-                .padding(DS.Space.md)
-                .background(.tint, in: RoundedRectangle(cornerRadius: DS.Radius.control))
-                .foregroundStyle(.white)
-            }
-
-            Spacer()
+            .frame(width: 140, alignment: .leading)
+            .padding(DS.Space.md)
+            .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+            .overlay(
+                RoundedRectangle(cornerRadius: DS.Radius.card)
+                    .stroke(DS.Color.border, lineWidth: 1)
+            )
         }
-        .padding(DS.Space.lg)
-        .frame(maxHeight: .infinity, alignment: .center)
+        .buttonStyle(.plain)
     }
 }
 
