@@ -314,6 +314,8 @@ struct CheckInEditorView: View {
             }
 
             noteText = entry.note ?? ""
+        } else if !isBinary {
+            amountFocused = true
         }
     }
 
