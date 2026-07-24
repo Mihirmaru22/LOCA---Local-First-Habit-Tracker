@@ -309,7 +309,12 @@ The "backend that does the thinking" is a layered probabilistic model. Every nod
 carries a **posterior** (a value *and* a calibrated confidence). Confidence is
 first-class: it is what the question economy spends against.
 
-### 4.1 Four layers, by timescale
+### 4.1 Five entities, by timescale
+
+> **Updated in P3** (`PersonalLifeModel-LifeEvents.md`): a fifth entity — **life
+> events** — is added below. P1 originally listed four; life events were elevated from
+> a mere detection trigger to a first-class regime layer that sits above the daily
+> model and scopes every baseline. See §4.1(5) and P3.
 
 1. **Episodes (minutes–hours, the raw material).**
    A day is an ordered set of episodes. Each episode is a bundle:
@@ -338,6 +343,17 @@ first-class: it is what the question economy spends against.
    eventually answer *"which people improve your mood"* and *"what environments make
    you happiest."*
 
+5. **Life events (rare, dated, high-impact — the regime layer). — added in P3.**
+   New job, graduation, promotion, breakup, marriage, moving cities, vacation, illness,
+   bereavement, financial milestones. These are **structural breaks**, not big days:
+   the points where the life's data-generating process changes and baselines move.
+   Unlike the four entities above — which describe a locally stationary life — a life
+   event is the **operator that rewrites the model**: it segments the timeline into
+   regimes, re-baselines states, re-weights or retires context entities, and becomes
+   the explanatory anchor behind months-long shifts. Treated as an ordinary episode it
+   would corrupt every baseline it spans, so it is elevated to its own subsystem. Full
+   design in **`PersonalLifeModel-LifeEvents.md`** (P3).
+
 ### 4.2 The relationship graph (the payoff layer)
 
 Over the layers sits a growing **associative/causal graph**: edges like
@@ -347,6 +363,10 @@ strengthen with evidence; some graduate to tentative causal claims where the dat
 structure allows (natural experiments, within-person contrasts, and — later —
 opt-in micro-randomized nudges, §2.8). **This graph is the thing the user will feel
 as "LOCA knows me."** It is never shown as a raw graph; it surfaces as sentences.
+*(P3 adds **life-event nodes** to this graph and scopes edges **within regime**, so a
+change that shifts many variables at once is attributed to the event rather than
+manufacturing false edges between the variables — see `PersonalLifeModel-LifeEvents.md`
+§6c.)*
 
 ### 4.3 Confidence is the currency
 
@@ -460,6 +480,14 @@ The model is non-stationary; lives change. Uncertainty is *pushed back up* by:
   new job inferred from calendar/location change) triggers a bounded re-learning
   burst: the model widens uncertainty across the affected subgraph and temporarily
   raises the burden budget to re-anchor — then recedes again.
+
+  > **Elevated in P3.** This bullet is the seed of what is now a full subsystem, the
+  > **Life Events Engine** (`PersonalLifeModel-LifeEvents.md`). The distinction P3
+  > adds: not all rising uncertainty is a life event. *Gradual drift* (one node
+  > wandering) is handled by slow re-personalization; a *structural break* (many nodes
+  > breaking at once, coherently) is a **life event** that must be segmented,
+  > re-baselined, and anchored as its own entity — not merely met with more questions.
+  > Drift detection is the sensor; the Life Events Engine is the interpreter.
 
 ### 5.5 The burden budget (hard, enforced)
 
