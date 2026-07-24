@@ -152,6 +152,16 @@
 		9426896D3B89443EA3F342BD /* UncertaintyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D7E106DBFD4436CB57012CD /* UncertaintyModels.swift */; };
 		252DBB9DA99B4BB09950A0FF /* UncertaintyValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD70FA3CF4D34DD1ADE3F040 /* UncertaintyValidator.swift */; };
 		DC4EDB80F8D24BAFAD6F52A4 /* ViewRenderingSpecification.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40136964818440CB183624C /* ViewRenderingSpecification.swift */; };
+		3ACB9A8F2533403292FD6037 /* SignalModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47CE243A75594807A935F050 /* SignalModels.swift */; };
+		B60336F098644039ACA597FD /* UncertaintyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D7E106DBFD4436CB57012CD /* UncertaintyModels.swift */; };
+		BC8047FE689A47BB85E02F3E /* LifeEventModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C5D8BAD568F45938AF6725C /* LifeEventModels.swift */; };
+		118DAEF8F3154CD39D9D2C7E /* ChapterModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86BB7A0D33C447FB8707EA34 /* ChapterModel.swift */; };
+		E801EFE5D014433B8BD86123 /* TraitModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 897271B11E814E59B5C885B9 /* TraitModel.swift */; };
+		B76A92589DB44C2F8361FF95 /* PersonModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 226D81B014DD44DE80D93BB4 /* PersonModel.swift */; };
+		E48388FCBA37469DAE5986DB /* InferredStateModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 126D0D524CF043C7B04C4E5C /* InferredStateModel.swift */; };
+		55D99B761F0B4A719C759206 /* InferredStateModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 126D0D524CF043C7B04C4E5C /* InferredStateModel.swift */; };
+		1FE9F6B42363404BB74AC56A /* ComposedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA052AE8F12E4A9D82739619 /* ComposedViewModel.swift */; };
+		848B1F9D35DC470B991C3EF8 /* ComposedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA052AE8F12E4A9D82739619 /* ComposedViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -323,6 +333,8 @@
 		8D7E106DBFD4436CB57012CD /* UncertaintyModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UncertaintyModels.swift; sourceTree = "<group>"; };
 		BD70FA3CF4D34DD1ADE3F040 /* UncertaintyValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UncertaintyValidator.swift; sourceTree = "<group>"; };
 		D40136964818440CB183624C /* ViewRenderingSpecification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewRenderingSpecification.swift; sourceTree = "<group>"; };
+		126D0D524CF043C7B04C4E5C /* InferredStateModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InferredStateModel.swift; sourceTree = "<group>"; };
+		EA052AE8F12E4A9D82739619 /* ComposedViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposedViewModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -621,6 +633,7 @@
 				D1F51567A57345B58FDEEA69 /* MoodInferenceModel.swift */,
 				128F5204A29A40D69E2B41B6 /* StateInferenceEngine.swift */,
 				07BC26C094C44A98BDD3B7D0 /* StressInferenceModel.swift */,
+				126D0D524CF043C7B04C4E5C /* InferredStateModel.swift */,
 			);
 			path = Inference;
 			sourceTree = "<group>";
@@ -673,6 +686,7 @@
 				8C33A4D4C6EE4EC6804620D6 /* PersonalLifeViewUI.swift */,
 				0E78DF6BCC124F6EA5C653EF /* TraitSummaryView.swift */,
 				E64F904AABAC4554B7B20EBA /* ViewCompositionEngine.swift */,
+				EA052AE8F12E4A9D82739619 /* ComposedViewModel.swift */,
 			);
 			path = PersonalLifeView;
 			sourceTree = "<group>";
@@ -849,6 +863,14 @@
 				CF4D3E4F5A6B7C8D9E0F1A2B /* CheckInWriter.swift in Sources */,
 				F18CA204FECB9D1C102ECADE /* WidgetRefreshCoordinator.swift in Sources */,
 				052F419EE842417885F32906 /* Animation+Extensions.swift in Sources */,
+				3ACB9A8F2533403292FD6037 /* SignalModels.swift in Sources */,
+				B60336F098644039ACA597FD /* UncertaintyModels.swift in Sources */,
+				BC8047FE689A47BB85E02F3E /* LifeEventModels.swift in Sources */,
+				118DAEF8F3154CD39D9D2C7E /* ChapterModel.swift in Sources */,
+				E801EFE5D014433B8BD86123 /* TraitModel.swift in Sources */,
+				B76A92589DB44C2F8361FF95 /* PersonModel.swift in Sources */,
+				55D99B761F0B4A719C759206 /* InferredStateModel.swift in Sources */,
+				848B1F9D35DC470B991C3EF8 /* ComposedViewModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -977,6 +999,8 @@
 				9426896D3B89443EA3F342BD /* UncertaintyModels.swift in Sources */,
 				252DBB9DA99B4BB09950A0FF /* UncertaintyValidator.swift in Sources */,
 				DC4EDB80F8D24BAFAD6F52A4 /* ViewRenderingSpecification.swift in Sources */,
+				E48388FCBA37469DAE5986DB /* InferredStateModel.swift in Sources */,
+				1FE9F6B42363404BB74AC56A /* ComposedViewModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
