@@ -45,146 +45,15 @@ struct HabitTodaySection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.lg) {
-            // ── Header ──────────────────────────────────────────
             Text("Today")
                 .font(DS.Text.body)
                 .fontWeight(.semibold)
                 .foregroundStyle(DS.Color.textPrimary)
 
-            // ── Progress & Status ────────────────────────────
             VStack(spacing: DS.Space.md) {
-                HStack(spacing: DS.Space.lg) {
-                    // Arc progress (binary or quantitative)
-                    ZStack {
-                        ArcProgressView(
-                            fraction: progressFraction,
-                            color: ColorPalette[board.colorIndex],
-                            size: 56
-                        )
-
-                        switch board.metric {
-                        case .binary:
-                            if todayLogged {
-                                Image(systemName: "checkmark")
-                                    .font(.body.bold())
-                                    .foregroundStyle(ColorPalette[board.colorIndex])
-                            }
-                        case .quantitative:
-                            Text(String(Int((progressFraction * 100).rounded())) + "%")
-                                .font(.system(.caption, design: .rounded, weight: .bold))
-                                .foregroundStyle(ColorPalette[board.colorIndex])
-                        }
-                    }
-                    .frame(width: 56, height: 56)
-
-                    // Status text + progress details
-                    VStack(alignment: .leading, spacing: DS.Space.xs) {
-                        switch board.metric {
-                        case .binary:
-                            if todayLogged {
-                                Text("Done Today")
-                                    .font(DS.Text.body)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(DS.Color.textPrimary)
-                            } else {
-                                Text("Check off daily")
-                                    .font(DS.Text.body)
-                                    .foregroundStyle(DS.Color.textSecondary)
-                            }
-                        case .quantitative:
-                            Text(String(format: todaysTotal.truncatingRemainder(dividingBy: 1) == 0 ? "%.0f" : "%.1f", todaysTotal)
-                                 + " / " + String(format: "%.0f", board.effectiveTarget)
-                                 + (board.unitLabel.map { " \($0)" } ?? ""))
-                                .font(DS.Text.body)
-                                .fontWeight(.semibold)
-                                .foregroundStyle(
-                                    progressFraction >= 1 ? ColorPalette[board.colorIndex] : DS.Color.textSecondary
-                                )
-
-                            Text(progressFraction >= 1 ? "Goal met ✓" : "Keep going")
-                                .font(DS.Text.caption)
-                                .foregroundStyle(
-                                    progressFraction >= 1 ? ColorPalette[board.colorIndex] : DS.Color.textSecondary
-                                )
-                        }
-                    }
-
-                    Spacer()
-
-                    // Binary: inline confirmation button
-                    if board.metric == .binary {
-                        Button(action: logBinaryQuick) {
-                            if showSuccessBadge {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .font(.title3)
-                                    .foregroundStyle(Color.white)
-                            } else if isLoggingQuick {
-                                ProgressView()
-                                    .tint(ColorPalette[board.colorIndex])
-                            } else if todayLogged {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .font(.title3)
-                                    .foregroundStyle(ColorPalette[board.colorIndex])
-                            } else {
-                                Image(systemName: "plus.circle.fill")
-                                    .font(.title3)
-                                    .foregroundStyle(ColorPalette[board.colorIndex])
-                            }
-                        }
-                        .frame(width: 44, height: 44)
-                        .background(showSuccessBadge ? ColorPalette[board.colorIndex] : DS.Color.surfaceRecessed, in: Circle())
-                        .disabled(isLoggingQuick)
-                    } else {
-                        // Quantitative: toggle inline input
-                        Button(action: { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            if showInlineQuantitative {
-                                quantitativeInput = ""
-                            }
-                            showInlineQuantitative.toggle()
-                        }}) {
-                            Image(systemName: showInlineQuantitative ? "chevron.up.circle.fill" : "plus.circle.fill")
-                                .font(.title3)
-                                .foregroundStyle(ColorPalette[board.colorIndex])
-                                .frame(width: 44, height: 44)
-                                .background(DS.Color.surfaceRecessed, in: Circle())
-                        }
-                    }
-                }
-
-                // Quantitative: inline input (revealed on tap)
+                progressRow
                 if board.metric == .quantitative && showInlineQuantitative {
-                    HStack(spacing: DS.Space.md) {
-                        TextField("0", text: $quantitativeInput)
-                            .font(DS.Text.body)
-                            .keyboardType(.decimalPad)
-                            .focused($quantitativeFocused)
-                            .frame(height: 44)
-                            .padding(.horizontal, DS.Space.md)
-                            .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: DS.Radius.control))
-
-                        if let unit = board.unitLabel, !unit.isEmpty {
-                            Text(unit)
-                                .font(DS.Text.caption)
-                                .foregroundStyle(DS.Color.textSecondary)
-                                .frame(minWidth: 50, alignment: .leading)
-                        }
-
-                        Button(action: logQuantitativeQuick) {
-                            if isLoggingQuick {
-                                ProgressView()
-                                    .tint(ColorPalette[board.colorIndex])
-                            } else {
-                                Text("Log")
-                                    .font(DS.Text.caption)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(Color.white)
-                            }
-                        }
-                        .frame(height: 44)
-                        .frame(minWidth: 50)
-                        .background(ColorPalette[board.colorIndex], in: RoundedRectangle(cornerRadius: DS.Radius.control))
-                        .disabled(isLoggingQuick || !isAmountValid)
-                    }
+                    quantitativeInputRow
                 }
             }
 
@@ -235,7 +104,158 @@ struct HabitTodaySection: View {
         }
     }
 
+    // MARK: - Subviews
+
+    @ViewBuilder
+    private var progressRow: some View {
+        HStack(spacing: DS.Space.lg) {
+            ringView
+            statusText
+            Spacer()
+            actionButton
+        }
+    }
+
+    @ViewBuilder
+    private var ringView: some View {
+        ZStack {
+            ArcProgressView(
+                fraction: progressFraction,
+                color: ColorPalette[board.colorIndex],
+                size: 56
+            )
+            switch board.metric {
+            case .binary:
+                if todayLogged {
+                    Image(systemName: "checkmark")
+                        .font(.body.bold())
+                        .foregroundStyle(ColorPalette[board.colorIndex])
+                }
+            case .quantitative:
+                Text(String(Int((progressFraction * 100).rounded())) + "%")
+                    .font(.system(.caption, design: .rounded, weight: .bold))
+                    .foregroundStyle(ColorPalette[board.colorIndex])
+            }
+        }
+        .frame(width: 56, height: 56)
+    }
+
+    @ViewBuilder
+    private var statusText: some View {
+        VStack(alignment: .leading, spacing: DS.Space.xs) {
+            switch board.metric {
+            case .binary:
+                if todayLogged {
+                    Text("Done Today")
+                        .font(DS.Text.body)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(DS.Color.textPrimary)
+                } else {
+                    Text("Check off daily")
+                        .font(DS.Text.body)
+                        .foregroundStyle(DS.Color.textSecondary)
+                }
+            case .quantitative:
+                Text(quantitativeProgressLabel)
+                    .font(DS.Text.body)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(progressFraction >= 1 ? ColorPalette[board.colorIndex] : DS.Color.textSecondary)
+                Text(progressFraction >= 1 ? "Goal met ✓" : "Keep going")
+                    .font(DS.Text.caption)
+                    .foregroundStyle(progressFraction >= 1 ? ColorPalette[board.colorIndex] : DS.Color.textSecondary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var actionButton: some View {
+        if board.metric == .binary {
+            Button(action: logBinaryQuick) {
+                binaryButtonIcon
+            }
+            .frame(width: 44, height: 44)
+            .background(showSuccessBadge ? ColorPalette[board.colorIndex] : DS.Color.surfaceRecessed, in: Circle())
+            .disabled(isLoggingQuick)
+        } else {
+            Button {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    if showInlineQuantitative { quantitativeInput = "" }
+                    showInlineQuantitative.toggle()
+                }
+            } label: {
+                Image(systemName: showInlineQuantitative ? "chevron.up.circle.fill" : "plus.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(ColorPalette[board.colorIndex])
+                    .frame(width: 44, height: 44)
+                    .background(DS.Color.surfaceRecessed, in: Circle())
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var binaryButtonIcon: some View {
+        if showSuccessBadge {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.title3)
+                .foregroundStyle(Color.white)
+        } else if isLoggingQuick {
+            ProgressView()
+                .tint(ColorPalette[board.colorIndex])
+        } else if todayLogged {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.title3)
+                .foregroundStyle(ColorPalette[board.colorIndex])
+        } else {
+            Image(systemName: "plus.circle.fill")
+                .font(.title3)
+                .foregroundStyle(ColorPalette[board.colorIndex])
+        }
+    }
+
+    @ViewBuilder
+    private var quantitativeInputRow: some View {
+        HStack(spacing: DS.Space.md) {
+            TextField("0", text: $quantitativeInput)
+                .font(DS.Text.body)
+                .decimalKeyboard()
+                .focused($quantitativeFocused)
+                .frame(height: 44)
+                .padding(.horizontal, DS.Space.md)
+                .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: DS.Radius.control))
+
+            if let unit = board.unitLabel, !unit.isEmpty {
+                Text(unit)
+                    .font(DS.Text.caption)
+                    .foregroundStyle(DS.Color.textSecondary)
+                    .frame(minWidth: 50, alignment: .leading)
+            }
+
+            Button(action: logQuantitativeQuick) {
+                if isLoggingQuick {
+                    ProgressView().tint(ColorPalette[board.colorIndex])
+                } else {
+                    Text("Log")
+                        .font(DS.Text.caption)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Color.white)
+                }
+            }
+            .frame(height: 44)
+            .frame(minWidth: 50)
+            .background(ColorPalette[board.colorIndex], in: RoundedRectangle(cornerRadius: DS.Radius.control))
+            .disabled(isLoggingQuick || !isAmountValid)
+        }
+    }
+
     // MARK: - Computed
+
+    private var quantitativeProgressLabel: String {
+        let fmt = todaysTotal.truncatingRemainder(dividingBy: 1) == 0 ? "%.0f" : "%.1f"
+        let total = String(format: fmt, todaysTotal)
+        let goal = String(format: "%.0f", board.effectiveTarget)
+        let unit = board.unitLabel.map { " \($0)" } ?? ""
+        return "\(total) / \(goal)\(unit)"
+    }
 
     private var isAmountValid: Bool {
         guard let amount = Double(quantitativeInput.trimmingCharacters(in: .whitespaces)), amount > 0, amount <= 999.9 else { return false }
