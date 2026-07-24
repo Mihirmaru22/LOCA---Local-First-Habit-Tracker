@@ -77,23 +77,14 @@ class SignalManager: NSObject, ObservableObject {
         do {
             let now = Date()
 
-            async let sleepSignals = healthKitManager.collectSleep()
-            async let hrvSignals = healthKitManager.collectHeartRateVariability()
-            async let stepSignals = healthKitManager.collectSteps()
-            async let locationSignals = locationManager.collectLocationHistory()
-            async let calendarSignals = calendarManager.collectCalendarEvents()
-            async let deviceSignals = deviceActivityManager.collectScreenTime()
-            async let motionSignals = motionActivityManager.collectMotion()
-
-            let allSignals = try await [
-                sleepSignals,
-                hrvSignals,
-                stepSignals,
-                locationSignals,
-                calendarSignals,
-                deviceSignals,
-                motionSignals
-            ].flatMap { $0 }
+            var allSignals: [SignalEvent] = []
+            allSignals += (try? await healthKitManager.collectSleep()) ?? []
+            allSignals += (try? await healthKitManager.collectHeartRateVariability()) ?? []
+            allSignals += (try? await healthKitManager.collectSteps()) ?? []
+            allSignals += (try? await locationManager.collectLocationHistory()) ?? []
+            allSignals += (try? await calendarManager.collectCalendarEvents()) ?? []
+            allSignals += (try? await deviceActivityManager.collectScreenTime()) ?? []
+            allSignals += (try? await motionActivityManager.collectMotion()) ?? []
 
             for signal in allSignals {
                 modelContext.insert(signal)
