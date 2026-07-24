@@ -128,7 +128,7 @@ struct PersonalLifeListView: View {
     private var exploreSection: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: DS.Space.md) {
-                ExploreCard(title: "Your Life", subtitle: "The whole picture", icon: "telescope") {
+                ExploreCard(title: "Your Life", subtitle: "The whole picture", icon: "binoculars") {
                     LifeSceneView()
                 }
                 ExploreCard(title: "Chapters", subtitle: "Life in intervals", icon: "book.pages") {
