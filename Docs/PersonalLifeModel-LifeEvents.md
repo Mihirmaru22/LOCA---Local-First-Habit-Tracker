@@ -1,5 +1,11 @@
 # The Life Events Engine — Change Points as First-Class Anchors
 
+> **⚠ SUPERSEDED by `LOCA-Founding-Manifesto.md`.** The core insight here survives and is
+> promoted: turning points are structure, not noise. In the manifesto's ontology **Life
+> Events remain first-class** (atomic pivots) and gain a companion, **Chapters** (the
+> intervals a Life Event opens) — the event is the door, the chapter is the room. The
+> detection and sensitivity mechanics below still apply. Retained as history.
+
 ## Phase P — Session P3 · The Fifth Entity
 
 > *No UI. No SwiftUI. No code. This session adds a subsystem the first two documents

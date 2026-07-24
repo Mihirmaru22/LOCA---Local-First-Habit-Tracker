@@ -1,5 +1,12 @@
 # The Personal Life Model — Founding Vision & Interaction Model
 
+> **⚠ SUPERSEDED by `LOCA-Founding-Manifesto.md`.** This document is retained as the
+> intellectual record of how the vision was reached, not as the current vision. Its
+> central error — that the goal is for the *system* to understand the *user* — was
+> corrected in the manifesto, which repoints the product from an observational engine
+> to a personal *instrument* that returns perspective to the user. Read P1–P3 as
+> history; build from the manifesto.
+
 ## Phase P — Session P1 · Inventing the Category
 
 > *No UI. No SwiftUI. No wireframes. This document defines a new product category,
