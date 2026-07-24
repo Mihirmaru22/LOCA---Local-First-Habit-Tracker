@@ -461,6 +461,7 @@ struct CheckInEditorView: View {
 
 // MARK: - Preview
 
+#if false  // TEMP (Phase-L build isolation): disabled to isolate swift-frontend #Preview macro crash. Prime suspect per crash backtrace.
 #Preview("CheckInEditor – Create Mode") {
     let schema = Schema([HabitBoard.self, LogEntry.self])
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
@@ -474,3 +475,4 @@ struct CheckInEditorView: View {
     }
     .modelContainer(container)
 }
+#endif
