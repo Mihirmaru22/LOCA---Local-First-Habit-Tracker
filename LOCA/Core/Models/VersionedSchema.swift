@@ -37,6 +37,9 @@ enum RippleSchemaV1: VersionedSchema {
     /// `UncertaintyRecord`, `ComposedView`) were added in Phases 3–5 before the
     /// first production CloudKit sync, so appending them here does not violate the
     /// post-release immutability rule documented above.
+    ///
+    /// `Direction` and `Fork` were added in Phase 7 (the first-person layer)
+    /// before the first production CloudKit sync.
     static var models: [any PersistentModel.Type] {
         [
             HabitBoard.self,
@@ -51,6 +54,8 @@ enum RippleSchemaV1: VersionedSchema {
             PersonAppearance.self,
             UncertaintyRecord.self,
             ComposedView.self,
+            Direction.self,
+            Fork.self,
         ]
     }
 }

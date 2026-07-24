@@ -136,6 +136,9 @@
 		E06D17FC11E04391AC6EBEFE /* AnomalyDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE07B2B823DA4E2398F1027A /* AnomalyDetector.swift */; };
 		DBCFA44522BF49D293AF3CC8 /* EventClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC844D85A9FD4ECF9D89F145 /* EventClassifier.swift */; };
 		16F708C81EA942FAA91F5452 /* EventDetectionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD40BE633CE54E419A4EF713 /* EventDetectionEngine.swift */; };
+		78B4D940544F4F6988723F5A /* DirectionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CD3EF36A4504EC2B092EDD8 /* DirectionModel.swift */; };
+		CC0FA28CBF7F4C7997328A4F /* DirectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46B7109E93264DE9A5FAB54E /* DirectionView.swift */; };
+		DEC886610E32444B8AE7435B /* DirectionCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94E2C16D6CB34D8FB7CB8680 /* DirectionCaptureView.swift */; };
 		5E58547710E44338B0203784 /* RelationshipGraphEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11954C214BE34D96BB07C1B9 /* RelationshipGraphEngine.swift */; };
 		54C2471DD4294A9F928AD82E /* LifeEventModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C5D8BAD568F45938AF6725C /* LifeEventModels.swift */; };
 		C0E9F32F198346EB9594666C /* RegimePersistenceChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F8BC6E762E54E1B8E9521D1 /* RegimePersistenceChecker.swift */; };
@@ -320,6 +323,9 @@
 		CE07B2B823DA4E2398F1027A /* AnomalyDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnomalyDetector.swift; sourceTree = "<group>"; };
 		BC844D85A9FD4ECF9D89F145 /* EventClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventClassifier.swift; sourceTree = "<group>"; };
 		CD40BE633CE54E419A4EF713 /* EventDetectionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventDetectionEngine.swift; sourceTree = "<group>"; };
+		1CD3EF36A4504EC2B092EDD8 /* DirectionModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectionModel.swift; sourceTree = "<group>"; };
+		46B7109E93264DE9A5FAB54E /* DirectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectionView.swift; sourceTree = "<group>"; };
+		94E2C16D6CB34D8FB7CB8680 /* DirectionCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectionCaptureView.swift; sourceTree = "<group>"; };
 		11954C214BE34D96BB07C1B9 /* RelationshipGraphEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelationshipGraphEngine.swift; sourceTree = "<group>"; };
 		8C5D8BAD568F45938AF6725C /* LifeEventModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeEventModels.swift; sourceTree = "<group>"; };
 		0F8BC6E762E54E1B8E9521D1 /* RegimePersistenceChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegimePersistenceChecker.swift; sourceTree = "<group>"; };
@@ -613,6 +619,7 @@
 				86BB7A0D33C447FB8707EA34 /* ChapterModel.swift */,
 				65A7F2853AAF486B8EF5F0A9 /* PeopleExtractor.swift */,
 				226D81B014DD44DE80D93BB4 /* PersonModel.swift */,
+				1CD3EF36A4504EC2B092EDD8 /* DirectionModel.swift */,
 				FDF5D0F2E2E440EA90A108EE /* TraitInferenceEngine.swift */,
 				897271B11E814E59B5C885B9 /* TraitModel.swift */,
 			);
@@ -691,6 +698,8 @@
 				47334E5DAB804ED49D6E573F /* PeopleView.swift */,
 				81139E15C57243C89D3BF541 /* PersonalLifeListView.swift */,
 				B5438274A4BC49CD90724D6C /* RelationshipGraphView.swift */,
+				46B7109E93264DE9A5FAB54E /* DirectionView.swift */,
+				94E2C16D6CB34D8FB7CB8680 /* DirectionCaptureView.swift */,
 				6DC531F8F7F24B14829AA3B6 /* PersonalLifeValidation.swift */,
 				8C33A4D4C6EE4EC6804620D6 /* PersonalLifeViewUI.swift */,
 				0E78DF6BCC124F6EA5C653EF /* TraitSummaryView.swift */,
@@ -978,6 +987,9 @@
 				AD8C8D7F055F47C3904427AF /* PeopleView.swift in Sources */,
 				2CFB92818593426EBED0AF43 /* PersonalLifeListView.swift in Sources */,
 				2437F7709D5F47908D5439CD /* RelationshipGraphView.swift in Sources */,
+				78B4D940544F4F6988723F5A /* DirectionModel.swift in Sources */,
+				CC0FA28CBF7F4C7997328A4F /* DirectionView.swift in Sources */,
+				DEC886610E32444B8AE7435B /* DirectionCaptureView.swift in Sources */,
 				C2C67C2B18CB4157B1BA33C2 /* PersonalLifeValidation.swift in Sources */,
 				DCFB2912F8A34AE79CC6DAB3 /* PersonalLifeViewUI.swift in Sources */,
 				F3EEFE6DE7594FACA63F1BB0 /* TraitSummaryView.swift in Sources */,
