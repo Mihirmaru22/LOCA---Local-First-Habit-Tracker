@@ -148,9 +148,9 @@
 		E5F6A7B8C9D0E1F2A3B4C5D6 /* NarrativeComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrativeComposer.swift; sourceTree = "<group>"; };
 		B8C9D0E1F2A3B4C5D6E7F8A9 /* NarrativeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrativeView.swift; sourceTree = "<group>"; };
 		C3D4E5F6A7B8C9D0E1F2A3B4 /* PatternsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternsView.swift; sourceTree = "<group>"; };
-		F3D4E5F6A7B8C9D0E1F2A3B4 /* FeedbackAnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackAnalyticsView.swift; sourceTree = "<group>"; };
-		G4E5F6A7B8C9D0E1F2A3B4C5 /* FeedbackProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackProcessor.swift; sourceTree = "<group>"; };
-		H5F6A7B8C9D0E1F2A3B4C5D6 /* ContextEnricher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextEnricher.swift; sourceTree = "<group>"; };
+		F3D4E5F6A7B8C9D0E1F2A3B4 /* FeedbackAnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LOCA/Features/PersonalLifeView/FeedbackAnalyticsView.swift"; sourceTree = SOURCE_ROOT; };
+		G4E5F6A7B8C9D0E1F2A3B4C5 /* FeedbackProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LOCA/Learning/Synthesis/FeedbackProcessor.swift"; sourceTree = SOURCE_ROOT; };
+		H5F6A7B8C9D0E1F2A3B4C5D6 /* ContextEnricher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LOCA/Learning/Synthesis/ContextEnricher.swift"; sourceTree = SOURCE_ROOT; };
 		FC8D3E5A2B7F8C9D0E1F4A2B /* CalibrationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA7B8AC9D7E1F4B5A82C6D3E /* CalibrationModel.swift */; };
 		E1F2A3B4C5D6E7F8A9B0C1D2 /* FeedbackModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E1F2A3B4C5D6E7F8A9B0C1 /* FeedbackModel.swift */; };
 		F2A3B4C5D6E7F8A9B0C1D2E3 /* FeedbackModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E1F2A3B4C5D6E7F8A9B0C1 /* FeedbackModel.swift */; };
@@ -750,6 +750,9 @@
 				6DC531F8F7F24B14829AA3B6 /* PersonalLifeValidation.swift */,
 				8C33A4D4C6EE4EC6804620D6 /* PersonalLifeViewUI.swift */,
 				0E78DF6BCC124F6EA5C653EF /* TraitSummaryView.swift */,
+				B8C9D0E1F2A3B4C5D6E7F8A9 /* NarrativeView.swift */,
+				C3D4E5F6A7B8C9D0E1F2A3B4 /* PatternsView.swift */,
+				F3D4E5F6A7B8C9D0E1F2A3B4 /* FeedbackAnalyticsView.swift */,
 				E64F904AABAC4554B7B20EBA /* ViewCompositionEngine.swift */,
 				EA052AE8F12E4A9D82739619 /* ComposedViewModel.swift */,
 			);
