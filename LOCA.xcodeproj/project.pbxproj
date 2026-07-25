@@ -946,6 +946,7 @@
 				B76A92589DB44C2F8361FF95 /* PersonModel.swift in Sources */,
 				FA11FA11FA11FA11FA11FA11 /* DirectionModel.swift in Sources */,
 				FC8D3E5A2B7F8C9D0E1F4A2B /* CalibrationModel.swift in Sources */,
+				F2A3B4C5D6E7F8A9B0C1D2E3 /* FeedbackModel.swift in Sources */,
 				55D99B761F0B4A719C759206 /* InferredStateModel.swift in Sources */,
 				848B1F9D35DC470B991C3EF8 /* ComposedViewModel.swift in Sources */,
 			);
@@ -1048,6 +1049,7 @@
 				2437F7709D5F47908D5439CD /* RelationshipGraphView.swift in Sources */,
 				78B4D940544F4F6988723F5A /* DirectionModel.swift in Sources */,
 				EB9C2F4D1A6E7B8C9D0E3F2A /* CalibrationModel.swift in Sources */,
+				E1F2A3B4C5D6E7F8A9B0C1D2 /* FeedbackModel.swift in Sources */,
 				0B36C1F03FCA4592AF3995B2 /* PresentScene.swift in Sources */,
 				BC4AD1268BDC468082BD7C61 /* PresentComposer.swift in Sources */,
 				7CE8A8551A7F4415A2319F72 /* PresentView.swift in Sources */,
