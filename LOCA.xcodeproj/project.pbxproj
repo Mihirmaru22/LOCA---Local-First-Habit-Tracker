@@ -94,7 +94,7 @@
 		CF4D3E4F5A6B7C8D9E0F1A2B /* CheckInWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF3A1B2C3D4E5F6A7B8C9D0E /* CheckInWriter.swift */; };
 		D27B8705E25F45C2A8DFABE1 /* Double+Clamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13289E001E014999A9EFB063 /* Double+Clamp.swift */; };
 		D388B1355EEE4A79A8BA6242 /* CloudKitSyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F4E506745484B71A76301BD /* CloudKitSyncCoordinator.swift */; };
-		D3F68D36689EDD3AB476FAE0 /* HabitAnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C351824E770C933A393581B /* HabitAnalyticsView.swift */; };
+
 		D45B6400C4A988DB2D499E0E /* HeatmapWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98EC7081C1B9D172E1DB63DC /* HeatmapWidget.swift */; };
 		D73B09D65D15695BD06A83CB /* SettingsMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04AD22D76419B8B94DE6EC40 /* SettingsMenuView.swift */; };
 		D9F19BCA3572423D959CEEF5 /* HabitGridLayoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1722A0BDC804F11856E575D /* HabitGridLayoutView.swift */; };
@@ -144,11 +144,14 @@
 		541E0FB6494542E09848C63A /* AskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39158669CE3E4B559D032FE4 /* AskView.swift */; };
 		78B4D940544F4F6988723F5A /* DirectionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CD3EF36A4504EC2B092EDD8 /* DirectionModel.swift */; };
 		EB9C2F4D1A6E7B8C9D0E3F2A /* CalibrationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA7B8AC9D7E1F4B5A82C6D3E /* CalibrationModel.swift */; };
-		D0E1F2A3B4C5D6E7F8A9B0C1 /* FeedbackModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackModel.swift; sourceTree = "<group>"; };
-		9F2E3D4A5B6C7D8E9F0A1B2C /* PatternDetectionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternDetectionEngine.swift; sourceTree = "<group>"; };
-		E5F6A7B8C9D0E1F2A3B4C5D6 /* NarrativeComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrativeComposer.swift; sourceTree = "<group>"; };
+		D0E1F2A3B4C5D6E7F8A9B0C1 /* FeedbackModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LOCA/Learning/Entities/FeedbackModel.swift"; sourceTree = SOURCE_ROOT; };
+		9F2E3D4A5B6C7D8E9F0A1B2C /* PatternDetectionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LOCA/Learning/Synthesis/PatternDetectionEngine.swift"; sourceTree = SOURCE_ROOT; };
+		E5F6A7B8C9D0E1F2A3B4C5D6 /* NarrativeComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LOCA/Learning/Synthesis/NarrativeComposer.swift"; sourceTree = SOURCE_ROOT; };
 		B8C9D0E1F2A3B4C5D6E7F8A9 /* NarrativeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrativeView.swift; sourceTree = "<group>"; };
 		C3D4E5F6A7B8C9D0E1F2A3B4 /* PatternsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternsView.swift; sourceTree = "<group>"; };
+		F3D4E5F6A7B8C9D0E1F2A3B4 /* FeedbackAnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LOCA/Features/PersonalLifeView/FeedbackAnalyticsView.swift"; sourceTree = SOURCE_ROOT; };
+		G4E5F6A7B8C9D0E1F2A3B4C5 /* FeedbackProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LOCA/Learning/Synthesis/FeedbackProcessor.swift"; sourceTree = SOURCE_ROOT; };
+		H5F6A7B8C9D0E1F2A3B4C5D6 /* ContextEnricher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LOCA/Learning/Synthesis/ContextEnricher.swift"; sourceTree = SOURCE_ROOT; };
 		FC8D3E5A2B7F8C9D0E1F4A2B /* CalibrationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA7B8AC9D7E1F4B5A82C6D3E /* CalibrationModel.swift */; };
 		E1F2A3B4C5D6E7F8A9B0C1D2 /* FeedbackModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E1F2A3B4C5D6E7F8A9B0C1 /* FeedbackModel.swift */; };
 		F2A3B4C5D6E7F8A9B0C1D2E3 /* FeedbackModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E1F2A3B4C5D6E7F8A9B0C1 /* FeedbackModel.swift */; };
@@ -158,6 +161,9 @@
 		A7B8C9D0E1F2A3B4C5D6E7F8 /* NarrativeComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F6A7B8C9D0E1F2A3B4C5D6 /* NarrativeComposer.swift */; };
 		C9D0E1F2A3B4C5D6E7F8A9B0 /* NarrativeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8C9D0E1F2A3B4C5D6E7F8A9 /* NarrativeView.swift */; };
 		D4E5F6A7B8C9D0E1F2A3B4C5 /* PatternsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F6A7B8C9D0E1F2A3B4 /* PatternsView.swift */; };
+		E5D4E5F6A7B8C9D0E1F2A3B4 /* FeedbackAnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3D4E5F6A7B8C9D0E1F2A3B4 /* FeedbackAnalyticsView.swift */; };
+		F6E5F6A7B8C9D0E1F2A3B4C5 /* FeedbackProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = G4E5F6A7B8C9D0E1F2A3B4C5 /* FeedbackProcessor.swift */; };
+		G7F6A7B8C9D0E1F2A3B4C5D6 /* ContextEnricher.swift in Sources */ = {isa = PBXBuildFile; fileRef = H5F6A7B8C9D0E1F2A3B4C5D6 /* ContextEnricher.swift */; };
 		CA7B8AC9D7E1F4B5A82C6D3E /* CalibrationModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalibrationModel.swift; sourceTree = "<group>"; };
 		FA11FA11FA11FA11FA11FA11 /* DirectionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CD3EF36A4504EC2B092EDD8 /* DirectionModel.swift */; };
 		CC0FA28CBF7F4C7997328A4F /* DirectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46B7109E93264DE9A5FAB54E /* DirectionView.swift */; };
@@ -277,7 +283,7 @@
 		86A9A6A783B46023591EB5D0 /* HabitListRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitListRow.swift; sourceTree = "<group>"; };
 		8A1E3F118B00458FA0744867 /* VersionedSchema.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VersionedSchema.swift; sourceTree = "<group>"; };
 		8A8D2D460BD70B1FCE35B5F7 /* DS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DS.swift; sourceTree = "<group>"; };
-		8C351824E770C933A393581B /* HabitAnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitAnalyticsView.swift; sourceTree = "<group>"; };
+
 		8CDAE353812C31ADEF5B9789 /* ArcProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArcProgressView.swift; sourceTree = "<group>"; };
 		8CF2B6B9240E460892583CEC /* Date+Calendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Calendar.swift"; sourceTree = "<group>"; };
 		98EC7081C1B9D172E1DB63DC /* HeatmapWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeatmapWidget.swift; sourceTree = "<group>"; };
@@ -470,7 +476,7 @@
 			children = (
 				75EA3DF789134654984688CB /* HabitDetailView.swift */,
 				4CE91B0C5D88414094E4DD05 /* HeatmapView.swift */,
-				8C351824E770C933A393581B /* HabitAnalyticsView.swift */,
+
 				ABA9551FC8C82DA8A6FEA0AD /* HabitCheckInsView.swift */,
 				5E0CEC1DACBB3FDB6E82E5BD /* HabitJournalView.swift */,
 				C3CFB3A1EC398091E63EF048 /* TimelineChartView.swift */,
@@ -747,6 +753,9 @@
 				6DC531F8F7F24B14829AA3B6 /* PersonalLifeValidation.swift */,
 				8C33A4D4C6EE4EC6804620D6 /* PersonalLifeViewUI.swift */,
 				0E78DF6BCC124F6EA5C653EF /* TraitSummaryView.swift */,
+				B8C9D0E1F2A3B4C5D6E7F8A9 /* NarrativeView.swift */,
+				C3D4E5F6A7B8C9D0E1F2A3B4 /* PatternsView.swift */,
+				F3D4E5F6A7B8C9D0E1F2A3B4 /* FeedbackAnalyticsView.swift */,
 				E64F904AABAC4554B7B20EBA /* ViewCompositionEngine.swift */,
 				EA052AE8F12E4A9D82739619 /* ComposedViewModel.swift */,
 			);
@@ -907,7 +916,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				FD6101E26D004E2C8AA1ADD5 /* HabitBoard.swift in Sources */,
-				D4E5F6A7B8C9D0E1F2A3B4C5 /* PatternsView.swift in Sources */,
 				9DC743F9D675419D924F051E /* LogEntry.swift in Sources */,
 				50C2F3E507384D21B34EB939 /* VersionedSchema.swift in Sources */,
 				9A14DA72010B4F2CA5E419E7 /* ModelContainerFactory.swift in Sources */,
@@ -934,6 +942,7 @@
 				B76A92589DB44C2F8361FF95 /* PersonModel.swift in Sources */,
 				FA11FA11FA11FA11FA11FA11 /* DirectionModel.swift in Sources */,
 				FC8D3E5A2B7F8C9D0E1F4A2B /* CalibrationModel.swift in Sources */,
+				F2A3B4C5D6E7F8A9B0C1D2E3 /* FeedbackModel.swift in Sources */,
 				55D99B761F0B4A719C759206 /* InferredStateModel.swift in Sources */,
 				848B1F9D35DC470B991C3EF8 /* ComposedViewModel.swift in Sources */,
 			);
@@ -944,6 +953,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				62780CD2EA974EBA86115C30 /* LOCAApp.swift in Sources */,
+				85E6023392767E28ACEF45563C2B295F /* AppCoordinator.swift in Sources */,
 				D388B1355EEE4A79A8BA6242 /* CloudKitSyncCoordinator.swift in Sources */,
 				675D0365D5C54CA9B9670937 /* HabitBoard.swift in Sources */,
 				7C33229B8B884E4A8722EE7D /* LogEntry.swift in Sources */,
@@ -974,7 +984,7 @@
 				7504D58ADAB74D25BA2F69C8 /* HeatmapDataProvider.swift in Sources */,
 				E8A397AD3E3F43468E8BFF20 /* HabitDetailView.swift in Sources */,
 				FB7C2613B33C4BAAB22BB911 /* HeatmapView.swift in Sources */,
-				D3F68D36689EDD3AB476FAE0 /* HabitAnalyticsView.swift in Sources */,
+
 				3D053EF389D282B1C5921995 /* HabitCheckInsView.swift in Sources */,
 				3CB41CE97E4FF273209C5DAC /* HabitJournalView.swift in Sources */,
 				8D575C6FE704AF7C134F1024 /* TimelineChartView.swift in Sources */,
@@ -1036,6 +1046,7 @@
 				2437F7709D5F47908D5439CD /* RelationshipGraphView.swift in Sources */,
 				78B4D940544F4F6988723F5A /* DirectionModel.swift in Sources */,
 				EB9C2F4D1A6E7B8C9D0E3F2A /* CalibrationModel.swift in Sources */,
+				E1F2A3B4C5D6E7F8A9B0C1D2 /* FeedbackModel.swift in Sources */,
 				0B36C1F03FCA4592AF3995B2 /* PresentScene.swift in Sources */,
 				BC4AD1268BDC468082BD7C61 /* PresentComposer.swift in Sources */,
 				7CE8A8551A7F4415A2319F72 /* PresentView.swift in Sources */,
@@ -1046,6 +1057,9 @@
 				C2C67C2B18CB4157B1BA33C2 /* PersonalLifeValidation.swift in Sources */,
 				DCFB2912F8A34AE79CC6DAB3 /* PersonalLifeViewUI.swift in Sources */,
 				F3EEFE6DE7594FACA63F1BB0 /* TraitSummaryView.swift in Sources */,
+				C9D0E1F2A3B4C5D6E7F8A9B0 /* NarrativeView.swift in Sources */,
+				D4E5F6A7B8C9D0E1F2A3B4C5 /* PatternsView.swift in Sources */,
+				E5D4E5F6A7B8C9D0E1F2A3B4 /* FeedbackAnalyticsView.swift in Sources */,
 				051587161C4246C9A9239035 /* ViewCompositionEngine.swift in Sources */,
 				52550F5555DD45B3AE9E3410 /* SignalCollectionStatusView.swift in Sources */,
 				D82ED360B9674E1BA53018BD /* ChapterBuilder.swift in Sources */,
@@ -1058,6 +1072,10 @@
 				DBCFA44522BF49D293AF3CC8 /* EventClassifier.swift in Sources */,
 				16F708C81EA942FAA91F5452 /* EventDetectionEngine.swift in Sources */,
 				5E58547710E44338B0203784 /* RelationshipGraphEngine.swift in Sources */,
+				A1B2C3D4E5F6A7B8C9D0E1F2 /* PatternDetectionEngine.swift in Sources */,
+				F6E5F6A7B8C9D0E1F2A3B4C5 /* FeedbackProcessor.swift in Sources */,
+				G7F6A7B8C9D0E1F2A3B4C5D6 /* ContextEnricher.swift in Sources */,
+				F6A7B8C9D0E1F2A3B4C5D6E7 /* NarrativeComposer.swift in Sources */,
 				54C2471DD4294A9F928AD82E /* LifeEventModels.swift in Sources */,
 				C0E9F32F198346EB9594666C /* RegimePersistenceChecker.swift in Sources */,
 				01E8EF1FCDA54E0BBC16C974 /* CalibrationManager.swift in Sources */,
