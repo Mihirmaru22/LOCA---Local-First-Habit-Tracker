@@ -100,10 +100,11 @@ final class LogEntry {
     /// Use this property — never `board?.id` — in all `#Predicate` expressions
     /// that filter `LogEntry` by board. See ADR-003.
     ///
-    /// The property default (`UUID()`) satisfies CloudKit's "all properties must
-    /// have a default" requirement. In practice it is always overwritten by the
-    /// designated initialiser, which requires `boardID` as a non-defaulted parameter.
-    var boardID: UUID = UUID()
+    /// CloudKit requires a default value; a nil UUID (all zeros) is used as the
+    /// sentinel to detect orphan entries created outside the designated initializer.
+    /// The designated initializer requires this parameter explicitly, making it
+    /// impossible to silently create an orphan entry through normal code paths.
+    var boardID: UUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
 
     // MARK: - Relationship
 
