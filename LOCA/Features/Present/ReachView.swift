@@ -25,6 +25,8 @@ struct ReachView: View {
     @Environment(\.dismiss) private var dismiss
 
     let scene: PresentScene   // The composed Present — the starting point.
+    @Binding var showAsk: Bool
+    @Binding var askPrefill: String
 
     @State private var depth: Double = 0.0          // 0 = now, 1 = oldest
     @GestureState private var dragDelta: Double = 0
@@ -175,9 +177,20 @@ struct ReachView: View {
     private var weekSignalsView: some View {
         VStack(alignment: .leading, spacing: DS.Space.sm) {
             ForEach(scene.signals.filter { abs($0.delta) >= 0.03 }, id: \.dimension.rawValue) { signal in
-                SignalRow(signal: signal, foreground: foregroundColor)
+                Button(action: { pullSignalThread(signal) }) {
+                    SignalRow(signal: signal, foreground: foregroundColor)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
             }
         }
+    }
+
+    private func pullSignalThread(_ signal: StateSignal) {
+        let question = "Tell me more about my \(signal.dimension.label.lowercased())"
+        askPrefill = question
+        showAsk = true
+        dismiss()
     }
 
     // Depth 2 — chapter shape.
@@ -237,16 +250,28 @@ struct ReachView: View {
     private func landmarkList(_ landmarks: [LifeLandmark]) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.xs) {
             ForEach(landmarks) { lm in
-                HStack(spacing: DS.Space.sm) {
-                    Image(systemName: lm.isEvent ? "diamond.fill" : "circle.fill")
-                        .font(.system(size: 5))
-                        .foregroundStyle(foregroundColor.opacity(lm.isEvent ? 0.7 : 0.4))
-                    Text(lm.label)
-                        .font(.caption)
-                        .foregroundStyle(foregroundColor.opacity(lm.isEvent ? 0.7 : 0.45))
+                Button(action: { pullLandmarkThread(lm) }) {
+                    HStack(spacing: DS.Space.sm) {
+                        Image(systemName: lm.isEvent ? "diamond.fill" : "circle.fill")
+                            .font(.system(size: 5))
+                            .foregroundStyle(foregroundColor.opacity(lm.isEvent ? 0.7 : 0.4))
+                        Text(lm.label)
+                            .font(.caption)
+                            .foregroundStyle(foregroundColor.opacity(lm.isEvent ? 0.7 : 0.45))
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
             }
         }
+    }
+
+    private func pullLandmarkThread(_ landmark: LifeLandmark) {
+        let question = "Tell me more about: \(landmark.label)"
+        askPrefill = question
+        showAsk = true
+        dismiss()
     }
 
     // MARK: - Depth Track
@@ -361,5 +386,7 @@ private struct SignalRow: View {
 // MARK: - Preview
 
 #Preview {
-    ReachView(scene: .empty)
+    @State var showAsk = false
+    @State var askPrefill = ""
+    return ReachView(scene: .empty, showAsk: $showAsk, askPrefill: $askPrefill)
 }

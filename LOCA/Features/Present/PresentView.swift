@@ -53,7 +53,7 @@ struct PresentView: View {
         }
         .ignoresSafeArea()
         .fullScreenCover(isPresented: $showReach) {
-            ReachView(scene: scene)
+            ReachView(scene: scene, showAsk: $showAsk, askPrefill: $askPrefill)
         }
         .sheet(isPresented: $showAsk) {
             AskView(prefill: askPrefill) { _ in
