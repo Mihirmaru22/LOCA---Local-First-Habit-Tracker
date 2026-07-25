@@ -10,19 +10,7 @@ import CoreMotion
 
 @MainActor
 class MotionActivityManager: NSObject {
-    private let motionManager = CMMotionManager()
     private let pedometer = CMPedometer()
-
-    override init() {
-        super.init()
-        setupMotionDetection()
-    }
-
-    private func setupMotionDetection() {
-        if motionManager.isAccelerometerAvailable {
-            motionManager.accelerometerUpdateInterval = 60
-        }
-    }
 
     // MARK: - Motion Collection
 

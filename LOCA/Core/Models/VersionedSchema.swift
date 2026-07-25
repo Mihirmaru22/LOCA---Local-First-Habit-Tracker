@@ -56,6 +56,9 @@ enum RippleSchemaV1: VersionedSchema {
             ComposedView.self,
             Direction.self,
             Fork.self,
+            Calibration.self,
+            PatternFeedback.self,
+            NarrativeFeedback.self,
         ]
     }
 }

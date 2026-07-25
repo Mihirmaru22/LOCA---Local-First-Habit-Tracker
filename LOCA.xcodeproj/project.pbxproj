@@ -136,7 +136,29 @@
 		E06D17FC11E04391AC6EBEFE /* AnomalyDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE07B2B823DA4E2398F1027A /* AnomalyDetector.swift */; };
 		DBCFA44522BF49D293AF3CC8 /* EventClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC844D85A9FD4ECF9D89F145 /* EventClassifier.swift */; };
 		16F708C81EA942FAA91F5452 /* EventDetectionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD40BE633CE54E419A4EF713 /* EventDetectionEngine.swift */; };
+		0B36C1F03FCA4592AF3995B2 /* PresentScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DC7CE9713E24116BC370CFA /* PresentScene.swift */; };
+		BC4AD1268BDC468082BD7C61 /* PresentComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CC0751164694E058A4DBF91 /* PresentComposer.swift */; };
+		7CE8A8551A7F4415A2319F72 /* PresentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98F30FFBF067459EB49F5C1B /* PresentView.swift */; };
+		B20E25D2D2EB410CB6FB99C3 /* ReachView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 531BE0CE95E040FDAE7D53BB /* ReachView.swift */; };
+		541E0FB6494542E09848C63A /* AskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39158669CE3E4B559D032FE4 /* AskView.swift */; };
 		78B4D940544F4F6988723F5A /* DirectionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CD3EF36A4504EC2B092EDD8 /* DirectionModel.swift */; };
+		EB9C2F4D1A6E7B8C9D0E3F2A /* CalibrationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA7B8AC9D7E1F4B5A82C6D3E /* CalibrationModel.swift */; };
+		D0E1F2A3B4C5D6E7F8A9B0C1 /* FeedbackModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackModel.swift; sourceTree = "<group>"; };
+		9F2E3D4A5B6C7D8E9F0A1B2C /* PatternDetectionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternDetectionEngine.swift; sourceTree = "<group>"; };
+		E5F6A7B8C9D0E1F2A3B4C5D6 /* NarrativeComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrativeComposer.swift; sourceTree = "<group>"; };
+		B8C9D0E1F2A3B4C5D6E7F8A9 /* NarrativeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrativeView.swift; sourceTree = "<group>"; };
+		C3D4E5F6A7B8C9D0E1F2A3B4 /* PatternsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternsView.swift; sourceTree = "<group>"; };
+		FC8D3E5A2B7F8C9D0E1F4A2B /* CalibrationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA7B8AC9D7E1F4B5A82C6D3E /* CalibrationModel.swift */; };
+		E1F2A3B4C5D6E7F8A9B0C1D2 /* FeedbackModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E1F2A3B4C5D6E7F8A9B0C1 /* FeedbackModel.swift */; };
+		F2A3B4C5D6E7F8A9B0C1D2E3 /* FeedbackModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E1F2A3B4C5D6E7F8A9B0C1 /* FeedbackModel.swift */; };
+		A1B2C3D4E5F6A7B8C9D0E1F2 /* PatternDetectionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F2E3D4A5B6C7D8E9F0A1B2C /* PatternDetectionEngine.swift */; };
+		B2C3D4E5F6A7B8C9D0E1F2A3 /* PatternDetectionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F2E3D4A5B6C7D8E9F0A1B2C /* PatternDetectionEngine.swift */; };
+		F6A7B8C9D0E1F2A3B4C5D6E7 /* NarrativeComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F6A7B8C9D0E1F2A3B4C5D6 /* NarrativeComposer.swift */; };
+		A7B8C9D0E1F2A3B4C5D6E7F8 /* NarrativeComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F6A7B8C9D0E1F2A3B4C5D6 /* NarrativeComposer.swift */; };
+		C9D0E1F2A3B4C5D6E7F8A9B0 /* NarrativeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8C9D0E1F2A3B4C5D6E7F8A9 /* NarrativeView.swift */; };
+		D4E5F6A7B8C9D0E1F2A3B4C5 /* PatternsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F6A7B8C9D0E1F2A3B4 /* PatternsView.swift */; };
+		CA7B8AC9D7E1F4B5A82C6D3E /* CalibrationModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalibrationModel.swift; sourceTree = "<group>"; };
+		FA11FA11FA11FA11FA11FA11 /* DirectionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CD3EF36A4504EC2B092EDD8 /* DirectionModel.swift */; };
 		CC0FA28CBF7F4C7997328A4F /* DirectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46B7109E93264DE9A5FAB54E /* DirectionView.swift */; };
 		DEC886610E32444B8AE7435B /* DirectionCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94E2C16D6CB34D8FB7CB8680 /* DirectionCaptureView.swift */; };
 		5E58547710E44338B0203784 /* RelationshipGraphEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11954C214BE34D96BB07C1B9 /* RelationshipGraphEngine.swift */; };
@@ -323,6 +345,11 @@
 		CE07B2B823DA4E2398F1027A /* AnomalyDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnomalyDetector.swift; sourceTree = "<group>"; };
 		BC844D85A9FD4ECF9D89F145 /* EventClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventClassifier.swift; sourceTree = "<group>"; };
 		CD40BE633CE54E419A4EF713 /* EventDetectionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventDetectionEngine.swift; sourceTree = "<group>"; };
+		3DC7CE9713E24116BC370CFA /* PresentScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentScene.swift; sourceTree = "<group>"; };
+		4CC0751164694E058A4DBF91 /* PresentComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentComposer.swift; sourceTree = "<group>"; };
+		98F30FFBF067459EB49F5C1B /* PresentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentView.swift; sourceTree = "<group>"; };
+		531BE0CE95E040FDAE7D53BB /* ReachView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReachView.swift; sourceTree = "<group>"; };
+		39158669CE3E4B559D032FE4 /* AskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskView.swift; sourceTree = "<group>"; };
 		1CD3EF36A4504EC2B092EDD8 /* DirectionModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectionModel.swift; sourceTree = "<group>"; };
 		46B7109E93264DE9A5FAB54E /* DirectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectionView.swift; sourceTree = "<group>"; };
 		94E2C16D6CB34D8FB7CB8680 /* DirectionCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectionCaptureView.swift; sourceTree = "<group>"; };
@@ -579,6 +606,7 @@
 			children = (
 				C98301DF1FB24E4484DAFE03 /* Dashboard */,
 				AA11000000000000000007AB /* PersonalLifeView */,
+				EE1E000EEAA34B14B86E4786 /* Present */,
 				AA11000000000000000008AB /* Settings */,
 				707B3ADA96F94C6090385589 /* HabitDetail */,
 				B325876734E272C06C77D326 /* HabitManagement */,
@@ -620,6 +648,7 @@
 				65A7F2853AAF486B8EF5F0A9 /* PeopleExtractor.swift */,
 				226D81B014DD44DE80D93BB4 /* PersonModel.swift */,
 				1CD3EF36A4504EC2B092EDD8 /* DirectionModel.swift */,
+				CA7B8AC9D7E1F4B5A82C6D3E /* CalibrationModel.swift */,
 				FDF5D0F2E2E440EA90A108EE /* TraitInferenceEngine.swift */,
 				897271B11E814E59B5C885B9 /* TraitModel.swift */,
 			);
@@ -687,6 +716,18 @@
 				D40136964818440CB183624C /* ViewRenderingSpecification.swift */,
 			);
 			path = Learning;
+			sourceTree = "<group>";
+		};
+		EE1E000EEAA34B14B86E4786 /* Present */ = {
+			isa = PBXGroup;
+			children = (
+				3DC7CE9713E24116BC370CFA /* PresentScene.swift */,
+				4CC0751164694E058A4DBF91 /* PresentComposer.swift */,
+				98F30FFBF067459EB49F5C1B /* PresentView.swift */,
+				531BE0CE95E040FDAE7D53BB /* ReachView.swift */,
+				39158669CE3E4B559D032FE4 /* AskView.swift */,
+			);
+			path = Present;
 			sourceTree = "<group>";
 		};
 		AA11000000000000000007AB /* PersonalLifeView */ = {
@@ -863,6 +904,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				FD6101E26D004E2C8AA1ADD5 /* HabitBoard.swift in Sources */,
+				D4E5F6A7B8C9D0E1F2A3B4C5 /* PatternsView.swift in Sources */,
 				9DC743F9D675419D924F051E /* LogEntry.swift in Sources */,
 				50C2F3E507384D21B34EB939 /* VersionedSchema.swift in Sources */,
 				9A14DA72010B4F2CA5E419E7 /* ModelContainerFactory.swift in Sources */,
@@ -887,6 +929,8 @@
 				118DAEF8F3154CD39D9D2C7E /* ChapterModel.swift in Sources */,
 				E801EFE5D014433B8BD86123 /* TraitModel.swift in Sources */,
 				B76A92589DB44C2F8361FF95 /* PersonModel.swift in Sources */,
+				FA11FA11FA11FA11FA11FA11 /* DirectionModel.swift in Sources */,
+				FC8D3E5A2B7F8C9D0E1F4A2B /* CalibrationModel.swift in Sources */,
 				55D99B761F0B4A719C759206 /* InferredStateModel.swift in Sources */,
 				848B1F9D35DC470B991C3EF8 /* ComposedViewModel.swift in Sources */,
 			);
@@ -988,6 +1032,12 @@
 				2CFB92818593426EBED0AF43 /* PersonalLifeListView.swift in Sources */,
 				2437F7709D5F47908D5439CD /* RelationshipGraphView.swift in Sources */,
 				78B4D940544F4F6988723F5A /* DirectionModel.swift in Sources */,
+				EB9C2F4D1A6E7B8C9D0E3F2A /* CalibrationModel.swift in Sources */,
+				0B36C1F03FCA4592AF3995B2 /* PresentScene.swift in Sources */,
+				BC4AD1268BDC468082BD7C61 /* PresentComposer.swift in Sources */,
+				7CE8A8551A7F4415A2319F72 /* PresentView.swift in Sources */,
+				B20E25D2D2EB410CB6FB99C3 /* ReachView.swift in Sources */,
+				541E0FB6494542E09848C63A /* AskView.swift in Sources */,
 				CC0FA28CBF7F4C7997328A4F /* DirectionView.swift in Sources */,
 				DEC886610E32444B8AE7435B /* DirectionCaptureView.swift in Sources */,
 				C2C67C2B18CB4157B1BA33C2 /* PersonalLifeValidation.swift in Sources */,

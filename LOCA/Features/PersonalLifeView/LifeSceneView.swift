@@ -146,7 +146,7 @@ struct LifeSceneView: View {
 
     private var emptyState: some View {
         VStack(spacing: DS.Space.lg) {
-            Image(systemName: "telescope")
+            Image(systemName: "binoculars")
                 .font(.system(size: 48))
                 .foregroundStyle(DS.Color.textTertiary)
 
