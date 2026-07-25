@@ -161,7 +161,7 @@ import SwiftData
         var summary = ""
 
         if let chapter = context.contextChapter {
-            summary += "This pattern emerged during \"\(chapter.title)\". "
+            summary += "This pattern emerged during \"\(chapter.name)\". "
         }
 
         if !context.relatedLogs.isEmpty {
