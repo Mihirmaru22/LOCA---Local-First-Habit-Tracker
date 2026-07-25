@@ -19,6 +19,7 @@ struct PatternsView: View {
     @State private var isLoading = true
     @State private var selectedPattern: LifePattern?
     @State private var showPatternDetail = false
+    @State private var patternFeedback: [UUID: Int] = [:] // resonance per pattern
 
     var body: some View {
         ScrollView {
@@ -151,6 +152,11 @@ private struct PatternDetailView: View {
     let pattern: LifePattern
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+
+    @State private var resonance: Int = 0
+    @State private var refinement: String = ""
+    @State private var feedbackSaved = false
 
     var body: some View {
         NavigationStack {
@@ -221,6 +227,53 @@ private struct PatternDetailView: View {
 
                     Spacer(minLength: DS.Space.xxxl)
 
+                    Divider()
+
+                    // Feedback
+                    VStack(alignment: .leading, spacing: DS.Space.md) {
+                        Text("Does this ring true?")
+                            .font(.caption)
+                            .foregroundStyle(DS.Color.textTertiary)
+                            .textCase(.uppercase)
+
+                        HStack(spacing: DS.Space.md) {
+                            Button(action: { resonance = -1; saveFeedback() }) {
+                                Image(systemName: "hand.thumbsdown.fill")
+                                    .font(.title3)
+                                    .foregroundStyle(resonance == -1 ? Color(hex: "#EF4444") : DS.Color.textTertiary)
+                            }
+
+                            Button(action: { resonance = 0; saveFeedback() }) {
+                                Image(systemName: "minus.circle.fill")
+                                    .font(.title3)
+                                    .foregroundStyle(resonance == 0 ? Color.accentColor : DS.Color.textTertiary)
+                            }
+
+                            Button(action: { resonance = 1; saveFeedback() }) {
+                                Image(systemName: "hand.thumbsup.fill")
+                                    .font(.title3)
+                                    .foregroundStyle(resonance == 1 ? Color(hex: "#10B981") : DS.Color.textTertiary)
+                            }
+
+                            Spacer()
+
+                            if feedbackSaved {
+                                Text("Feedback saved")
+                                    .font(.caption2)
+                                    .foregroundStyle(Color(hex: "#10B981"))
+                            }
+                        }
+
+                        TextField("Optional: refine or correct this pattern", text: $refinement, axis: .vertical)
+                            .font(.caption)
+                            .foregroundStyle(DS.Color.textPrimary)
+                            .lineLimit(2...4)
+                            .padding(DS.Space.sm)
+                            .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: DS.Radius.control))
+                    }
+
+                    Spacer(minLength: DS.Space.xxxl)
+
                     // Explore button
                     Button(action: { /* seed a question */ }) {
                         Text(pattern.explorableQuestion)
@@ -239,6 +292,28 @@ private struct PatternDetailView: View {
                     Button("Close") { dismiss() }
                 }
             }
+        }
+    }
+
+    private func saveFeedback() {
+        do {
+            let feedback = PatternFeedback(
+                patternId: pattern.id,
+                resonance: resonance,
+                refinement: refinement.isEmpty ? nil : refinement
+            )
+            modelContext.insert(feedback)
+            try modelContext.save()
+            withAnimation(.easeInOut(duration: 0.3)) {
+                feedbackSaved = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    feedbackSaved = false
+                }
+            }
+        } catch {
+            // Silent fail
         }
     }
 

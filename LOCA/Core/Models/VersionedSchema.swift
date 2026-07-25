@@ -57,6 +57,8 @@ enum RippleSchemaV1: VersionedSchema {
             Direction.self,
             Fork.self,
             Calibration.self,
+            PatternFeedback.self,
+            NarrativeFeedback.self,
         ]
     }
 }

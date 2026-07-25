@@ -37,6 +37,10 @@ struct NarrativeView: View {
         .task { await loadNarrative() }
     }
 
+    @State private var arcResonance: Double = 0.5
+    @State private var narrativeNotes: String = ""
+    @State private var feedbackSaved = false
+
     private func narrativeContent(_ narrative: LifeNarrative) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.xl) {
             // Arc
@@ -51,6 +55,18 @@ struct NarrativeView: View {
                     .fontWeight(.light)
                     .foregroundStyle(DS.Color.textPrimary)
                     .lineSpacing(4)
+
+                // Arc feedback
+                VStack(alignment: .leading, spacing: DS.Space.sm) {
+                    HStack {
+                        Text("Does this ring true?")
+                            .font(.caption2)
+                            .foregroundStyle(DS.Color.textTertiary)
+                        Slider(value: $arcResonance, in: 0...1)
+                            .tint(Color.accentColor)
+                            .onChange(of: arcResonance) { _ in saveNarrativeFeedback() }
+                    }
+                }
             }
 
             Divider()
@@ -151,6 +167,29 @@ struct NarrativeView: View {
             narrative = nil
         }
         isLoading = false
+    }
+
+    private func saveNarrativeFeedback() {
+        guard let narrative = narrative else { return }
+        do {
+            let feedback = NarrativeFeedback(
+                arc: narrative.arc,
+                resonance: arcResonance,
+                notes: narrativeNotes.isEmpty ? nil : narrativeNotes
+            )
+            modelContext.insert(feedback)
+            try modelContext.save()
+            withAnimation(.easeInOut(duration: 0.3)) {
+                feedbackSaved = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    feedbackSaved = false
+                }
+            }
+        } catch {
+            // Silent fail
+        }
     }
 }
 
