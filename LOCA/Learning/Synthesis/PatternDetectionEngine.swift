@@ -94,6 +94,21 @@ final class PatternDetectionEngine {
             chapters: chapters
         ))
 
+        // Apply feedback-adjusted confidence
+        let processor = FeedbackProcessor.shared
+        let feedbackMap = try processor.loadPatternFeedback(modelContext: modelContext)
+        patterns = patterns.map { pattern in
+            guard let feedback = feedbackMap[pattern.id] else { return pattern }
+            let adjusted = processor.adjustedConfidence(for: pattern, feedback: feedback)
+            return LifePattern(
+                observation: pattern.observation,
+                layer: pattern.layer,
+                confidence: adjusted,
+                sampleCount: pattern.sampleCount,
+                explorableQuestion: pattern.explorableQuestion
+            )
+        }
+
         return patterns.sorted { $0.confidence > $1.confidence }
     }
 

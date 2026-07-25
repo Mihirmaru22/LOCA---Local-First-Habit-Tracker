@@ -55,15 +55,35 @@ final class NarrativeComposer {
     ) -> LifeNarrative? {
         guard !patterns.isEmpty else { return nil }
 
+        // Load and filter by user feedback
+        let processor = FeedbackProcessor.shared
+        var workingPatterns = patterns
+        var narrativeFeedback: [NarrativeFeedback] = []
+
+        do {
+            let patternFeedback = try processor.loadPatternFeedback(modelContext: modelContext)
+            narrativeFeedback = try processor.loadNarrativeFeedback(modelContext: modelContext)
+
+            // Suppress low-resonance patterns; prioritize high-resonance
+            let lowResonance = processor.lowResonancePatterns(patterns, feedback: patternFeedback)
+            workingPatterns = workingPatterns.filter { pattern in
+                !lowResonance.contains { $0.id == pattern.id }
+            }
+
+            guard !workingPatterns.isEmpty else { return nil }
+        } catch {
+            // Fallback: use all patterns if feedback load fails
+        }
+
         // Cluster patterns into thematic threads
-        let threads = identifyThreads(patterns: patterns)
+        let threads = identifyThreads(patterns: workingPatterns)
         guard !threads.isEmpty else { return nil }
 
         // Identify life arc from chapter progression + direction
-        let arc = identifyArc(chapters: chapters, direction: direction, patterns: patterns)
+        let arc = identifyArc(chapters: chapters, direction: direction, patterns: workingPatterns, narrativeFeedback: narrativeFeedback)
 
         // Compose narrative body from arc + threads
-        let body = composeBody(arc: arc, threads: threads, patterns: patterns)
+        let body = composeBody(arc: arc, threads: threads, patterns: workingPatterns)
 
         return LifeNarrative(
             arc: arc,
@@ -119,7 +139,8 @@ final class NarrativeComposer {
     private func identifyArc(
         chapters: [Chapter],
         direction: Direction?,
-        patterns: [LifePattern]
+        patterns: [LifePattern],
+        narrativeFeedback: [NarrativeFeedback] = []
     ) -> String {
         // If there's a Direction, use it as the primary arc
         if let direction = direction {
