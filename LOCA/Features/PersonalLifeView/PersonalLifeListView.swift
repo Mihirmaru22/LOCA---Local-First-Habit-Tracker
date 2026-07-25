@@ -149,6 +149,9 @@ struct PersonalLifeListView: View {
                 ExploreCard(title: "Patterns", subtitle: "What moves together", icon: "sparkles") {
                     PatternsView()
                 }
+                ExploreCard(title: "Narrative", subtitle: "Your life story", icon: "book.pages.fill") {
+                    NarrativeView()
+                }
             }
             .padding(.horizontal, DS.Space.lg)
         }
