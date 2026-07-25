@@ -157,6 +157,8 @@ private struct PatternDetailView: View {
     @State private var resonance: Int = 0
     @State private var refinement: String = ""
     @State private var feedbackSaved = false
+    @State private var context: ContextEnricher.PatternContext?
+    @State private var isLoadingContext = true
 
     var body: some View {
         NavigationStack {
@@ -223,6 +225,23 @@ private struct PatternDetailView: View {
                         Text(layerDescription)
                             .font(DS.Text.body)
                             .foregroundStyle(DS.Color.textSecondary)
+                    }
+
+                    // Pattern context (if loaded)
+                    if !isLoadingContext, let context = context {
+                        Divider()
+
+                        VStack(alignment: .leading, spacing: DS.Space.sm) {
+                            Text("Context")
+                                .font(.caption)
+                                .foregroundStyle(DS.Color.textTertiary)
+                                .textCase(.uppercase)
+
+                            Text(ContextEnricher.shared.summarizeContext(context))
+                                .font(.caption)
+                                .foregroundStyle(DS.Color.textSecondary)
+                                .lineSpacing(2)
+                        }
                     }
 
                     Spacer(minLength: DS.Space.xxxl)
@@ -292,7 +311,27 @@ private struct PatternDetailView: View {
                     Button("Close") { dismiss() }
                 }
             }
+            .task { await loadContext() }
         }
+    }
+
+    private func loadContext() async {
+        isLoadingContext = true
+        do {
+            let enricher = ContextEnricher.shared
+            let processor = FeedbackProcessor.shared
+            let feedbackMap = try processor.loadPatternFeedback(modelContext: modelContext)
+            let patternFeedback = feedbackMap[pattern.id] ?? []
+
+            context = try enricher.enrichPattern(
+                pattern,
+                modelContext: modelContext,
+                feedback: patternFeedback
+            )
+        } catch {
+            context = nil
+        }
+        isLoadingContext = false
     }
 
     private func saveFeedback() {
