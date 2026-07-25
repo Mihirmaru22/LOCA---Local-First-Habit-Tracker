@@ -152,7 +152,7 @@ struct LOCAApp: App {
                         // Generate and deliver reflections (Phase 4.1–4.4).
                         // One honest sentence tied to progress, delivered as push.
                         // Phase 4.4: Exit gate — if engagement < 30% over 20 reflections, suppress.
-                        while true {
+                        while !Task.isCancelled {
                             // Check if feature is still earning attention (Phase 4.4)
                             let continueReflections = await ReflectionDelivery.shared.shouldContinueReflections()
                             guard continueReflections else {
@@ -183,7 +183,7 @@ struct LOCAApp: App {
                         // Detect and deliver interventions (Phase 5.1–5.4).
                         // High-confidence relapse warnings, delivered as push.
                         // Phase 5.5: Exit gate — if effectiveness < 50% over 10 interventions, suppress.
-                        while true {
+                        while !Task.isCancelled {
                             // Check if feature is still effective (Phase 5.5)
                             let continueInterventions = await InterventionDelivery.shared.shouldContinueInterventions()
                             guard continueInterventions else {
