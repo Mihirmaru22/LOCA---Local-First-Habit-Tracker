@@ -31,6 +31,10 @@ struct AskView: View {
     @State private var composeFailed = false
     @FocusState private var fieldFocused: Bool
 
+    @State private var showCalibrationSheet = false
+    @State private var selectedAnnotation: AnnotationPoint?
+    @State private var calibrationLabel: String = ""
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -54,6 +58,16 @@ struct AskView: View {
         .onAppear {
             question = prefill
             if prefill.isEmpty { fieldFocused = true }
+        }
+        .sheet(isPresented: $showCalibrationSheet) {
+            if let annotation = selectedAnnotation {
+                CalibrationSheet(
+                    annotation: annotation,
+                    label: $calibrationLabel,
+                    isPresented: $showCalibrationSheet,
+                    onSave: { saveCalibration(annotation, label: $0) }
+                )
+            }
         }
     }
 
@@ -143,7 +157,8 @@ struct AskView: View {
                         ForEach(view.annotations, id: \.timestamp) { annotation in
                             SoftAnnotationRow(
                                 annotation: annotation,
-                                onPullThread: { pullAnnotationThread(annotation) }
+                                onPullThread: { pullAnnotationThread(annotation) },
+                                onCalibrate: { openCalibration(for: annotation) }
                             )
                         }
                     }
@@ -195,6 +210,29 @@ struct AskView: View {
         Task { await compose() }
     }
 
+    private func openCalibration(for annotation: AnnotationPoint) {
+        selectedAnnotation = annotation
+        calibrationLabel = ""
+        showCalibrationSheet = true
+    }
+
+    private func saveCalibration(_ annotation: AnnotationPoint, label: String) {
+        guard !label.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        do {
+            let calibration = Calibration(
+                elementType: "annotation",
+                elementText: annotation.text,
+                label: label,
+                dimension: annotation.targetState
+            )
+            modelContext.insert(calibration)
+            try modelContext.save()
+            showCalibrationSheet = false
+        } catch {
+            // Silently fail for now
+        }
+    }
+
     private func meanConfidence(_ view: ComposedView) -> Double {
         let all = view.moodTimeline.map { 1.0 - $0.uncertainty }
         guard !all.isEmpty else { return 0.5 }
@@ -243,23 +281,102 @@ struct AskView: View {
 private struct SoftAnnotationRow: View {
     let annotation: AnnotationPoint
     let onPullThread: () -> Void
+    let onCalibrate: () -> Void
 
     var body: some View {
-        Button(action: onPullThread) {
-            VStack(alignment: .leading, spacing: DS.Space.xs) {
+        VStack(alignment: .leading, spacing: DS.Space.xs) {
+            HStack(alignment: .top, spacing: DS.Space.md) {
+                Button(action: onPullThread) {
+                    VStack(alignment: .leading, spacing: DS.Space.xs) {
+                        Text(annotation.text)
+                            .font(DS.Text.body)
+                            .foregroundStyle(DS.Color.textPrimary.opacity(0.8))
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Text("pull to explore →")
+                            .font(.caption2)
+                            .foregroundStyle(DS.Color.textTertiary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+
+                Button(action: onCalibrate) {
+                    Image(systemName: "pencil.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(DS.Color.textTertiary)
+                        .padding(DS.Space.xs)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+}
+
+// MARK: - Calibration Sheet
+
+private struct CalibrationSheet: View {
+    let annotation: AnnotationPoint
+    @Binding var label: String
+    @Binding var isPresented: Bool
+    let onSave: (String) -> Void
+
+    @FocusState private var fieldFocused: Bool
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: DS.Space.lg) {
+                Text("Sharpen this observation")
+                    .font(.headline)
+                    .foregroundStyle(DS.Color.textPrimary)
+
                 Text(annotation.text)
                     .font(DS.Text.body)
-                    .foregroundStyle(DS.Color.textPrimary.opacity(0.8))
-                    .fixedSize(horizontal: false, vertical: true)
+                    .foregroundStyle(DS.Color.textSecondary)
+                    .padding(DS.Space.md)
+                    .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: DS.Radius.card))
 
-                Text("pull to explore →")
-                    .font(.caption2)
-                    .foregroundStyle(DS.Color.textTertiary)
+                VStack(alignment: .leading, spacing: DS.Space.sm) {
+                    Text("Your context")
+                        .font(.caption)
+                        .foregroundStyle(DS.Color.textTertiary)
+                        .textCase(.uppercase)
+
+                    TextField("e.g., This was during the stressful project...", text: $label, axis: .vertical)
+                        .font(DS.Text.body)
+                        .foregroundStyle(DS.Color.textPrimary)
+                        .lineLimit(2...6)
+                        .focused($fieldFocused)
+                        .padding(DS.Space.md)
+                        .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: DS.Radius.control))
+                }
+
+                Spacer()
+
+                HStack(spacing: DS.Space.md) {
+                    Button("Cancel") {
+                        isPresented = false
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(DS.Space.md)
+                    .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: DS.Radius.control))
+                    .foregroundStyle(DS.Color.textPrimary)
+
+                    Button("Save") {
+                        onSave(label)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(DS.Space.md)
+                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: DS.Radius.control))
+                    .foregroundStyle(.white)
+                    .disabled(label.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .contentShape(Rectangle())
+            .padding(DS.Space.xl)
+            .navigationBarTitleDisplayMode(.inline)
         }
-        .buttonStyle(.plain)
+        .onAppear { fieldFocused = true }
     }
 }
 
