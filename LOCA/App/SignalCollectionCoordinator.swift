@@ -131,8 +131,11 @@ class SignalCollectionCoordinator: NSObject, ObservableObject {
         // Start collection
         manager.startCollection()
 
-        // Monitoring loop: check status every hour
-        while isCollecting {
+        // Monitoring loop: check status every hour.
+        // Checks Task.isCancelled at the top of every iteration (Engineering Principles §3.3).
+        // When the parent .task is cancelled, Task.sleep throws CancellationError; the catch
+        // block logs nothing (isCancelled == true) and the loop exits on the next condition check.
+        while isCollecting && !Task.isCancelled {
             do {
                 try await Task.sleep(nanoseconds: 3600 * 1_000_000_000)  // 1 hour
                 lastCollectionTime = manager.lastUpdateTime
@@ -144,6 +147,7 @@ class SignalCollectionCoordinator: NSObject, ObservableObject {
                 if !Task.isCancelled {
                     logger.error("Collection monitoring error: \(error.localizedDescription)")
                 }
+                break
             }
         }
 

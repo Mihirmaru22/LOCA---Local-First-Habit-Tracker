@@ -94,7 +94,7 @@
 		CF4D3E4F5A6B7C8D9E0F1A2B /* CheckInWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF3A1B2C3D4E5F6A7B8C9D0E /* CheckInWriter.swift */; };
 		D27B8705E25F45C2A8DFABE1 /* Double+Clamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13289E001E014999A9EFB063 /* Double+Clamp.swift */; };
 		D388B1355EEE4A79A8BA6242 /* CloudKitSyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F4E506745484B71A76301BD /* CloudKitSyncCoordinator.swift */; };
-		D3F68D36689EDD3AB476FAE0 /* HabitAnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C351824E770C933A393581B /* HabitAnalyticsView.swift */; };
+
 		D45B6400C4A988DB2D499E0E /* HeatmapWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98EC7081C1B9D172E1DB63DC /* HeatmapWidget.swift */; };
 		D73B09D65D15695BD06A83CB /* SettingsMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04AD22D76419B8B94DE6EC40 /* SettingsMenuView.swift */; };
 		D9F19BCA3572423D959CEEF5 /* HabitGridLayoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1722A0BDC804F11856E575D /* HabitGridLayoutView.swift */; };
@@ -283,7 +283,7 @@
 		86A9A6A783B46023591EB5D0 /* HabitListRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitListRow.swift; sourceTree = "<group>"; };
 		8A1E3F118B00458FA0744867 /* VersionedSchema.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VersionedSchema.swift; sourceTree = "<group>"; };
 		8A8D2D460BD70B1FCE35B5F7 /* DS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DS.swift; sourceTree = "<group>"; };
-		8C351824E770C933A393581B /* HabitAnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitAnalyticsView.swift; sourceTree = "<group>"; };
+
 		8CDAE353812C31ADEF5B9789 /* ArcProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArcProgressView.swift; sourceTree = "<group>"; };
 		8CF2B6B9240E460892583CEC /* Date+Calendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Calendar.swift"; sourceTree = "<group>"; };
 		98EC7081C1B9D172E1DB63DC /* HeatmapWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeatmapWidget.swift; sourceTree = "<group>"; };
@@ -476,7 +476,7 @@
 			children = (
 				75EA3DF789134654984688CB /* HabitDetailView.swift */,
 				4CE91B0C5D88414094E4DD05 /* HeatmapView.swift */,
-				8C351824E770C933A393581B /* HabitAnalyticsView.swift */,
+
 				ABA9551FC8C82DA8A6FEA0AD /* HabitCheckInsView.swift */,
 				5E0CEC1DACBB3FDB6E82E5BD /* HabitJournalView.swift */,
 				C3CFB3A1EC398091E63EF048 /* TimelineChartView.swift */,
@@ -957,6 +957,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				62780CD2EA974EBA86115C30 /* LOCAApp.swift in Sources */,
+				85E6023392767E28ACEF45563C2B295F /* AppCoordinator.swift in Sources */,
 				D388B1355EEE4A79A8BA6242 /* CloudKitSyncCoordinator.swift in Sources */,
 				675D0365D5C54CA9B9670937 /* HabitBoard.swift in Sources */,
 				7C33229B8B884E4A8722EE7D /* LogEntry.swift in Sources */,
@@ -987,7 +988,7 @@
 				7504D58ADAB74D25BA2F69C8 /* HeatmapDataProvider.swift in Sources */,
 				E8A397AD3E3F43468E8BFF20 /* HabitDetailView.swift in Sources */,
 				FB7C2613B33C4BAAB22BB911 /* HeatmapView.swift in Sources */,
-				D3F68D36689EDD3AB476FAE0 /* HabitAnalyticsView.swift in Sources */,
+
 				3D053EF389D282B1C5921995 /* HabitCheckInsView.swift in Sources */,
 				3CB41CE97E4FF273209C5DAC /* HabitJournalView.swift in Sources */,
 				8D575C6FE704AF7C134F1024 /* TimelineChartView.swift in Sources */,
