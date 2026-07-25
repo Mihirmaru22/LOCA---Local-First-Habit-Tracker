@@ -14,7 +14,6 @@ enum HabitDetailTab: Hashable {
     case overview
     case checkIns
     case journal
-    case analytics
 }
 
 // MARK: - HabitDetailView
@@ -50,9 +49,6 @@ struct HabitDetailView: View {
                         .padding(.bottom, 80) // clear toolbar
                 case .journal:
                     HabitJournalView(board: board)
-                        .padding(.bottom, 80)
-                case .analytics:
-                    HabitAnalyticsView(board: board)
                         .padding(.bottom, 80)
                 case .overview:
                     ScrollView {
@@ -389,8 +385,7 @@ private struct HabitDetailTabBar: View {
     private let tabs: [(tab: HabitDetailTab, icon: String)] = [
         (.overview, "chart.line.uptrend.xyaxis"),
         (.checkIns, "checklist"),
-        (.journal, "doc.text"),
-        (.analytics, "chart.bar.xaxis.ascending")
+        (.journal, "doc.text")
     ]
 
     var body: some View {
@@ -412,7 +407,7 @@ private struct HabitDetailTabBar: View {
             GeometryReader { geo in
                 Capsule(style: .continuous)
                     .fill(ColorPalette[0].opacity(0.15))
-                    .frame(width: geo.size.width / 4, height: geo.size.height)
+                    .frame(width: geo.size.width / CGFloat(tabs.count), height: geo.size.height)
                     .offset(x: tabOffset(in: geo.size.width), y: 0)
                     .animation(DS.Motion.settle(reduceMotion: reduceMotion), value: selectedTab)
             }
@@ -421,7 +416,7 @@ private struct HabitDetailTabBar: View {
     }
 
     private func tabOffset(in width: CGFloat) -> CGFloat {
-        let tabWidth = width / 4
+        let tabWidth = width / CGFloat(tabs.count)
         let selectedIndex = tabs.firstIndex { $0.tab == selectedTab } ?? 0
         return CGFloat(selectedIndex) * tabWidth
     }
