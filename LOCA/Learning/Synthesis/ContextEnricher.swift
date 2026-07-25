@@ -93,21 +93,23 @@ import SwiftData
 
         switch pattern.layer {
         case .habitState, .habitChapter:
-            // Find logs that likely relate to the habit mentioned in pattern
+            // Find logs that likely relate to the habit mentioned in pattern.
+            // LogEntry has no title; match against the owning board's name and the optional note.
             relatedLogs = allLogs.filter { log in
-                pattern.observation.lowercased().contains(log.title.lowercased()) ||
-                (log.notes?.lowercased().contains(pattern.observation.lowercased()) ?? false)
+                let boardName = log.board?.name ?? ""
+                return pattern.observation.lowercased().contains(boardName.lowercased()) ||
+                    (log.note?.lowercased().contains(pattern.observation.lowercased()) ?? false)
             }
             .sorted { $0.timestamp > $1.timestamp }
             .prefix(5)
             .map { $0 }
 
         case .personState:
-            // Find appearance-related logs or notes mentioning people
+            // Find logs with notes mentioning people or social context.
             relatedLogs = allLogs.filter { log in
                 pattern.observation.lowercased().contains("time") ||
                 pattern.observation.lowercased().contains("person") ||
-                (log.notes?.lowercased().contains("with") ?? false)
+                (log.note?.lowercased().contains("with") ?? false)
             }
             .sorted { $0.timestamp > $1.timestamp }
             .prefix(3)
@@ -148,7 +150,7 @@ import SwiftData
         }
 
         return chapters.first { chapter in
-            chapter.startDate <= newestState && chapter.endDate >= oldestState
+            chapter.startDate <= newestState && (chapter.endDate ?? Date()) >= oldestState
         }
     }
 
@@ -163,7 +165,7 @@ import SwiftData
         }
 
         if !context.relatedLogs.isEmpty {
-            let recentActivity = context.relatedLogs.prefix(2).map { $0.title }.joined(separator: " and ")
+            let recentActivity = context.relatedLogs.prefix(2).map { $0.note ?? "check-in" }.joined(separator: " and ")
             summary += "Recent activity: \(recentActivity). "
         }
 

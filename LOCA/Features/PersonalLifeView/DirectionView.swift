@@ -217,7 +217,7 @@ struct DirectionView: View {
         } label: {
             Label("Add a fork", systemImage: "arrow.triangle.branch")
                 .font(.caption)
-                .foregroundStyle(.tint)
+                .foregroundStyle(Color.accentColor)
                 .padding(.horizontal, DS.Space.lg)
         }
     }

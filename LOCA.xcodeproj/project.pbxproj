@@ -916,10 +916,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				FD6101E26D004E2C8AA1ADD5 /* HabitBoard.swift in Sources */,
-				D4E5F6A7B8C9D0E1F2A3B4C5 /* PatternsView.swift in Sources */,
-				E5D4E5F6A7B8C9D0E1F2A3B4 /* FeedbackAnalyticsView.swift in Sources */,
-				F6E5F6A7B8C9D0E1F2A3B4C5 /* FeedbackProcessor.swift in Sources */,
-				G7F6A7B8C9D0E1F2A3B4C5D6 /* ContextEnricher.swift in Sources */,
 				9DC743F9D675419D924F051E /* LogEntry.swift in Sources */,
 				50C2F3E507384D21B34EB939 /* VersionedSchema.swift in Sources */,
 				9A14DA72010B4F2CA5E419E7 /* ModelContainerFactory.swift in Sources */,
@@ -1076,6 +1072,7 @@
 				DBCFA44522BF49D293AF3CC8 /* EventClassifier.swift in Sources */,
 				16F708C81EA942FAA91F5452 /* EventDetectionEngine.swift in Sources */,
 				5E58547710E44338B0203784 /* RelationshipGraphEngine.swift in Sources */,
+				A1B2C3D4E5F6A7B8C9D0E1F2 /* PatternDetectionEngine.swift in Sources */,
 				F6E5F6A7B8C9D0E1F2A3B4C5 /* FeedbackProcessor.swift in Sources */,
 				G7F6A7B8C9D0E1F2A3B4C5D6 /* ContextEnricher.swift in Sources */,
 				54C2471DD4294A9F928AD82E /* LifeEventModels.swift in Sources */,
