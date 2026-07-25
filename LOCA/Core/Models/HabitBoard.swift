@@ -359,13 +359,18 @@ extension HabitBoard {
     /// include it — SwiftData propagates relationship changes immediately upon insert
     /// within the same `ModelContext`.
     ///
-    /// **Contract (C-2):** this fast path is valid *only* for an entry dated **today**.
-    /// It inspects today's window exclusively and can only start or extend a streak — it
-    /// never decrements. Any mutation that touches another day (a backdated or future
-    /// insert, an edit, or a delete) must instead set `needsStreakRecalculation` and route
-    /// through `StreakCalculator` (see `StreakMaintenanceCoordinator`), which rebuilds the
-    /// cache from the full log history. Calling this for a non-today mutation leaves the
-    /// cached streak silently wrong.
+    /// **Incremental-Only Contract:** This fast path is valid *only* for an entry dated
+    /// **today**. It inspects today's window exclusively and can only start or extend a
+    /// streak — it never decrements. Any mutation that touches another day (a backdated
+    /// or future insert, an edit, or a delete) must instead set `needsStreakRecalculation`
+    /// and route through `StreakCalculator` (see `StreakMaintenanceCoordinator`), which
+    /// rebuilds the cache from the full log history. Calling this for a non-today mutation
+    /// leaves the cached streak silently wrong.
+    ///
+    /// **Verification:** All call sites route correctly via `CheckInWriter`, which checks
+    /// `Calendar.current.isDateInToday(timestamp)` and calls `updateStreak()` only for
+    /// today's entries. Edits, deletes, and non-today inserts set `needsStreakRecalculation`
+    /// instead. No call site violates this contract.
     ///
     /// Today's entries are identified using a precomputed half-open interval
     /// `[todayStart, tomorrowStart)`, avoiding per-entry Calendar calls. Total
