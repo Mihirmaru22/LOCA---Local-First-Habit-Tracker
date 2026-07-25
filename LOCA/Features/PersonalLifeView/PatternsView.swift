@@ -1,0 +1,265 @@
+//
+//  PatternsView.swift
+//  LOCA
+//
+//  Phase 9, Session 9.1 — Patterns & synthesis view.
+//
+//  Surface cross-layer patterns: habits that affect your states, people who
+//  shift your mood, chapters with distinct emotional tones, habits that persist
+//  across your life. Each pattern is a thread you can pull to explore deeper.
+//
+
+import SwiftUI
+import SwiftData
+
+struct PatternsView: View {
+    @Environment(\.modelContext) private var modelContext
+
+    @State private var patterns: [LifePattern] = []
+    @State private var isLoading = true
+    @State private var selectedPattern: LifePattern?
+    @State private var showPatternDetail = false
+
+    var body: some View {
+        ScrollView {
+            if isLoading {
+                VStack(spacing: DS.Space.lg) {
+                    Text("…")
+                        .font(.title3)
+                        .foregroundStyle(DS.Color.textTertiary)
+                }
+                .padding(DS.Space.xl)
+            } else if patterns.isEmpty {
+                emptyState
+            } else {
+                VStack(alignment: .leading, spacing: DS.Space.lg) {
+                    Text("Patterns")
+                        .font(.headline)
+                        .foregroundStyle(DS.Color.textPrimary)
+                        .padding(.horizontal, DS.Space.lg)
+
+                    VStack(spacing: DS.Space.md) {
+                        ForEach(patterns) { pattern in
+                            PatternCard(pattern: pattern)
+                                .onTapGesture {
+                                    selectedPattern = pattern
+                                    showPatternDetail = true
+                                }
+                        }
+                    }
+                    .padding(DS.Space.lg)
+                }
+            }
+        }
+        .navigationTitle("Patterns")
+        .largeNavigationTitleDisplay()
+        .task { await loadPatterns() }
+        .sheet(isPresented: $showPatternDetail) {
+            if let pattern = selectedPattern {
+                PatternDetailView(pattern: pattern)
+            }
+        }
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: DS.Space.lg) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 48))
+                .foregroundStyle(DS.Color.textTertiary)
+
+            VStack(spacing: DS.Space.sm) {
+                Text("Patterns emerging")
+                    .font(.headline)
+                    .foregroundStyle(DS.Color.textPrimary)
+
+                Text("LOCA needs a few weeks of data across habits, states, and people to see patterns in your life.")
+                    .font(.caption)
+                    .foregroundStyle(DS.Color.textSecondary)
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .padding(DS.Space.xxxl)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func loadPatterns() async {
+        isLoading = true
+        do {
+            patterns = try PatternDetectionEngine.shared.detectPatterns(modelContext: modelContext)
+        } catch {
+            patterns = []
+        }
+        isLoading = false
+    }
+}
+
+// MARK: - Pattern Card
+
+private struct PatternCard: View {
+    let pattern: LifePattern
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Space.md) {
+            HStack(alignment: .top, spacing: DS.Space.md) {
+                VStack(alignment: .leading, spacing: DS.Space.xs) {
+                    Text(pattern.observation)
+                        .font(DS.Text.body)
+                        .foregroundStyle(DS.Color.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    HStack(spacing: DS.Space.sm) {
+                        Label(
+                            String(pattern.sampleCount),
+                            systemImage: "checkmark.circle.fill"
+                        )
+                        .font(.caption2)
+                        .foregroundStyle(DS.Color.textTertiary)
+
+                        Spacer()
+
+                        confidenceBadge
+                    }
+                }
+
+                Spacer()
+            }
+        }
+        .padding(DS.Space.md)
+        .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+    }
+
+    private var confidenceBadge: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "star.fill")
+                .font(.caption2)
+            Text(String(format: "%.0f%%", pattern.confidence * 100))
+                .font(.caption2)
+        }
+        .foregroundStyle(confidenceColor)
+    }
+
+    private var confidenceColor: Color {
+        if pattern.confidence >= 0.7 { return Color(hex: "#10B981") }
+        if pattern.confidence >= 0.5 { return Color(hex: "#F59E0B") }
+        return Color(hex: "#6B7280")
+    }
+}
+
+// MARK: - Pattern Detail
+
+private struct PatternDetailView: View {
+    let pattern: LifePattern
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: DS.Space.lg) {
+                    // Pattern statement
+                    VStack(alignment: .leading, spacing: DS.Space.sm) {
+                        Text("Pattern")
+                            .font(.caption)
+                            .foregroundStyle(DS.Color.textTertiary)
+                            .textCase(.uppercase)
+
+                        Text(pattern.observation)
+                            .font(.title3)
+                            .fontWeight(.light)
+                            .foregroundStyle(DS.Color.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Divider()
+
+                    // Confidence
+                    VStack(alignment: .leading, spacing: DS.Space.sm) {
+                        HStack {
+                            Text("Confidence")
+                                .font(.caption)
+                                .foregroundStyle(DS.Color.textTertiary)
+                                .textCase(.uppercase)
+
+                            Spacer()
+
+                            Text(String(format: "%.0f%%", pattern.confidence * 100))
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(DS.Color.textSecondary)
+                        }
+
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                RoundedRectangle(cornerRadius: 2)
+                                    .foregroundStyle(DS.Color.surfaceRecessed)
+
+                                RoundedRectangle(cornerRadius: 2)
+                                    .frame(width: geo.size.width * pattern.confidence)
+                                    .foregroundStyle(Color.accentColor)
+                            }
+                        }
+                        .frame(height: 6)
+
+                        Text("Based on \(pattern.sampleCount) observations")
+                            .font(.caption2)
+                            .foregroundStyle(DS.Color.textTertiary)
+                    }
+
+                    Divider()
+
+                    // Layer context
+                    VStack(alignment: .leading, spacing: DS.Space.sm) {
+                        Text("Pattern type")
+                            .font(.caption)
+                            .foregroundStyle(DS.Color.textTertiary)
+                            .textCase(.uppercase)
+
+                        Text(layerDescription)
+                            .font(DS.Text.body)
+                            .foregroundStyle(DS.Color.textSecondary)
+                    }
+
+                    Spacer(minLength: DS.Space.xxxl)
+
+                    // Explore button
+                    Button(action: { /* seed a question */ }) {
+                        Text(pattern.explorableQuestion)
+                            .font(.caption)
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(DS.Space.md)
+                            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: DS.Radius.control))
+                    }
+                }
+                .padding(DS.Space.xl)
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private var layerDescription: String {
+        switch pattern.layer {
+        case .habitState:
+            return "This pattern connects a habit to your state (mood, energy, stress, or focus)."
+        case .personState:
+            return "This pattern connects time with a person to changes in your state."
+        case .chapterState:
+            return "This pattern describes a distinct emotional tone during a chapter of your life."
+        case .habitChapter:
+            return "This pattern shows that a habit is consistent across different chapters — it's part of your core rhythm."
+        }
+    }
+}
+
+// MARK: - Preview
+
+#Preview {
+    NavigationStack {
+        PatternsView()
+    }
+}

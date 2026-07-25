@@ -146,6 +146,9 @@ struct PersonalLifeListView: View {
                 ExploreCard(title: "Direction", subtitle: "Where you're headed", icon: "arrow.forward.circle") {
                     DirectionView()
                 }
+                ExploreCard(title: "Patterns", subtitle: "What moves together", icon: "sparkles") {
+                    PatternsView()
+                }
             }
             .padding(.horizontal, DS.Space.lg)
         }
