@@ -152,6 +152,9 @@ struct PersonalLifeListView: View {
                 ExploreCard(title: "Narrative", subtitle: "Your life story", icon: "book.pages.fill") {
                     NarrativeView()
                 }
+                ExploreCard(title: "Feedback", subtitle: "Your learning loop", icon: "hand.thumbsup.fill") {
+                    FeedbackAnalyticsView()
+                }
             }
             .padding(.horizontal, DS.Space.lg)
         }
