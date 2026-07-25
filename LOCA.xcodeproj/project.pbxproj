@@ -145,7 +145,7 @@
 		78B4D940544F4F6988723F5A /* DirectionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CD3EF36A4504EC2B092EDD8 /* DirectionModel.swift */; };
 		EB9C2F4D1A6E7B8C9D0E3F2A /* CalibrationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA7B8AC9D7E1F4B5A82C6D3E /* CalibrationModel.swift */; };
 		D0E1F2A3B4C5D6E7F8A9B0C1 /* FeedbackModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LOCA/Learning/Entities/FeedbackModel.swift"; sourceTree = SOURCE_ROOT; };
-		9F2E3D4A5B6C7D8E9F0A1B2C /* PatternDetectionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternDetectionEngine.swift; sourceTree = "<group>"; };
+		9F2E3D4A5B6C7D8E9F0A1B2C /* PatternDetectionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LOCA/Learning/Synthesis/PatternDetectionEngine.swift"; sourceTree = SOURCE_ROOT; };
 		E5F6A7B8C9D0E1F2A3B4C5D6 /* NarrativeComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrativeComposer.swift; sourceTree = "<group>"; };
 		B8C9D0E1F2A3B4C5D6E7F8A9 /* NarrativeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrativeView.swift; sourceTree = "<group>"; };
 		C3D4E5F6A7B8C9D0E1F2A3B4 /* PatternsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternsView.swift; sourceTree = "<group>"; };
