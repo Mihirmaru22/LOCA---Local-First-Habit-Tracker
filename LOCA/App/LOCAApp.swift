@@ -45,9 +45,7 @@ import os.log
 struct LOCAApp: App {
 
     private let container: ModelContainer?
-    private let cloudKitCoordinator: CloudKitSyncCoordinator?
-    private let streakMaintenanceCoordinator: StreakMaintenanceCoordinator?
-    private let signalCollectionCoordinator: SignalCollectionCoordinator?
+    private let appCoordinator: AppCoordinator?
     nonisolated private let logger = Logger(subsystem: "com.loca.app", category: "app")
 
     init() {
@@ -58,14 +56,12 @@ struct LOCAApp: App {
             // comment. LOCAApp does not know or care which one it gets.
             let container = try ModelContainerFactory.makeConfiguredContainer()
             self.container = container
-            self.cloudKitCoordinator = CloudKitSyncCoordinator(container: container)
-            // Consumer half of the needsStreakRecalculation pipeline (C-1):
-            // CloudKitSyncCoordinator flags boards after an import; this repairs
-            // their cached streaks from the full log history and clears the flag.
-            self.streakMaintenanceCoordinator = StreakMaintenanceCoordinator(container: container)
-            // Signal collection coordinator (Phase 4.1): on-device learning engine
-            // ingests passive signals from HealthKit, Calendar, Location, device activity
-            self.signalCollectionCoordinator = SignalCollectionCoordinator.shared
+            self.appCoordinator = AppCoordinator(
+                container: container,
+                cloudKitCoordinator: CloudKitSyncCoordinator(container: container),
+                streakMaintenanceCoordinator: StreakMaintenanceCoordinator(container: container),
+                signalCollectionCoordinator: SignalCollectionCoordinator.shared
+            )
 
             // DEBUG-only: seeds minimal sample data so HabitDetailView,
             // HeatmapView, and AnalyticsCardsView can be exercised before
@@ -86,9 +82,7 @@ struct LOCAApp: App {
             // Nothing further to do here except fail visibly via ContainerUnavailableView
             // rather than force-unwrapping into a crash.
             self.container = nil
-            self.cloudKitCoordinator = nil
-            self.streakMaintenanceCoordinator = nil
-            self.signalCollectionCoordinator = nil
+            self.appCoordinator = nil
         }
     }
 
@@ -98,117 +92,10 @@ struct LOCAApp: App {
                 TodayView()
                     .modelContainer(container)
                     .task {
-                        // .task ties CloudKitSyncCoordinator's observation loop
-                        // lifetime to this view's lifetime — cancelled automatically
-                        // on disappear, with no manual Task/queue lifecycle management
-                        // (Engineering Principles §3.1: structured concurrency only).
-                        await cloudKitCoordinator?.start()
-                    }
-                    .task {
-                        // Consumer half of the streak-recalculation pipeline (C-1):
-                        // runs a launch repair pass for boards flagged in a prior
-                        // session, then recalculates on each completed CloudKit import.
-                        // Separate .task so it observes concurrently with the coordinator
-                        // above rather than serially behind its never-returning loop.
-                        await streakMaintenanceCoordinator?.start()
-                    }
-                    .task {
-                        // Request notification permission for reminders (Phase 3.1).
-                        // Non-critical; silent fail if permission denied.
-                        _ = await ReminderScheduler.shared.requestNotificationPermission()
-                    }
-                    .task {
-                        // Reschedule all reminders on launch (Phase 3.1).
-                        // Handles reminders that may have been cleared on system restart
-                        // or prior app updates.
-                        //
-                        // HabitBoard is a non-Sendable SwiftData @Model, so we extract
-                        // Sendable ReminderRequest snapshots here on the MainActor before
-                        // handing them across the ReminderScheduler actor boundary.
-                        let fetchRequest = FetchDescriptor<HabitBoard>(
-                            predicate: #Predicate { $0.archivedAt == nil }
-                        )
-                        if let boards = try? container.mainContext.fetch(fetchRequest) {
-                            let requests: [ReminderRequest] = boards.compactMap { board in
-                                guard let time = board.preferredReminderTime else { return nil }
-                                return ReminderRequest(id: board.id, name: board.name, time: time)
-                            }
-                            await ReminderScheduler.shared.rescheduleAllReminders(requests)
-                        }
-                    }
-                    .task {
-                        // Monitor CloudKit sync status (Phase 3.5).
-                        // Non-blocking: displays sync state to user without interruption.
-                        await SyncStatusCoordinator.shared.start()
-                    }
-                    .task {
-                        // Initialize and start signal collection (Phase 4.1).
-                        // On-device passive signal ingestion from HealthKit, Calendar, Location, etc.
-                        // Non-critical; continues silently if permissions denied.
-                        await signalCollectionCoordinator?.initialize(modelContext: container.mainContext)
-                        await signalCollectionCoordinator?.start()
-                    }
-                    .task {
-                        // Generate and deliver reflections (Phase 4.1–4.4).
-                        // One honest sentence tied to progress, delivered as push.
-                        // Phase 4.4: Exit gate — if engagement < 30% over 20 reflections, suppress.
-                        while !Task.isCancelled {
-                            // Check if feature is still earning attention (Phase 4.4)
-                            let continueReflections = await ReflectionDelivery.shared.shouldContinueReflections()
-                            guard continueReflections else {
-                                logger.debug("Reflection feature suppressed due to low engagement")
-                                break
-                            }
-
-                            let fetchRequest = FetchDescriptor<HabitBoard>(
-                                predicate: #Predicate { $0.archivedAt == nil }
-                            )
-                            if let boards = try? container.mainContext.fetch(fetchRequest) {
-                                // Generate one reflection per active habit
-                                for board in boards {
-                                    let logs = (board.logs ?? []).map { LogSnapshot(from: $0) }
-                                    if let reflection = ReflectionGenerator.generateForHabit(board: board, logs: logs) {
-                                        await ReflectionDelivery.shared.deliverReflection(reflection)
-                                        // Limit to one reflection per app session to avoid noise
-                                        break
-                                    }
-                                }
-                            }
-
-                            // Wait ~24 hours before regenerating (Phase 4.1: rare).
-                            try? await Task.sleep(for: .seconds(24 * 60 * 60))
-                        }
-                    }
-                    .task {
-                        // Detect and deliver interventions (Phase 5.1–5.4).
-                        // High-confidence relapse warnings, delivered as push.
-                        // Phase 5.5: Exit gate — if effectiveness < 50% over 10 interventions, suppress.
-                        while !Task.isCancelled {
-                            // Check if feature is still effective (Phase 5.5)
-                            let continueInterventions = await InterventionDelivery.shared.shouldContinueInterventions()
-                            guard continueInterventions else {
-                                logger.debug("Intervention feature suppressed due to low effectiveness")
-                                break
-                            }
-
-                            let fetchRequest = FetchDescriptor<HabitBoard>(
-                                predicate: #Predicate { $0.archivedAt == nil }
-                            )
-                            if let boards = try? container.mainContext.fetch(fetchRequest) {
-                                // Detect relapse risk for each active habit
-                                for board in boards {
-                                    let logs = (board.logs ?? []).map { LogSnapshot(from: $0) }
-                                    if let prediction = RelapseDetector.detectRelapse(board: board, logs: logs) {
-                                        await InterventionDelivery.shared.deliverIntervention(prediction)
-                                        // Limit to one intervention per app session to avoid noise
-                                        break
-                                    }
-                                }
-                            }
-
-                            // Wait ~24 hours before re-checking (Phase 5: infrequent).
-                            try? await Task.sleep(for: .seconds(24 * 60 * 60))
-                        }
+                        // All app-level coordinator initialization via AppCoordinator (H-10).
+                        // Replaces 7 separate .task modifiers with one unified lifecycle.
+                        // Cancellation propagates to all running coordinators when the task ends.
+                        await appCoordinator?.start()
                     }
             } else {
                 ContainerUnavailableView()

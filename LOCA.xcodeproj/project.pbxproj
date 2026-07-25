@@ -50,6 +50,7 @@
 		5A83AE55776345929CB34BF7 /* WidgetRefreshCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2805490003546CEAA6A8872 /* WidgetRefreshCoordinator.swift */; };
 		6260B091F4A4695307795022 /* ReminderScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF26E3DDB17CA4EFB50AF326 /* ReminderScheduler.swift */; };
 		62780CD2EA974EBA86115C30 /* LOCAApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80DC4E439C544786958675F7 /* LOCAApp.swift */; };
+		85E6023392767E28ACEF45563C2B295F /* AppCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 216268FABBE8F228E875D0EB765B51E1 /* AppCoordinator.swift */; };
 		675D0365D5C54CA9B9670937 /* HabitBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C709F0147F14CE0AEDACAE8 /* HabitBoard.swift */; };
 		6800A67989F48D24F0691570 /* HabitRecommendationCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DE0767C9D0EA4F73A069DA /* HabitRecommendationCard.swift */; };
 		7146E82590C741108AF373D7 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A18185A6B14A16B58268EB /* ColorPalette.swift */; };
@@ -276,6 +277,7 @@
 		7CFAF3D28A75810E28A7408F /* SimpleHabitCreationView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SimpleHabitCreationView.swift; sourceTree = "<group>"; };
 		7EED539C8E562129FC1FEB9B /* YearComparisonChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YearComparisonChartView.swift; sourceTree = "<group>"; };
 		80DC4E439C544786958675F7 /* LOCAApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LOCAApp.swift; sourceTree = "<group>"; };
+		216268FABBE8F228E875D0EB765B51E1 /* AppCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCoordinator.swift; sourceTree = "<group>"; };
 		8430612562AB5270D58C46C7 /* ArcGaugeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArcGaugeView.swift; sourceTree = "<group>"; };
 		861A172DF02AF80236AFED0B /* ReflectionPrompt.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReflectionPrompt.swift; sourceTree = "<group>"; };
 		86A9A6A783B46023591EB5D0 /* HabitListRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitListRow.swift; sourceTree = "<group>"; };
@@ -458,6 +460,7 @@
 			isa = PBXGroup;
 			children = (
 				80DC4E439C544786958675F7 /* LOCAApp.swift */,
+				216268FABBE8F228E875D0EB765B51E1 /* AppCoordinator.swift */,
 				5B3B92460BE743CFADF3C6DE /* SignalCollectionCoordinator.swift */,
 				1F4E506745484B71A76301BD /* CloudKitSyncCoordinator.swift */,
 				F2805490003546CEAA6A8872 /* WidgetRefreshCoordinator.swift */,
