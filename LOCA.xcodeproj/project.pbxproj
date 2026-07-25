@@ -148,6 +148,9 @@
 		E5F6A7B8C9D0E1F2A3B4C5D6 /* NarrativeComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrativeComposer.swift; sourceTree = "<group>"; };
 		B8C9D0E1F2A3B4C5D6E7F8A9 /* NarrativeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrativeView.swift; sourceTree = "<group>"; };
 		C3D4E5F6A7B8C9D0E1F2A3B4 /* PatternsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternsView.swift; sourceTree = "<group>"; };
+		F3D4E5F6A7B8C9D0E1F2A3B4 /* FeedbackAnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackAnalyticsView.swift; sourceTree = "<group>"; };
+		G4E5F6A7B8C9D0E1F2A3B4C5 /* FeedbackProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackProcessor.swift; sourceTree = "<group>"; };
+		H5F6A7B8C9D0E1F2A3B4C5D6 /* ContextEnricher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextEnricher.swift; sourceTree = "<group>"; };
 		FC8D3E5A2B7F8C9D0E1F4A2B /* CalibrationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA7B8AC9D7E1F4B5A82C6D3E /* CalibrationModel.swift */; };
 		E1F2A3B4C5D6E7F8A9B0C1D2 /* FeedbackModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E1F2A3B4C5D6E7F8A9B0C1 /* FeedbackModel.swift */; };
 		F2A3B4C5D6E7F8A9B0C1D2E3 /* FeedbackModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E1F2A3B4C5D6E7F8A9B0C1 /* FeedbackModel.swift */; };
@@ -157,6 +160,9 @@
 		A7B8C9D0E1F2A3B4C5D6E7F8 /* NarrativeComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F6A7B8C9D0E1F2A3B4C5D6 /* NarrativeComposer.swift */; };
 		C9D0E1F2A3B4C5D6E7F8A9B0 /* NarrativeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8C9D0E1F2A3B4C5D6E7F8A9 /* NarrativeView.swift */; };
 		D4E5F6A7B8C9D0E1F2A3B4C5 /* PatternsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F6A7B8C9D0E1F2A3B4 /* PatternsView.swift */; };
+		E5D4E5F6A7B8C9D0E1F2A3B4 /* FeedbackAnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3D4E5F6A7B8C9D0E1F2A3B4 /* FeedbackAnalyticsView.swift */; };
+		F6E5F6A7B8C9D0E1F2A3B4C5 /* FeedbackProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = G4E5F6A7B8C9D0E1F2A3B4C5 /* FeedbackProcessor.swift */; };
+		G7F6A7B8C9D0E1F2A3B4C5D6 /* ContextEnricher.swift in Sources */ = {isa = PBXBuildFile; fileRef = H5F6A7B8C9D0E1F2A3B4C5D6 /* ContextEnricher.swift */; };
 		CA7B8AC9D7E1F4B5A82C6D3E /* CalibrationModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalibrationModel.swift; sourceTree = "<group>"; };
 		FA11FA11FA11FA11FA11FA11 /* DirectionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CD3EF36A4504EC2B092EDD8 /* DirectionModel.swift */; };
 		CC0FA28CBF7F4C7997328A4F /* DirectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46B7109E93264DE9A5FAB54E /* DirectionView.swift */; };
@@ -905,6 +911,9 @@
 			files = (
 				FD6101E26D004E2C8AA1ADD5 /* HabitBoard.swift in Sources */,
 				D4E5F6A7B8C9D0E1F2A3B4C5 /* PatternsView.swift in Sources */,
+				E5D4E5F6A7B8C9D0E1F2A3B4 /* FeedbackAnalyticsView.swift in Sources */,
+				F6E5F6A7B8C9D0E1F2A3B4C5 /* FeedbackProcessor.swift in Sources */,
+				G7F6A7B8C9D0E1F2A3B4C5D6 /* ContextEnricher.swift in Sources */,
 				9DC743F9D675419D924F051E /* LogEntry.swift in Sources */,
 				50C2F3E507384D21B34EB939 /* VersionedSchema.swift in Sources */,
 				9A14DA72010B4F2CA5E419E7 /* ModelContainerFactory.swift in Sources */,
@@ -1043,6 +1052,9 @@
 				C2C67C2B18CB4157B1BA33C2 /* PersonalLifeValidation.swift in Sources */,
 				DCFB2912F8A34AE79CC6DAB3 /* PersonalLifeViewUI.swift in Sources */,
 				F3EEFE6DE7594FACA63F1BB0 /* TraitSummaryView.swift in Sources */,
+				C9D0E1F2A3B4C5D6E7F8A9B0 /* NarrativeView.swift in Sources */,
+				D4E5F6A7B8C9D0E1F2A3B4C5 /* PatternsView.swift in Sources */,
+				E5D4E5F6A7B8C9D0E1F2A3B4 /* FeedbackAnalyticsView.swift in Sources */,
 				051587161C4246C9A9239035 /* ViewCompositionEngine.swift in Sources */,
 				52550F5555DD45B3AE9E3410 /* SignalCollectionStatusView.swift in Sources */,
 				D82ED360B9674E1BA53018BD /* ChapterBuilder.swift in Sources */,
@@ -1055,6 +1067,8 @@
 				DBCFA44522BF49D293AF3CC8 /* EventClassifier.swift in Sources */,
 				16F708C81EA942FAA91F5452 /* EventDetectionEngine.swift in Sources */,
 				5E58547710E44338B0203784 /* RelationshipGraphEngine.swift in Sources */,
+				F6E5F6A7B8C9D0E1F2A3B4C5 /* FeedbackProcessor.swift in Sources */,
+				G7F6A7B8C9D0E1F2A3B4C5D6 /* ContextEnricher.swift in Sources */,
 				54C2471DD4294A9F928AD82E /* LifeEventModels.swift in Sources */,
 				C0E9F32F198346EB9594666C /* RegimePersistenceChecker.swift in Sources */,
 				01E8EF1FCDA54E0BBC16C974 /* CalibrationManager.swift in Sources */,
