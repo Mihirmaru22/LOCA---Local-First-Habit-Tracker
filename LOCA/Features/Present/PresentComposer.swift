@@ -51,6 +51,14 @@ final class PresentComposer {
         )
         let activeDirection = directions.first
 
+        // Fork context: unresolved forks that might need attention.
+        let unresolvedForks = try modelContext.fetch(
+            FetchDescriptor<Fork>(
+                predicate: #Predicate { !$0.resolved },
+                sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+            )
+        )
+
         // Recent states.
         let windowStart = calendar.date(byAdding: .day, value: -recentWindowDays, to: now)!
         let recentDesc = FetchDescriptor<InferredState>(
@@ -83,8 +91,13 @@ final class PresentComposer {
         }
 
         // Soft thread: offered only when something is genuinely worth investigating
-        // and we have real confidence in it.
-        let softThread = composeSoftThread(ranked: ranked, chapter: currentChapter)
+        // and we have real confidence in it. Prioritize unresolved forks (self-turning mode).
+        let softThread: SoftThread?
+        if let fork = unresolvedForks.first {
+            softThread = composeForkThread(fork)
+        } else {
+            softThread = composeSoftThread(ranked: ranked, chapter: currentChapter)
+        }
 
         return PresentScene(
             timeContext: timeContext,
@@ -221,6 +234,20 @@ final class PresentComposer {
         case .evening:   return "A quiet stretch — close to your baseline for this chapter."
         case .night:     return "It's been steady."
         }
+    }
+
+    private func composeForkThread(_ fork: Fork) -> SoftThread {
+        let label: String
+        if fork.kind == .decision {
+            label = "You faced a choice: \"\(fork.statement)\""
+        } else if fork.kind == .inflection {
+            label = "Something shifted: \"\(fork.statement)\""
+        } else { // question
+            label = "A question remains: \"\(fork.statement)\""
+        }
+
+        let question = "About this fork: \(fork.statement) — how did I resolve it, or where is it now?"
+        return SoftThread(label: label, prefilledQuestion: question)
     }
 
     private func composeSoftThread(ranked: [StateSignal], chapter: Chapter?) -> SoftThread? {
