@@ -110,6 +110,10 @@ class StateInferenceEngine: NSObject, ObservableObject {
                     mood: moodResult.value,
                     moodUncertainty: moodResult.uncertainty
                 )
+                inferred.energyAbsent = energyResult.isAbsent
+                inferred.stressAbsent = stressResult.isAbsent
+                inferred.focusAbsent = focusResult.isAbsent
+                inferred.moodAbsent = moodResult.isAbsent
 
                 ctx.insert(inferred)
             }
@@ -179,7 +183,31 @@ class StateInferenceEngine: NSObject, ObservableObject {
 
 // MARK: - Inference Result
 
-struct InferenceResult {
-    let value: Double  // 0–1
-    let uncertainty: Double  // 0–1
+/// C1.1: Absence-carrying result type.
+/// `.absent` = no evidence arrived (structurally distinct from measured-neutral).
+/// `.measured` = at least one real signal or user log contributed.
+enum InferenceResult {
+    case absent(uncertainty: Double)
+    case measured(value: Double, uncertainty: Double)
+
+    /// 0.0 when absent; the inferred value otherwise.
+    var value: Double {
+        switch self {
+        case .absent: return 0.0
+        case .measured(let v, _): return v
+        }
+    }
+
+    /// Full uncertainty for absent states (1.0); inferred uncertainty otherwise.
+    var uncertainty: Double {
+        switch self {
+        case .absent(let u): return u
+        case .measured(_, let u): return u
+        }
+    }
+
+    var isAbsent: Bool {
+        if case .absent = self { return true }
+        return false
+    }
 }

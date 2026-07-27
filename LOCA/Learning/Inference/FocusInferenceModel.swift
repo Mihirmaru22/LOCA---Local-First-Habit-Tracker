@@ -34,47 +34,61 @@ class FocusInferenceModel {
 
         var uncertaintyTerms: [Double] = []
         var focusComponents: [Double] = []
+        var hasRealEvidence = false
 
         // Component 1: App focus score (single-app dominance)
-        let appFocusScore = calculateAppFocusScore(signals: signals)
-        focusComponents.append(appFocusScore * appFocusWeight)
-        uncertaintyTerms.append(0.15 * appFocusWeight)
+        if let appFocusScore = calculateAppFocusScore(signals: signals) {
+            focusComponents.append(appFocusScore * appFocusWeight)
+            uncertaintyTerms.append(0.15 * appFocusWeight)
+            hasRealEvidence = true
+        } else {
+            uncertaintyTerms.append(0.15 * appFocusWeight)
+        }
 
         // Component 2: Interruption count (calendar events, context switches)
         let interruptionScore = calculateInterruptionScore(signals: signals)
-        focusComponents.append((1.0 - interruptionScore) * interruptionWeight)
-        uncertaintyTerms.append(0.2 * interruptionWeight)
+        if interruptionScore > 0 {
+            focusComponents.append((1.0 - interruptionScore) * interruptionWeight)
+            uncertaintyTerms.append(0.2 * interruptionWeight)
+            hasRealEvidence = true
+        } else {
+            uncertaintyTerms.append(0.2 * interruptionWeight)
+        }
 
         // Component 3: Screen time consistency (same app, no switching)
-        let consistencyScore = calculateConsistencyScore(signals: signals)
-        focusComponents.append(consistencyScore * consistencyWeight)
-        uncertaintyTerms.append(0.25 * consistencyWeight)
+        if let consistencyScore = calculateConsistencyScore(signals: signals) {
+            focusComponents.append(consistencyScore * consistencyWeight)
+            uncertaintyTerms.append(0.25 * consistencyWeight)
+            hasRealEvidence = true
+        } else {
+            uncertaintyTerms.append(0.25 * consistencyWeight)
+        }
 
-        // Component 4: Time-of-day effect (natural focus windows)
-        let timeScore = focusableTimeWindows[hour] ?? defaultFocusTime(hour: hour)
-        focusComponents.append(timeScore * timeOfDayWeight)
-        uncertaintyTerms.append(0.1 * timeOfDayWeight)
-
-        // Component 5: Energy level (focus requires energy)
-        // In real deployment, this would infer from energy state
-        let energyScore = 0.5  // Placeholder
-        focusComponents.append(energyScore * energyWeight)
-        uncertaintyTerms.append(0.2 * energyWeight)
-
-        // Component 6: Explicit logged focus
+        // Component 4: Explicit logged focus
         if let loggedSignal = signals.first(where: { $0.source == .explicitLog }) {
             focusComponents.append(loggedSignal.value * loggedFocusWeight)
             uncertaintyTerms.append(loggedSignal.uncertainty * loggedFocusWeight)
+            hasRealEvidence = true
         } else {
             uncertaintyTerms.append(0.3 * loggedFocusWeight)
         }
+
+        // C1.1: Time-of-day focus windows are a prior. Return absent when no real signals arrived.
+        guard hasRealEvidence else {
+            return .absent(uncertainty: 1.0)
+        }
+
+        // Time-of-day and energy are valid context priors when real evidence exists.
+        let timeScore = focusableTimeWindows[hour] ?? defaultFocusTime(hour: hour)
+        focusComponents.append(timeScore * timeOfDayWeight)
+        uncertaintyTerms.append(0.1 * timeOfDayWeight)
 
         let focus = focusComponents.reduce(0, +)
         let baseUncertainty = sqrt(
             uncertaintyTerms.map { pow($0, 2) }.reduce(0, +)
         )
 
-        return InferenceResult(
+        return .measured(
             value: min(1.0, max(0, focus)),
             uncertainty: min(1.0, baseUncertainty)
         )
@@ -82,9 +96,10 @@ class FocusInferenceModel {
 
     // MARK: - App Focus Score
 
-    private func calculateAppFocusScore(signals: [SignalEvent]) -> Double {
+    // C1.1: Returns nil when no device-activity signals — absence of data is not 0.5 focus.
+    private func calculateAppFocusScore(signals: [SignalEvent]) -> Double? {
         let deviceSignals = signals.filter { $0.source == .deviceActivity }
-        guard !deviceSignals.isEmpty else { return 0.5 }
+        guard !deviceSignals.isEmpty else { return nil }
 
         var singleAppDominance = 0.0
         var appSwitches = 0
@@ -126,9 +141,10 @@ class FocusInferenceModel {
 
     // MARK: - Consistency Score
 
-    private func calculateConsistencyScore(signals: [SignalEvent]) -> Double {
+    // C1.1: Returns nil when fewer than 2 device signals — cannot measure switch rate.
+    private func calculateConsistencyScore(signals: [SignalEvent]) -> Double? {
         let deviceSignals = signals.filter { $0.source == .deviceActivity }
-        guard deviceSignals.count > 1 else { return 0.5 }
+        guard deviceSignals.count > 1 else { return nil }
 
         var previousApp: String?
         var switches = 0

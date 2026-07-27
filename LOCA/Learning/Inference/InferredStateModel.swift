@@ -33,6 +33,13 @@ final class InferredState {
     var isCalibrated: Bool = false
     var calibrationError: Double?
 
+    // C1.1: Absence flags — true when no real signals contributed to that dimension.
+    // Absence is structurally distinct from a measured value of 0.0 or 0.5.
+    var energyAbsent: Bool = false
+    var stressAbsent: Bool = false
+    var focusAbsent: Bool = false
+    var moodAbsent: Bool = false
+
     init(
         timestamp: Date,
         energy: Double,
