@@ -32,35 +32,55 @@ class MoodInferenceModel {
     ) -> InferenceResult {
         var uncertaintyTerms: [Double] = []
         var moodComponents: [Double] = []
+        var contributingSources: [String] = []
+        var totalSampleCount = 0
 
         // Component 1: Explicit mood check-ins — nil when none logged
+        let moodLogSignals = signals.filter { $0.source == .explicitLog && $0.metadata["mood"] != nil }
         if let recentMoodScore = extractRecentMoodCheck(signals: signals) {
             moodComponents.append(recentMoodScore * moodCheckinWeight)
             uncertaintyTerms.append(0.4 * moodCheckinWeight)
+            contributingSources.append(SignalSource.explicitLog.rawValue)
+            totalSampleCount += moodLogSignals.count
         } else {
             uncertaintyTerms.append(0.4 * moodCheckinWeight)
         }
 
         // Component 2: Note sentiment — nil when no notes present
+        let noteSignals = signals.filter { $0.source == .explicitLog && $0.metadata["note"] != nil }
         if let sentimentScore = extractNoteSentiment(signals: signals) {
             moodComponents.append(sentimentScore * sentimentWeight)
             uncertaintyTerms.append(0.25 * sentimentWeight)
+            if !contributingSources.contains(SignalSource.explicitLog.rawValue) {
+                contributingSources.append(SignalSource.explicitLog.rawValue)
+            }
+            totalSampleCount += noteSignals.count
         } else {
             uncertaintyTerms.append(0.25 * sentimentWeight)
         }
 
         // Component 3: Social engagement — nil when no calendar or social signals
+        let calendarSignals = signals.filter { $0.source == .calendar }
         if let socialScore = calculateSocialEngagement(signals: signals) {
             moodComponents.append(socialScore * socialEngagementWeight)
             uncertaintyTerms.append(0.2 * socialEngagementWeight)
+            if !calendarSignals.isEmpty {
+                if !contributingSources.contains(SignalSource.calendar.rawValue) {
+                    contributingSources.append(SignalSource.calendar.rawValue)
+                    totalSampleCount += calendarSignals.count
+                }
+            }
         } else {
             uncertaintyTerms.append(0.2 * socialEngagementWeight)
         }
 
         // Component 4: Variety score — nil when no location signals
+        let locationSignals = signals.filter { $0.source == .location }
         if let varietyScore = calculateVariety(signals: signals) {
             moodComponents.append(varietyScore * varietyWeight)
             uncertaintyTerms.append(0.2 * varietyWeight)
+            contributingSources.append(SignalSource.location.rawValue)
+            totalSampleCount += locationSignals.count
         } else {
             uncertaintyTerms.append(0.2 * varietyWeight)
         }
@@ -69,14 +89,21 @@ class MoodInferenceModel {
         if let sleepAggregate = aggregates[.sleep] {
             moodComponents.append(sleepAggregate.mean * sleepQualityWeight)
             uncertaintyTerms.append(sleepAggregate.uncertainty * sleepQualityWeight)
+            contributingSources.append(SignalSource.sleep.rawValue)
+            totalSampleCount += sleepAggregate.sampleCount
         } else {
             uncertaintyTerms.append(0.15 * sleepQualityWeight)
         }
 
-        // Component 6: Explicit logged mood
-        if let loggedSignal = signals.first(where: { $0.source == .explicitLog }) {
+        // Component 6: Explicit logged mood (distinct from mood check-in metadata)
+        let explicitLogs = signals.filter { $0.source == .explicitLog }
+        if let loggedSignal = explicitLogs.first {
             moodComponents.append(loggedSignal.value * loggedMoodWeight)
             uncertaintyTerms.append(loggedSignal.uncertainty * loggedMoodWeight)
+            if !contributingSources.contains(SignalSource.explicitLog.rawValue) {
+                contributingSources.append(SignalSource.explicitLog.rawValue)
+                totalSampleCount += explicitLogs.count
+            }
         } else {
             uncertaintyTerms.append(0.3 * loggedMoodWeight)
         }
@@ -91,9 +118,19 @@ class MoodInferenceModel {
             uncertaintyTerms.map { pow($0, 2) }.reduce(0, +)
         )
 
+        let windowStart = signals.map(\.timestamp).min() ?? timestamp
+        let windowEnd   = signals.map(\.timestamp).max() ?? timestamp
+        let provenance  = InferenceProvenance(
+            sources: contributingSources,
+            sampleCount: totalSampleCount,
+            windowStart: windowStart,
+            windowEnd: windowEnd
+        )
+
         return .measured(
             value: min(1.0, max(0, mood)),
-            uncertainty: min(1.0, baseUncertainty)
+            uncertainty: min(1.0, baseUncertainty),
+            provenance: provenance
         )
     }
 

@@ -35,12 +35,16 @@ class EnergyInferenceModel {
         var uncertaintyTerms: [Double] = []
         var energyComponents: [Double] = []
         var hasRealEvidence = false
+        var contributingSources: [String] = []
+        var totalSampleCount = 0
 
         // Component 1: Sleep quality (previous night)
         if let sleepAggregate = aggregates[.sleep] {
             energyComponents.append(sleepAggregate.mean * sleepWeight)
             uncertaintyTerms.append(sleepAggregate.uncertainty * sleepWeight)
             hasRealEvidence = true
+            contributingSources.append(SignalSource.sleep.rawValue)
+            totalSampleCount += sleepAggregate.sampleCount
         } else {
             uncertaintyTerms.append(0.2)
         }
@@ -50,6 +54,8 @@ class EnergyInferenceModel {
             energyComponents.append(stepsAggregate.mean * stepsWeight)
             uncertaintyTerms.append(stepsAggregate.uncertainty * stepsWeight)
             hasRealEvidence = true
+            contributingSources.append(SignalSource.motionActivity.rawValue)
+            totalSampleCount += stepsAggregate.sampleCount
         } else {
             uncertaintyTerms.append(0.1 * stepsWeight)
         }
@@ -59,15 +65,20 @@ class EnergyInferenceModel {
             energyComponents.append(hrvAggregate.mean * hrvWeight)
             uncertaintyTerms.append(hrvAggregate.uncertainty * hrvWeight)
             hasRealEvidence = true
+            contributingSources.append(SignalSource.heartRateVariability.rawValue)
+            totalSampleCount += hrvAggregate.sampleCount
         } else {
             uncertaintyTerms.append(0.15 * hrvWeight)
         }
 
         // Component 4: Explicit logged energy (ground truth)
-        if let loggedSignal = signals.first(where: { $0.source == .explicitLog }) {
+        let explicitLogs = signals.filter { $0.source == .explicitLog }
+        if let loggedSignal = explicitLogs.first {
             energyComponents.append(loggedSignal.value * loggedEnergyWeight)
             uncertaintyTerms.append(loggedSignal.uncertainty * loggedEnergyWeight)
             hasRealEvidence = true
+            contributingSources.append(SignalSource.explicitLog.rawValue)
+            totalSampleCount += explicitLogs.count
         } else {
             uncertaintyTerms.append(0.3 * loggedEnergyWeight)
         }
@@ -87,9 +98,19 @@ class EnergyInferenceModel {
             uncertaintyTerms.map { pow($0, 2) }.reduce(0, +)
         )
 
+        let windowStart = signals.map(\.timestamp).min() ?? timestamp
+        let windowEnd   = signals.map(\.timestamp).max() ?? timestamp
+        let provenance  = InferenceProvenance(
+            sources: contributingSources,
+            sampleCount: totalSampleCount,
+            windowStart: windowStart,
+            windowEnd: windowEnd
+        )
+
         return .measured(
             value: min(1.0, max(0, energy)),
-            uncertainty: min(1.0, baseUncertainty)
+            uncertainty: min(1.0, baseUncertainty),
+            provenance: provenance
         )
     }
 

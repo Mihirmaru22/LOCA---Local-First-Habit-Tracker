@@ -40,6 +40,26 @@ final class InferredState {
     var focusAbsent: Bool = false
     var moodAbsent: Bool = false
 
+    // C1.2: Provenance — JSON-encoded InferenceProvenance per dimension.
+    // Available without a second query so view-layer callers can name their evidence.
+    var energyProvenanceJSON: String?
+    var stressProvenanceJSON: String?
+    var focusProvenanceJSON: String?
+    var moodProvenanceJSON: String?
+
+    var energyProvenance: InferenceProvenance? {
+        energyProvenanceJSON.flatMap { InferenceProvenance.decode(from: $0) }
+    }
+    var stressProvenance: InferenceProvenance? {
+        stressProvenanceJSON.flatMap { InferenceProvenance.decode(from: $0) }
+    }
+    var focusProvenance: InferenceProvenance? {
+        focusProvenanceJSON.flatMap { InferenceProvenance.decode(from: $0) }
+    }
+    var moodProvenance: InferenceProvenance? {
+        moodProvenanceJSON.flatMap { InferenceProvenance.decode(from: $0) }
+    }
+
     init(
         timestamp: Date,
         energy: Double,

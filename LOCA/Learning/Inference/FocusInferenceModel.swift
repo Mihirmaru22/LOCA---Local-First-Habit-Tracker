@@ -35,22 +35,32 @@ class FocusInferenceModel {
         var uncertaintyTerms: [Double] = []
         var focusComponents: [Double] = []
         var hasRealEvidence = false
+        var contributingSources: [String] = []
+        var totalSampleCount = 0
 
         // Component 1: App focus score (single-app dominance)
+        let deviceSignals = signals.filter { $0.source == .deviceActivity }
         if let appFocusScore = calculateAppFocusScore(signals: signals) {
             focusComponents.append(appFocusScore * appFocusWeight)
             uncertaintyTerms.append(0.15 * appFocusWeight)
             hasRealEvidence = true
+            contributingSources.append(SignalSource.deviceActivity.rawValue)
+            totalSampleCount += deviceSignals.count
         } else {
             uncertaintyTerms.append(0.15 * appFocusWeight)
         }
 
         // Component 2: Interruption count (calendar events, context switches)
+        let calendarSignals = signals.filter { $0.source == .calendar }
         let interruptionScore = calculateInterruptionScore(signals: signals)
         if interruptionScore > 0 {
             focusComponents.append((1.0 - interruptionScore) * interruptionWeight)
             uncertaintyTerms.append(0.2 * interruptionWeight)
             hasRealEvidence = true
+            if !contributingSources.contains(SignalSource.calendar.rawValue) {
+                contributingSources.append(SignalSource.calendar.rawValue)
+                totalSampleCount += calendarSignals.count
+            }
         } else {
             uncertaintyTerms.append(0.2 * interruptionWeight)
         }
@@ -60,15 +70,22 @@ class FocusInferenceModel {
             focusComponents.append(consistencyScore * consistencyWeight)
             uncertaintyTerms.append(0.25 * consistencyWeight)
             hasRealEvidence = true
+            if !contributingSources.contains(SignalSource.deviceActivity.rawValue) {
+                contributingSources.append(SignalSource.deviceActivity.rawValue)
+                totalSampleCount += deviceSignals.count
+            }
         } else {
             uncertaintyTerms.append(0.25 * consistencyWeight)
         }
 
         // Component 4: Explicit logged focus
-        if let loggedSignal = signals.first(where: { $0.source == .explicitLog }) {
+        let explicitLogs = signals.filter { $0.source == .explicitLog }
+        if let loggedSignal = explicitLogs.first {
             focusComponents.append(loggedSignal.value * loggedFocusWeight)
             uncertaintyTerms.append(loggedSignal.uncertainty * loggedFocusWeight)
             hasRealEvidence = true
+            contributingSources.append(SignalSource.explicitLog.rawValue)
+            totalSampleCount += explicitLogs.count
         } else {
             uncertaintyTerms.append(0.3 * loggedFocusWeight)
         }
@@ -78,7 +95,7 @@ class FocusInferenceModel {
             return .absent(uncertainty: 1.0)
         }
 
-        // Time-of-day and energy are valid context priors when real evidence exists.
+        // Time-of-day is valid context when real evidence exists.
         let timeScore = focusableTimeWindows[hour] ?? defaultFocusTime(hour: hour)
         focusComponents.append(timeScore * timeOfDayWeight)
         uncertaintyTerms.append(0.1 * timeOfDayWeight)
@@ -88,9 +105,19 @@ class FocusInferenceModel {
             uncertaintyTerms.map { pow($0, 2) }.reduce(0, +)
         )
 
+        let windowStart = signals.map(\.timestamp).min() ?? timestamp
+        let windowEnd   = signals.map(\.timestamp).max() ?? timestamp
+        let provenance  = InferenceProvenance(
+            sources: contributingSources,
+            sampleCount: totalSampleCount,
+            windowStart: windowStart,
+            windowEnd: windowEnd
+        )
+
         return .measured(
             value: min(1.0, max(0, focus)),
-            uncertainty: min(1.0, baseUncertainty)
+            uncertainty: min(1.0, baseUncertainty),
+            provenance: provenance
         )
     }
 

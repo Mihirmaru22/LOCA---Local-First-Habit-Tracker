@@ -35,6 +35,8 @@ class StressInferenceModel {
         var uncertaintyTerms: [Double] = []
         var stressComponents: [Double] = []
         var hasRealEvidence = false
+        var contributingSources: [String] = []
+        var totalSampleCount = 0
 
         // Component 1: HRV (inverse: low HRV = high stress)
         if let hrvAggregate = aggregates[.heartRateVariability] {
@@ -42,6 +44,8 @@ class StressInferenceModel {
             stressComponents.append(hrvStress * hrvWeight)
             uncertaintyTerms.append(hrvAggregate.uncertainty * hrvWeight)
             hasRealEvidence = true
+            contributingSources.append(SignalSource.heartRateVariability.rawValue)
+            totalSampleCount += hrvAggregate.sampleCount
         } else {
             uncertaintyTerms.append(0.25 * hrvWeight)
         }
@@ -51,33 +55,48 @@ class StressInferenceModel {
             stressComponents.append(calendarAggregate.mean * eventDensityWeight)
             uncertaintyTerms.append(calendarAggregate.uncertainty * eventDensityWeight)
             hasRealEvidence = true
+            contributingSources.append(SignalSource.calendar.rawValue)
+            totalSampleCount += calendarAggregate.sampleCount
         } else {
             uncertaintyTerms.append(0.2 * eventDensityWeight)
         }
 
         // Component 3: Location changes (task-switching stress indicator)
+        let locationSignals = signals.filter { $0.source == .location }
         if let locationChangeScore = detectLocationChanges(signals: signals) {
             stressComponents.append(locationChangeScore * locationChangeWeight)
             uncertaintyTerms.append(0.15 * locationChangeWeight)
             hasRealEvidence = true
+            contributingSources.append(SignalSource.location.rawValue)
+            totalSampleCount += locationSignals.count
         } else {
             uncertaintyTerms.append(0.15 * locationChangeWeight)
         }
 
         // Component 4: Note sentiment — nil when no notes logged
+        let noteSignals = signals.filter { $0.source == .explicitLog && $0.metadata["note"] != nil }
         if let sentimentScore = extractNoteSentiment(signals: signals) {
             stressComponents.append((1.0 - sentimentScore) * sentimentWeight)
             uncertaintyTerms.append(0.2 * sentimentWeight)
             hasRealEvidence = true
+            if !noteSignals.isEmpty && !contributingSources.contains(SignalSource.explicitLog.rawValue) {
+                contributingSources.append(SignalSource.explicitLog.rawValue)
+            }
+            totalSampleCount += noteSignals.count
         } else {
             uncertaintyTerms.append(0.2 * sentimentWeight)
         }
 
         // Component 5: Explicit logged stress
-        if let loggedSignal = signals.first(where: { $0.source == .explicitLog }) {
+        let explicitLogs = signals.filter { $0.source == .explicitLog }
+        if let loggedSignal = explicitLogs.first {
             stressComponents.append(loggedSignal.value * loggedStressWeight)
             uncertaintyTerms.append(loggedSignal.uncertainty * loggedStressWeight)
             hasRealEvidence = true
+            if !contributingSources.contains(SignalSource.explicitLog.rawValue) {
+                contributingSources.append(SignalSource.explicitLog.rawValue)
+                totalSampleCount += explicitLogs.count
+            }
         } else {
             uncertaintyTerms.append(0.25 * loggedStressWeight)
         }
@@ -97,9 +116,19 @@ class StressInferenceModel {
             uncertaintyTerms.map { pow($0, 2) }.reduce(0, +)
         )
 
+        let windowStart = signals.map(\.timestamp).min() ?? timestamp
+        let windowEnd   = signals.map(\.timestamp).max() ?? timestamp
+        let provenance  = InferenceProvenance(
+            sources: contributingSources,
+            sampleCount: totalSampleCount,
+            windowStart: windowStart,
+            windowEnd: windowEnd
+        )
+
         return .measured(
             value: min(1.0, max(0, stress)),
-            uncertainty: min(1.0, baseUncertainty)
+            uncertainty: min(1.0, baseUncertainty),
+            provenance: provenance
         )
     }
 
