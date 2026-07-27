@@ -58,29 +58,37 @@ class ViewCompositionEngine {
 
         let events = (try? ctx.fetch(eventsDescriptor)) ?? []
 
-        // Build timeline layers
+        // Build timeline layers — absence and uncertainty type flow through to TimelinePoint.
         let energyTimeline = buildTimeline(
             states: states,
             keyPath: \.energy,
-            uncertaintyPath: \.energyUncertainty
+            uncertaintyPath: \.energyUncertainty,
+            absentPath: \.energyAbsent,
+            uncertaintyTypePath: \.energyUncertaintyTypeRaw
         )
 
         let stressTimeline = buildTimeline(
             states: states,
             keyPath: \.stress,
-            uncertaintyPath: \.stressUncertainty
+            uncertaintyPath: \.stressUncertainty,
+            absentPath: \.stressAbsent,
+            uncertaintyTypePath: \.stressUncertaintyTypeRaw
         )
 
         let focusTimeline = buildTimeline(
             states: states,
             keyPath: \.focus,
-            uncertaintyPath: \.focusUncertainty
+            uncertaintyPath: \.focusUncertainty,
+            absentPath: \.focusAbsent,
+            uncertaintyTypePath: \.focusUncertaintyTypeRaw
         )
 
         let moodTimeline = buildTimeline(
             states: states,
             keyPath: \.mood,
-            uncertaintyPath: \.moodUncertainty
+            uncertaintyPath: \.moodUncertainty,
+            absentPath: \.moodAbsent,
+            uncertaintyTypePath: \.moodUncertaintyTypeRaw
         )
 
         // Build event markers
@@ -119,27 +127,48 @@ class ViewCompositionEngine {
     private func buildTimeline(
         states: [InferredState],
         keyPath: KeyPath<InferredState, Double>,
-        uncertaintyPath: KeyPath<InferredState, Double>
+        uncertaintyPath: KeyPath<InferredState, Double>,
+        absentPath: KeyPath<InferredState, Bool>,
+        uncertaintyTypePath: KeyPath<InferredState, String?>
     ) -> [TimelinePoint] {
         return states.sorted(by: { $0.timestamp < $1.timestamp }).map { state in
             let value = state[keyPath: keyPath]
             let uncertainty = state[keyPath: uncertaintyPath]
+            let isAbsent = state[keyPath: absentPath]
+            let uncertaintyTypeRaw = state[keyPath: uncertaintyTypePath]
             let confidence = ConfidenceLevel(uncertainty: uncertainty)
 
+            // C1.4: Absence has its own rendering contract, separate from low-confidence.
+            // "absent" → no data arrived; do not render as "speculative" (which implies
+            // a weak measurement, not zero measurement).
+            // "epistemic" soft/speculative → we could know, but don't yet.
+            // "aleatoric" → this IS the spread; halo rendering.
             let renderingStyle: String = {
-                switch confidence {
-                case .crisp: return "crisp"
-                case .soft: return "soft"
-                case .speculative: return "speculative"
+                if isAbsent { return "absent" }
+                guard let typeRaw = uncertaintyTypeRaw,
+                      let uType = UncertaintyType(rawValue: typeRaw) else {
+                    switch confidence {
+                    case .crisp: return "crisp"
+                    case .soft: return "soft"
+                    case .speculative: return "speculative"
+                    }
+                }
+                switch uType {
+                case .epistemic:
+                    return confidence == .crisp ? "soft" : "speculative"
+                case .aleatoric:
+                    return confidence == .crisp ? "crisp" : "uncertain"
                 }
             }()
 
             return TimelinePoint(
                 timestamp: state.timestamp,
-                value: value,
+                value: isAbsent ? 0.0 : value,
                 uncertainty: uncertainty,
                 confidence: confidence,
-                renderingStyle: renderingStyle
+                renderingStyle: renderingStyle,
+                isAbsent: isAbsent,
+                uncertaintyType: uncertaintyTypeRaw
             )
         }
     }
