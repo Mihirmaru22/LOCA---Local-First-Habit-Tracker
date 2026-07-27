@@ -30,16 +30,22 @@ class StressInferenceModel {
         timestamp: Date
     ) -> InferenceResult {
         let calendar = Calendar.current
-        let dayOfWeek = calendar.component(.weekday, from: timestamp)  // 1=Sunday, 7=Saturday
+        let dayOfWeek = calendar.component(.weekday, from: timestamp)
 
         var uncertaintyTerms: [Double] = []
         var stressComponents: [Double] = []
+        var hasRealEvidence = false
+        var contributingSources: [String] = []
+        var totalSampleCount = 0
 
         // Component 1: HRV (inverse: low HRV = high stress)
         if let hrvAggregate = aggregates[.heartRateVariability] {
             let hrvStress = 1.0 - hrvAggregate.mean
             stressComponents.append(hrvStress * hrvWeight)
             uncertaintyTerms.append(hrvAggregate.uncertainty * hrvWeight)
+            hasRealEvidence = true
+            contributingSources.append(SignalSource.heartRateVariability.rawValue)
+            totalSampleCount += hrvAggregate.sampleCount
         } else {
             uncertaintyTerms.append(0.25 * hrvWeight)
         }
@@ -48,49 +54,90 @@ class StressInferenceModel {
         if let calendarAggregate = aggregates[.calendar] {
             stressComponents.append(calendarAggregate.mean * eventDensityWeight)
             uncertaintyTerms.append(calendarAggregate.uncertainty * eventDensityWeight)
+            hasRealEvidence = true
+            contributingSources.append(SignalSource.calendar.rawValue)
+            totalSampleCount += calendarAggregate.sampleCount
         } else {
             uncertaintyTerms.append(0.2 * eventDensityWeight)
         }
 
         // Component 3: Location changes (task-switching stress indicator)
-        let locationChangeScore = detectLocationChanges(signals: signals)
-        stressComponents.append(locationChangeScore * locationChangeWeight)
-        uncertaintyTerms.append(0.15 * locationChangeWeight)
+        let locationSignals = signals.filter { $0.source == .location }
+        if let locationChangeScore = detectLocationChanges(signals: signals) {
+            stressComponents.append(locationChangeScore * locationChangeWeight)
+            uncertaintyTerms.append(0.15 * locationChangeWeight)
+            hasRealEvidence = true
+            contributingSources.append(SignalSource.location.rawValue)
+            totalSampleCount += locationSignals.count
+        } else {
+            uncertaintyTerms.append(0.15 * locationChangeWeight)
+        }
 
-        // Component 4: Note sentiment (if user logged notes)
-        let sentimentScore = extractNoteSentiment(signals: signals)
-        stressComponents.append((1.0 - sentimentScore) * sentimentWeight)  // Negative sentiment = stress
-        uncertaintyTerms.append(0.2 * sentimentWeight)
+        // Component 4: Note sentiment — nil when no notes logged
+        let noteSignals = signals.filter { $0.source == .explicitLog && $0.metadata["note"] != nil }
+        if let sentimentScore = extractNoteSentiment(signals: signals) {
+            stressComponents.append((1.0 - sentimentScore) * sentimentWeight)
+            uncertaintyTerms.append(0.2 * sentimentWeight)
+            hasRealEvidence = true
+            if !noteSignals.isEmpty && !contributingSources.contains(SignalSource.explicitLog.rawValue) {
+                contributingSources.append(SignalSource.explicitLog.rawValue)
+            }
+            totalSampleCount += noteSignals.count
+        } else {
+            uncertaintyTerms.append(0.2 * sentimentWeight)
+        }
 
-        // Component 5: Day-of-week baseline
-        let dayBaseline = dayOfWeekBaseline[dayOfWeek] ?? defaultDayOfWeekBaseline(dayOfWeek: dayOfWeek)
-        stressComponents.append(dayBaseline * dayOfWeekWeight)
-        uncertaintyTerms.append(0.1 * dayOfWeekWeight)
-
-        // Component 6: Explicit logged stress
-        if let loggedSignal = signals.first(where: { $0.source == .explicitLog }) {
+        // Component 5: Explicit logged stress
+        let explicitLogs = signals.filter { $0.source == .explicitLog }
+        if let loggedSignal = explicitLogs.first {
             stressComponents.append(loggedSignal.value * loggedStressWeight)
             uncertaintyTerms.append(loggedSignal.uncertainty * loggedStressWeight)
+            hasRealEvidence = true
+            if !contributingSources.contains(SignalSource.explicitLog.rawValue) {
+                contributingSources.append(SignalSource.explicitLog.rawValue)
+                totalSampleCount += explicitLogs.count
+            }
         } else {
             uncertaintyTerms.append(0.25 * loggedStressWeight)
         }
+
+        // C1.1: Day-of-week is a prior, not evidence. Return absent when nothing real arrived.
+        guard hasRealEvidence else {
+            return .absent(uncertainty: 1.0)
+        }
+
+        // Day-of-week baseline is valid context when real evidence exists.
+        let dayBaseline = dayOfWeekBaseline[dayOfWeek] ?? defaultDayOfWeekBaseline(dayOfWeek: dayOfWeek)
+        stressComponents.append(dayBaseline * dayOfWeekWeight)
+        uncertaintyTerms.append(0.1 * dayOfWeekWeight)
 
         let stress = stressComponents.reduce(0, +)
         let baseUncertainty = sqrt(
             uncertaintyTerms.map { pow($0, 2) }.reduce(0, +)
         )
 
-        return InferenceResult(
+        let windowStart = signals.map(\.timestamp).min() ?? timestamp
+        let windowEnd   = signals.map(\.timestamp).max() ?? timestamp
+        let provenance  = InferenceProvenance.create(
+            sources: contributingSources,
+            sampleCount: totalSampleCount,
+            windowStart: windowStart,
+            windowEnd: windowEnd
+        )
+
+        return .measured(
             value: min(1.0, max(0, stress)),
-            uncertainty: min(1.0, baseUncertainty)
+            uncertainty: min(1.0, baseUncertainty),
+            provenance: provenance
         )
     }
 
     // MARK: - Location Changes
 
-    private func detectLocationChanges(signals: [SignalEvent]) -> Double {
+    // C1.1: Returns nil when fewer than 2 location signals — cannot infer change rate.
+    private func detectLocationChanges(signals: [SignalEvent]) -> Double? {
         let locationSignals = signals.filter { $0.source == .location }
-        guard locationSignals.count > 1 else { return 0.1 }
+        guard locationSignals.count > 1 else { return nil }
 
         var changeCount = 0
         var lastPlace: String?
@@ -108,22 +155,21 @@ class StressInferenceModel {
 
     // MARK: - Sentiment Analysis (Simple)
 
-    private func extractNoteSentiment(signals: [SignalEvent]) -> Double {
+    // C1.1: Returns nil when no notes logged — absence of notes is not neutral sentiment.
+    private func extractNoteSentiment(signals: [SignalEvent]) -> Double? {
         let notedSignals = signals.filter { $0.source == .explicitLog }
-
-        var sentimentSum = 0.5  // Neutral baseline
+        var sentimentSum = 0.0
         var count = 0
 
         for signal in notedSignals {
             if let note = signal.metadata["note"] {
-                let sentiment = simpleSentimentScore(note)
-                sentimentSum += sentiment
+                sentimentSum += simpleSentimentScore(note)
                 count += 1
             }
         }
 
-        guard count > 0 else { return 0.5 }
-        return sentimentSum / Double(count + 1)
+        guard count > 0 else { return nil }
+        return sentimentSum / Double(count)
     }
 
     private func simpleSentimentScore(_ text: String) -> Double {

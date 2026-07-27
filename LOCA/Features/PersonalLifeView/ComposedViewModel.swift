@@ -76,6 +76,29 @@ struct TimelinePoint: Codable {
     let uncertainty: Double
     let confidence: ConfidenceLevel
     let renderingStyle: String
+    // C1.4: Absence carried to the surface.
+    // "absent" renderingStyle means "we genuinely have no data" —
+    // distinct from "speculative" (low-confidence measured value).
+    let isAbsent: Bool
+    let uncertaintyType: String?    // UncertaintyType.rawValue or nil
+
+    init(
+        timestamp: Date,
+        value: Double,
+        uncertainty: Double,
+        confidence: ConfidenceLevel,
+        renderingStyle: String,
+        isAbsent: Bool = false,
+        uncertaintyType: String? = nil
+    ) {
+        self.timestamp = timestamp
+        self.value = value
+        self.uncertainty = uncertainty
+        self.confidence = confidence
+        self.renderingStyle = renderingStyle
+        self.isAbsent = isAbsent
+        self.uncertaintyType = uncertaintyType
+    }
 }
 
 // MARK: - Event Marker

@@ -33,6 +33,52 @@ final class InferredState {
     var isCalibrated: Bool = false
     var calibrationError: Double?
 
+    // C1.1: Absence flags — true when no real signals contributed to that dimension.
+    // Absence is structurally distinct from a measured value of 0.0 or 0.5.
+    var energyAbsent: Bool = false
+    var stressAbsent: Bool = false
+    var focusAbsent: Bool = false
+    var moodAbsent: Bool = false
+
+    // C1.2: Provenance — JSON-encoded InferenceProvenance per dimension.
+    // Available without a second query so view-layer callers can name their evidence.
+    var energyProvenanceJSON: String?
+    var stressProvenanceJSON: String?
+    var focusProvenanceJSON: String?
+    var moodProvenanceJSON: String?
+
+    var energyProvenance: InferenceProvenance? {
+        energyProvenanceJSON.flatMap { InferenceProvenance.decode(from: $0) }
+    }
+    var stressProvenance: InferenceProvenance? {
+        stressProvenanceJSON.flatMap { InferenceProvenance.decode(from: $0) }
+    }
+    var focusProvenance: InferenceProvenance? {
+        focusProvenanceJSON.flatMap { InferenceProvenance.decode(from: $0) }
+    }
+    var moodProvenance: InferenceProvenance? {
+        moodProvenanceJSON.flatMap { InferenceProvenance.decode(from: $0) }
+    }
+
+    // C1.3: Uncertainty type raw values (UncertaintyType.rawValue or nil if absent).
+    var energyUncertaintyTypeRaw: String?
+    var stressUncertaintyTypeRaw: String?
+    var focusUncertaintyTypeRaw: String?
+    var moodUncertaintyTypeRaw: String?
+
+    var energyUncertaintyType: UncertaintyType? {
+        energyUncertaintyTypeRaw.flatMap { UncertaintyType(rawValue: $0) }
+    }
+    var stressUncertaintyType: UncertaintyType? {
+        stressUncertaintyTypeRaw.flatMap { UncertaintyType(rawValue: $0) }
+    }
+    var focusUncertaintyType: UncertaintyType? {
+        focusUncertaintyTypeRaw.flatMap { UncertaintyType(rawValue: $0) }
+    }
+    var moodUncertaintyType: UncertaintyType? {
+        moodUncertaintyTypeRaw.flatMap { UncertaintyType(rawValue: $0) }
+    }
+
     init(
         timestamp: Date,
         energy: Double,

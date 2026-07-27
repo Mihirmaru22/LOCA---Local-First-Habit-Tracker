@@ -34,52 +34,83 @@ class EnergyInferenceModel {
 
         var uncertaintyTerms: [Double] = []
         var energyComponents: [Double] = []
+        var hasRealEvidence = false
+        var contributingSources: [String] = []
+        var totalSampleCount = 0
 
         // Component 1: Sleep quality (previous night)
         if let sleepAggregate = aggregates[.sleep] {
             energyComponents.append(sleepAggregate.mean * sleepWeight)
             uncertaintyTerms.append(sleepAggregate.uncertainty * sleepWeight)
+            hasRealEvidence = true
+            contributingSources.append(SignalSource.sleep.rawValue)
+            totalSampleCount += sleepAggregate.sampleCount
         } else {
-            uncertaintyTerms.append(0.2)  // Missing sleep data adds uncertainty
+            uncertaintyTerms.append(0.2)
         }
 
-        // Component 2: Time-of-day effect (circadian rhythm)
-        let circadianScore = circadianRhythm(hour: hour)
-        energyComponents.append(circadianScore * timeOfDayWeight)
-        uncertaintyTerms.append(0.08 * timeOfDayWeight)
-
-        // Component 3: Step count (activity in this hour)
+        // Component 2: Step count (activity in this hour)
         if let stepsAggregate = aggregates[.motionActivity] {
             energyComponents.append(stepsAggregate.mean * stepsWeight)
             uncertaintyTerms.append(stepsAggregate.uncertainty * stepsWeight)
+            hasRealEvidence = true
+            contributingSources.append(SignalSource.motionActivity.rawValue)
+            totalSampleCount += stepsAggregate.sampleCount
         } else {
             uncertaintyTerms.append(0.1 * stepsWeight)
         }
 
-        // Component 4: Heart rate variability (arousal level)
+        // Component 3: Heart rate variability (arousal level)
         if let hrvAggregate = aggregates[.heartRateVariability] {
             energyComponents.append(hrvAggregate.mean * hrvWeight)
             uncertaintyTerms.append(hrvAggregate.uncertainty * hrvWeight)
+            hasRealEvidence = true
+            contributingSources.append(SignalSource.heartRateVariability.rawValue)
+            totalSampleCount += hrvAggregate.sampleCount
         } else {
-            uncertaintyTerms.append(0.15 * hrvWeight)  // No Watch = higher uncertainty
+            uncertaintyTerms.append(0.15 * hrvWeight)
         }
 
-        // Component 5: Explicit logged energy (ground truth)
-        if let loggedSignal = signals.first(where: { $0.source == .explicitLog }) {
+        // Component 4: Explicit logged energy (ground truth)
+        let explicitLogs = signals.filter { $0.source == .explicitLog }
+        if let loggedSignal = explicitLogs.first {
             energyComponents.append(loggedSignal.value * loggedEnergyWeight)
             uncertaintyTerms.append(loggedSignal.uncertainty * loggedEnergyWeight)
+            hasRealEvidence = true
+            contributingSources.append(SignalSource.explicitLog.rawValue)
+            totalSampleCount += explicitLogs.count
         } else {
             uncertaintyTerms.append(0.3 * loggedEnergyWeight)
         }
+
+        // C1.1: Without real evidence, circadian alone is a prior — not a measurement.
+        guard hasRealEvidence else {
+            return .absent(uncertainty: 1.0)
+        }
+
+        // Circadian rhythm is valid context when real evidence exists.
+        let circadianScore = circadianRhythm(hour: hour)
+        energyComponents.append(circadianScore * timeOfDayWeight)
+        uncertaintyTerms.append(0.08 * timeOfDayWeight)
 
         let energy = energyComponents.reduce(0, +)
         let baseUncertainty = sqrt(
             uncertaintyTerms.map { pow($0, 2) }.reduce(0, +)
         )
 
-        return InferenceResult(
+        let windowStart = signals.map(\.timestamp).min() ?? timestamp
+        let windowEnd   = signals.map(\.timestamp).max() ?? timestamp
+        let provenance  = InferenceProvenance.create(
+            sources: contributingSources,
+            sampleCount: totalSampleCount,
+            windowStart: windowStart,
+            windowEnd: windowEnd
+        )
+
+        return .measured(
             value: min(1.0, max(0, energy)),
-            uncertainty: min(1.0, baseUncertainty)
+            uncertainty: min(1.0, baseUncertainty),
+            provenance: provenance
         )
     }
 

@@ -51,11 +51,17 @@ class CalibrationManager {
 
         guard let states = try? ctx.fetch(statesDescriptor), !states.isEmpty else { return }
 
-        // Compute errors per state
-        calibrateEnergy(logs: logs, states: states)
-        calibrateStress(logs: logs, states: states)
-        calibrateFocus(logs: logs, states: states)
-        calibrateMood(logs: logs, states: states)
+        // C1.3: Separate states by uncertainty type.
+        // Epistemic states (reducible uncertainty) should drive weight updates.
+        // Aleatoric states (inherent noise) should not — recalibrating for noise
+        // worsens generalization on new hours with similar sensor readings.
+        let epistemicStates = states.filter { $0.energyUncertaintyType == .epistemic || $0.energyUncertaintyType == nil }
+        let allStates = states
+
+        calibrateEnergy(logs: logs, states: epistemicStates)
+        calibrateStress(logs: logs, states: allStates.filter { $0.stressUncertaintyType == .epistemic || $0.stressUncertaintyType == nil })
+        calibrateFocus(logs: logs, states: allStates.filter { $0.focusUncertaintyType == .epistemic || $0.focusUncertaintyType == nil })
+        calibrateMood(logs: logs, states: allStates.filter { $0.moodUncertaintyType == .epistemic || $0.moodUncertaintyType == nil })
     }
 
     // MARK: - Energy Calibration

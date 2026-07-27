@@ -24,6 +24,10 @@ struct ComposedScene {
     // Cross-entity insights
     let insights: [SceneInsight]
     let overallUncertainty: Double
+    // C1.4: True when the scene has no real evidence — structurally distinct from
+    // "high uncertainty measured scene." A scene can only be labeled absent here;
+    // no composition path may substitute a default value on its behalf.
+    let isDataAbsent: Bool
 }
 
 struct ChapterSnapshot {
@@ -96,8 +100,11 @@ class MultiEntityComposer {
         )
 
         let uncertainty = computeSceneUncertainty(traits: globalTraits, people: people)
+        // C1.4: The scene is "absent" when no chapters and no global traits exist.
+        // This is structurally distinct from a scene with high uncertainty on real data.
+        let isDataAbsent = chapters.isEmpty && globalTraits.isEmpty
 
-        logger.info("Composed life scene: \(chapters.count) chapters, \(globalTraits.count) traits, \(people.count) people, \(insights.count) insights")
+        logger.info("Composed life scene: \(chapters.count) chapters, \(globalTraits.count) traits, \(people.count) people, \(insights.count) insights, absent=\(isDataAbsent)")
 
         return ComposedScene(
             question: "How has your life evolved across chapters?",
@@ -106,7 +113,8 @@ class MultiEntityComposer {
             traits: globalTraits,
             people: people.map { PersonSnapshot(person: $0, salienceInChapter: nil, moodCorrelation: $0.moodCorrelation) },
             insights: insights,
-            overallUncertainty: uncertainty
+            overallUncertainty: isDataAbsent ? 1.0 : uncertainty,
+            isDataAbsent: isDataAbsent
         )
     }
 
