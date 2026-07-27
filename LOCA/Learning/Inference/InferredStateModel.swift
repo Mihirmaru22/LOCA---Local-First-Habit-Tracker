@@ -60,6 +60,25 @@ final class InferredState {
         moodProvenanceJSON.flatMap { InferenceProvenance.decode(from: $0) }
     }
 
+    // C1.3: Uncertainty type raw values (UncertaintyType.rawValue or nil if absent).
+    var energyUncertaintyTypeRaw: String?
+    var stressUncertaintyTypeRaw: String?
+    var focusUncertaintyTypeRaw: String?
+    var moodUncertaintyTypeRaw: String?
+
+    var energyUncertaintyType: UncertaintyType? {
+        energyUncertaintyTypeRaw.flatMap { UncertaintyType(rawValue: $0) }
+    }
+    var stressUncertaintyType: UncertaintyType? {
+        stressUncertaintyTypeRaw.flatMap { UncertaintyType(rawValue: $0) }
+    }
+    var focusUncertaintyType: UncertaintyType? {
+        focusUncertaintyTypeRaw.flatMap { UncertaintyType(rawValue: $0) }
+    }
+    var moodUncertaintyType: UncertaintyType? {
+        moodUncertaintyTypeRaw.flatMap { UncertaintyType(rawValue: $0) }
+    }
+
     init(
         timestamp: Date,
         energy: Double,

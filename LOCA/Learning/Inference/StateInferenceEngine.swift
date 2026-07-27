@@ -118,6 +118,10 @@ class StateInferenceEngine: NSObject, ObservableObject {
                 inferred.stressProvenanceJSON = stressResult.provenanceJSON
                 inferred.focusProvenanceJSON = focusResult.provenanceJSON
                 inferred.moodProvenanceJSON = moodResult.provenanceJSON
+                inferred.energyUncertaintyTypeRaw = energyResult.provenance.uncertaintyType.rawValue
+                inferred.stressUncertaintyTypeRaw = stressResult.provenance.uncertaintyType.rawValue
+                inferred.focusUncertaintyTypeRaw = focusResult.provenance.uncertaintyType.rawValue
+                inferred.moodUncertaintyTypeRaw = moodResult.provenance.uncertaintyType.rawValue
 
                 ctx.insert(inferred)
             }
@@ -188,13 +192,17 @@ class StateInferenceEngine: NSObject, ObservableObject {
 // MARK: - Inference Provenance (C1.2)
 
 /// What produced an inferred value: which sources contributed, how many samples,
-/// and over what time window. Carried on every .measured result so callers can
-/// answer "where did this come from?" without a second query.
+/// over what time window, and whether the residual uncertainty is reducible.
+/// Carried on every .measured result so callers can answer "where did this come
+/// from?" without a second query.
 struct InferenceProvenance: Codable {
-    let sources: [String]       // SignalSource.rawValue for each contributing source
-    let sampleCount: Int        // total samples across all contributing sources
+    let sources: [String]               // SignalSource.rawValue for each contributing source
+    let sampleCount: Int                // total samples across all contributing sources
     let windowStart: Date
     let windowEnd: Date
+    // C1.3: whether the remaining uncertainty is epistemic (reducible via more data)
+    // or aleatoric (inherent noise; more data won't help).
+    let uncertaintyType: UncertaintyType
 
     var contributingSourceSet: Set<SignalSource> {
         Set(sources.compactMap { SignalSource(rawValue: $0) })
@@ -204,8 +212,28 @@ struct InferenceProvenance: Codable {
         sources: [],
         sampleCount: 0,
         windowStart: .distantPast,
-        windowEnd: .distantPast
+        windowEnd: .distantPast,
+        uncertaintyType: .epistemic
     )
+
+    /// C1.3: Factory that assigns uncertainty type from sample count.
+    /// sampleCount < 3 → .epistemic (reducible: more data would help).
+    /// sampleCount >= 3 → .aleatoric (inherent: more data won't eliminate the spread).
+    static func create(
+        sources: [String],
+        sampleCount: Int,
+        windowStart: Date,
+        windowEnd: Date
+    ) -> InferenceProvenance {
+        let type: UncertaintyType = sampleCount < 3 ? .epistemic : .aleatoric
+        return InferenceProvenance(
+            sources: sources,
+            sampleCount: sampleCount,
+            windowStart: windowStart,
+            windowEnd: windowEnd,
+            uncertaintyType: type
+        )
+    }
 
     func jsonEncoded() -> String? {
         let encoder = JSONEncoder()

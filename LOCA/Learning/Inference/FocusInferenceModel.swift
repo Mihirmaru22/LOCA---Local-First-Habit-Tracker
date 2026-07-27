@@ -107,7 +107,7 @@ class FocusInferenceModel {
 
         let windowStart = signals.map(\.timestamp).min() ?? timestamp
         let windowEnd   = signals.map(\.timestamp).max() ?? timestamp
-        let provenance  = InferenceProvenance(
+        let provenance  = InferenceProvenance.create(
             sources: contributingSources,
             sampleCount: totalSampleCount,
             windowStart: windowStart,

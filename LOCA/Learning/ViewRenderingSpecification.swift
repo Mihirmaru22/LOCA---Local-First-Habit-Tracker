@@ -15,13 +15,16 @@ struct RenderingInstruction {
     let uncertainty: Double
     let confidence: ConfidenceLevel
     let renderingStyle: RenderingStyle
+    // C1.3: carried through so UI can distinguish "we could know more" (epistemic)
+    // from "this IS the spread" (aleatoric). Nil when the state was absent.
+    let uncertaintyType: UncertaintyType?
 }
 
 enum RenderingStyle {
-    case crisp             // Fully opaque, sharp edges, saturated color
-    case soft              // Partially transparent, blurred edges, desaturated
-    case speculative       // Very faint, ghosted, near-invisible
-    case uncertain         // Surrounded by halo/ring proportional to uncertainty
+    case crisp                           // Fully opaque, sharp edges, saturated color
+    case soft                            // Partially transparent, blurred edges, desaturated
+    case speculative                     // Very faint, ghosted — epistemic: "we don't know yet"
+    case uncertain(confidence: Double)   // Halo ring proportional to spread — aleatoric: "this IS the noise"
 
     static func from(confidence: ConfidenceLevel) -> RenderingStyle {
         switch confidence {
@@ -186,33 +189,47 @@ class RenderInstructionGenerator {
         state: InferredState,
         dataType: String  // "energy", "stress", "focus", "mood"
     ) -> RenderingInstruction {
-        let (value, uncertainty) = extractStateData(state: state, dataType: dataType)
+        let (value, uncertainty, isAbsent, uType) = extractStateData(state: state, dataType: dataType)
         let confidence = ConfidenceLevel(uncertainty: uncertainty)
-        let style = RenderingStyle.from(confidence: confidence)
+
+        // C1.3: Branch on uncertainty type. The two kinds of doubt produce different visuals.
+        // - Absent or epistemic (reducible, missing data) → .speculative: grayed out,
+        //   communicates "we don't know yet" — NOT the same as a soft measured value.
+        // - Aleatoric (inherent noise) → .uncertain with halo: measured but spread,
+        //   communicates "this IS the variation" — asking for more data won't fix it.
+        let style: RenderingStyle
+        if isAbsent || uType == .epistemic {
+            style = .speculative
+        } else if uType == .aleatoric {
+            style = confidence == .crisp ? .crisp : .uncertain(confidence: 1.0 - uncertainty)
+        } else {
+            style = RenderingStyle.from(confidence: confidence)
+        }
 
         return RenderingInstruction(
             value: value,
             uncertainty: uncertainty,
             confidence: confidence,
-            renderingStyle: style
+            renderingStyle: style,
+            uncertaintyType: isAbsent ? nil : uType
         )
     }
 
     private func extractStateData(
         state: InferredState,
         dataType: String
-    ) -> (Double, Double) {
+    ) -> (Double, Double, Bool, UncertaintyType?) {
         switch dataType {
         case "energy":
-            return (state.energy, state.energyUncertainty)
+            return (state.energy, state.energyUncertainty, state.energyAbsent, state.energyUncertaintyType)
         case "stress":
-            return (state.stress, state.stressUncertainty)
+            return (state.stress, state.stressUncertainty, state.stressAbsent, state.stressUncertaintyType)
         case "focus":
-            return (state.focus, state.focusUncertainty)
+            return (state.focus, state.focusUncertainty, state.focusAbsent, state.focusUncertaintyType)
         case "mood":
-            return (state.mood, state.moodUncertainty)
+            return (state.mood, state.moodUncertainty, state.moodAbsent, state.moodUncertaintyType)
         default:
-            return (0, 1.0)
+            return (0, 1.0, true, nil)
         }
     }
 
