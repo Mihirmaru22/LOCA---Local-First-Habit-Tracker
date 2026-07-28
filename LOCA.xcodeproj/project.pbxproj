@@ -195,6 +195,8 @@
 		B76A92589DB44C2F8361FF95 /* PersonModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 226D81B014DD44DE80D93BB4 /* PersonModel.swift */; };
 		E48388FCBA37469DAE5986DB /* InferredStateModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 126D0D524CF043C7B04C4E5C /* InferredStateModel.swift */; };
 		55D99B761F0B4A719C759206 /* InferredStateModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 126D0D524CF043C7B04C4E5C /* InferredStateModel.swift */; };
+		B2C3D4E5F6A7B8C9D0E1F2A3 /* InferenceTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* InferenceTypes.swift */; };
+		C3D4E5F6A7B8C9D0E1F2A3B4 /* InferenceTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* InferenceTypes.swift */; };
 		1FE9F6B42363404BB74AC56A /* ComposedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA052AE8F12E4A9D82739619 /* ComposedViewModel.swift */; };
 		848B1F9D35DC470B991C3EF8 /* ComposedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA052AE8F12E4A9D82739619 /* ComposedViewModel.swift */; };
 /* End PBXBuildFile section */
@@ -381,6 +383,7 @@
 		BD70FA3CF4D34DD1ADE3F040 /* UncertaintyValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UncertaintyValidator.swift; sourceTree = "<group>"; };
 		D40136964818440CB183624C /* ViewRenderingSpecification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewRenderingSpecification.swift; sourceTree = "<group>"; };
 		126D0D524CF043C7B04C4E5C /* InferredStateModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InferredStateModel.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B8C9D0E1F2 /* InferenceTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InferenceTypes.swift; sourceTree = "<group>"; };
 		EA052AE8F12E4A9D82739619 /* ComposedViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposedViewModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -687,6 +690,7 @@
 				128F5204A29A40D69E2B41B6 /* StateInferenceEngine.swift */,
 				07BC26C094C44A98BDD3B7D0 /* StressInferenceModel.swift */,
 				126D0D524CF043C7B04C4E5C /* InferredStateModel.swift */,
+				A1B2C3D4E5F6A7B8C9D0E1F2 /* InferenceTypes.swift */,
 			);
 			path = Inference;
 			sourceTree = "<group>";
@@ -944,6 +948,7 @@
 				FC8D3E5A2B7F8C9D0E1F4A2B /* CalibrationModel.swift in Sources */,
 				F2A3B4C5D6E7F8A9B0C1D2E3 /* FeedbackModel.swift in Sources */,
 				55D99B761F0B4A719C759206 /* InferredStateModel.swift in Sources */,
+				B2C3D4E5F6A7B8C9D0E1F2A3 /* InferenceTypes.swift in Sources */,
 				848B1F9D35DC470B991C3EF8 /* ComposedViewModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1083,6 +1088,7 @@
 				44905AC223B74A5F83482B08 /* FocusInferenceModel.swift in Sources */,
 				211E063B030E45AEBA658532 /* MoodInferenceModel.swift in Sources */,
 				064377980C6F45DBB5CC4A41 /* StateInferenceEngine.swift in Sources */,
+				C3D4E5F6A7B8C9D0E1F2A3B4 /* InferenceTypes.swift in Sources */,
 				CC952E37F0884B38A0F30C69 /* StressInferenceModel.swift in Sources */,
 				807062DE124B45279CDF5B69 /* CalendarManager.swift in Sources */,
 				24DE42FD010E430386C1D8BB /* DeviceActivityManager.swift in Sources */,
