@@ -130,11 +130,12 @@ final class PatternDetectionEngine {
                 Calendar.current.startOfDay(for: log.timestamp)
             }
 
-            // Compare states on days with vs without this habit
+            // C1: only include present mood measurements — absent states (mood=0.0)
+            // are not low-mood evidence; they are no-data evidence.
             var moodWithHabit: [Double] = []
             var moodWithoutHabit: [Double] = []
 
-            for state in states {
+            for state in states where !state.moodAbsent {
                 let day = Calendar.current.startOfDay(for: state.timestamp)
                 if logsByDay[day] != nil {
                     moodWithHabit.append(state.mood)
@@ -173,7 +174,8 @@ final class PatternDetectionEngine {
         chapters: [Chapter]
     ) -> [LifePattern] {
         var patterns: [LifePattern] = []
-        let overallEnergy = mean(states.map { $0.energy })
+        // C1: compute overall energy baseline from present measurements only.
+        let overallEnergy = mean(states.filter { !$0.energyAbsent }.map { $0.energy })
 
         for person in people {
             let personApps = appearances.filter { $0.personId == person.id }
@@ -183,7 +185,8 @@ final class PatternDetectionEngine {
             var energyWithPerson: [Double] = []
             var energyWithoutPerson: [Double] = []
 
-            for state in states {
+            // C1: skip absent energy states — energy=0.0 is not evidence of low energy.
+            for state in states where !state.energyAbsent {
                 let day = Calendar.current.startOfDay(for: state.timestamp)
                 if appDates.contains(day) {
                     energyWithPerson.append(state.energy)
@@ -221,11 +224,14 @@ final class PatternDetectionEngine {
 
         for chapter in chapters {
             let end = chapter.endDate ?? Date.distantFuture
-            let inChapter = states.filter { $0.timestamp >= chapter.startDate && $0.timestamp < end }
+            // C1: filter absent mood states before computing chapter and overall means.
+            let inChapter = states.filter {
+                $0.timestamp >= chapter.startDate && $0.timestamp < end && !$0.moodAbsent
+            }
             guard inChapter.count >= 5 else { continue }
 
             let chapterMood = mean(inChapter.map { $0.mood })
-            let overallMood = mean(states.map { $0.mood })
+            let overallMood = mean(states.filter { !$0.moodAbsent }.map { $0.mood })
             let moodDelta = chapterMood - overallMood
 
             guard abs(moodDelta) >= 0.08 else { continue }

@@ -139,11 +139,13 @@ class ChapterBuilder {
         let states = try modelContext.fetch(descriptor)
         guard !states.isEmpty else { return }
 
-        chapter.baselineEnergy = mean(states.map { $0.energy })
-        chapter.baselineStress = mean(states.map { $0.stress })
-        chapter.baselineFocus  = mean(states.map { $0.focus })
-        chapter.baselineMood   = mean(states.map { $0.mood })
-        chapter.volatility     = stddev(states.map { $0.mood })
+        // C1: filter absent states per dimension before computing baselines.
+        // Absent states carry value=0.0 and must not be averaged as real measurements.
+        if let e = mean(states.filter { !$0.energyAbsent }.map { $0.energy }) { chapter.baselineEnergy = e }
+        if let s = mean(states.filter { !$0.stressAbsent }.map { $0.stress }) { chapter.baselineStress = s }
+        if let f = mean(states.filter { !$0.focusAbsent  }.map { $0.focus  }) { chapter.baselineFocus  = f }
+        if let m = mean(states.filter { !$0.moodAbsent   }.map { $0.mood   }) { chapter.baselineMood   = m }
+        chapter.volatility = stddev(states.filter { !$0.moodAbsent }.map { $0.mood })
 
         // Activity and social from signals
         let signalDescriptor = FetchDescriptor<SignalEvent>(
@@ -154,13 +156,13 @@ class ChapterBuilder {
         let signals = try modelContext.fetch(signalDescriptor)
 
         let motionSignals = signals.filter { $0.source == .motionActivity }
-        if !motionSignals.isEmpty {
-            chapter.activityLevel = mean(motionSignals.map { $0.value })
+        if let activity = mean(motionSignals.map { $0.value }) {
+            chapter.activityLevel = activity
         }
 
         let calendarSignals = signals.filter { $0.source == .calendar }
-        if !calendarSignals.isEmpty {
-            chapter.socialEngagement = mean(calendarSignals.map { $0.value })
+        if let social = mean(calendarSignals.map { $0.value }) {
+            chapter.socialEngagement = social
         }
 
         try modelContext.save()
@@ -168,14 +170,15 @@ class ChapterBuilder {
 
     // MARK: - Helpers
 
-    private func mean(_ values: [Double]) -> Double {
-        guard !values.isEmpty else { return 0.5 }
+    // C1: returns nil for empty input — absence must not become 0.5.
+    private func mean(_ values: [Double]) -> Double? {
+        guard !values.isEmpty else { return nil }
         return values.reduce(0, +) / Double(values.count)
     }
 
     private func stddev(_ values: [Double]) -> Double {
         guard values.count > 1 else { return 0 }
-        let m = mean(values)
+        let m = mean(values) ?? 0
         let variance = values.map { pow($0 - m, 2) }.reduce(0, +) / Double(values.count)
         return sqrt(variance)
     }

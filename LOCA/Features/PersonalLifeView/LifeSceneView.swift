@@ -19,7 +19,10 @@ struct LifeSceneView: View {
             if isLoading {
                 ProgressView("Composing your life scene…")
                     .frame(maxHeight: .infinity, alignment: .center)
-            } else if let scene {
+            } else if let scene, !scene.isDataAbsent {
+                // C1.4: only render sceneContent when real data exists.
+                // isDataAbsent means no chapters and no global traits — the scene
+                // is structurally absent, not merely uncertain.
                 sceneContent(scene)
             } else {
                 emptyState
