@@ -60,6 +60,7 @@ enum RippleSchemaV1: VersionedSchema {
             PatternFeedback.self,
             NarrativeFeedback.self,
             SensorConflict.self,
+            SourceProvenance.self,
         ]
     }
 }
