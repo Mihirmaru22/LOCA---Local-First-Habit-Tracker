@@ -172,7 +172,7 @@ struct DirectionView: View {
 
             if let chapter = ctx.chapter {
                 TrajectoryCard(
-                    headline: chapter.name,
+                    headline: chapter.name ?? "Unnamed Chapter",
                     detail: chapterDetail(chapter),
                     icon: "book.pages"
                 )

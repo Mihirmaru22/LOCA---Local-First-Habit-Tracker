@@ -127,7 +127,6 @@ private struct StressUnderlayView: View {
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            // Gradient background (stress intensity)
             LinearGradient(
                 gradient: Gradient(colors: [
                     Color(hex: "#FEE2E2").opacity(0.1),
@@ -142,10 +141,13 @@ private struct StressUnderlayView: View {
                     VStack(spacing: 0) {
                         Spacer()
 
-                        RoundedRectangle(cornerRadius: 2)
-                            .frame(height: CGFloat(point.value * 100))
-                            .foregroundStyle(Color(hex: "#EF4444"))
-                            .opacity(opacityForConfidence(point.confidence))
+                        // C1.4: absent points have no stress bar — absence is not zero stress.
+                        if !point.isAbsent {
+                            RoundedRectangle(cornerRadius: 2)
+                                .frame(height: CGFloat(point.value * 100))
+                                .foregroundStyle(Color(hex: "#EF4444"))
+                                .opacity(opacityForConfidence(point.confidence))
+                        }
                     }
                     .frame(height: 120)
                 }
@@ -176,45 +178,49 @@ private struct EnergyTimelineView: View {
             let width = size.width
             let height = size.height
             let points = timeline
+            let strokeColor = Color(hex: "#10B981")
 
-            // Draw line
+            // C1.4: Build the line path with natural gaps at absent points.
+            // An absent point is a break in the line, not a point at 0.
             var path = Path()
+            var inGap = true  // start with a gap until the first present point
+
             for (index, point) in points.enumerated() {
+                guard !point.isAbsent else {
+                    inGap = true
+                    continue
+                }
                 let x = (CGFloat(index) / CGFloat(points.count - 1)) * width
                 let y = height - (CGFloat(point.value) * height)
 
-                if index == 0 {
+                if inGap {
                     path.move(to: CGPoint(x: x, y: y))
+                    inGap = false
                 } else {
                     path.addLine(to: CGPoint(x: x, y: y))
                 }
             }
 
-            // Render with confidence-based styling
-            let strokeColor = Color(hex: "#10B981")
+            context.stroke(path, with: .color(strokeColor.opacity(0.8)), style: StrokeStyle(lineWidth: 2))
 
+            // Draw dots only for present points.
             for (index, point) in points.enumerated() {
+                guard !point.isAbsent else { continue }
+
                 let x = (CGFloat(index) / CGFloat(points.count - 1)) * width
                 let y = height - (CGFloat(point.value) * height)
-
+                let dotSize = sizeForConfidence(point.confidence)
                 let opacity = opacityForConfidence(point.confidence)
-                let size = sizeForConfidence(point.confidence)
 
-                var pointPath = Path(ellipseIn: CGRect(
-                    x: x - size / 2,
-                    y: y - size / 2,
-                    width: size,
-                    height: size
+                let dotPath = Path(ellipseIn: CGRect(
+                    x: x - dotSize / 2,
+                    y: y - dotSize / 2,
+                    width: dotSize,
+                    height: dotSize
                 ))
 
-                context.fill(
-                    pointPath,
-                    with: .color(strokeColor.opacity(opacity))
-                )
+                context.fill(dotPath, with: .color(strokeColor.opacity(opacity)))
             }
-
-            var strokeStyle = StrokeStyle(lineWidth: 2)
-            context.stroke(path, with: .color(strokeColor.opacity(0.8)), style: strokeStyle)
         }
     }
 
@@ -244,14 +250,25 @@ private struct MoodDotsView: View {
         HStack(alignment: .center, spacing: 8) {
             ForEach(timeline, id: \.timestamp) { point in
                 VStack(spacing: 4) {
-                    Circle()
-                        .frame(width: 16, height: 16)
-                        .foregroundStyle(Color(hex: "#F59E0B"))
-                        .opacity(opacityForConfidence(point.confidence))
+                    if point.isAbsent {
+                        // C1.4: absent mood is not zero mood — render as an empty ring with no value.
+                        Circle()
+                            .strokeBorder(Color(hex: "#F59E0B").opacity(0.3), lineWidth: 1.5)
+                            .frame(width: 16, height: 16)
 
-                    Text(formattedValue(point.value))
-                        .font(.caption2)
-                        .foregroundStyle(DS.Color.textSecondary)
+                        Text("–")
+                            .font(.caption2)
+                            .foregroundStyle(DS.Color.textTertiary)
+                    } else {
+                        Circle()
+                            .frame(width: 16, height: 16)
+                            .foregroundStyle(Color(hex: "#F59E0B"))
+                            .opacity(opacityForConfidence(point.confidence))
+
+                        Text(formattedValue(point.value))
+                            .font(.caption2)
+                            .foregroundStyle(DS.Color.textSecondary)
+                    }
                 }
             }
             Spacer()
@@ -367,27 +384,31 @@ private struct UncertaintyLegendView: View {
                         .frame(height: 3)
                         .frame(width: 40)
                         .foregroundStyle(.gray)
-                        .opacity(0.6)
-
-                    Text("Uncertain")
-                        .font(.caption2)
-                        .foregroundStyle(DS.Color.textSecondary)
-                }
-
-                VStack(alignment: .leading, spacing: 4) {
-                    RoundedRectangle(cornerRadius: 2)
-                        .frame(height: 3)
-                        .frame(width: 40)
-                        .foregroundStyle(.gray)
                         .opacity(0.25)
 
                     Text("Speculative")
                         .font(.caption2)
                         .foregroundStyle(DS.Color.textSecondary)
                 }
+
+                // C1.4: "No data" is a distinct rendering state — not faint, but absent.
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 4) {
+                        ForEach(0..<3, id: \.self) { _ in
+                            RoundedRectangle(cornerRadius: 1)
+                                .frame(width: 10, height: 3)
+                                .foregroundStyle(Color.gray.opacity(0.4))
+                        }
+                    }
+                    .frame(width: 40, alignment: .leading)
+
+                    Text("No data")
+                        .font(.caption2)
+                        .foregroundStyle(DS.Color.textSecondary)
+                }
             }
 
-            Text("Fainter lines indicate less certain inferences. Solid lines show logged data or high-confidence predictions.")
+            Text("Gaps in lines and hollow dots mean no data arrived — not that the value was low. Fainter solid lines are real but uncertain measurements.")
                 .font(.caption2)
                 .foregroundStyle(DS.Color.textTertiary)
         }

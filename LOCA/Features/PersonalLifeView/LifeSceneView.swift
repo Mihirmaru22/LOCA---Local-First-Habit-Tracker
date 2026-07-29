@@ -19,7 +19,10 @@ struct LifeSceneView: View {
             if isLoading {
                 ProgressView("Composing your life scene…")
                     .frame(maxHeight: .infinity, alignment: .center)
-            } else if let scene {
+            } else if let scene, !scene.isDataAbsent {
+                // C1.4: only render sceneContent when real data exists.
+                // isDataAbsent means no chapters and no global traits — the scene
+                // is structurally absent, not merely uncertain.
                 sceneContent(scene)
             } else {
                 emptyState
@@ -209,7 +212,6 @@ private struct InsightRow: View {
         switch insight.type {
         case .traitShift:        return "arrow.up.arrow.down"
         case .personPresence:    return "person.crop.circle"
-        case .stateCorrelation:  return "waveform.path"
         case .chapterContrast:   return "book.pages"
         }
     }
@@ -270,10 +272,18 @@ private struct ChapterSceneCard: View {
                             .fontWeight(.bold)
                             .foregroundStyle(.tint)
                     }
-                    Text(snapshot.chapter.name)
-                        .font(DS.Text.body)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(DS.Color.textPrimary)
+                    if let chapterName = snapshot.chapter.name {
+                        Text(chapterName)
+                            .font(DS.Text.body)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(DS.Color.textPrimary)
+                    } else {
+                        Text("Name this chapter →")
+                            .font(DS.Text.body)
+                            .fontWeight(.regular)
+                            .italic()
+                            .foregroundStyle(DS.Color.textTertiary)
+                    }
                 }
                 Spacer()
                 Text("\(snapshot.chapter.durationInDays)d")

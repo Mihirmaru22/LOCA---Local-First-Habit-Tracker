@@ -44,8 +44,9 @@ final class Person {
     var lastSeenDate: Date
     var appearanceCount: Int            // Total appearances in signals
 
-    // State correlation (optional): does this person co-occur with mood shifts?
-    var moodCorrelation: Double?        // Positive = uplifts mood; negative = stresses
+    // C2.4: moodCorrelation is raw observed co-occurrence evidence only — not a verdict
+    // about relationship meaning ("uplifting", "stressful"). Never surfaced as a label.
+    var moodCorrelation: Double?
     var moodCorrelationSampleCount: Int
 
     // Chapter context
@@ -55,17 +56,18 @@ final class Person {
     var createdAt: Date = Date()
     var updatedAt: Date = Date()
 
+    // C2.3: primaryContext is subject-authoritative. It is not a parameter here so callers
+    // cannot accidentally populate it from sensor inference. Set it only after a user act.
     init(
         name: String,
-        nameVariants: [String] = [],
-        primaryContext: RelationshipContext = .unknown
+        nameVariants: [String] = []
     ) {
         self.name = name
         self.nameVariants = nameVariants
         self.initials = Person.makeInitials(from: name)
         self.salience = 0.0
         self.salienceUncertainty = 0.8
-        self.primaryContext = primaryContext
+        self.primaryContext = .unknown
         self.detectedContexts = []
         self.firstSeenDate = Date()
         self.lastSeenDate = Date()

@@ -128,6 +128,14 @@
 		F3EEFE6DE7594FACA63F1BB0 /* TraitSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E78DF6BCC124F6EA5C653EF /* TraitSummaryView.swift */; };
 		051587161C4246C9A9239035 /* ViewCompositionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = E64F904AABAC4554B7B20EBA /* ViewCompositionEngine.swift */; };
 		52550F5555DD45B3AE9E3410 /* SignalCollectionStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EF39B9BE4644225B12B98C9 /* SignalCollectionStatusView.swift */; };
+		D1E2F3A4B5C6D7E8F9A0B1C2 /* HealthKitPermissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitPermissionView.swift; sourceTree = "<group>"; };
+		C2B1A0F9E8D7C6B5A4F3E2D1 /* HealthKitPermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E2F3A4B5C6D7E8F9A0B1C2 /* HealthKitPermissionView.swift */; };
+		E7F8A9B0C1D2E3F4A5B6C7D8 /* DaylightManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaylightManager.swift; sourceTree = "<group>"; };
+		F8A9B0C1D2E3F4A5B6C7D8E9 /* DaylightManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7F8A9B0C1D2E3F4A5B6C7D8 /* DaylightManager.swift */; };
+		C1D2E3F4A5B6C7D8E9F0A1B2 /* HabitBridgeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitBridgeManager.swift; sourceTree = "<group>"; };
+		D2E3F4A5B6C7D8E9F0A1B2C3 /* HabitBridgeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D2E3F4A5B6C7D8E9F0A1B2 /* HabitBridgeManager.swift */; };
+		A9B0C1D2E3F4A5B6C7D8E9F0 /* ContextPermissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextPermissionView.swift; sourceTree = "<group>"; };
+		B0C1D2E3F4A5B6C7D8E9F0A1 /* ContextPermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B0C1D2E3F4A5B6C7D8E9F0 /* ContextPermissionView.swift */; };
 		D82ED360B9674E1BA53018BD /* ChapterBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B3BE72F49504B60836C746D /* ChapterBuilder.swift */; };
 		B50218B1D1A54AB68A40FBF6 /* ChapterModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86BB7A0D33C447FB8707EA34 /* ChapterModel.swift */; };
 		96E063DD36EB43399AFA0BF7 /* PeopleExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65A7F2853AAF486B8EF5F0A9 /* PeopleExtractor.swift */; };
@@ -150,6 +158,8 @@
 		B8C9D0E1F2A3B4C5D6E7F8A9 /* NarrativeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrativeView.swift; sourceTree = "<group>"; };
 		C3D4E5F6A7B8C9D0E1F2A3B4 /* PatternsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternsView.swift; sourceTree = "<group>"; };
 		F3D4E5F6A7B8C9D0E1F2A3B4 /* FeedbackAnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LOCA/Features/PersonalLifeView/FeedbackAnalyticsView.swift"; sourceTree = SOURCE_ROOT; };
+		B4C5D6E7F8A9B0C1D2E3F4A5 /* SensorConflictView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorConflictView.swift; sourceTree = "<group>"; };
+		A5F4E3D2C1B0A9F8E7D6C5B4 /* SensorConflictView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C5D6E7F8A9B0C1D2E3F4A5 /* SensorConflictView.swift */; };
 		G4E5F6A7B8C9D0E1F2A3B4C5 /* FeedbackProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LOCA/Learning/Synthesis/FeedbackProcessor.swift"; sourceTree = SOURCE_ROOT; };
 		H5F6A7B8C9D0E1F2A3B4C5D6 /* ContextEnricher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LOCA/Learning/Synthesis/ContextEnricher.swift"; sourceTree = SOURCE_ROOT; };
 		FC8D3E5A2B7F8C9D0E1F4A2B /* CalibrationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA7B8AC9D7E1F4B5A82C6D3E /* CalibrationModel.swift */; };
@@ -165,6 +175,7 @@
 		F6E5F6A7B8C9D0E1F2A3B4C5 /* FeedbackProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = G4E5F6A7B8C9D0E1F2A3B4C5 /* FeedbackProcessor.swift */; };
 		G7F6A7B8C9D0E1F2A3B4C5D6 /* ContextEnricher.swift in Sources */ = {isa = PBXBuildFile; fileRef = H5F6A7B8C9D0E1F2A3B4C5D6 /* ContextEnricher.swift */; };
 		CA7B8AC9D7E1F4B5A82C6D3E /* CalibrationModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalibrationModel.swift; sourceTree = "<group>"; };
+		CF89A3B274DC4E56B8F290A1 /* SensorConflict.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorConflict.swift; sourceTree = "<group>"; };
 		FA11FA11FA11FA11FA11FA11 /* DirectionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CD3EF36A4504EC2B092EDD8 /* DirectionModel.swift */; };
 		CC0FA28CBF7F4C7997328A4F /* DirectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46B7109E93264DE9A5FAB54E /* DirectionView.swift */; };
 		DEC886610E32444B8AE7435B /* DirectionCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94E2C16D6CB34D8FB7CB8680 /* DirectionCaptureView.swift */; };
@@ -195,8 +206,11 @@
 		B76A92589DB44C2F8361FF95 /* PersonModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 226D81B014DD44DE80D93BB4 /* PersonModel.swift */; };
 		E48388FCBA37469DAE5986DB /* InferredStateModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 126D0D524CF043C7B04C4E5C /* InferredStateModel.swift */; };
 		55D99B761F0B4A719C759206 /* InferredStateModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 126D0D524CF043C7B04C4E5C /* InferredStateModel.swift */; };
+		A0B1C2D3E4F5061728394A5B /* InferenceTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1E2D3C4B5A6978869504231 /* InferenceTypes.swift */; };
+		1234567890ABCDEF12345678 /* InferenceTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1E2D3C4B5A6978869504231 /* InferenceTypes.swift */; };
 		1FE9F6B42363404BB74AC56A /* ComposedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA052AE8F12E4A9D82739619 /* ComposedViewModel.swift */; };
 		848B1F9D35DC470B991C3EF8 /* ComposedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA052AE8F12E4A9D82739619 /* ComposedViewModel.swift */; };
+		D09B4E7A385C4F1DA92B6CF3 /* SensorConflict.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF89A3B274DC4E56B8F290A1 /* SensorConflict.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -381,6 +395,7 @@
 		BD70FA3CF4D34DD1ADE3F040 /* UncertaintyValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UncertaintyValidator.swift; sourceTree = "<group>"; };
 		D40136964818440CB183624C /* ViewRenderingSpecification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewRenderingSpecification.swift; sourceTree = "<group>"; };
 		126D0D524CF043C7B04C4E5C /* InferredStateModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InferredStateModel.swift; sourceTree = "<group>"; };
+		F1E2D3C4B5A6978869504231 /* InferenceTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InferenceTypes.swift; sourceTree = "<group>"; };
 		EA052AE8F12E4A9D82739619 /* ComposedViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposedViewModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -658,6 +673,7 @@
 				226D81B014DD44DE80D93BB4 /* PersonModel.swift */,
 				1CD3EF36A4504EC2B092EDD8 /* DirectionModel.swift */,
 				CA7B8AC9D7E1F4B5A82C6D3E /* CalibrationModel.swift */,
+				CF89A3B274DC4E56B8F290A1 /* SensorConflict.swift */,
 				FDF5D0F2E2E440EA90A108EE /* TraitInferenceEngine.swift */,
 				897271B11E814E59B5C885B9 /* TraitModel.swift */,
 			);
@@ -687,6 +703,7 @@
 				128F5204A29A40D69E2B41B6 /* StateInferenceEngine.swift */,
 				07BC26C094C44A98BDD3B7D0 /* StressInferenceModel.swift */,
 				126D0D524CF043C7B04C4E5C /* InferredStateModel.swift */,
+				F1E2D3C4B5A6978869504231 /* InferenceTypes.swift */,
 			);
 			path = Inference;
 			sourceTree = "<group>";
@@ -699,6 +716,8 @@
 				57F41BC5CD854A20A6D4D140 /* HealthKitManager.swift */,
 				866A1B52FC0F4202822A0DE8 /* LocationManager.swift */,
 				29BD4C07E8D7423E994BE833 /* MotionActivityManager.swift */,
+				E7F8A9B0C1D2E3F4A5B6C7D8 /* DaylightManager.swift */,
+				C1D2E3F4A5B6C7D8E9F0A1B2 /* HabitBridgeManager.swift */,
 				E2B6F24F5644421B9C7DE2A2 /* SignalManager.swift */,
 			);
 			path = Managers;
@@ -756,6 +775,7 @@
 				B8C9D0E1F2A3B4C5D6E7F8A9 /* NarrativeView.swift */,
 				C3D4E5F6A7B8C9D0E1F2A3B4 /* PatternsView.swift */,
 				F3D4E5F6A7B8C9D0E1F2A3B4 /* FeedbackAnalyticsView.swift */,
+				B4C5D6E7F8A9B0C1D2E3F4A5 /* SensorConflictView.swift */,
 				E64F904AABAC4554B7B20EBA /* ViewCompositionEngine.swift */,
 				EA052AE8F12E4A9D82739619 /* ComposedViewModel.swift */,
 			);
@@ -766,6 +786,8 @@
 			isa = PBXGroup;
 			children = (
 				6EF39B9BE4644225B12B98C9 /* SignalCollectionStatusView.swift */,
+				D1E2F3A4B5C6D7E8F9A0B1C2 /* HealthKitPermissionView.swift */,
+				A9B0C1D2E3F4A5B6C7D8E9F0 /* ContextPermissionView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -944,6 +966,7 @@
 				FC8D3E5A2B7F8C9D0E1F4A2B /* CalibrationModel.swift in Sources */,
 				F2A3B4C5D6E7F8A9B0C1D2E3 /* FeedbackModel.swift in Sources */,
 				55D99B761F0B4A719C759206 /* InferredStateModel.swift in Sources */,
+				A0B1C2D3E4F5061728394A5B /* InferenceTypes.swift in Sources */,
 				848B1F9D35DC470B991C3EF8 /* ComposedViewModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1060,9 +1083,15 @@
 				C9D0E1F2A3B4C5D6E7F8A9B0 /* NarrativeView.swift in Sources */,
 				D4E5F6A7B8C9D0E1F2A3B4C5 /* PatternsView.swift in Sources */,
 				E5D4E5F6A7B8C9D0E1F2A3B4 /* FeedbackAnalyticsView.swift in Sources */,
+				A5F4E3D2C1B0A9F8E7D6C5B4 /* SensorConflictView.swift in Sources */,
 				051587161C4246C9A9239035 /* ViewCompositionEngine.swift in Sources */,
 				52550F5555DD45B3AE9E3410 /* SignalCollectionStatusView.swift in Sources */,
+				C2B1A0F9E8D7C6B5A4F3E2D1 /* HealthKitPermissionView.swift in Sources */,
+				F8A9B0C1D2E3F4A5B6C7D8E9 /* DaylightManager.swift in Sources */,
+				D2E3F4A5B6C7D8E9F0A1B2C3 /* HabitBridgeManager.swift in Sources */,
+				B0C1D2E3F4A5B6C7D8E9F0A1 /* ContextPermissionView.swift in Sources */,
 				D82ED360B9674E1BA53018BD /* ChapterBuilder.swift in Sources */,
+				D09B4E7A385C4F1DA92B6CF3 /* SensorConflict.swift in Sources */,
 				B50218B1D1A54AB68A40FBF6 /* ChapterModel.swift in Sources */,
 				96E063DD36EB43399AFA0BF7 /* PeopleExtractor.swift in Sources */,
 				0BF22EFB288A4CDF88663999 /* PersonModel.swift in Sources */,
@@ -1083,6 +1112,7 @@
 				44905AC223B74A5F83482B08 /* FocusInferenceModel.swift in Sources */,
 				211E063B030E45AEBA658532 /* MoodInferenceModel.swift in Sources */,
 				064377980C6F45DBB5CC4A41 /* StateInferenceEngine.swift in Sources */,
+				1234567890ABCDEF12345678 /* InferenceTypes.swift in Sources */,
 				CC952E37F0884B38A0F30C69 /* StressInferenceModel.swift in Sources */,
 				807062DE124B45279CDF5B69 /* CalendarManager.swift in Sources */,
 				24DE42FD010E430386C1D8BB /* DeviceActivityManager.swift in Sources */,

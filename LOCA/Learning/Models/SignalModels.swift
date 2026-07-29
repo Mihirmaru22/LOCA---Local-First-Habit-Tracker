@@ -14,11 +14,15 @@ import SwiftData
 enum SignalSource: String, Codable {
     case sleep
     case heartRateVariability
+    case heartRate
     case location
     case calendar
     case deviceActivity
     case explicitLog
     case motionActivity
+    case workout
+    case mindfulSession
+    case daylight
 }
 
 // MARK: - Signal Event (Atomic Measurement)

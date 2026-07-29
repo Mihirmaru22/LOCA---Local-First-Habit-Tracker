@@ -2,60 +2,83 @@
 //  HealthKitManager.swift
 //  LOCA
 //
-//  HealthKit integration for sleep, HRV, steps
+//  C3.1 — Passive HealthKit ingestion
+//  Collects sleep, HRV, heart rate, steps, workouts, and mindful minutes
+//  as SignalEvents. Authorization is requested once, through the
+//  HealthKitPermissionView framing flow, not eagerly from init().
+//
+//  HealthKit's privacy model: read authorization is never exposed to apps.
+//  Denied types simply return no samples. Each collector therefore runs
+//  unconditionally and returns [] when the user hasn't granted access —
+//  graceful degradation without an isAuthorized guard.
 //
 
 import Foundation
 import HealthKit
 
+// MARK: - HKWorkoutActivityType name helper
+
+private extension HKWorkoutActivityType {
+    var commonName: String {
+        switch self {
+        case .running:                       return "Running"
+        case .cycling:                       return "Cycling"
+        case .walking:                       return "Walking"
+        case .swimming:                      return "Swimming"
+        case .yoga:                          return "Yoga"
+        case .functionalStrengthTraining:    return "Strength"
+        case .traditionalStrengthTraining:   return "Strength"
+        case .highIntensityIntervalTraining: return "HIIT"
+        case .hiking:                        return "Hiking"
+        case .dance:                         return "Dance"
+        case .pilates:                       return "Pilates"
+        default:                             return "Workout"
+        }
+    }
+}
+
+// MARK: - HealthKitManager
+
 @MainActor
 class HealthKitManager: NSObject {
     private let healthStore = HKHealthStore()
-    private var isAuthorized = false
 
-    override init() {
-        super.init()
-        requestAuthorization()
-    }
+    // All types LOCA reads. Kept in sync with NSHealthShareUsageDescription
+    // in Info.plist and SignalCollectionCoordinator.requestHealthKitPermission().
+    static let readTypes: Set<HKObjectType> = Set([
+        HKObjectType.categoryType(forIdentifier: .sleepAnalysis),
+        HKObjectType.categoryType(forIdentifier: .mindfulSession),
+        HKObjectType.quantityType(forIdentifier: .heartRateVariabilitySDNN),
+        HKObjectType.quantityType(forIdentifier: .heartRate),
+        HKObjectType.quantityType(forIdentifier: .stepCount),
+        HKObjectType.workoutType(),
+    ].compactMap { $0 })
 
     // MARK: - Authorization
 
-    private func requestAuthorization() {
-        let typesToRead: Set<HKObjectType> = Set(
-            [
-                HKObjectType.categoryType(forIdentifier: .sleepAnalysis),
-                HKObjectType.quantityType(forIdentifier: .heartRateVariabilitySDNN),
-                HKObjectType.quantityType(forIdentifier: .stepCount),
-                HKObjectType.quantityType(forIdentifier: .restingHeartRate),
-            ].compactMap { $0 }
-        )
-
-        guard !typesToRead.isEmpty else { return }
-
-        healthStore.requestAuthorization(toShare: nil, read: typesToRead) { [weak self] success, _ in
-            DispatchQueue.main.async {
-                self?.isAuthorized = success
+    /// Requests read authorization for all HealthKit types LOCA uses.
+    /// Called by SignalCollectionCoordinator after the HealthKitPermissionView
+    /// framing has been shown. Never called from init().
+    func requestAuthorization() async -> Bool {
+        return await withCheckedContinuation { continuation in
+            healthStore.requestAuthorization(toShare: nil, read: Self.readTypes) { granted, _ in
+                continuation.resume(returning: granted)
             }
         }
     }
 
     // MARK: - Sleep Collection
 
-    func collectSleep() async throws -> [SignalEvent] {
-        guard isAuthorized else { return [] }
-
+    func collectSleep() async -> [SignalEvent] {
         guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else { return [] }
         let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: Date())!
         let predicate = HKQuery.predicateForSamples(
-            withStart: thirtyDaysAgo,
-            end: Date(),
-            options: .strictStartDate
+            withStart: thirtyDaysAgo, end: Date(), options: .strictStartDate
         )
 
-        // HealthKit runs its results handler on a private background queue, not the
-        // MainActor. The @Sendable handler keeps it off-actor (avoiding a
-        // dispatch_assert_queue crash) and extracts only Sendable primitives; the
-        // SwiftData @Model objects are built afterward on the MainActor.
+        // HealthKit callbacks run on a private background queue, not the MainActor.
+        // @Sendable handlers extract only Sendable primitives; @Model construction
+        // happens on the MainActor after the await.
         let samples: [(endDate: Date, hoursSleep: Double)] = await withCheckedContinuation { continuation in
             let query = HKSampleQuery(
                 sampleType: sleepType,
@@ -67,14 +90,12 @@ class HealthKitManager: NSObject {
                     continuation.resume(returning: [])
                     return
                 }
-
-                let extracted = samples.map { sample in
-                    (endDate: sample.endDate,
-                     hoursSleep: sample.endDate.timeIntervalSince(sample.startDate) / 3600)
+                let extracted = samples.map { s in
+                    (endDate: s.endDate,
+                     hoursSleep: s.endDate.timeIntervalSince(s.startDate) / 3600)
                 }
                 continuation.resume(returning: extracted)
             }
-
             self.healthStore.execute(query)
         }
 
@@ -91,19 +112,13 @@ class HealthKitManager: NSObject {
 
     // MARK: - Heart Rate Variability Collection
 
-    func collectHeartRateVariability() async throws -> [SignalEvent] {
-        guard isAuthorized else { return [] }
-
+    func collectHeartRateVariability() async -> [SignalEvent] {
         guard let hrvType = HKObjectType.quantityType(forIdentifier: .heartRateVariabilitySDNN) else { return [] }
         let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: Date())!
         let predicate = HKQuery.predicateForSamples(
-            withStart: thirtyDaysAgo,
-            end: Date(),
-            options: .strictStartDate
+            withStart: thirtyDaysAgo, end: Date(), options: .strictStartDate
         )
 
-        // @Sendable handler: runs on HealthKit's background queue, extracts only
-        // Sendable primitives; @Model construction happens on the MainActor below.
         let samples: [(endDate: Date, hrv: Double)] = await withCheckedContinuation { continuation in
             let query = HKSampleQuery(
                 sampleType: hrvType,
@@ -115,14 +130,12 @@ class HealthKitManager: NSObject {
                     continuation.resume(returning: [])
                     return
                 }
-
-                let extracted = samples.map { sample in
-                    (endDate: sample.endDate,
-                     hrv: sample.quantity.doubleValue(for: HKUnit(from: "ms")))
+                let extracted = samples.map { s in
+                    (endDate: s.endDate,
+                     hrv: s.quantity.doubleValue(for: HKUnit(from: "ms")))
                 }
                 continuation.resume(returning: extracted)
             }
-
             self.healthStore.execute(query)
         }
 
@@ -137,11 +150,61 @@ class HealthKitManager: NSObject {
         }
     }
 
+    // MARK: - Heart Rate Collection
+
+    /// Collects hourly-averaged heart rate. Normalize: bpm / 100 → [0, 1].
+    /// Inference models receive the raw normalized value; they assign meaning
+    /// (e.g. elevated HR correlating with stress) via their own weighting.
+    func collectHeartRate() async -> [SignalEvent] {
+        guard let hrType = HKObjectType.quantityType(forIdentifier: .heartRate) else { return [] }
+        let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: Date())!
+        let now = Date()
+
+        var intervalComponents = DateComponents()
+        intervalComponents.hour = 1
+
+        let buckets: [(startDate: Date, avgBPM: Double)] = await withCheckedContinuation { continuation in
+            let query = HKStatisticsCollectionQuery(
+                quantityType: hrType,
+                quantitySamplePredicate: HKQuery.predicateForSamples(
+                    withStart: thirtyDaysAgo, end: now, options: .strictStartDate
+                ),
+                options: .discreteAverage,
+                anchorDate: thirtyDaysAgo,
+                intervalComponents: intervalComponents
+            )
+
+            query.initialResultsHandler = { @Sendable _, results, error in
+                guard let results, error == nil else {
+                    continuation.resume(returning: [])
+                    return
+                }
+                var extracted: [(startDate: Date, avgBPM: Double)] = []
+                results.enumerateStatistics(from: thirtyDaysAgo, to: now) { statistics, _ in
+                    if let qty = statistics.averageQuantity() {
+                        let bpm = qty.doubleValue(for: HKUnit(from: "count/min"))
+                        extracted.append((startDate: statistics.startDate, avgBPM: bpm))
+                    }
+                }
+                continuation.resume(returning: extracted)
+            }
+            self.healthStore.execute(query)
+        }
+
+        return buckets.map { bucket in
+            SignalEvent(
+                timestamp: bucket.startDate,
+                source: .heartRate,
+                value: min(1.0, bucket.avgBPM / 100.0),
+                uncertainty: 0.15,
+                metadata: ["bpm": String(format: "%.0f", bucket.avgBPM)]
+            )
+        }
+    }
+
     // MARK: - Step Count Collection
 
-    func collectSteps() async throws -> [SignalEvent] {
-        guard isAuthorized else { return [] }
-
+    func collectSteps() async -> [SignalEvent] {
         guard let stepType = HKObjectType.quantityType(forIdentifier: .stepCount) else { return [] }
 
         var calendar = Calendar.current
@@ -153,16 +216,11 @@ class HealthKitManager: NSObject {
         var intervalComponents = DateComponents()
         intervalComponents.hour = 1
 
-        // @Sendable handler: HKStatisticsCollectionQuery invokes its results handler
-        // on a background queue. Extract Sendable (Date, stepCount) pairs here; build
-        // the @Model objects on the MainActor after the await.
         let buckets: [(startDate: Date, stepCount: Double)] = await withCheckedContinuation { continuation in
             let query = HKStatisticsCollectionQuery(
                 quantityType: stepType,
                 quantitySamplePredicate: HKQuery.predicateForSamples(
-                    withStart: thirtyDaysAgo,
-                    end: now,
-                    options: .strictStartDate
+                    withStart: thirtyDaysAgo, end: now, options: .strictStartDate
                 ),
                 options: .cumulativeSum,
                 anchorDate: thirtyDaysAgo,
@@ -174,7 +232,6 @@ class HealthKitManager: NSObject {
                     continuation.resume(returning: [])
                     return
                 }
-
                 var extracted: [(startDate: Date, stepCount: Double)] = []
                 results.enumerateStatistics(from: thirtyDaysAgo, to: now) { statistics, _ in
                     let stepCount = statistics.sumQuantity()?.doubleValue(for: HKUnit.count()) ?? 0
@@ -182,7 +239,6 @@ class HealthKitManager: NSObject {
                 }
                 continuation.resume(returning: extracted)
             }
-
             self.healthStore.execute(query)
         }
 
@@ -193,6 +249,92 @@ class HealthKitManager: NSObject {
                 value: min(1.0, bucket.stepCount / 1000),
                 uncertainty: 0.1,
                 metadata: ["steps": String(Int(bucket.stepCount))]
+            )
+        }
+    }
+
+    // MARK: - Workout Collection
+
+    /// Collects workouts and maps each to a SignalEvent. Normalize: 60 min → 1.0.
+    func collectWorkouts() async -> [SignalEvent] {
+        let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: Date())!
+        let predicate = HKQuery.predicateForSamples(
+            withStart: thirtyDaysAgo, end: Date(), options: .strictStartDate
+        )
+
+        let samples: [(endDate: Date, durationMinutes: Double, activityName: String)] =
+            await withCheckedContinuation { continuation in
+                let query = HKSampleQuery(
+                    sampleType: HKObjectType.workoutType(),
+                    predicate: predicate,
+                    limit: HKObjectQueryNoLimit,
+                    sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]
+                ) { @Sendable _, samples, error in
+                    guard let workouts = samples as? [HKWorkout], error == nil else {
+                        continuation.resume(returning: [])
+                        return
+                    }
+                    let extracted = workouts.map { w in
+                        (endDate: w.endDate,
+                         durationMinutes: w.duration / 60.0,
+                         activityName: w.workoutActivityType.commonName)
+                    }
+                    continuation.resume(returning: extracted)
+                }
+                self.healthStore.execute(query)
+            }
+
+        return samples.map { entry in
+            SignalEvent(
+                timestamp: entry.endDate,
+                source: .workout,
+                value: min(1.0, entry.durationMinutes / 60.0),
+                uncertainty: 0.1,
+                metadata: [
+                    "activity": entry.activityName,
+                    "duration_min": String(format: "%.0f", entry.durationMinutes),
+                ]
+            )
+        }
+    }
+
+    // MARK: - Mindful Minutes Collection
+
+    /// Collects mindfulness sessions. Normalize: 20 min → 1.0.
+    func collectMindfulMinutes() async -> [SignalEvent] {
+        guard let mindfulType = HKObjectType.categoryType(forIdentifier: .mindfulSession) else { return [] }
+        let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: Date())!
+        let predicate = HKQuery.predicateForSamples(
+            withStart: thirtyDaysAgo, end: Date(), options: .strictStartDate
+        )
+
+        let samples: [(endDate: Date, durationMinutes: Double)] = await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: mindfulType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]
+            ) { @Sendable _, samples, error in
+                guard let sessions = samples as? [HKCategorySample], error == nil else {
+                    continuation.resume(returning: [])
+                    return
+                }
+                let extracted = sessions.map { s in
+                    (endDate: s.endDate,
+                     durationMinutes: s.endDate.timeIntervalSince(s.startDate) / 60.0)
+                }
+                continuation.resume(returning: extracted)
+            }
+            self.healthStore.execute(query)
+        }
+
+        return samples.map { entry in
+            SignalEvent(
+                timestamp: entry.endDate,
+                source: .mindfulSession,
+                value: min(1.0, entry.durationMinutes / 20.0),
+                uncertainty: 0.1,
+                metadata: ["duration_min": String(format: "%.1f", entry.durationMinutes)]
             )
         }
     }

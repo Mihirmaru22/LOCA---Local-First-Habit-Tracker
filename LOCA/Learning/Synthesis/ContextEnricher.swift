@@ -160,8 +160,8 @@ import SwiftData
     func summarizeContext(_ context: PatternContext) -> String {
         var summary = ""
 
-        if let chapter = context.contextChapter {
-            summary += "This pattern emerged during \"\(chapter.name)\". "
+        if let chapter = context.contextChapter, let chapterName = chapter.name {
+            summary += "This pattern emerged during \"\(chapterName)\". "
         }
 
         if !context.relatedLogs.isEmpty {

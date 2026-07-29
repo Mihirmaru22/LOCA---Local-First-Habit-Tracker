@@ -19,7 +19,7 @@ struct SignalCollectionStatusView: View {
                     .font(.headline)
                     .foregroundStyle(DS.Color.textPrimary)
 
-                Text("LOCA learns from your passive signals: sleep, location, calendar, activity.")
+                Text("LOCA learns from your passive signals: sleep, heart rate, workouts, mindful minutes, location, calendar, and activity.")
                     .font(.caption)
                     .foregroundStyle(DS.Color.textSecondary)
             }
@@ -88,10 +88,15 @@ struct SignalCollectionStatusView: View {
 
             // Info
             VStack(alignment: .leading, spacing: 6) {
-                InfoRow(icon: "moon.zzz.fill", label: "Sleep", status: "HealthKit")
-                InfoRow(icon: "calendar", label: "Events", status: "Calendar")
-                InfoRow(icon: "location.fill", label: "Location", status: "On-device")
-                InfoRow(icon: "figure.walk", label: "Activity", status: "Motion sensor")
+                InfoRow(icon: "moon.zzz.fill",         label: "Sleep",            status: "HealthKit")
+                InfoRow(icon: "heart.fill",             label: "Heart Rate",       status: "HealthKit")
+                InfoRow(icon: "waveform.path.ecg",      label: "HRV",              status: "HealthKit")
+                InfoRow(icon: "figure.run",             label: "Workouts",         status: "HealthKit")
+                InfoRow(icon: "brain.head.profile",     label: "Mindful Minutes",  status: "HealthKit")
+                InfoRow(icon: "figure.walk",            label: "Steps",            status: "HealthKit")
+                InfoRow(icon: "calendar",               label: "Events",           status: "Calendar")
+                InfoRow(icon: "location.fill",          label: "Location",         status: "On-device")
+                InfoRow(icon: "sensor.fill",            label: "Motion",           status: "Motion sensor")
             }
 
             Spacer()

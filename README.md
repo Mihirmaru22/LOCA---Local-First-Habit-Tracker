@@ -1,17 +1,20 @@
-# LOCA — Local-First Habit Tracker
+# LOCA — Local-First Habit Tracker + Personal Life Model
 
-A high-performance, local-first habit tracker for iOS 17+ and macOS 14+. Built with SwiftUI, SwiftData, and CloudKit — no custom backend, no REST APIs, no network dependency for core functionality.
+A high-performance, local-first habit tracker and personal life intelligence system for iOS 17+ and macOS 14+. Built with SwiftUI, SwiftData, and CloudKit — no custom backend, no REST APIs, no network dependency for core functionality. All inference runs on-device.
 
-> ⭐ **Read first after the roadmap:** [`Docs/THE-CENTRAL-QUESTION.md`](Docs/THE-CENTRAL-QUESTION.md)
-> — the honest Phase 6 assessment and the one question the whole product is a bet on:
+> **Read first:** [`Docs/THE-CENTRAL-QUESTION.md`](Docs/THE-CENTRAL-QUESTION.md)
+> — the one question the whole product is a bet on:
 > *"Does LOCA let me **see** my life, or does it just **show me data** about my life?"*
-> Revisit it at the end of Phase 8 and Phase 10 before building anything new.
 
 ---
 
 ## Philosophy
 
 **The device is the server.** All data lives locally in a SQLite store managed by SwiftData. CloudKit acts as a silent, asynchronous sync layer. The UI never awaits a network response to update.
+
+**The model, not the entry, is the product.** LOCA passively builds a probabilistic model of the user's life from sensors, calendars, health data, and habit logs — without asking them to keep a diary. The learning engine infers. It asks only when passive inference is genuinely exhausted.
+
+**Epistemic honesty is a first-class constraint.** LOCA distinguishes no-data from low-value. Absent measurements are structurally separate from measured-neutral values. No composition path converts ignorance into a midpoint.
 
 ---
 
@@ -22,6 +25,7 @@ A high-performance, local-first habit tracker for iOS 17+ and macOS 14+. Built w
 | UI | SwiftUI (view-driven state, no thick MVVM) |
 | Data | SwiftData + NSPersistentCloudKitContainer |
 | Sync | CloudKit (silent background sync) |
+| Inference | On-device only — no network calls, no external ML APIs |
 | Widgets | WidgetKit + AppIntentConfiguration |
 | Shortcuts | App Intents |
 | Platforms | iOS 17+, macOS 14+ |
@@ -35,160 +39,311 @@ A high-performance, local-first habit tracker for iOS 17+ and macOS 14+. Built w
 ```
 LOCA/
 ├── App/
-│   ├── LOCAApp.swift                  # Entry point, container init, CloudKit coordinator
-│   ├── CloudKitSyncCoordinator.swift  # NSPersistentCloudKitContainerEvent observer
-│   └── WidgetRefreshCoordinator.swift # WidgetKit timeline invalidation
+│   ├── LOCAApp.swift                    # Entry point, container init
+│   ├── AppCoordinator.swift             # Root coordinator
+│   ├── CloudKitSyncCoordinator.swift    # NSPersistentCloudKitContainerEvent observer
+│   ├── SignalCollectionCoordinator.swift # Hourly sensor pipeline trigger
+│   ├── InterventionDelivery.swift       # Habit intervention scheduling
+│   ├── ReflectionDelivery.swift         # Reflection prompt delivery
+│   └── WidgetRefreshCoordinator.swift   # WidgetKit timeline invalidation
+│
 ├── Core/
 │   ├── Models/
-│   │   ├── HabitBoard.swift           # Primary habit entity (@Model, CloudKit-safe)
-│   │   ├── LogEntry.swift             # Append-only check-in record (@Model)
-│   │   └── VersionedSchema.swift      # RippleSchemaV1 + RippleMigrationPlan
+│   │   ├── HabitBoard.swift             # Primary habit entity (@Model)
+│   │   ├── LogEntry.swift               # Append-only check-in record (@Model)
+│   │   ├── ReflectionUnit.swift         # Reflection storage
+│   │   └── VersionedSchema.swift        # RippleSchemaV1 + RippleMigrationPlan
 │   ├── Persistence/
-│   │   ├── ModelContainerFactory.swift # Production / local dev / in-memory containers
-│   │   ├── PersistenceError.swift     # Typed error domain
-│   │   └── DebugSeeder.swift          # Sample data (DEBUG only)
+│   │   ├── ModelContainerFactory.swift  # Production / local dev / in-memory containers
+│   │   ├── CheckInWriter.swift          # Atomic check-in write path
+│   │   ├── DebugSeeder.swift            # Habit sample data (DEBUG only)
+│   │   ├── LifeSeeder.swift             # Life model sample data (DEBUG only)
+│   │   ├── ReminderScheduler.swift      # Local notification scheduling
+│   │   └── PersistenceError.swift       # Typed error domain
 │   ├── Analytics/
-│   │   ├── HeatmapDataProvider.swift  # Off-thread heatmap aggregation
-│   │   └── StreakCalculator.swift     # Full historical streak recalculation
-│   ├── DesignSystem/
-│   │   ├── DS.swift                   # Token namespace (spacing, radius, motion)
-│   │   ├── DS+Color.swift             # Semantic color tokens
-│   │   ├── DS+Typography.swift        # Font scale
-│   │   └── DSComponents.swift         # LOCACard, SectionHeader, ValueText
-│   └── Extensions/
-│       ├── ColorPalette.swift         # Indexed color array (ADR-002)
-│       ├── View+PlatformAdaptations.swift # Cross-platform shims
-│       ├── Date+Calendar.swift
-│       ├── Animation+Extensions.swift
-│       └── Double+Clamp.swift
+│   │   ├── HeatmapDataProvider.swift    # Off-thread heatmap aggregation
+│   │   └── StreakCalculator.swift       # Full historical streak recalculation
+│   └── DesignSystem/
+│       ├── DS.swift                     # Token namespace (spacing, radius, motion)
+│       ├── DS+Color.swift               # Semantic color tokens
+│       ├── DS+Typography.swift          # Font scale
+│       ├── DS+Motion.swift              # Animation tokens
+│       ├── DSComponents.swift           # LOCACard, SectionHeader, ValueText
+│       ├── ArcGaugeView.swift           # Reusable arc progress component
+│       ├── WeeklyBarChart.swift         # Shared bar chart component
+│       ├── Haptics.swift                # Haptic feedback wrapper
+│       └── PressableButtonStyle.swift   # Press-state button style
+│
 ├── Features/
-│   ├── Dashboard/
-│   │   ├── TodayView.swift            # Root view, NavigationStack host
-│   │   ├── HabitListView.swift        # Layout router (list / grid / timeline)
-│   │   ├── HabitListLayoutView.swift  # Zone-based list (To Do / In Progress / Done)
-│   │   ├── HabitGridLayoutView.swift  # 2-col grid with 8-week mini heatmap
-│   │   ├── HabitTimelineLayoutView.swift # Chronological timeline
-│   │   ├── HabitCardView.swift        # Single habit row
-│   │   ├── HabitListRow.swift
-│   │   ├── ArcProgressView.swift
-│   │   └── SettingsMenuView.swift     # Layout picker, app settings
-│   ├── HabitDetail/
-│   │   ├── HabitDetailView.swift      # 4-tab detail: summary / check-ins / journal / analytics
-│   │   ├── HabitCheckInsView.swift    # Check-in history (grouped, swipe actions)
-│   │   ├── HabitJournalView.swift     # Journal surface (wraps JournalTimelineView)
-│   │   ├── JournalTimelineView.swift  # Day-grouped entry list
-│   │   ├── AddCheckInSheetView.swift  # New check-in modal
-│   │   ├── EditCheckInSheetView.swift # Edit existing check-in modal
-│   │   ├── HabitAnalyticsView.swift   # Full analytics tab (Canvas charts + heatmap hero)
-│   │   ├── HeatmapView.swift          # Scrollable 365-day grid (used by HabitAnalyticsView)
-│   │   ├── TimelineChartView.swift    # Canvas-based 7/30/90/All chart
-│   │   ├── StreaksChartView.swift     # 12-month bar timeline
-│   │   ├── YearComparisonChartView.swift
-│   │   ├── ConsistencyChartView.swift
-│   │   └── WeekdaysChartView.swift
-│   └── HabitManagement/
-│       ├── HabitFormView.swift        # Create / edit habit sheet
-│       ├── HabitBoardDraft.swift      # Form staging state
-│       └── UnitOption.swift           # Picker-backed unit catalogue
+│   ├── Dashboard/                       # Habit list/grid/timeline views
+│   ├── HabitDetail/                     # 4-tab detail: summary/check-ins/journal/analytics
+│   ├── HabitManagement/                 # Habit creation, editing, templates, recommendations
+│   ├── PersonalLifeView/                # Life scene, chapters, traits, people, patterns
+│   ├── Present/                         # "Present" tab: now/reach/ask views
+│   └── Settings/                        # Signal collection status
+│
+├── Learning/
+│   ├── Inference/
+│   │   ├── InferenceTypes.swift         # InferenceProvenance, InferenceResult (shared with widget)
+│   │   ├── InferredStateModel.swift     # @Model for hourly inferred states (absence-aware)
+│   │   ├── StateInferenceEngine.swift   # Hourly inference orchestrator
+│   │   ├── EnergyInferenceModel.swift   # Energy dimension inference
+│   │   ├── StressInferenceModel.swift   # Stress dimension inference
+│   │   ├── FocusInferenceModel.swift    # Focus dimension inference
+│   │   ├── MoodInferenceModel.swift     # Mood dimension inference
+│   │   └── CalibrationManager.swift     # Per-user calibration adjustments
+│   ├── Managers/                        # Sensor access (HealthKit, Motion, Calendar, Location)
+│   ├── Models/
+│   │   ├── SignalModels.swift           # SignalEvent, SignalSource, WeeklyRegime
+│   │   └── UncertaintyModels.swift      # UncertaintyType (epistemic / aleatoric)
+│   ├── EventDetection/
+│   │   ├── EventDetectionEngine.swift   # Life event detection from regime shifts
+│   │   ├── EventClassifier.swift        # Signal-to-event classification
+│   │   ├── AnomalyDetector.swift        # Statistical anomaly detection
+│   │   ├── RegimePersistenceChecker.swift # Regime stability checks
+│   │   ├── RelationshipGraphEngine.swift # Person co-occurrence graph
+│   │   └── LifeEventModels.swift        # LifeEvent, EventType @Models
+│   ├── Entities/
+│   │   ├── ChapterBuilder.swift         # Segments life into named chapters
+│   │   ├── ChapterModel.swift           # Chapter @Model
+│   │   ├── TraitInferenceEngine.swift   # 6 trait dimensions from 30-day state windows
+│   │   ├── TraitModel.swift             # Trait @Model
+│   │   ├── PersonModel.swift            # Person, PersonAppearance @Models
+│   │   ├── PeopleExtractor.swift        # Calendar contact extraction
+│   │   ├── DirectionModel.swift         # Direction (goals) @Model
+│   │   ├── FeedbackModel.swift          # PatternFeedback, NarrativeFeedback @Models
+│   │   └── CalibrationModel.swift       # Calibration @Model
+│   ├── Synthesis/
+│   │   ├── PatternDetectionEngine.swift # Cross-layer pattern detection
+│   │   ├── NarrativeComposer.swift      # Natural language narrative generation
+│   │   ├── FeedbackProcessor.swift      # Pattern feedback incorporation
+│   │   └── ContextEnricher.swift        # Cross-entity context enrichment
+│   ├── UncertaintyValidator.swift       # Validates uncertainty propagation
+│   └── ViewRenderingSpecification.swift # Render instruction contracts
+│
 ├── Intents/
 │   ├── LogHabitIntent.swift
 │   ├── HabitBoardEntity.swift
 │   └── LOCAShortcuts.swift
-└── LOCAWidget/ (Extension target)
-    └── ...
+│
+└── LOCAWidget/                          # Widget extension target
+    ├── HeatmapWidget.swift
+    ├── HeatmapWidgetView.swift
+    ├── HeatmapProvider.swift
+    └── LOCAWidgetBundle.swift
 ```
+
+---
+
+## Two Verticals
+
+### Vertical 1 — Habit Engine (Phases 1–10, complete)
+
+The original LOCA: create habits, log check-ins, analyze streaks, view analytics. Local-first with CloudKit sync and WidgetKit integration.
+
+### Vertical 2 — Personal Life Model (Phases P1–P10 / Cycle 2)
+
+A passive intelligence layer that builds a probabilistic model of the user's life from sensors and behavior — without asking them to keep a diary.
+
+**The pipeline (sensor → storage → inference → entities → synthesis → surface):**
+
+```
+Sensors (HealthKit / Motion / Calendar / Location)
+    ↓  SignalManager (hourly collection)
+SignalEvent  (raw sensor readings, stored in SwiftData)
+    ↓  StateInferenceEngine (hourly, idempotent)
+InferredState  (energy / stress / focus / mood, with absence flags)
+    ↓  EventDetectionEngine (regime shift detection)
+LifeEvent  (workChange / locationChange / socialChange / …)
+    ↓  ChapterBuilder  →  Chapter entities
+    ↓  TraitInferenceEngine  →  Trait entities (30-day rolling window)
+    ↓  PeopleExtractor / RelationshipGraphEngine  →  Person entities
+    ↓  PatternDetectionEngine  →  LifePattern cross-layer patterns
+    ↓  NarrativeComposer  →  NarrativeUnit natural language
+    ↓  MultiEntityComposer / ViewCompositionEngine
+Present tab / LifeSceneView / ChapterListView / PatternsView / …
+```
+
+---
+
+## Epistemic Architecture (Cycle 2 — C1)
+
+The Cycle 2 epistemics layer enforces one invariant end-to-end: **absence is never converted into a value.** Every layer from inference to surface must distinguish "no data arrived" from "data arrived and the value was neutral."
+
+### Absence representation
+
+`InferredState` carries per-dimension boolean flags alongside numeric values:
+
+| Flag | Meaning |
+|---|---|
+| `energyAbsent` | No energy signal arrived this hour — `energy` field (0.0) must not be read |
+| `stressAbsent` | Same for stress |
+| `focusAbsent` | Same for focus |
+| `moodAbsent` | Same for mood |
+
+### Provenance (C1.2)
+
+Every `.measured` result carries `InferenceProvenance`: contributing sources, sample count, time window, and `UncertaintyType`.
+
+### Uncertainty types (C1.3)
+
+| Type | Meaning |
+|---|---|
+| `.epistemic` | Reducible — more data would help (< 3 samples) |
+| `.aleatoric` | Inherent — more data won't eliminate the spread (≥ 3 samples) |
+
+### What C1 eliminates
+
+- `guard !x.isEmpty else { return 0.5 }` — fabricating a midpoint from absence
+- Including absent-flagged states (value 0.0) in means, deltas, or pattern confidence
+- Rendering absent timeline points as values (bars at 0, dots at 0%, line segments to the floor)
+- Composition layers that silently supply defaults when the scene is structurally absent
+
+### Surface behavior
+
+- `EnergyTimelineView`: gaps in the line at absent points, no dot drawn
+- `StressUnderlayView`: no bar rendered for absent hours
+- `MoodDotsView`: hollow ring + "–" label for absent, not "0%"
+- `LifeSceneView`: shows the communicative empty state when `ComposedScene.isDataAbsent`
+- `UncertaintyLegendView`: three-state legend — Certain / Speculative / No data
 
 ---
 
 ## Data Model
 
-### HabitBoard
-Represents a single tracked habit (e.g. "Running", "Meditate"). Owns all configuration and log history.
+### Habit Engine Models
 
-| Property | Type | Notes |
-|---|---|---|
-| `id` | `UUID` | Stable identity — join key for `LogEntry.boardID` |
-| `name` | `String` | Display name |
-| `metricType` | `Int` | `0` = binary, `1` = quantitative (CloudKit-safe raw value) |
-| `targetValue` | `Double?` | Daily goal; `nil` for binary (effective default `1.0`) |
-| `unitLabel` | `String?` | e.g. `"mi"`, `"mins"`, `"L"` |
-| `colorIndex` | `Int` | Index into `ColorPalette` (ADR-002) |
-| `emoji` | `String?` | Optional card prefix emoji (e.g. `"🏃"`) |
-| `useColorBackground` | `Bool` | Tinted card background toggle |
-| `currentStreak` | `Int` | Cached; updated incrementally on every check-in |
-| `longestStreak` | `Int` | Cached; updated when `currentStreak` exceeds it |
-| `lastCheckedDate` | `Date?` | Day boundary for incremental streak logic |
-| `needsStreakRecalculation` | `Bool` | CloudKit merge invalidation flag |
-| `archivedAt` | `Date?` | Soft-delete marker; `nil` = active |
-| `createdAt` | `Date` | Creation timestamp |
-| `logs` | `[LogEntry]?` | Owned relationship (`.nullify` delete rule) |
-
-### LogEntry
-A single check-in event. Append-only at the check-in path; user-initiated delete is permitted.
+**HabitBoard** — a single tracked habit.
 
 | Property | Type | Notes |
 |---|---|---|
 | `id` | `UUID` | Stable identity |
-| `timestamp` | `Date` | Exact datetime of the check-in |
-| `value` | `Double` | `1.0` for binary; measured amount for quantitative |
-| `note` | `String?` | Optional journal text |
-| `boardID` | `UUID` | Denormalized copy of `board.id` — safe `#Predicate` target (ADR-003) |
-| `board` | `HabitBoard?` | Optional to tolerate transient CloudKit orphan states |
+| `name` | `String` | Display name |
+| `metricType` | `Int` | 0 = binary, 1 = quantitative |
+| `targetValue` | `Double?` | Daily goal; nil for binary |
+| `unitLabel` | `String?` | e.g. "mi", "mins", "L" |
+| `colorIndex` | `Int` | Index into ColorPalette |
+| `emoji` | `String?` | Optional card prefix |
+| `currentStreak` | `Int` | Cached, updated on each check-in |
+| `longestStreak` | `Int` | Cached high-water mark |
+| `archivedAt` | `Date?` | Soft-delete; nil = active |
 
-### Schema & Migrations
-- **Schema:** `RippleSchemaV1` (`HabitBoard` + `LogEntry`)
-- **Migration plan:** `RippleMigrationPlan` (no stages in v1 — cleanly established)
-- **Versioning:** Add `RippleSchemaV2` + a `MigrationStage` for any future property additions
+**LogEntry** — a single check-in. Append-only at the check-in path.
+
+| Property | Type | Notes |
+|---|---|---|
+| `timestamp` | `Date` | Exact datetime |
+| `value` | `Double` | 1.0 for binary; measured amount for quantitative |
+| `note` | `String?` | Optional journal text |
+| `boardID` | `UUID` | Denormalized join key (ADR-003) |
+
+### Life Model Entities
+
+**InferredState** — one hourly snapshot of inferred wellbeing.
+
+| Property | Type | Notes |
+|---|---|---|
+| `timestamp` | `Date` | Hour boundary |
+| `energy` / `stress` / `focus` / `mood` | `Double` | 0.0 when `xAbsent = true` |
+| `energyAbsent` / `stressAbsent` / `focusAbsent` / `moodAbsent` | `Bool` | C1.1 absence flags |
+| `provenanceJSON` | `String?` | Encoded `InferenceProvenance` |
+| `uncertaintyTypeRaw` | `String?` | "epistemic" or "aleatoric" |
+
+**Chapter** — a named life interval derived from LifeEvents.
+
+| Property | Notes |
+|---|---|
+| `startDate` / `endDate` | Interval; `endDate = nil` means current chapter |
+| `name` | Default from event type; user-editable |
+| `baselineEnergy` / `baselineStress` / `baselineFocus` / `baselineMood` | Per-chapter state baselines |
+| `isCurrentChapter` | True for the open chapter |
+
+**Trait** — an inferred personality dimension from a 30-day rolling window.
+
+| Dimension | Description |
+|---|---|
+| `resilience` | Speed of stress recovery after spikes |
+| `consistency` | Regularity of daily energy patterns |
+| `socialDrive` | Tendency toward social engagement (proxied via mood lift) |
+| `activityDrive` | Physical activity tendency (proxied via morning energy) |
+| `focusDepth` | Sustained concentration in uninterrupted sessions |
+| `moodStability` | Variance in mood across the window |
+
+**Person / PersonAppearance** — people extracted from calendar events with co-occurrence tracking.
+
+**LifeEvent** — detected life transitions (workChange, locationChange, socialChange, healthChange, scheduleChange, habitChange).
+
+**Direction** — user-authored goals (subject-authoritative; the machine does not author these).
 
 ---
 
-## Persistence
+## Claim Taxonomy
 
-| Concern | Implementation |
+`Docs/LOCA-Cycle2-Claim-Taxonomy.md` classifies every stored/inferred field into three authority categories:
+
+| Category | Examples |
 |---|---|
-| Storage | App Group SQLite via `ModelContainerFactory.makeSharedContainer()` |
-| CloudKit | `.private("iCloud.com.mihirmaru.loca")` explicit binding; `.none` in `LOCAL_DEVELOPMENT` builds |
-| Soft delete | `HabitBoard.archive(in:)` — sets `archivedAt`, never calls `modelContext.delete()` |
-| Hard delete | `LogEntry` only — explicit user action in check-in history and journal |
-| Save errors | Every site: `do/try/catch + modelContext.rollback()` + non-blocking alert |
-| Streak cache | Incremental `updateStreak()` on insert; `StreakCalculator` for full recalculation |
-| Widget sharing | Widget Extension reads same SQLite via same App Group identifier |
-| Seed data | `DebugSeeder.seedIfNeeded()` — 2 boards × 60 days, DEBUG builds only, no-op if data exists |
+| **Sensor-authoritative** | All InferredState values, absence flags, provenance, Trait values, Chapter baselines, SignalEvent readings |
+| **Subject-authoritative** | Chapter.name, Chapter.userDescription, Direction (all fields), Person.name, RelationshipContext |
+| **Unfillable** | Event valence/sentiment, relationship meaning/verdict, Direction existence/content authored by the machine |
+
+The machine never fills subject-authoritative fields. It never authors Direction content. It never adds a sentiment/valence field to LifeEvent.
 
 ---
 
 ## Feature Status
 
+### Habit Engine
 | Feature | Status |
 |---|---|
-| Habit creation (name, type, goal, unit, color, emoji) | ✅ Complete |
+| Habit creation (name, type, goal, unit, color, emoji, template) | ✅ Complete |
 | Habit editing | ✅ Complete |
 | Habit soft-delete (archive) | ✅ Complete |
-| Dashboard — list layout (zone-based) | ✅ Complete |
-| Dashboard — grid layout (8-week heatmap cards) | ✅ Complete |
-| Dashboard — timeline layout | ✅ Complete |
-| Layout switching (list / grid / timeline) | ✅ Complete |
-| Binary check-in (tap to log) | ✅ Complete |
-| Quantitative check-in (sheet with amount) | ✅ Complete |
-| Detail view — summary tab (heatmap card + streak + consistency + month) | ✅ Complete |
-| Detail view — check-in history tab | ✅ Complete |
-| Detail view — journal tab | ✅ Complete |
-| Detail view — full analytics tab (Canvas charts + 365-day heatmap) | ✅ Complete |
-| Add check-in (date, time, amount, notes) | ✅ Complete |
-| Edit check-in (pre-filled, in-place mutation) | ✅ Complete |
-| Delete check-in | ✅ Complete |
-| Duplicate check-in | ✅ Complete |
-| Quick log (inline amount input in history) | ✅ Complete |
-| Streak calculation (current + longest, cached) | ✅ Complete |
-| Consistency metric (days completed / days elapsed) | ✅ Complete |
-| Current month total + weekly bar chart | ✅ Complete |
-| 52-week heatmap (detail view) | ✅ Complete |
-| Canvas analytics charts (timeline, streaks, year, consistency, weekdays) | ✅ Complete (tab 3) |
-| Journal timeline (day-grouped, swipe-to-delete) | ✅ Complete |
+| Dashboard — list / grid / timeline layouts | ✅ Complete |
+| Binary and quantitative check-ins | ✅ Complete |
+| Edit / delete / duplicate check-ins | ✅ Complete |
+| Detail view — summary / check-ins / journal / analytics tabs | ✅ Complete |
+| 365-day heatmap, streak charts, year comparison, weekday analysis | ✅ Complete |
+| Habit templates and unit inference | ✅ Complete |
+| Goal inference and tuning | ✅ Complete |
+| Relapse prediction and intervention delivery | ✅ Complete |
+| Reflection prompts | ✅ Complete |
+| Timing suggestions | ✅ Complete |
+| Habit correlation analysis | ✅ Complete |
+| Habit recommendations | ✅ Complete |
 | CloudKit sync | ✅ Complete |
 | Widget (WidgetKit + AppIntentConfiguration) | ✅ Complete |
 | App Intents / Siri Shortcuts | ✅ Complete |
-| Cross-platform (iOS + macOS) via platform shims | ✅ Complete |
+
+### Personal Life Model
+| Feature | Status |
+|---|---|
+| Signal collection (HealthKit, Motion, Calendar, Location) | ✅ Complete |
+| Hourly state inference — energy, stress, focus, mood | ✅ Complete |
+| Absence-aware inference (C1.1 — absence ≠ neutral) | ✅ Complete |
+| Inference provenance (C1.2 — sources, sample count, window) | ✅ Complete |
+| Uncertainty typing (C1.3 — epistemic vs. aleatoric) | ✅ Complete |
+| Absence-aware surface rendering (C1.4) | ✅ Complete |
+| Life event detection (regime shift analysis) | ✅ Complete |
+| Chapter segmentation from life events | ✅ Complete |
+| Chapter baseline computation (per-dimension, absent-filtered) | ✅ Complete |
+| Trait inference — 6 dimensions, 30-day rolling window | ✅ Complete |
+| Person extraction from calendar events | ✅ Complete |
+| Relationship graph (co-occurrence analysis) | ✅ Complete |
+| Cross-layer pattern detection (habit×state, person×state, chapter×state) | ✅ Complete |
+| Natural language narrative composition | ✅ Complete |
+| Pattern feedback incorporation | ✅ Complete |
+| Multi-entity composition (chapters + traits + people + insights) | ✅ Complete |
+| Present tab (now / reach / ask surfaces) | ✅ Complete |
+| LifeSceneView | ✅ Complete |
+| ChapterListView | ✅ Complete |
+| PatternsView | ✅ Complete |
+| NarrativeView | ✅ Complete |
+| DirectionCaptureView (user-authored goals) | ✅ Complete |
+| RelationshipGraphView | ✅ Complete |
+| FeedbackAnalyticsView | ✅ Complete |
+| Claim taxonomy (C2.1 — sensor / subject / unfillable) | ✅ Complete |
+| Authority-aware composition (C2.2–C2.4) | 🔲 Pending |
 
 ---
 
@@ -197,39 +352,17 @@ A single check-in event. Append-only at the check-in path; user-initiated delete
 | ADR | Decision |
 |---|---|
 | ADR-001 | `LogEntry` append-only at check-in path; user-initiated delete is a separate, permitted action |
-| ADR-002 | `ColorPalette` indexed array instead of per-board hex strings — O(1) `Color` construction, CloudKit safe |
+| ADR-002 | `ColorPalette` indexed array instead of per-board hex strings — O(1) construction, CloudKit safe |
 | ADR-003 | Denormalized `boardID: UUID` on `LogEntry` — `#Predicate` on `board?.id` silently fails on iOS 17 |
 | ADR-004 | Shared App Group SQLite; widget and main app address the same file via matching identifier |
 | ADR-005 | Snapshot pattern for analytics computation — prevents in-flight mutation during aggregation |
 | ADR-009 | `#if LOCAL_DEVELOPMENT` compile-time switch — personal team builds, no entitlements required |
-
----
-
-## Known Compiler Patterns (Bug Catalogue)
-
-Patterns encountered and resolved during development — documented to prevent recurrence:
-
-| # | Pattern | Fix |
-|---|---|---|
-| 1 | `some View` in protocol | Use `associatedtype Body: View` |
-| 2 | `let` bindings in `@ViewBuilder` | Use computed properties |
-| 3 | `.onTapGesture` + `NavigationLink` | Gesture swallows tap — use `.buttonStyle(.borderless)` |
-| 5 | `accessibilityHint(... : nil)` | Conditionally omit the modifier |
-| 6 | `Color(.systemBackground)` | `#if canImport(UIKit)` branch |
-| 7 | `@Query` key path | Explicit root type: `\HabitBoard.createdAt` |
-| 8 | `.navigationBarTitleDisplayMode` | Use `inlineNavigationTitleDisplay()` shim |
-| 9 | Canvas closure | `{ context, size in ... }` (both params required) |
-| 10 | `stride` in `ForEach` | `Array(stride(from:to:by:))` |
-| 13 | `@Query` makes synthesized init private | Add explicit `init() {}` |
-| 14 | Double `NavigationStack` | One root only — child views must not embed their own |
-| 15 | Bare `import UIKit` | `#if canImport(UIKit)` |
-| 16 | `keyboardType(.decimalPad)` raw | Use `decimalKeyboard()` shim |
-| 17 | `.tabViewStyle(.page(...))` raw | Use `pagedTabView()` shim |
-| 19 | `try? voidThrowingCall()` | `do/catch + rollback()` |
-| 20 | `Double.random()` | No zero-arg overload — always `Double.random(in: 0...1)` |
-| — | Nested ternary in `String(format:)` | Exceeds Swift type-checker complexity — extract to `let` |
-| — | Large `body` with many closures | Break into private `@ViewBuilder` computed properties |
-| — | `.navigationBarTrailing` on macOS | Use `.confirmationAction` (cross-platform) |
+| C1 | Absence flags (`xAbsent: Bool`) on `InferredState` — structurally separate from measured-neutral |
+| C1 | `InferenceResult` enum (`.absent` / `.measured`) — absence carries through the pipeline |
+| C1 | `InferenceProvenance` on every `.measured` result — callers can answer "where did this come from?" |
+| C1 | `UncertaintyType` enum — epistemic (reducible) vs. aleatoric (inherent) |
+| C1 | `InferenceTypes.swift` compiled into both main app and widget targets — shared type definitions |
+| C2.1 | Claim taxonomy: sensor-authoritative / subject-authoritative / unfillable — governs all C2 sessions |
 
 ---
 
@@ -241,6 +374,7 @@ Patterns encountered and resolved during development — documented to prevent r
 - Apple Developer account (paid) for CloudKit + App Group entitlements
 
 ### Local Development (Personal Team / Simulator)
+
 Add `LOCAL_DEVELOPMENT` to Active Compilation Conditions:
 
 ```
@@ -260,7 +394,7 @@ open LOCA.xcodeproj
 
 Select the `LOCA` scheme → set `LOCAL_DEVELOPMENT` if on a personal team → build and run.
 
-`DebugSeeder` seeds two sample habits ("Meditate" binary, "Running" quantitative) with 60 days of log history on first launch in DEBUG builds. It is a no-op if any active board already exists, and entirely absent from Release builds.
+`DebugSeeder` seeds two sample habits with 60 days of log history on first DEBUG launch (no-op if data exists). `LifeSeeder` seeds sample life model data (signals, inferred states, people, chapters) for development of the Personal Life Model vertical.
 
 ---
 
@@ -273,48 +407,23 @@ Select the `LOCA` scheme → set `LOCAL_DEVELOPMENT` if on a personal team → b
 | `.decimalKeyboard()` | `.keyboardType(.decimalPad)` | no-op |
 | `.groupedInsetList()` | `.listStyle(.insetGrouped)` | `.listStyle(.inset)` |
 | `.pagedTabView()` | `.tabViewStyle(.page(indexDisplayMode: .never))` | no-op |
+| `.confirmationAction` toolbar placement | cross-platform (replaces `.navigationBarTrailing`) | ✓ |
 
 ---
 
-## Testing
-
-### Manual Test Checklist
-- [ ] Create binary and quantitative habits with different units, colors, and emoji
-- [ ] Log check-ins via grid card button (binary = direct, quantitative = sheet)
-- [ ] Log via `+` button on detail view
-- [ ] Edit a check-in (swipe → Edit in history tab)
-- [ ] Delete a check-in (swipe → Delete)
-- [ ] Duplicate a check-in (swipe → Duplicate)
-- [ ] Switch between list / grid / timeline layouts
-- [ ] Open each detail tab (summary / check-ins / journal / full analytics)
-- [ ] Verify heatmap updates immediately after check-in
-- [ ] Verify streak increments correctly at midnight rollover
-- [ ] Test on macOS — all layouts, no iOS-only crashes
-- [ ] Add widget to Home Screen, tap check-in button, verify sync to app
-
-### Accessibility (T16 pass — 2026-07-22)
+## Accessibility
 
 **VoiceOver**
-- All interactive list rows have `.accessibilityElement(children: .ignore)` + descriptive `.accessibilityLabel` (habit name, streak, today status).
-- FAB "+" button carries `.accessibilityLabel("New Habit")` / "New Check-in".
-- Swipe actions (Delete/Edit/Duplicate) are exposed via native `.swipeActions` — automatically reachable by VoiceOver's swipe-to-action gesture.
-- Form fields labelled: habit name, type picker, daily goal amount, color swatches.
-- Heatmap cells carry per-cell accessibility labels (date + value).
+- All interactive list rows carry `.accessibilityElement(children: .ignore)` + descriptive `.accessibilityLabel`.
+- Swipe actions (Delete / Edit / Duplicate) exposed via native `.swipeActions`.
+- Heatmap cells carry per-cell labels (date + value).
 
 **Dynamic Type**
-- All prose uses semantic `DS.Text` tokens (`Font.headline`, `Font.subheadline`, etc.) that scale automatically.
-- Fixed-size fonts in data-visualization elements (heatmap cells ≤12pt, chart axis labels ≤11pt) are intentional for layout integrity; these elements supplement rather than replace the labelled text data.
-- RefConsistencyCard percentage and label use `.system(.title3, …)` / `.caption2` (semantic — T16 fix).
+- All prose uses semantic `DS.Text` tokens that scale automatically.
+- Fixed-size fonts in visualization elements (heatmap ≤12pt, chart axes ≤11pt) are intentional for layout integrity.
 
 **Reduce Motion**
-- `@Environment(\.accessibilityReduceMotion)` is read in `HabitCheckInsView`; animations skip when set.
-
-**WCAG AA Contrast**
-- Dark mode: all 12 palette colors pass 4.5:1 vs dark surface. ✓
-- Light mode: palette indices 0, 2, 3, 6, 9, 10 pass 3:1 (UI-element threshold); 1, 4, 5, 7, 8, 11 fail vs pure white. Accents always render on dark DS.Color.surface cards in the current UI — no pure-white context exists today.
-
-**App Icon**
-- `AppIcon.appiconset` slot definitions are present for iOS (1024×1024 universal) and macOS (16–512pt scales). Image files must be supplied by the developer before submission.
+- `@Environment(\.accessibilityReduceMotion)` is read; animations skip when set.
 
 ---
 
@@ -323,6 +432,23 @@ Select the `LOCA` scheme → set `LOCAL_DEVELOPMENT` if on a personal team → b
 `MAJOR.MINOR.PATCH` via Build Settings → Product Version.
 
 **Current: 1.0.0**
+
+---
+
+## Design Documents
+
+| Document | Purpose |
+|---|---|
+| `Docs/LOCA-Founding-Manifesto.md` | Purpose, refusals, ontology — the governing document |
+| `Docs/THE-CENTRAL-QUESTION.md` | The one question the whole product is a bet on |
+| `Docs/LOCA-Product-Experience.md` | The interaction model |
+| `Docs/LOCA-Life-Implementation-Plan.md` | Phase-by-phase build sequence for the life vertical |
+| `Docs/LOCA-Cycle2-Plan.md` | Cycle 2: epistemics layer (C1–C6) |
+| `Docs/LOCA-Cycle2-Claim-Taxonomy.md` | Every field classified by authority |
+| `Docs/PersonalLifeModel.md` | Founding vision (intellectual record) |
+| `Docs/PersonalLifeModel-LearningEngine.md` | Learning engine design |
+| `Docs/ENGINEERING_PRINCIPLES.md` | Swift 6, on-device, performance, burden budgets |
+| `Docs/DESIGN_LANGUAGE.md` | Visual and interaction language |
 
 ---
 

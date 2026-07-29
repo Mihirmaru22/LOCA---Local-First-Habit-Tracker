@@ -59,6 +59,7 @@ enum RippleSchemaV1: VersionedSchema {
             Calibration.self,
             PatternFeedback.self,
             NarrativeFeedback.self,
+            SensorConflict.self,
         ]
     }
 }

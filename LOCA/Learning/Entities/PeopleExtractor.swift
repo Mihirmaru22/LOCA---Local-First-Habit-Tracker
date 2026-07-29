@@ -55,13 +55,14 @@ class PeopleExtractor {
             nameCounts[key]?.sources.append("note")
         }
 
-        // Persist only recurring people
+        // Persist only recurring people.
+        // C2.3: primaryContext is subject-authoritative — only the user may set it.
+        // Detected contexts from signals go to detectedContexts (sensor evidence only).
         for (name, data) in nameCounts where data.count >= minimumAppearances {
-            let primaryContext = dominantContext(data.contexts)
             upsertPerson(
                 name: name,
                 appearanceCount: data.count,
-                primaryContext: primaryContext,
+                detectedContexts: data.contexts,
                 windowStart: windowStart,
                 modelContext: modelContext
             )
@@ -197,18 +198,12 @@ class PeopleExtractor {
             .joined(separator: " ")
     }
 
-    private func dominantContext(_ contexts: [RelationshipContext]) -> RelationshipContext {
-        var counts: [RelationshipContext: Int] = [:]
-        for c in contexts { counts[c, default: 0] += 1 }
-        return counts.max(by: { $0.value < $1.value })?.key ?? .unknown
-    }
-
     // MARK: - Upsert
 
     private func upsertPerson(
         name: String,
         appearanceCount: Int,
-        primaryContext: RelationshipContext,
+        detectedContexts: [RelationshipContext],
         windowStart: Date,
         modelContext: ModelContext
     ) {
@@ -220,19 +215,23 @@ class PeopleExtractor {
 
         let salience = min(1.0, Double(appearanceCount) / 20.0)  // 20 appearances = max salience
         let uncertainty = max(0.15, 0.8 - Double(appearanceCount) * 0.05)
+        let rawContexts = detectedContexts.map { $0.rawValue }
 
         if let existing = try? modelContext.fetch(descriptor).first {
             existing.salience = existing.salience * 0.7 + salience * 0.3
             existing.salienceUncertainty = min(existing.salienceUncertainty, uncertainty)
             existing.appearanceCount += appearanceCount
             existing.lastSeenDate = Date()
-            existing.primaryContext = primaryContext
+            // C2.3: primaryContext is subject-authoritative — never overwritten by sensor inference.
+            // Sensor-detected contexts are stored as evidence in detectedContexts only.
+            existing.detectedContexts = rawContexts
             existing.updatedAt = Date()
         } else {
-            let person = Person(name: name, primaryContext: primaryContext)
+            let person = Person(name: name)
             person.salience = salience
             person.salienceUncertainty = uncertainty
             person.appearanceCount = appearanceCount
+            person.detectedContexts = rawContexts
             modelContext.insert(person)
         }
     }

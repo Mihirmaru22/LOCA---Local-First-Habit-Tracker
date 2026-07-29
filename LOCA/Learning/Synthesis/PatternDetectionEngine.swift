@@ -24,7 +24,6 @@ struct LifePattern: Identifiable {
     /// Which layers does this pattern cross?
     enum Layer: String {
         case habitState     // habit frequency ↔ state
-        case personState    // person appearance ↔ state
         case chapterState   // chapter ↔ state rhythm
         case habitChapter   // habit consistency across chapters
     }
@@ -58,8 +57,6 @@ final class PatternDetectionEngine {
         )
         let logs = try modelContext.fetch(FetchDescriptor<LogEntry>())
         let boards = try modelContext.fetch(FetchDescriptor<HabitBoard>())
-        let people = try modelContext.fetch(FetchDescriptor<Person>())
-        let appearances = try modelContext.fetch(FetchDescriptor<PersonAppearance>())
         let chapters = try modelContext.fetch(
             FetchDescriptor<Chapter>(sortBy: [SortDescriptor(\.startDate)])
         )
@@ -71,14 +68,6 @@ final class PatternDetectionEngine {
             boards: boards,
             logs: logs,
             states: states
-        ))
-
-        // Person ↔ State patterns (beyond the graph)
-        patterns.append(contentsOf: personStatePatterns(
-            people: people,
-            appearances: appearances,
-            states: states,
-            chapters: chapters
         ))
 
         // Chapter rhythm patterns
@@ -130,11 +119,12 @@ final class PatternDetectionEngine {
                 Calendar.current.startOfDay(for: log.timestamp)
             }
 
-            // Compare states on days with vs without this habit
+            // C1: only include present mood measurements — absent states (mood=0.0)
+            // are not low-mood evidence; they are no-data evidence.
             var moodWithHabit: [Double] = []
             var moodWithoutHabit: [Double] = []
 
-            for state in states {
+            for state in states where !state.moodAbsent {
                 let day = Calendar.current.startOfDay(for: state.timestamp)
                 if logsByDay[day] != nil {
                     moodWithHabit.append(state.mood)
@@ -164,53 +154,6 @@ final class PatternDetectionEngine {
         return patterns
     }
 
-    // MARK: - Person × State Patterns (granular)
-
-    private func personStatePatterns(
-        people: [Person],
-        appearances: [PersonAppearance],
-        states: [InferredState],
-        chapters: [Chapter]
-    ) -> [LifePattern] {
-        var patterns: [LifePattern] = []
-        let overallEnergy = mean(states.map { $0.energy })
-
-        for person in people {
-            let personApps = appearances.filter { $0.personId == person.id }
-            guard personApps.count >= 3 else { continue }
-
-            let appDates = Set(personApps.map { Calendar.current.startOfDay(for: $0.timestamp) })
-            var energyWithPerson: [Double] = []
-            var energyWithoutPerson: [Double] = []
-
-            for state in states {
-                let day = Calendar.current.startOfDay(for: state.timestamp)
-                if appDates.contains(day) {
-                    energyWithPerson.append(state.energy)
-                } else {
-                    energyWithoutPerson.append(state.energy)
-                }
-            }
-
-            let withMean = mean(energyWithPerson)
-            let delta = abs(withMean - overallEnergy)
-            guard delta >= 0.06, energyWithPerson.count >= 3 else { continue }
-
-            let confidence = effectConfidence(magnitude: delta, sampleCount: energyWithPerson.count)
-            let direction = withMean > overallEnergy ? "higher" : "lower"
-
-            patterns.append(LifePattern(
-                observation: "Your energy tends to be \(direction) on days around \(person.name).",
-                layer: .personState,
-                confidence: confidence,
-                sampleCount: energyWithPerson.count,
-                explorableQuestion: "How does spending time with \(person.name) affect my energy?"
-            ))
-        }
-
-        return patterns
-    }
-
     // MARK: - Chapter × State Patterns
 
     private func chapterStatePatterns(
@@ -221,11 +164,14 @@ final class PatternDetectionEngine {
 
         for chapter in chapters {
             let end = chapter.endDate ?? Date.distantFuture
-            let inChapter = states.filter { $0.timestamp >= chapter.startDate && $0.timestamp < end }
+            // C1: filter absent mood states before computing chapter and overall means.
+            let inChapter = states.filter {
+                $0.timestamp >= chapter.startDate && $0.timestamp < end && !$0.moodAbsent
+            }
             guard inChapter.count >= 5 else { continue }
 
             let chapterMood = mean(inChapter.map { $0.mood })
-            let overallMood = mean(states.map { $0.mood })
+            let overallMood = mean(states.filter { !$0.moodAbsent }.map { $0.mood })
             let moodDelta = chapterMood - overallMood
 
             guard abs(moodDelta) >= 0.08 else { continue }
@@ -233,13 +179,15 @@ final class PatternDetectionEngine {
             let confidence = effectConfidence(magnitude: abs(moodDelta), sampleCount: inChapter.count)
             let direction = moodDelta > 0 ? "higher" : "lower"
 
-            patterns.append(LifePattern(
-                observation: "Your mood was measurably \(direction) during \(chapter.name).",
-                layer: .chapterState,
-                confidence: confidence,
-                sampleCount: inChapter.count,
-                explorableQuestion: "What made \(chapter.name) affect my mood this way?"
-            ))
+            if let chapterName = chapter.name {
+                patterns.append(LifePattern(
+                    observation: "Your mood was measurably \(direction) during \(chapterName).",
+                    layer: .chapterState,
+                    confidence: confidence,
+                    sampleCount: inChapter.count,
+                    explorableQuestion: "What made \(chapterName) affect my mood this way?"
+                ))
+            }
         }
 
         return patterns
@@ -265,9 +213,8 @@ final class PatternDetectionEngine {
                 let logsInChapter = boardLogs.filter {
                     $0.timestamp >= chapter.startDate && $0.timestamp < end
                 }
-                if duration > 0 && !logsInChapter.isEmpty {
-                    let frequency = Double(logsInChapter.count) / Double(duration)
-                    chapterConsistency[chapter.name] = (duration, logsInChapter.count)
+                if duration > 0 && !logsInChapter.isEmpty, let chapterName = chapter.name {
+                    chapterConsistency[chapterName] = (duration, logsInChapter.count)
                 }
             }
 

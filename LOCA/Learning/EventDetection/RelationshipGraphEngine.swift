@@ -117,24 +117,16 @@ final class RelationshipGraphEngine {
         let chapters = try modelContext.fetch(
             FetchDescriptor<Chapter>(sortBy: [SortDescriptor(\.startDate)])
         )
-        let people = try modelContext.fetch(FetchDescriptor<Person>())
-        let appearances = try modelContext.fetch(FetchDescriptor<PersonAppearance>())
 
         let regimes = regimeBuckets(states: states, chapters: chapters)
 
-        var nodes: [RelationshipNode] = StateDim.allCases.map {
+        // C2.4: only state-state edges are asserted. Person-state edges were removed
+        // because "this person is associated with lower/higher mood" is a verdict
+        // about relationship meaning — an unfillable claim (taxonomy §3.3).
+        let nodes: [RelationshipNode] = StateDim.allCases.map {
             RelationshipNode(id: $0.nodeId, label: $0.label, kind: .state)
         }
-        var edges: [RelationshipEdge] = stateStateEdges(states: states, regimes: regimes)
-
-        let (personNodes, personEdges) = personStateEdges(
-            people: people,
-            appearances: appearances,
-            states: states,
-            chapters: chapters
-        )
-        nodes += personNodes
-        edges += personEdges
+        let edges: [RelationshipEdge] = stateStateEdges(states: states, regimes: regimes)
 
         return RelationshipGraph(nodes: nodes, edges: edges, generatedAt: Date())
     }
@@ -207,86 +199,6 @@ final class RelationshipGraphEngine {
         return edges
     }
 
-    // MARK: - Person × State Edges
-
-    private func personStateEdges(
-        people: [Person],
-        appearances: [PersonAppearance],
-        states: [InferredState],
-        chapters: [Chapter]
-    ) -> ([RelationshipNode], [RelationshipEdge]) {
-        var nodes: [RelationshipNode] = []
-        var edges: [RelationshipEdge] = []
-
-        let overallMood = mean(states.map { $0.mood })
-
-        // Mean mood per chapter — the regime baseline a person is compared against.
-        var regimeMood: [UUID: Double] = [:]
-        for chapter in chapters {
-            let end = chapter.endDate ?? Date.distantFuture
-            let inChapter = states.filter { $0.timestamp >= chapter.startDate && $0.timestamp < end }
-            if !inChapter.isEmpty {
-                regimeMood[chapter.id] = mean(inChapter.map { $0.mood })
-            }
-        }
-
-        func regimeId(for date: Date) -> UUID? {
-            chapters.first { date >= $0.startDate && date < ($0.endDate ?? Date.distantFuture) }?.id
-        }
-
-        let appearancesByPerson = Dictionary(grouping: appearances.filter { $0.moodAtTime != nil }) {
-            $0.personId
-        }
-
-        for person in people {
-            guard let apps = appearancesByPerson[person.id], apps.count >= 4 else { continue }
-
-            nodes.append(RelationshipNode(id: "person.\(person.id)", label: person.name, kind: .person))
-
-            // Pooled: this person's typical mood-at-time vs the overall baseline.
-            let personMoods = apps.compactMap { $0.moodAtTime }
-            let pooledEffect = mean(personMoods) - overallMood
-
-            // Within-regime: (person mood − chapter baseline), sample-weighted.
-            var weightedSum = 0.0
-            var weight = 0.0
-            let appsByRegime = Dictionary(grouping: apps) { regimeId(for: $0.timestamp) }
-            for (chapterId, chapterApps) in appsByRegime {
-                guard let cid = chapterId,
-                      let baseline = regimeMood[cid],
-                      chapterApps.count >= 3 else { continue }
-                let personMoodInRegime = mean(chapterApps.compactMap { $0.moodAtTime })
-                let w = Double(chapterApps.count)
-                weightedSum += (personMoodInRegime - baseline) * w
-                weight += w
-            }
-
-            let withinEffect = weight > 0 ? weightedSum / weight : pooledEffect
-            let sampleCount = weight > 0 ? Int(weight) : personMoods.count
-
-            let confounded = abs(pooledEffect) >= 0.12 && abs(withinEffect) < 0.05
-            let asserted = abs(withinEffect) >= 0.06
-            guard asserted || confounded else { continue }
-
-            let confidence = effectConfidence(magnitude: abs(withinEffect), sampleCount: sampleCount)
-            edges.append(
-                RelationshipEdge(
-                    id: "ps.\(person.id.uuidString)",
-                    fromLabel: person.name,
-                    toLabel: "Mood",
-                    strength: clampUnit(withinEffect * 3.0),
-                    confidence: confounded ? min(confidence, 0.4) : confidence,
-                    isConfounded: confounded,
-                    pooledStrength: clampUnit(pooledEffect * 3.0),
-                    sampleCount: sampleCount,
-                    explanation: personEdgeExplanation(person: person, within: withinEffect, confounded: confounded)
-                )
-            )
-        }
-
-        return (nodes, edges)
-    }
-
     // MARK: - Explanations
 
     private func stateEdgeExplanation(a: StateDim, b: StateDim, within: Double, confounded: Bool) -> String {
@@ -295,14 +207,6 @@ final class RelationshipGraphEngine {
         }
         let direction = within < 0 ? "lower" : "higher"
         return "Within a chapter, higher \(a.label.lowercased()) tends to go with \(direction) \(b.label.lowercased())."
-    }
-
-    private func personEdgeExplanation(person: Person, within: Double, confounded: Bool) -> String {
-        if confounded {
-            return "Your mood looked different around \(person.name) overall, but within each chapter it holds steady — the difference tracks a life change, not \(person.name)."
-        }
-        let direction = within < 0 ? "lower" : "higher"
-        return "Within a chapter, your mood tends to be \(direction) around \(person.name)."
     }
 
     // MARK: - Statistics Helpers
@@ -339,13 +243,6 @@ final class RelationshipGraphEngine {
         let sizeFactor = min(1.0, Double(sampleCount) / 150.0)
         let strengthFactor = min(1.0, magnitude / 0.6)
         return min(1.0, (0.35 + 0.65 * strengthFactor) * sizeFactor)
-    }
-
-    /// Confidence in a mean-difference (person→mood) edge.
-    private func effectConfidence(magnitude: Double, sampleCount: Int) -> Double {
-        let sizeFactor = min(1.0, Double(sampleCount) / 40.0)
-        let strengthFactor = min(1.0, magnitude / 0.2)
-        return min(1.0, (0.3 + 0.7 * strengthFactor) * sizeFactor)
     }
 
     private func clampUnit(_ value: Double) -> Double {

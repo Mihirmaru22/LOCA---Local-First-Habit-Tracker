@@ -109,10 +109,18 @@ struct ChapterCard: View {
                             .foregroundStyle(.tint)
                     }
 
-                    Text(chapter.name)
-                        .font(DS.Text.body)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(DS.Color.textPrimary)
+                    if let name = chapter.name {
+                        Text(name)
+                            .font(DS.Text.body)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(DS.Color.textPrimary)
+                    } else {
+                        Text("Name this chapter →")
+                            .font(DS.Text.body)
+                            .fontWeight(.regular)
+                            .italic()
+                            .foregroundStyle(DS.Color.textTertiary)
+                    }
 
                     Text(dateRangeLabel(chapter))
                         .font(DS.Text.caption)
@@ -288,7 +296,7 @@ struct ChapterDetailView: View {
                 }
                 .padding(DS.Space.lg)
             }
-            .navigationTitle(chapter.name)
+            .navigationTitle(chapter.name ?? "Unnamed Chapter")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -298,19 +306,18 @@ struct ChapterDetailView: View {
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Rename") {
-                        draftName = chapter.name
+                    Button(chapter.name == nil ? "Name" : "Rename") {
+                        draftName = chapter.name ?? ""
                         editingName = true
                     }
                 }
             }
-            .alert("Rename Chapter", isPresented: $editingName) {
-                TextField("Chapter name", text: $draftName)
+            .alert(chapter.name == nil ? "Name This Chapter" : "Rename Chapter", isPresented: $editingName) {
+                TextField("e.g. The Internship", text: $draftName)
                 Button("Save") {
-                    if !draftName.isEmpty {
-                        chapter.name = draftName
-                        try? modelContext.save()
-                    }
+                    let trimmed = draftName.trimmingCharacters(in: .whitespacesAndNewlines)
+                    chapter.name = trimmed.isEmpty ? nil : trimmed
+                    try? modelContext.save()
                 }
                 Button("Cancel", role: .cancel) {}
             }

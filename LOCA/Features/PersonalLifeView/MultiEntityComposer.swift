@@ -47,14 +47,12 @@ struct TraitSnapshot {
 struct PersonSnapshot {
     let person: Person
     let salienceInChapter: Double?  // Salience within a specific chapter context
-    let moodCorrelation: Double?
 }
 
 struct SceneInsight {
     enum InsightType: String {
         case traitShift          // A trait changed significantly across chapters
         case personPresence      // A person was notably present/absent in a chapter
-        case stateCorrelation    // A person correlates with state patterns
         case chapterContrast     // Two chapters differ markedly
     }
 
@@ -111,7 +109,7 @@ class MultiEntityComposer {
             generatedAt: Date(),
             chapters: chapterSnapshots,
             traits: globalTraits,
-            people: people.map { PersonSnapshot(person: $0, salienceInChapter: nil, moodCorrelation: $0.moodCorrelation) },
+            people: people.map { PersonSnapshot(person: $0, salienceInChapter: nil) },
             insights: insights,
             overallUncertainty: isDataAbsent ? 1.0 : uncertainty,
             isDataAbsent: isDataAbsent
@@ -190,8 +188,7 @@ class MultiEntityComposer {
             let salience = min(1.0, Double(count) / (Double(totalDays) * 0.5))
             return PersonSnapshot(
                 person: person,
-                salienceInChapter: salience,
-                moodCorrelation: person.moodCorrelation
+                salienceInChapter: salience
             )
         }.sorted { ($0.salienceInChapter ?? 0) > ($1.salienceInChapter ?? 0) }
     }
@@ -214,27 +211,14 @@ class MultiEntityComposer {
 
         // Person presence insights: who was most prominent in each chapter
         for snapshot in chapters {
+            guard let chapterName = snapshot.chapter.name else { continue }
             if let topPerson = snapshot.peopleForChapter.first,
                let salience = topPerson.salienceInChapter, salience > 0.3 {
                 insights.append(SceneInsight(
                     type: .personPresence,
-                    text: "\(topPerson.person.name) was notably present during \(snapshot.chapter.name)",
+                    text: "\(topPerson.person.name) was notably present during \(chapterName)",
                     confidence: min(0.9, salience),
-                    entities: [topPerson.person.name, snapshot.chapter.name]
-                ))
-            }
-        }
-
-        // Mood correlation insight for high-salience people
-        for person in allPeople.prefix(5) {
-            if let corr = person.moodCorrelation, abs(corr) > 0.25,
-               person.moodCorrelationSampleCount >= 5 {
-                let direction = corr > 0 ? "associated with higher mood" : "associated with lower mood"
-                insights.append(SceneInsight(
-                    type: .stateCorrelation,
-                    text: "\(person.name) is \(direction) when they appear in your life",
-                    confidence: min(0.8, abs(corr) * 2),
-                    entities: [person.name]
+                    entities: [topPerson.person.name, chapterName]
                 ))
             }
         }
@@ -244,6 +228,9 @@ class MultiEntityComposer {
 
     private func traitShiftInsights(from prev: ChapterSnapshot, to curr: ChapterSnapshot) -> [SceneInsight] {
         var insights: [SceneInsight] = []
+        guard let prevName = prev.chapter.name, let currName = curr.chapter.name else {
+            return insights
+        }
 
         for currTrait in curr.traitsForChapter {
             guard let prevTrait = prev.traitsForChapter.first(where: { $0.traitType == currTrait.traitType }) else { continue }
@@ -256,9 +243,9 @@ class MultiEntityComposer {
 
             insights.append(SceneInsight(
                 type: .traitShift,
-                text: "\(currTrait.traitType.displayName) \(direction) between \(prev.chapter.name) and \(curr.chapter.name)",
+                text: "\(currTrait.traitType.displayName) \(direction) between \(prevName) and \(currName)",
                 confidence: confidence,
-                entities: [currTrait.traitType.rawValue, prev.chapter.name, curr.chapter.name]
+                entities: [currTrait.traitType.rawValue, prevName, currName]
             ))
         }
 
