@@ -54,19 +54,6 @@ class HealthKitManager: NSObject {
         HKObjectType.workoutType(),
     ].compactMap { $0 })
 
-    // MARK: - Authorization
-
-    /// Requests read authorization for all HealthKit types LOCA uses.
-    /// Called by SignalCollectionCoordinator after the HealthKitPermissionView
-    /// framing has been shown. Never called from init().
-    func requestAuthorization() async -> Bool {
-        return await withCheckedContinuation { continuation in
-            healthStore.requestAuthorization(toShare: nil, read: Self.readTypes) { granted, _ in
-                continuation.resume(returning: granted)
-            }
-        }
-    }
-
     // MARK: - Sleep Collection
 
     func collectSleep() async -> [SignalEvent] {
@@ -245,7 +232,7 @@ class HealthKitManager: NSObject {
         return buckets.map { bucket in
             SignalEvent(
                 timestamp: bucket.startDate,
-                source: .motionActivity,
+                source: .steps,
                 value: min(1.0, bucket.stepCount / 1000),
                 uncertainty: 0.1,
                 metadata: ["steps": String(Int(bucket.stepCount))]

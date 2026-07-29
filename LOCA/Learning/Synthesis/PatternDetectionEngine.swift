@@ -24,6 +24,7 @@ struct LifePattern: Identifiable {
     /// Which layers does this pattern cross?
     enum Layer: String {
         case habitState     // habit frequency ↔ state
+        case personState    // time with a person ↔ state change
         case chapterState   // chapter ↔ state rhythm
         case habitChapter   // habit consistency across chapters
     }

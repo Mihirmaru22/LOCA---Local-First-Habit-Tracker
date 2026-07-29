@@ -20,6 +20,7 @@ enum SignalSource: String, Codable {
     case deviceActivity
     case explicitLog
     case motionActivity
+    case steps
     case workout
     case mindfulSession
     case daylight

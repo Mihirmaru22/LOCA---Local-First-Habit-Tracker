@@ -10,6 +10,7 @@ import SwiftUI
 
 struct SignalCollectionStatusView: View {
     @StateObject private var coordinator = SignalCollectionCoordinator.shared
+    @StateObject private var consent = SignalSourceConsent.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -86,17 +87,24 @@ struct SignalCollectionStatusView: View {
                 .background(Color.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
             }
 
-            // Info
-            VStack(alignment: .leading, spacing: 6) {
-                InfoRow(icon: "moon.zzz.fill",         label: "Sleep",            status: "HealthKit")
-                InfoRow(icon: "heart.fill",             label: "Heart Rate",       status: "HealthKit")
-                InfoRow(icon: "waveform.path.ecg",      label: "HRV",              status: "HealthKit")
-                InfoRow(icon: "figure.run",             label: "Workouts",         status: "HealthKit")
-                InfoRow(icon: "brain.head.profile",     label: "Mindful Minutes",  status: "HealthKit")
-                InfoRow(icon: "figure.walk",            label: "Steps",            status: "HealthKit")
-                InfoRow(icon: "calendar",               label: "Events",           status: "Calendar")
-                InfoRow(icon: "location.fill",          label: "Location",         status: "On-device")
-                InfoRow(icon: "sensor.fill",            label: "Motion",           status: "Motion sensor")
+            // Sources — each individually revocable (C3.4 consent ledger).
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Sources")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(DS.Color.textSecondary)
+                    .textCase(.uppercase)
+
+                ForEach(ConsentableSource.allCases) { source in
+                    Toggle(isOn: Binding(
+                        get: { consent.isEnabled(source) },
+                        set: { consent.setEnabled($0, for: source) }
+                    )) {
+                        Text(source.displayName)
+                            .font(.caption)
+                            .foregroundStyle(DS.Color.textPrimary)
+                    }
+                }
             }
 
             Spacer()
@@ -133,31 +141,6 @@ struct SignalCollectionStatusView: View {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .abbreviated
         return formatter.localizedString(for: date, relativeTo: Date())
-    }
-}
-
-private struct InfoRow: View {
-    let icon: String
-    let label: String
-    let status: String
-
-    var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: icon)
-                .font(.caption)
-                .frame(width: 20)
-                .foregroundStyle(DS.Color.textSecondary)
-
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(DS.Color.textPrimary)
-
-            Spacer()
-
-            Text(status)
-                .font(.caption2)
-                .foregroundStyle(DS.Color.textTertiary)
-        }
     }
 }
 

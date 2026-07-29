@@ -29,6 +29,16 @@ class LocationManager: NSObject {
         manager.distanceFilter = 200  // metres
     }
 
+    // MARK: - Authorization
+
+    /// Requests When-In-Use location authorization. The system dialog appears once;
+    /// the result arrives via the delegate's authorization callback, which starts
+    /// significant-change monitoring when granted. Called from the ContextPermissionView
+    /// flow (C3.2), not from init.
+    func requestAuthorization() {
+        manager.requestWhenInUseAuthorization()
+    }
+
     // MARK: - Start Monitoring (called after permission granted)
 
     func startMonitoringSignificantLocationChanges() {

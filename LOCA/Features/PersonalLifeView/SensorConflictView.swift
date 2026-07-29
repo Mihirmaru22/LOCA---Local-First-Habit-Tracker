@@ -53,7 +53,7 @@ struct SensorConflictView: View {
 
     private var dimensionSummarySection: some View {
         VStack(alignment: .leading, spacing: DS.Space.sm) {
-            SectionHeader(title: "By Dimension")
+            ConflictSectionHeader(title: "By Dimension")
 
             VStack(spacing: DS.Space.sm) {
                 ForEach(dimensionSummaries, id: \.dimension) { summary in
@@ -69,7 +69,7 @@ struct SensorConflictView: View {
     private var recentSection: some View {
         let shown = Array(conflicts.prefix(30))
         return VStack(alignment: .leading, spacing: DS.Space.sm) {
-            SectionHeader(
+            ConflictSectionHeader(
                 title: conflicts.count > 30
                     ? "Recent (30 of \(conflicts.count))"
                     : "All Conflicts (\(conflicts.count))"
@@ -121,7 +121,7 @@ struct SensorConflictView: View {
 
 // MARK: - Section Header
 
-private struct SectionHeader: View {
+private struct ConflictSectionHeader: View {
     let title: String
 
     var body: some View {

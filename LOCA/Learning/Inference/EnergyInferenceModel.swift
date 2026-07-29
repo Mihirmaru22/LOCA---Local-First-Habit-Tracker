@@ -50,11 +50,11 @@ class EnergyInferenceModel {
         }
 
         // Component 2: Step count (activity in this hour)
-        if let stepsAggregate = aggregates[.motionActivity] {
+        if let stepsAggregate = aggregates[.steps] {
             energyComponents.append(stepsAggregate.mean * stepsWeight)
             uncertaintyTerms.append(stepsAggregate.uncertainty * stepsWeight)
             hasRealEvidence = true
-            contributingSources.append(SignalSource.motionActivity.rawValue)
+            contributingSources.append(SignalSource.steps.rawValue)
             totalSampleCount += stepsAggregate.sampleCount
         } else {
             uncertaintyTerms.append(0.1 * stepsWeight)

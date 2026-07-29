@@ -136,7 +136,7 @@ class ChapterBuilder {
         )
         let signals = try modelContext.fetch(signalDescriptor)
 
-        let motionSignals = signals.filter { $0.source == .motionActivity }
+        let motionSignals = signals.filter { $0.source == .motionActivity || $0.source == .steps }
         if let activity = mean(motionSignals.map { $0.value }) {
             chapter.activityLevel = activity
         }
