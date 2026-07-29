@@ -2,8 +2,12 @@
 //  SignalCollectionCoordinator.swift
 //  LOCA
 //
-//  Phase 4 — Signal collection lifecycle coordinator
-//  Manages permissions, initialization, and collection loop
+//  C3.1 — Signal collection lifecycle coordinator
+//  Manages permissions, initialization, and collection loop.
+//
+//  HealthKit permissions are requested only after the HealthKitPermissionView
+//  framing has been shown (C3.1). Calendar and Location use standard OS dialogs
+//  and are requested from start(). All sources degrade gracefully when denied.
 //
 
 import Foundation
@@ -22,6 +26,13 @@ class SignalCollectionCoordinator: NSObject, ObservableObject {
     @Published var lastCollectionTime: Date?
     @Published var collectionError: String?
 
+    // C3.1: true until the user has seen HealthKitPermissionView.
+    // Backed by UserDefaults so it persists across launches. Once shown
+    // (regardless of the user's choice), the sheet never re-appears.
+    @Published var needsHealthKitFraming: Bool
+
+    private static let hkFramingKey = "com.loca.hkFramingShown"
+
     private var signalManager: SignalManager?
     private let logger = Logger(subsystem: "com.loca.signals", category: "collection")
 
@@ -32,6 +43,31 @@ class SignalCollectionCoordinator: NSObject, ObservableObject {
         case requesting = "Requesting..."
         case granted = "Granted"
         case denied = "Denied"
+    }
+
+    override init() {
+        needsHealthKitFraming = !UserDefaults.standard.bool(forKey: Self.hkFramingKey)
+        super.init()
+    }
+
+    // MARK: - HealthKit Framing
+
+    /// Called by HealthKitPermissionView's "Enable Health Access" button.
+    /// Marks framing as shown, then triggers the actual HealthKit permission dialog.
+    func enableHealthKit() async {
+        markHealthKitFramingShown()
+        _ = await requestHealthKitPermission()
+    }
+
+    /// Called by HealthKitPermissionView's "Not Now" button.
+    /// Marks framing as shown without requesting permissions; collection degrades gracefully.
+    func skipHealthKit() {
+        markHealthKitFramingShown()
+    }
+
+    private func markHealthKitFramingShown() {
+        UserDefaults.standard.set(true, forKey: Self.hkFramingKey)
+        needsHealthKitFraming = false
     }
 
     // MARK: - Initialization
@@ -51,39 +87,35 @@ class SignalCollectionCoordinator: NSObject, ObservableObject {
 
     // MARK: - Permissions
 
+    /// Requests Calendar and Location permissions. HealthKit is handled separately
+    /// through the HealthKitPermissionView framing flow (C3.1).
     func requestPermissions() async -> Bool {
         permissionStatus = .requesting
 
-        async let healthKitGranted = requestHealthKitPermission()
         async let calendarGranted = requestCalendarPermission()
         async let locationGranted = requestLocationPermission()
 
-        let results = await (healthKitGranted, calendarGranted, locationGranted)
+        let results = await (calendarGranted, locationGranted)
 
-        if results.0 || results.1 || results.2 {
+        if results.0 || results.1 {
             permissionStatus = .granted
-            logger.info("Signal collection permissions granted")
+            logger.info("Non-HealthKit signal permissions granted")
             return true
         } else {
             permissionStatus = .denied
-            logger.warning("Signal collection permissions denied")
+            logger.warning("Non-HealthKit signal permissions denied")
             return false
         }
     }
 
-    private func requestHealthKitPermission() async -> Bool {
-        let typesToRead: Set<HKObjectType> = Set(
-            [
-                HKObjectType.categoryType(forIdentifier: .sleepAnalysis),
-                HKObjectType.quantityType(forIdentifier: .heartRateVariabilitySDNN),
-                HKObjectType.quantityType(forIdentifier: .stepCount),
-            ].compactMap { $0 }
-        )
-
-        guard !typesToRead.isEmpty else { return false }
-
+    /// Requests HealthKit read authorization for all types in HealthKitManager.readTypes.
+    /// Called after permission framing via enableHealthKit(), not from start().
+    func requestHealthKitPermission() async -> Bool {
         return await withCheckedContinuation { continuation in
-            HKHealthStore().requestAuthorization(toShare: nil, read: typesToRead) { granted, error in
+            HKHealthStore().requestAuthorization(
+                toShare: nil,
+                read: HealthKitManager.readTypes
+            ) { granted, error in
                 if let error = error {
                     self.logger.error("HealthKit permission error: \(error.localizedDescription)")
                 }
@@ -104,8 +136,7 @@ class SignalCollectionCoordinator: NSObject, ObservableObject {
     }
 
     private func requestLocationPermission() async -> Bool {
-        // Location permission flow handled by LocationManager
-        // Return true optimistically; CLLocationManager requests on its own
+        // Location permission flow handled by LocationManager.
         return true
     }
 
@@ -122,22 +153,19 @@ class SignalCollectionCoordinator: NSObject, ObservableObject {
 
         logger.info("Starting signal collection")
 
-        // Request permissions on first start
+        // Request Calendar and Location permissions (standard OS dialogs).
+        // HealthKit permissions come through HealthKitPermissionView (C3.1 framing).
         let permissionsGranted = await requestPermissions()
         if !permissionsGranted {
-            logger.warning("Permissions not fully granted; continuing with available signals")
+            logger.warning("Calendar/Location permissions not fully granted; continuing with available signals")
         }
 
-        // Start collection
+        // Start collection. All sources degrade gracefully when not authorized.
         manager.startCollection()
 
-        // Monitoring loop: check status every hour.
-        // Checks Task.isCancelled at the top of every iteration (Engineering Principles §3.3).
-        // When the parent .task is cancelled, Task.sleep throws CancellationError; the catch
-        // block logs nothing (isCancelled == true) and the loop exits on the next condition check.
         while isCollecting && !Task.isCancelled {
             do {
-                try await Task.sleep(nanoseconds: 3600 * 1_000_000_000)  // 1 hour
+                try await Task.sleep(nanoseconds: 3600 * 1_000_000_000)
                 lastCollectionTime = manager.lastUpdateTime
                 if let error = manager.collectionError {
                     self.collectionError = error
@@ -160,9 +188,4 @@ class SignalCollectionCoordinator: NSObject, ObservableObject {
         signalManager?.stopCollection()
         logger.info("Signal collection coordinator stopped")
     }
-
-    // No `deinit { stop() }` here: the singleton lives for the app process's
-    // entire lifetime, so its deinit never actually runs. Wiring one would
-    // require an unsafe cross-actor hop from the nonisolated deinit into
-    // @MainActor's `stop()` for no observable benefit.
 }

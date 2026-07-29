@@ -49,10 +49,21 @@ struct TodayView: View {
         HabitsModule()
     ]
 
+    @StateObject private var signalCoordinator = SignalCollectionCoordinator.shared
+
     var body: some View {
         NavigationStack {
             // Single module today (Habits)
             HabitListView()
+        }
+        // C3.1: Show HealthKit permission framing once, before the system dialog.
+        // Driven by SignalCollectionCoordinator.needsHealthKitFraming (UserDefaults-
+        // backed), so it appears exactly once per install regardless of user choice.
+        .sheet(isPresented: $signalCoordinator.needsHealthKitFraming) {
+            HealthKitPermissionView(
+                onEnable: { await signalCoordinator.enableHealthKit() },
+                onSkip: { signalCoordinator.skipHealthKit() }
+            )
         }
     }
 }

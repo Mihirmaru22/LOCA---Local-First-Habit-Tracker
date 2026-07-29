@@ -78,9 +78,14 @@ class SignalManager: NSObject, ObservableObject {
             let now = Date()
 
             var allSignals: [SignalEvent] = []
-            allSignals += (try? await healthKitManager.collectSleep()) ?? []
-            allSignals += (try? await healthKitManager.collectHeartRateVariability()) ?? []
-            allSignals += (try? await healthKitManager.collectSteps()) ?? []
+            // HealthKit sources (non-throwing; graceful degradation when not authorized)
+            allSignals += await healthKitManager.collectSleep()
+            allSignals += await healthKitManager.collectHeartRateVariability()
+            allSignals += await healthKitManager.collectHeartRate()
+            allSignals += await healthKitManager.collectSteps()
+            allSignals += await healthKitManager.collectWorkouts()
+            allSignals += await healthKitManager.collectMindfulMinutes()
+            // Other sources (may throw; degrade gracefully via try?)
             allSignals += (try? await locationManager.collectLocationHistory()) ?? []
             allSignals += (try? await calendarManager.collectCalendarEvents()) ?? []
             allSignals += (try? await deviceActivityManager.collectScreenTime()) ?? []
