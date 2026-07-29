@@ -153,7 +153,10 @@ class SignalCollectionCoordinator: NSObject, ObservableObject {
     }
 
     private func requestLocationPermission() async -> Bool {
-        // Location permission flow handled by LocationManager.
+        // Triggers the system When-In-Use dialog. The grant/deny result is delivered
+        // asynchronously to LocationManager's delegate, which starts significant-change
+        // monitoring on grant. We return true to signal the request was initiated.
+        SignalManager.shared.locationManager.requestAuthorization()
         return true
     }
 

@@ -232,7 +232,7 @@ class HealthKitManager: NSObject {
         return buckets.map { bucket in
             SignalEvent(
                 timestamp: bucket.startDate,
-                source: .motionActivity,
+                source: .steps,
                 value: min(1.0, bucket.stepCount / 1000),
                 uncertainty: 0.1,
                 metadata: ["steps": String(Int(bucket.stepCount))]

@@ -250,7 +250,7 @@ class EventDetectionEngine: NSObject, ObservableObject {
         )
 
         let allActivityEvents = (try? modelContext.fetch(descriptor)) ?? []
-        let events = allActivityEvents.filter { $0.source == .motionActivity }
+        let events = allActivityEvents.filter { $0.source == .motionActivity || $0.source == .steps }
         guard !events.isEmpty else { return 0.5 }
 
         let avgActivity = events.map { $0.value }.reduce(0, +) / Double(events.count)
