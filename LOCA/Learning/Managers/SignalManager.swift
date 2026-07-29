@@ -25,6 +25,7 @@ class SignalManager: NSObject, ObservableObject {
     private let deviceActivityManager = DeviceActivityManager()
     private let motionActivityManager = MotionActivityManager()
     private let daylightManager = DaylightManager()
+    private let habitBridgeManager = HabitBridgeManager()
 
     private var backgroundTask: Task<Void, Never>?
     private var modelContext: ModelContext?
@@ -98,6 +99,9 @@ class SignalManager: NSObject, ObservableObject {
 
             // Device activity (may throw)
             allSignals += (try? await deviceActivityManager.collectScreenTime()) ?? []
+
+            // Habit bridge — authoritative user-logged facts (C3.3)
+            allSignals += habitBridgeManager.collectHabitLogs(modelContext: modelContext)
 
             for signal in allSignals {
                 modelContext.insert(signal)

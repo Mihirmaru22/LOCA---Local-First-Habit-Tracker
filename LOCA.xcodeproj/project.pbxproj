@@ -132,6 +132,8 @@
 		C2B1A0F9E8D7C6B5A4F3E2D1 /* HealthKitPermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E2F3A4B5C6D7E8F9A0B1C2 /* HealthKitPermissionView.swift */; };
 		E7F8A9B0C1D2E3F4A5B6C7D8 /* DaylightManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaylightManager.swift; sourceTree = "<group>"; };
 		F8A9B0C1D2E3F4A5B6C7D8E9 /* DaylightManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7F8A9B0C1D2E3F4A5B6C7D8 /* DaylightManager.swift */; };
+		C1D2E3F4A5B6C7D8E9F0A1B2 /* HabitBridgeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitBridgeManager.swift; sourceTree = "<group>"; };
+		D2E3F4A5B6C7D8E9F0A1B2C3 /* HabitBridgeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D2E3F4A5B6C7D8E9F0A1B2 /* HabitBridgeManager.swift */; };
 		A9B0C1D2E3F4A5B6C7D8E9F0 /* ContextPermissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextPermissionView.swift; sourceTree = "<group>"; };
 		B0C1D2E3F4A5B6C7D8E9F0A1 /* ContextPermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B0C1D2E3F4A5B6C7D8E9F0 /* ContextPermissionView.swift */; };
 		D82ED360B9674E1BA53018BD /* ChapterBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B3BE72F49504B60836C746D /* ChapterBuilder.swift */; };
@@ -715,6 +717,7 @@
 				866A1B52FC0F4202822A0DE8 /* LocationManager.swift */,
 				29BD4C07E8D7423E994BE833 /* MotionActivityManager.swift */,
 				E7F8A9B0C1D2E3F4A5B6C7D8 /* DaylightManager.swift */,
+				C1D2E3F4A5B6C7D8E9F0A1B2 /* HabitBridgeManager.swift */,
 				E2B6F24F5644421B9C7DE2A2 /* SignalManager.swift */,
 			);
 			path = Managers;
@@ -1085,6 +1088,7 @@
 				52550F5555DD45B3AE9E3410 /* SignalCollectionStatusView.swift in Sources */,
 				C2B1A0F9E8D7C6B5A4F3E2D1 /* HealthKitPermissionView.swift in Sources */,
 				F8A9B0C1D2E3F4A5B6C7D8E9 /* DaylightManager.swift in Sources */,
+				D2E3F4A5B6C7D8E9F0A1B2C3 /* HabitBridgeManager.swift in Sources */,
 				B0C1D2E3F4A5B6C7D8E9F0A1 /* ContextPermissionView.swift in Sources */,
 				D82ED360B9674E1BA53018BD /* ChapterBuilder.swift in Sources */,
 				D09B4E7A385C4F1DA92B6CF3 /* SensorConflict.swift in Sources */,
