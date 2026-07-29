@@ -212,7 +212,6 @@ private struct InsightRow: View {
         switch insight.type {
         case .traitShift:        return "arrow.up.arrow.down"
         case .personPresence:    return "person.crop.circle"
-        case .stateCorrelation:  return "waveform.path"
         case .chapterContrast:   return "book.pages"
         }
     }

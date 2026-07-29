@@ -44,8 +44,9 @@ final class Person {
     var lastSeenDate: Date
     var appearanceCount: Int            // Total appearances in signals
 
-    // State correlation (optional): does this person co-occur with mood shifts?
-    var moodCorrelation: Double?        // Positive = uplifts mood; negative = stresses
+    // C2.4: moodCorrelation is raw observed co-occurrence evidence only — not a verdict
+    // about relationship meaning ("uplifting", "stressful"). Never surfaced as a label.
+    var moodCorrelation: Double?
     var moodCorrelationSampleCount: Int
 
     // Chapter context

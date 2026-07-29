@@ -47,14 +47,12 @@ struct TraitSnapshot {
 struct PersonSnapshot {
     let person: Person
     let salienceInChapter: Double?  // Salience within a specific chapter context
-    let moodCorrelation: Double?
 }
 
 struct SceneInsight {
     enum InsightType: String {
         case traitShift          // A trait changed significantly across chapters
         case personPresence      // A person was notably present/absent in a chapter
-        case stateCorrelation    // A person correlates with state patterns
         case chapterContrast     // Two chapters differ markedly
     }
 
@@ -111,7 +109,7 @@ class MultiEntityComposer {
             generatedAt: Date(),
             chapters: chapterSnapshots,
             traits: globalTraits,
-            people: people.map { PersonSnapshot(person: $0, salienceInChapter: nil, moodCorrelation: $0.moodCorrelation) },
+            people: people.map { PersonSnapshot(person: $0, salienceInChapter: nil) },
             insights: insights,
             overallUncertainty: isDataAbsent ? 1.0 : uncertainty,
             isDataAbsent: isDataAbsent
@@ -190,8 +188,7 @@ class MultiEntityComposer {
             let salience = min(1.0, Double(count) / (Double(totalDays) * 0.5))
             return PersonSnapshot(
                 person: person,
-                salienceInChapter: salience,
-                moodCorrelation: person.moodCorrelation
+                salienceInChapter: salience
             )
         }.sorted { ($0.salienceInChapter ?? 0) > ($1.salienceInChapter ?? 0) }
     }
@@ -222,20 +219,6 @@ class MultiEntityComposer {
                     text: "\(topPerson.person.name) was notably present during \(chapterName)",
                     confidence: min(0.9, salience),
                     entities: [topPerson.person.name, chapterName]
-                ))
-            }
-        }
-
-        // Mood correlation insight for high-salience people
-        for person in allPeople.prefix(5) {
-            if let corr = person.moodCorrelation, abs(corr) > 0.25,
-               person.moodCorrelationSampleCount >= 5 {
-                let direction = corr > 0 ? "associated with higher mood" : "associated with lower mood"
-                insights.append(SceneInsight(
-                    type: .stateCorrelation,
-                    text: "\(person.name) is \(direction) when they appear in your life",
-                    confidence: min(0.8, abs(corr) * 2),
-                    entities: [person.name]
                 ))
             }
         }

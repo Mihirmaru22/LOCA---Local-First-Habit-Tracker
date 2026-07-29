@@ -108,15 +108,9 @@ struct PersonCard: View {
 
                 SalienceBar(salience: person.salience, uncertainty: person.salienceUncertainty)
 
-                HStack(spacing: DS.Space.md) {
-                    Text("\(person.appearanceCount) appearances")
-                        .font(.caption2)
-                        .foregroundStyle(DS.Color.textTertiary)
-
-                    if let correlation = person.moodCorrelation, person.moodCorrelationSampleCount >= 5 {
-                        MoodCorrelationTag(correlation: correlation)
-                    }
-                }
+                Text("\(person.appearanceCount) appearances")
+                    .font(.caption2)
+                    .foregroundStyle(DS.Color.textTertiary)
             }
         }
         .padding(DS.Space.md)
@@ -190,34 +184,6 @@ private struct SalienceBar: View {
             }
         }
         .frame(height: 4)
-    }
-}
-
-// MARK: - Mood Correlation Tag
-
-private struct MoodCorrelationTag: View {
-    let correlation: Double
-
-    private var label: String {
-        if correlation > 0.2 { return "Uplifting" }
-        if correlation < -0.2 { return "Stressful" }
-        return "Neutral"
-    }
-
-    private var color: Color {
-        if correlation > 0.2 { return Color(hex: "#10B981") }
-        if correlation < -0.2 { return Color(hex: "#EF4444") }
-        return DS.Color.textTertiary
-    }
-
-    var body: some View {
-        HStack(spacing: 3) {
-            Image(systemName: correlation > 0.2 ? "arrow.up.circle" : correlation < -0.2 ? "arrow.down.circle" : "minus.circle")
-                .font(.caption2)
-            Text(label)
-                .font(.caption2)
-        }
-        .foregroundStyle(color)
     }
 }
 
