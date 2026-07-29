@@ -51,7 +51,7 @@ class MotionActivityManager: NSObject {
 
     // MARK: - Activity → Signal Mapping
 
-    private static func activitySignal(_ activity: CMMotionActivity) -> (Double, String) {
+    private nonisolated static func activitySignal(_ activity: CMMotionActivity) -> (Double, String) {
         if activity.running     { return (0.9, "running") }
         if activity.cycling     { return (0.7, "cycling") }
         if activity.walking     { return (0.5, "walking") }
