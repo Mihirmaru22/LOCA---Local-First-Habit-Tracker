@@ -36,7 +36,6 @@ final class Chapter {
     var baselineMood: Double
 
     // Characterization
-    var dominantEventType: String?   // Most common event type during chapter
     var activityLevel: Double        // 0–1 normalized step/motion average
     var socialEngagement: Double     // 0–1 normalized social signal average
     var scheduleRegularity: Double   // 0–1 how consistent daily patterns were
