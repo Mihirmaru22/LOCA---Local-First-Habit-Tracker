@@ -130,6 +130,10 @@
 		52550F5555DD45B3AE9E3410 /* SignalCollectionStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EF39B9BE4644225B12B98C9 /* SignalCollectionStatusView.swift */; };
 		D1E2F3A4B5C6D7E8F9A0B1C2 /* HealthKitPermissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitPermissionView.swift; sourceTree = "<group>"; };
 		C2B1A0F9E8D7C6B5A4F3E2D1 /* HealthKitPermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E2F3A4B5C6D7E8F9A0B1C2 /* HealthKitPermissionView.swift */; };
+		E7F8A9B0C1D2E3F4A5B6C7D8 /* DaylightManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaylightManager.swift; sourceTree = "<group>"; };
+		F8A9B0C1D2E3F4A5B6C7D8E9 /* DaylightManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7F8A9B0C1D2E3F4A5B6C7D8 /* DaylightManager.swift */; };
+		A9B0C1D2E3F4A5B6C7D8E9F0 /* ContextPermissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextPermissionView.swift; sourceTree = "<group>"; };
+		B0C1D2E3F4A5B6C7D8E9F0A1 /* ContextPermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B0C1D2E3F4A5B6C7D8E9F0 /* ContextPermissionView.swift */; };
 		D82ED360B9674E1BA53018BD /* ChapterBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B3BE72F49504B60836C746D /* ChapterBuilder.swift */; };
 		B50218B1D1A54AB68A40FBF6 /* ChapterModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86BB7A0D33C447FB8707EA34 /* ChapterModel.swift */; };
 		96E063DD36EB43399AFA0BF7 /* PeopleExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65A7F2853AAF486B8EF5F0A9 /* PeopleExtractor.swift */; };
@@ -710,6 +714,7 @@
 				57F41BC5CD854A20A6D4D140 /* HealthKitManager.swift */,
 				866A1B52FC0F4202822A0DE8 /* LocationManager.swift */,
 				29BD4C07E8D7423E994BE833 /* MotionActivityManager.swift */,
+				E7F8A9B0C1D2E3F4A5B6C7D8 /* DaylightManager.swift */,
 				E2B6F24F5644421B9C7DE2A2 /* SignalManager.swift */,
 			);
 			path = Managers;
@@ -779,6 +784,7 @@
 			children = (
 				6EF39B9BE4644225B12B98C9 /* SignalCollectionStatusView.swift */,
 				D1E2F3A4B5C6D7E8F9A0B1C2 /* HealthKitPermissionView.swift */,
+				A9B0C1D2E3F4A5B6C7D8E9F0 /* ContextPermissionView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -1078,6 +1084,8 @@
 				051587161C4246C9A9239035 /* ViewCompositionEngine.swift in Sources */,
 				52550F5555DD45B3AE9E3410 /* SignalCollectionStatusView.swift in Sources */,
 				C2B1A0F9E8D7C6B5A4F3E2D1 /* HealthKitPermissionView.swift in Sources */,
+				F8A9B0C1D2E3F4A5B6C7D8E9 /* DaylightManager.swift in Sources */,
+				B0C1D2E3F4A5B6C7D8E9F0A1 /* ContextPermissionView.swift in Sources */,
 				D82ED360B9674E1BA53018BD /* ChapterBuilder.swift in Sources */,
 				D09B4E7A385C4F1DA92B6CF3 /* SensorConflict.swift in Sources */,
 				B50218B1D1A54AB68A40FBF6 /* ChapterModel.swift in Sources */,

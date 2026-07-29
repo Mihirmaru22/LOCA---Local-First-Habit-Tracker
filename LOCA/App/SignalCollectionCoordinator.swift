@@ -27,11 +27,12 @@ class SignalCollectionCoordinator: NSObject, ObservableObject {
     @Published var collectionError: String?
 
     // C3.1: true until the user has seen HealthKitPermissionView.
-    // Backed by UserDefaults so it persists across launches. Once shown
-    // (regardless of the user's choice), the sheet never re-appears.
     @Published var needsHealthKitFraming: Bool
+    // C3.2: true until the user has seen ContextPermissionView.
+    @Published var needsContextPermissionFraming: Bool
 
-    private static let hkFramingKey = "com.loca.hkFramingShown"
+    private static let hkFramingKey      = "com.loca.hkFramingShown"
+    private static let ctxFramingKey     = "com.loca.contextFramingShown"
 
     private var signalManager: SignalManager?
     private let logger = Logger(subsystem: "com.loca.signals", category: "collection")
@@ -46,21 +47,18 @@ class SignalCollectionCoordinator: NSObject, ObservableObject {
     }
 
     override init() {
-        needsHealthKitFraming = !UserDefaults.standard.bool(forKey: Self.hkFramingKey)
+        needsHealthKitFraming          = !UserDefaults.standard.bool(forKey: Self.hkFramingKey)
+        needsContextPermissionFraming  = !UserDefaults.standard.bool(forKey: Self.ctxFramingKey)
         super.init()
     }
 
-    // MARK: - HealthKit Framing
+    // MARK: - HealthKit Framing (C3.1)
 
-    /// Called by HealthKitPermissionView's "Enable Health Access" button.
-    /// Marks framing as shown, then triggers the actual HealthKit permission dialog.
     func enableHealthKit() async {
         markHealthKitFramingShown()
         _ = await requestHealthKitPermission()
     }
 
-    /// Called by HealthKitPermissionView's "Not Now" button.
-    /// Marks framing as shown without requesting permissions; collection degrades gracefully.
     func skipHealthKit() {
         markHealthKitFramingShown()
     }
@@ -68,6 +66,25 @@ class SignalCollectionCoordinator: NSObject, ObservableObject {
     private func markHealthKitFramingShown() {
         UserDefaults.standard.set(true, forKey: Self.hkFramingKey)
         needsHealthKitFraming = false
+    }
+
+    // MARK: - Context Framing (C3.2)
+
+    /// Called by ContextPermissionView's "Enable" button.
+    func enableContextSources() async {
+        markContextFramingShown()
+        async let cal = requestCalendarPermission()
+        async let loc = requestLocationPermission()
+        _ = await (cal, loc)
+    }
+
+    func skipContextSources() {
+        markContextFramingShown()
+    }
+
+    private func markContextFramingShown() {
+        UserDefaults.standard.set(true, forKey: Self.ctxFramingKey)
+        needsContextPermissionFraming = false
     }
 
     // MARK: - Initialization
@@ -153,14 +170,9 @@ class SignalCollectionCoordinator: NSObject, ObservableObject {
 
         logger.info("Starting signal collection")
 
-        // Request Calendar and Location permissions (standard OS dialogs).
-        // HealthKit permissions come through HealthKitPermissionView (C3.1 framing).
-        let permissionsGranted = await requestPermissions()
-        if !permissionsGranted {
-            logger.warning("Calendar/Location permissions not fully granted; continuing with available signals")
-        }
-
-        // Start collection. All sources degrade gracefully when not authorized.
+        // All permissions are requested through their respective framing views
+        // (C3.1 HealthKitPermissionView, C3.2 ContextPermissionView). Collection
+        // starts immediately; every source degrades gracefully when not authorized.
         manager.startCollection()
 
         while isCollecting && !Task.isCancelled {

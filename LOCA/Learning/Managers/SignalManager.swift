@@ -3,7 +3,7 @@
 //  LOCA
 //
 //  Signal ingestion coordinator
-//  Manages all seven signal sources and aggregation
+//  Manages all signal sources and aggregation
 //
 
 import Foundation
@@ -21,9 +21,10 @@ class SignalManager: NSObject, ObservableObject {
 
     private let healthKitManager = HealthKitManager()
     private let calendarManager = CalendarManager()
-    private let locationManager = LocationManager()
+    let locationManager = LocationManager()       // internal; DaylightManager reads lastLocation
     private let deviceActivityManager = DeviceActivityManager()
     private let motionActivityManager = MotionActivityManager()
+    private let daylightManager = DaylightManager()
 
     private var backgroundTask: Task<Void, Never>?
     private var modelContext: ModelContext?
@@ -78,18 +79,25 @@ class SignalManager: NSObject, ObservableObject {
             let now = Date()
 
             var allSignals: [SignalEvent] = []
-            // HealthKit sources (non-throwing; graceful degradation when not authorized)
+
+            // HealthKit (non-throwing; graceful degradation when not authorized)
             allSignals += await healthKitManager.collectSleep()
             allSignals += await healthKitManager.collectHeartRateVariability()
             allSignals += await healthKitManager.collectHeartRate()
             allSignals += await healthKitManager.collectSteps()
             allSignals += await healthKitManager.collectWorkouts()
             allSignals += await healthKitManager.collectMindfulMinutes()
-            // Other sources (may throw; degrade gracefully via try?)
-            allSignals += (try? await locationManager.collectLocationHistory()) ?? []
-            allSignals += (try? await calendarManager.collectCalendarEvents()) ?? []
+
+            // Context (non-throwing; graceful degradation when not authorized)
+            allSignals += await calendarManager.collectCalendarEvents()
+            allSignals += await locationManager.collectLocationHistory()
+            allSignals += await motionActivityManager.collectMotion()
+            allSignals += daylightManager.collectDaylight(
+                coordinate: locationManager.lastLocation?.coordinate
+            )
+
+            // Device activity (may throw)
             allSignals += (try? await deviceActivityManager.collectScreenTime()) ?? []
-            allSignals += (try? await motionActivityManager.collectMotion()) ?? []
 
             for signal in allSignals {
                 modelContext.insert(signal)
@@ -97,11 +105,6 @@ class SignalManager: NSObject, ObservableObject {
             try modelContext.save()
 
             await aggregateSignals(modelContext: modelContext)
-
-            // Derive higher-level structure from the raw signals just collected.
-            // This is the seam `aggregateSignals` always pointed at: signals →
-            // states → events → chapters/traits/people. Each stage is idempotent,
-            // so it is safe to run on every collection cycle.
             await runLifeModelPipeline(modelContext: modelContext)
 
             lastUpdateTime = now
@@ -114,32 +117,17 @@ class SignalManager: NSObject, ObservableObject {
 
     // MARK: - Life Model Pipeline
 
-    /// Runs the inference and structure pipeline over the signals in `modelContext`,
-    /// in dependency order. Every stage guards against empty inputs and is
-    /// idempotent, so a fresh device (no permissions, no signals) produces nothing
-    /// and repeated runs converge rather than accumulate.
-    ///
-    /// The engines are `@MainActor` by design (they hold the `ModelContext`
-    /// directly), so the pipeline runs on the main actor. Each stage's work is
-    /// bounded — a day of signals for inference, a month of states for detection.
     private func runLifeModelPipeline(modelContext: ModelContext) async {
-        // 1. Raw signals → hourly States (energy, stress, focus, mood).
         let stateEngine = StateInferenceEngine.shared
         stateEngine.setModelContext(modelContext)
         await stateEngine.inferStatesForPastDay(modelContext: modelContext)
 
-        // 2. States → Life Events (coordinated, sustained regime shifts).
         let eventEngine = EventDetectionEngine.shared
         eventEngine.setModelContext(modelContext)
         await eventEngine.detectEventsForPastMonth(modelContext: modelContext)
 
-        // 3. Life Events → Chapters (named intervals with regime-scoped baselines).
         try? ChapterBuilder.shared.buildChapters(modelContext: modelContext)
-
-        // 4. States → Traits (slow-moving dispositions).
         try? TraitInferenceEngine.shared.updateTraits(modelContext: modelContext)
-
-        // 5. Calendar / logged notes → People (relationships accruing over time).
         try? await PeopleExtractor.shared.extractPeople(modelContext: modelContext)
     }
 
@@ -157,12 +145,7 @@ class SignalManager: NSObject, ObservableObject {
         )
 
         guard let signals = try? modelContext.fetch(descriptor) else { return }
-
-        let hourlyWindows = groupSignalsByHour(signals)
-
-        for (_, _) in hourlyWindows {
-            // Aggregation computed but stored as-needed by inference engine
-        }
+        let _ = groupSignalsByHour(signals)
     }
 
     private func groupSignalsByHour(_ signals: [SignalEvent]) -> [Date: [SignalEvent]] {
@@ -172,11 +155,7 @@ class SignalManager: NSObject, ObservableObject {
         for signal in signals {
             let hourStart = calendar.dateComponents([.year, .month, .day, .hour], from: signal.timestamp)
             let hourStartDate = calendar.date(from: hourStart)!
-
-            if grouped[hourStartDate] == nil {
-                grouped[hourStartDate] = []
-            }
-            grouped[hourStartDate]?.append(signal)
+            grouped[hourStartDate, default: []].append(signal)
         }
 
         return grouped
@@ -184,17 +163,13 @@ class SignalManager: NSObject, ObservableObject {
 
     func computeAggregates(_ signals: [SignalEvent]) -> [SignalSource: AggregatedValue] {
         var aggregates: [SignalSource: AggregatedValue] = [:]
-
         let sourceGroups = Dictionary(grouping: signals) { $0.source }
 
         for (source, sourceSignals) in sourceGroups {
             let values = sourceSignals.map { $0.value }
             let uncertainties = sourceSignals.map { $0.uncertainty }
-
             let mean = values.reduce(0, +) / Double(values.count)
             let variance = values.map { pow($0 - mean, 2) }.reduce(0, +) / Double(values.count)
-            let stddev = sqrt(variance)
-
             let propagatedUncertainty = sqrt(
                 uncertainties.map { pow($0, 2) }.reduce(0, +)
             ) / Double(uncertainties.count)
@@ -203,7 +178,7 @@ class SignalManager: NSObject, ObservableObject {
                 mean: mean,
                 max: values.max() ?? 0,
                 min: values.min() ?? 0,
-                stddev: stddev,
+                stddev: sqrt(variance),
                 uncertainty: propagatedUncertainty,
                 sampleCount: sourceSignals.count
             )

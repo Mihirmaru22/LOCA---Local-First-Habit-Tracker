@@ -22,6 +22,7 @@ enum SignalSource: String, Codable {
     case motionActivity
     case workout
     case mindfulSession
+    case daylight
 }
 
 // MARK: - Signal Event (Atomic Measurement)

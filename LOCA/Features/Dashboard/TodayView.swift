@@ -57,12 +57,19 @@ struct TodayView: View {
             HabitListView()
         }
         // C3.1: Show HealthKit permission framing once, before the system dialog.
-        // Driven by SignalCollectionCoordinator.needsHealthKitFraming (UserDefaults-
-        // backed), so it appears exactly once per install regardless of user choice.
         .sheet(isPresented: $signalCoordinator.needsHealthKitFraming) {
             HealthKitPermissionView(
                 onEnable: { await signalCoordinator.enableHealthKit() },
                 onSkip: { signalCoordinator.skipHealthKit() }
+            )
+        }
+        // C3.2: Show Calendar/Location permission framing once, after HealthKit framing.
+        // SwiftUI presents sheets one at a time; when the HealthKit sheet is dismissed,
+        // this one appears if the user hasn't seen it yet.
+        .sheet(isPresented: $signalCoordinator.needsContextPermissionFraming) {
+            ContextPermissionView(
+                onEnable: { await signalCoordinator.enableContextSources() },
+                onSkip: { signalCoordinator.skipContextSources() }
             )
         }
     }
