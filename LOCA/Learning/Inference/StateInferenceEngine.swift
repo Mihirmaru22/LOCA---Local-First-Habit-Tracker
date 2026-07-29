@@ -124,6 +124,7 @@ class StateInferenceEngine: NSObject, ObservableObject {
                 inferred.moodUncertaintyTypeRaw = moodResult.provenance.uncertaintyType.rawValue
 
                 ctx.insert(inferred)
+                recordConflictsIfNeeded(state: inferred, signals: hourSignals, modelContext: ctx)
             }
 
             try ctx.save()
@@ -136,6 +137,45 @@ class StateInferenceEngine: NSObject, ObservableObject {
 
         } catch {
             inferenceError = error.localizedDescription
+        }
+    }
+
+    // MARK: - C2.2 Conflict Detection
+
+    /// Records a SensorConflict when a user self-report disagrees with the sensor-derived
+    /// value by ≥ threshold. The sensor value is never changed — conflicts are evidence.
+    private func recordConflictsIfNeeded(
+        state: InferredState,
+        signals: [SignalEvent],
+        modelContext: ModelContext
+    ) {
+        let threshold = 0.20
+        let explicitLogs = signals.filter { $0.source == .explicitLog }
+        guard !explicitLogs.isEmpty else { return }
+
+        let pairs: [(dimension: String, sensorValue: Double, isAbsent: Bool)] = [
+            ("energy", state.energy, state.energyAbsent),
+            ("stress", state.stress, state.stressAbsent),
+            ("focus",  state.focus,  state.focusAbsent),
+            ("mood",   state.mood,   state.moodAbsent),
+        ]
+
+        for (dimension, sensorValue, isAbsent) in pairs {
+            guard !isAbsent else { continue }
+            for log in explicitLogs {
+                guard let rawValue = log.metadata[dimension],
+                      let userValue = Double(rawValue) else { continue }
+                let magnitude = abs(sensorValue - userValue)
+                guard magnitude >= threshold else { break }
+                let conflict = SensorConflict(
+                    timestamp: state.timestamp,
+                    dimension: dimension,
+                    sensorValue: sensorValue,
+                    userValue: userValue
+                )
+                modelContext.insert(conflict)
+                break
+            }
         }
     }
 

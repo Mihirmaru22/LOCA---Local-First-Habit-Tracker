@@ -165,6 +165,7 @@
 		F6E5F6A7B8C9D0E1F2A3B4C5 /* FeedbackProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = G4E5F6A7B8C9D0E1F2A3B4C5 /* FeedbackProcessor.swift */; };
 		G7F6A7B8C9D0E1F2A3B4C5D6 /* ContextEnricher.swift in Sources */ = {isa = PBXBuildFile; fileRef = H5F6A7B8C9D0E1F2A3B4C5D6 /* ContextEnricher.swift */; };
 		CA7B8AC9D7E1F4B5A82C6D3E /* CalibrationModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalibrationModel.swift; sourceTree = "<group>"; };
+		CF89A3B274DC4E56B8F290A1 /* SensorConflict.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorConflict.swift; sourceTree = "<group>"; };
 		FA11FA11FA11FA11FA11FA11 /* DirectionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CD3EF36A4504EC2B092EDD8 /* DirectionModel.swift */; };
 		CC0FA28CBF7F4C7997328A4F /* DirectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46B7109E93264DE9A5FAB54E /* DirectionView.swift */; };
 		DEC886610E32444B8AE7435B /* DirectionCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94E2C16D6CB34D8FB7CB8680 /* DirectionCaptureView.swift */; };
@@ -199,6 +200,7 @@
 		1234567890ABCDEF12345678 /* InferenceTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1E2D3C4B5A6978869504231 /* InferenceTypes.swift */; };
 		1FE9F6B42363404BB74AC56A /* ComposedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA052AE8F12E4A9D82739619 /* ComposedViewModel.swift */; };
 		848B1F9D35DC470B991C3EF8 /* ComposedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA052AE8F12E4A9D82739619 /* ComposedViewModel.swift */; };
+		D09B4E7A385C4F1DA92B6CF3 /* SensorConflict.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF89A3B274DC4E56B8F290A1 /* SensorConflict.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -661,6 +663,7 @@
 				226D81B014DD44DE80D93BB4 /* PersonModel.swift */,
 				1CD3EF36A4504EC2B092EDD8 /* DirectionModel.swift */,
 				CA7B8AC9D7E1F4B5A82C6D3E /* CalibrationModel.swift */,
+				CF89A3B274DC4E56B8F290A1 /* SensorConflict.swift */,
 				FDF5D0F2E2E440EA90A108EE /* TraitInferenceEngine.swift */,
 				897271B11E814E59B5C885B9 /* TraitModel.swift */,
 			);
@@ -1068,6 +1071,7 @@
 				051587161C4246C9A9239035 /* ViewCompositionEngine.swift in Sources */,
 				52550F5555DD45B3AE9E3410 /* SignalCollectionStatusView.swift in Sources */,
 				D82ED360B9674E1BA53018BD /* ChapterBuilder.swift in Sources */,
+				D09B4E7A385C4F1DA92B6CF3 /* SensorConflict.swift in Sources */,
 				B50218B1D1A54AB68A40FBF6 /* ChapterModel.swift in Sources */,
 				96E063DD36EB43399AFA0BF7 /* PeopleExtractor.swift in Sources */,
 				0BF22EFB288A4CDF88663999 /* PersonModel.swift in Sources */,
