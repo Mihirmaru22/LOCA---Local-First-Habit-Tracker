@@ -153,7 +153,7 @@ class SignalManager: NSObject, ObservableObject {
         )
 
         guard let signals = try? modelContext.fetch(descriptor) else { return }
-        let _ = groupSignalsByHour(signals)
+        _ = groupSignalsByHour(signals)
     }
 
     private func groupSignalsByHour(_ signals: [SignalEvent]) -> [Date: [SignalEvent]] {

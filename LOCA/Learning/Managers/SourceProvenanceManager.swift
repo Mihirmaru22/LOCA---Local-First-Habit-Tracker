@@ -35,9 +35,7 @@ final class SourceProvenanceManager {
         // Fetch all existing provenance records
         let descriptor = FetchDescriptor<SourceProvenance>()
         let existing = (try? modelContext.fetch(descriptor)) ?? []
-        var ledger: [String: SourceProvenance] = Dictionary(
-            uniqueKeysWithValues: existing.map { ($0.sourceName, $0) }
-        )
+        var ledger = Dictionary(existing.map { ($0.sourceName, $0) }, uniquingKeysWith: { a, _ in a })
 
         // Upsert for every source that produced signals this cycle
         for sourceName in activeSources {
