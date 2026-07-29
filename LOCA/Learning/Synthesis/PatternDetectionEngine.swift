@@ -239,13 +239,15 @@ final class PatternDetectionEngine {
             let confidence = effectConfidence(magnitude: abs(moodDelta), sampleCount: inChapter.count)
             let direction = moodDelta > 0 ? "higher" : "lower"
 
-            patterns.append(LifePattern(
-                observation: "Your mood was measurably \(direction) during \(chapter.name).",
-                layer: .chapterState,
-                confidence: confidence,
-                sampleCount: inChapter.count,
-                explorableQuestion: "What made \(chapter.name) affect my mood this way?"
-            ))
+            if let chapterName = chapter.name {
+                patterns.append(LifePattern(
+                    observation: "Your mood was measurably \(direction) during \(chapterName).",
+                    layer: .chapterState,
+                    confidence: confidence,
+                    sampleCount: inChapter.count,
+                    explorableQuestion: "What made \(chapterName) affect my mood this way?"
+                ))
+            }
         }
 
         return patterns
@@ -271,9 +273,8 @@ final class PatternDetectionEngine {
                 let logsInChapter = boardLogs.filter {
                     $0.timestamp >= chapter.startDate && $0.timestamp < end
                 }
-                if duration > 0 && !logsInChapter.isEmpty {
-                    let frequency = Double(logsInChapter.count) / Double(duration)
-                    chapterConsistency[chapter.name] = (duration, logsInChapter.count)
+                if duration > 0 && !logsInChapter.isEmpty, let chapterName = chapter.name {
+                    chapterConsistency[chapterName] = (duration, logsInChapter.count)
                 }
             }
 

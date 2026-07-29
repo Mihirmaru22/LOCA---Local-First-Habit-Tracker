@@ -273,10 +273,18 @@ private struct ChapterSceneCard: View {
                             .fontWeight(.bold)
                             .foregroundStyle(.tint)
                     }
-                    Text(snapshot.chapter.name)
-                        .font(DS.Text.body)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(DS.Color.textPrimary)
+                    if let chapterName = snapshot.chapter.name {
+                        Text(chapterName)
+                            .font(DS.Text.body)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(DS.Color.textPrimary)
+                    } else {
+                        Text("Name this chapter →")
+                            .font(DS.Text.body)
+                            .fontWeight(.regular)
+                            .italic()
+                            .foregroundStyle(DS.Color.textTertiary)
+                    }
                 }
                 Spacer()
                 Text("\(snapshot.chapter.durationInDays)d")

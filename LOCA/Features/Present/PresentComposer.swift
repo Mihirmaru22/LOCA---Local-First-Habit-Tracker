@@ -317,7 +317,7 @@ final class PresentComposer {
 
         return ReachSlice(
             depth: .chapter,
-            headline: chapter.name,
+            headline: chapter.name ?? "This Chapter",
             body: body,
             landmarks: []
         )
@@ -339,7 +339,7 @@ final class PresentComposer {
 
         for chapter in chapters {
             let pos = now.timeIntervalSince(chapter.startDate) / span
-            landmarks.append(LifeLandmark(id: chapter.id, label: chapter.name, position: min(1, pos), isEvent: false))
+            landmarks.append(LifeLandmark(id: chapter.id, label: chapter.name ?? "—", position: min(1, pos), isEvent: false))
         }
         for event in events.prefix(6) {
             let pos = now.timeIntervalSince(event.timestamp) / span

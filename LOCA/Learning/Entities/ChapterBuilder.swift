@@ -55,10 +55,8 @@ class ChapterBuilder {
                 continue
             }
 
-            let chapterName = defaultName(for: event, index: index)
             let chapter = Chapter(
                 startDate: event.timestamp,
-                name: chapterName,
                 openingEventId: event.id
             )
 
@@ -102,26 +100,9 @@ class ChapterBuilder {
             startDate = earliestSignal?.timestamp ?? Date()
         }
 
-        let current = Chapter(
-            startDate: startDate,
-            name: "Now"
-        )
+        let current = Chapter(startDate: startDate)
         current.isCurrentChapter = true
         modelContext.insert(current)
-    }
-
-    // MARK: - Default Name Generation
-
-    private func defaultName(for event: LifeEvent, index: Int) -> String {
-        switch event.eventType {
-        case .workChange:    return "New Work Chapter"
-        case .locationChange: return "New Place Chapter"
-        case .socialChange:  return "Changed Relationships"
-        case .healthChange:  return "Health Shift"
-        case .scheduleChange: return "New Routine"
-        case .habitChange:   return "New Habits"
-        case .unknown:       return "Chapter \(index + 1)"
-        }
     }
 
     // MARK: - Compute Chapter Baselines

@@ -214,13 +214,14 @@ class MultiEntityComposer {
 
         // Person presence insights: who was most prominent in each chapter
         for snapshot in chapters {
+            guard let chapterName = snapshot.chapter.name else { continue }
             if let topPerson = snapshot.peopleForChapter.first,
                let salience = topPerson.salienceInChapter, salience > 0.3 {
                 insights.append(SceneInsight(
                     type: .personPresence,
-                    text: "\(topPerson.person.name) was notably present during \(snapshot.chapter.name)",
+                    text: "\(topPerson.person.name) was notably present during \(chapterName)",
                     confidence: min(0.9, salience),
-                    entities: [topPerson.person.name, snapshot.chapter.name]
+                    entities: [topPerson.person.name, chapterName]
                 ))
             }
         }
@@ -244,6 +245,9 @@ class MultiEntityComposer {
 
     private func traitShiftInsights(from prev: ChapterSnapshot, to curr: ChapterSnapshot) -> [SceneInsight] {
         var insights: [SceneInsight] = []
+        guard let prevName = prev.chapter.name, let currName = curr.chapter.name else {
+            return insights
+        }
 
         for currTrait in curr.traitsForChapter {
             guard let prevTrait = prev.traitsForChapter.first(where: { $0.traitType == currTrait.traitType }) else { continue }
@@ -256,9 +260,9 @@ class MultiEntityComposer {
 
             insights.append(SceneInsight(
                 type: .traitShift,
-                text: "\(currTrait.traitType.displayName) \(direction) between \(prev.chapter.name) and \(curr.chapter.name)",
+                text: "\(currTrait.traitType.displayName) \(direction) between \(prevName) and \(currName)",
                 confidence: confidence,
-                entities: [currTrait.traitType.rawValue, prev.chapter.name, curr.chapter.name]
+                entities: [currTrait.traitType.rawValue, prevName, currName]
             ))
         }
 

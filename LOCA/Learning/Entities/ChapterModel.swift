@@ -20,8 +20,9 @@ final class Chapter {
     var startDate: Date              // Day of opening Life Event (or app install)
     var endDate: Date?               // Day of closing Life Event; nil = current chapter
 
-    // Identity
-    var name: String                 // User-editable label e.g. "The Internship"
+    // Identity — subject-authoritative (C2.3): nil until the user names this chapter.
+    // No machine default may populate this field.
+    var name: String?                // User-editable label e.g. "The Internship"; nil = unnamed
     var userDescription: String?     // Free-form reflection
 
     // Bookend events
@@ -49,11 +50,10 @@ final class Chapter {
 
     init(
         startDate: Date,
-        name: String,
         openingEventId: UUID? = nil
     ) {
         self.startDate = startDate
-        self.name = name
+        self.name = nil
         self.openingEventId = openingEventId
         self.baselineEnergy = 0.5
         self.baselineStress = 0.5

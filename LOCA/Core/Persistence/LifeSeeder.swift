@@ -100,7 +100,8 @@ enum LifeSeeder {
 
         // MARK: Chapters
 
-        let before = Chapter(startDate: date(forDay: 0), name: "Before the Internship")
+        let before = Chapter(startDate: date(forDay: 0))
+        before.name = "Before the Internship"
         before.endDate = date(forDay: eventDay)
         before.closingEventId = event.id
         before.isCurrentChapter = false
@@ -116,9 +117,9 @@ enum LifeSeeder {
 
         let internship = Chapter(
             startDate: date(forDay: eventDay),
-            name: "The Internship",
             openingEventId: event.id
         )
+        internship.name = "The Internship"
         internship.isCurrentChapter = true
         internship.baselineEnergy = 0.66
         internship.baselineStress = 0.60
@@ -270,7 +271,8 @@ enum LifeSeeder {
     ) {
         guard let firstDay = appearanceDays.first, let lastDay = appearanceDays.last else { return }
 
-        let person = Person(name: name, primaryContext: primaryContext)
+        let person = Person(name: name)
+        person.primaryContext = primaryContext
         person.salience = salience
         person.salienceUncertainty = 0.2
         person.chapterId = chapterId

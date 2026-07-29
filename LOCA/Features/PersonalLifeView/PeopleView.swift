@@ -153,12 +153,14 @@ private struct ContextBadge: View {
     let context: RelationshipContext
 
     var body: some View {
-        Text(context.displayName)
-            .font(.caption2)
-            .foregroundStyle(context.color)
-            .padding(.horizontal, 7)
-            .padding(.vertical, 2)
-            .background(context.color.opacity(0.12), in: Capsule())
+        if context != .unknown {
+            Text(context.displayName)
+                .font(.caption2)
+                .foregroundStyle(context.color)
+                .padding(.horizontal, 7)
+                .padding(.vertical, 2)
+                .background(context.color.opacity(0.12), in: Capsule())
+        }
     }
 }
 
