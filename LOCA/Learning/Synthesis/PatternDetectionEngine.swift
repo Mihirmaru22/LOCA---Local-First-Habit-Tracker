@@ -24,7 +24,6 @@ struct LifePattern: Identifiable {
     /// Which layers does this pattern cross?
     enum Layer: String {
         case habitState     // habit frequency ↔ state
-        case personState    // person appearance ↔ state
         case chapterState   // chapter ↔ state rhythm
         case habitChapter   // habit consistency across chapters
     }
@@ -58,8 +57,6 @@ final class PatternDetectionEngine {
         )
         let logs = try modelContext.fetch(FetchDescriptor<LogEntry>())
         let boards = try modelContext.fetch(FetchDescriptor<HabitBoard>())
-        let people = try modelContext.fetch(FetchDescriptor<Person>())
-        let appearances = try modelContext.fetch(FetchDescriptor<PersonAppearance>())
         let chapters = try modelContext.fetch(
             FetchDescriptor<Chapter>(sortBy: [SortDescriptor(\.startDate)])
         )
@@ -71,14 +68,6 @@ final class PatternDetectionEngine {
             boards: boards,
             logs: logs,
             states: states
-        ))
-
-        // Person ↔ State patterns (beyond the graph)
-        patterns.append(contentsOf: personStatePatterns(
-            people: people,
-            appearances: appearances,
-            states: states,
-            chapters: chapters
         ))
 
         // Chapter rhythm patterns
@@ -159,55 +148,6 @@ final class PatternDetectionEngine {
                 confidence: confidence,
                 sampleCount: moodWithHabit.count,
                 explorableQuestion: "How does \(board.name) affect my mood?"
-            ))
-        }
-
-        return patterns
-    }
-
-    // MARK: - Person × State Patterns (granular)
-
-    private func personStatePatterns(
-        people: [Person],
-        appearances: [PersonAppearance],
-        states: [InferredState],
-        chapters: [Chapter]
-    ) -> [LifePattern] {
-        var patterns: [LifePattern] = []
-        // C1: compute overall energy baseline from present measurements only.
-        let overallEnergy = mean(states.filter { !$0.energyAbsent }.map { $0.energy })
-
-        for person in people {
-            let personApps = appearances.filter { $0.personId == person.id }
-            guard personApps.count >= 3 else { continue }
-
-            let appDates = Set(personApps.map { Calendar.current.startOfDay(for: $0.timestamp) })
-            var energyWithPerson: [Double] = []
-            var energyWithoutPerson: [Double] = []
-
-            // C1: skip absent energy states — energy=0.0 is not evidence of low energy.
-            for state in states where !state.energyAbsent {
-                let day = Calendar.current.startOfDay(for: state.timestamp)
-                if appDates.contains(day) {
-                    energyWithPerson.append(state.energy)
-                } else {
-                    energyWithoutPerson.append(state.energy)
-                }
-            }
-
-            let withMean = mean(energyWithPerson)
-            let delta = abs(withMean - overallEnergy)
-            guard delta >= 0.06, energyWithPerson.count >= 3 else { continue }
-
-            let confidence = effectConfidence(magnitude: delta, sampleCount: energyWithPerson.count)
-            let direction = withMean > overallEnergy ? "higher" : "lower"
-
-            patterns.append(LifePattern(
-                observation: "Your energy tends to be \(direction) on days around \(person.name).",
-                layer: .personState,
-                confidence: confidence,
-                sampleCount: energyWithPerson.count,
-                explorableQuestion: "How does spending time with \(person.name) affect my energy?"
             ))
         }
 
