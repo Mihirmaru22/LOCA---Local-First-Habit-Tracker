@@ -150,6 +150,8 @@
 		B8C9D0E1F2A3B4C5D6E7F8A9 /* NarrativeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrativeView.swift; sourceTree = "<group>"; };
 		C3D4E5F6A7B8C9D0E1F2A3B4 /* PatternsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternsView.swift; sourceTree = "<group>"; };
 		F3D4E5F6A7B8C9D0E1F2A3B4 /* FeedbackAnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LOCA/Features/PersonalLifeView/FeedbackAnalyticsView.swift"; sourceTree = SOURCE_ROOT; };
+		B4C5D6E7F8A9B0C1D2E3F4A5 /* SensorConflictView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorConflictView.swift; sourceTree = "<group>"; };
+		A5F4E3D2C1B0A9F8E7D6C5B4 /* SensorConflictView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C5D6E7F8A9B0C1D2E3F4A5 /* SensorConflictView.swift */; };
 		G4E5F6A7B8C9D0E1F2A3B4C5 /* FeedbackProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LOCA/Learning/Synthesis/FeedbackProcessor.swift"; sourceTree = SOURCE_ROOT; };
 		H5F6A7B8C9D0E1F2A3B4C5D6 /* ContextEnricher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LOCA/Learning/Synthesis/ContextEnricher.swift"; sourceTree = SOURCE_ROOT; };
 		FC8D3E5A2B7F8C9D0E1F4A2B /* CalibrationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA7B8AC9D7E1F4B5A82C6D3E /* CalibrationModel.swift */; };
@@ -763,6 +765,7 @@
 				B8C9D0E1F2A3B4C5D6E7F8A9 /* NarrativeView.swift */,
 				C3D4E5F6A7B8C9D0E1F2A3B4 /* PatternsView.swift */,
 				F3D4E5F6A7B8C9D0E1F2A3B4 /* FeedbackAnalyticsView.swift */,
+				B4C5D6E7F8A9B0C1D2E3F4A5 /* SensorConflictView.swift */,
 				E64F904AABAC4554B7B20EBA /* ViewCompositionEngine.swift */,
 				EA052AE8F12E4A9D82739619 /* ComposedViewModel.swift */,
 			);
@@ -1068,6 +1071,7 @@
 				C9D0E1F2A3B4C5D6E7F8A9B0 /* NarrativeView.swift in Sources */,
 				D4E5F6A7B8C9D0E1F2A3B4C5 /* PatternsView.swift in Sources */,
 				E5D4E5F6A7B8C9D0E1F2A3B4 /* FeedbackAnalyticsView.swift in Sources */,
+				A5F4E3D2C1B0A9F8E7D6C5B4 /* SensorConflictView.swift in Sources */,
 				051587161C4246C9A9239035 /* ViewCompositionEngine.swift in Sources */,
 				52550F5555DD45B3AE9E3410 /* SignalCollectionStatusView.swift in Sources */,
 				D82ED360B9674E1BA53018BD /* ChapterBuilder.swift in Sources */,

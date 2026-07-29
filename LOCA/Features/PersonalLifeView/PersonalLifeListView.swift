@@ -155,6 +155,9 @@ struct PersonalLifeListView: View {
                 ExploreCard(title: "Feedback", subtitle: "Your learning loop", icon: "hand.thumbsup.fill") {
                     FeedbackAnalyticsView()
                 }
+                ExploreCard(title: "Sensor Gaps", subtitle: "Where data disagreed", icon: "exclamationmark.triangle") {
+                    SensorConflictView()
+                }
             }
             .padding(.horizontal, DS.Space.lg)
         }
