@@ -44,18 +44,20 @@ categories. The classification is a statement about authority, not certainty:
 | `moodProvenanceJSON` | Sensor provenance record. |
 | `timestamp` | Wall-clock anchor for the inferred hour. |
 | `hourStart` | Normalized hour boundary for the state window. |
-| `rawSignalCount` | Count of signal events that fed this inference. |
+| `isCalibrated` | Whether user calibration has been applied to this state record. |
+| `calibrationError` | Residual error after calibration; nil if uncalibrated. |
 
 ### 1.2 `SignalEvent` (SignalModels.swift)
 
 | Field | Rationale |
 |---|---|
 | `timestamp` | When the sensor reading was captured. |
-| `source` | Which sensor or source produced it (health, location, calendar, app usage…). |
-| `signalType` | The kind of measurement (steps, HRV, screen time…). |
+| `source` | Which sensor or source produced it (`SignalSource` enum: health, location, calendar, app usage…). |
 | `value` | Raw or normalized measurement value. |
 | `uncertainty` | Measurement uncertainty from the source. |
 | `metadata` | Source-specific key-value pairs from the sensor. |
+
+`dayBucket` is a derived grouping date used for query optimization — structural scaffolding.
 
 `AggregatedValue` and `SignalWindow` follow the same pattern — all their numeric fields
 (mean, stddev, count, start/end) are sensor-authoritative aggregates.
@@ -81,6 +83,7 @@ and unfillable (see §3). The numeric estimate itself is sensor-authoritative.
 |---|---|
 | `startDate` | First signal event associated with this chapter. |
 | `endDate` | Last signal event, or nil if still active. |
+| `isCurrentChapter` | True when `endDate` is nil — a structural fact about whether the chapter is open. |
 | `activityLevel` | Mean step-based activity level computed from signals in window. |
 | `socialEngagement` | Calendar/location-based social density in window. |
 | `scheduleRegularity` | Variance of wake/sleep times in window — a sensor aggregate. |
@@ -89,7 +92,6 @@ and unfillable (see §3). The numeric estimate itself is sensor-authoritative.
 | `baselineStress` | Mean stress inferred across the chapter window. |
 | `baselineFocus` | Mean focus inferred across the chapter window. |
 | `baselineMood` | Mean mood inferred across the chapter window. |
-| `dominantTraits` | Most prominent trait estimates within this chapter's window. |
 
 ### 1.5 `Person` / `PersonAppearance` (PersonModel.swift)
 
@@ -97,6 +99,8 @@ and unfillable (see §3). The numeric estimate itself is sensor-authoritative.
 |---|---|
 | `salience` | How frequently this person appears relative to total chapter length. |
 | `salienceUncertainty` | Uncertainty in the salience estimate. |
+| `nameVariants` | Raw strings from signal sources that resolved to this person. Sensor-derived clustering output. |
+| `detectedContexts` | Raw context strings observed in signal sources (calendar titles, note fragments). |
 | `firstSeenDate` | Earliest calendar/location co-occurrence with a recognized identifier. |
 | `lastSeenDate` | Most recent co-occurrence. |
 | `appearanceCount` | Total co-occurrence count in signal history. |
@@ -104,21 +108,28 @@ and unfillable (see §3). The numeric estimate itself is sensor-authoritative.
 | `moodCorrelationSampleCount` | Sample count supporting the correlation estimate. |
 | `PersonAppearance.timestamp` | When the co-occurrence was detected. |
 | `PersonAppearance.personId` | Which person appeared. |
-| `PersonAppearance.salience` | Per-appearance salience weight. |
+| `PersonAppearance.source` | Which signal source recorded the appearance ("calendar", "note", "explicitLog"). |
+| `PersonAppearance.context` | Inferred `RelationshipContext` at time of appearance. |
+| `PersonAppearance.rawText` | Snippet of source text (calendar title, note excerpt) from which the appearance was extracted. |
+| `PersonAppearance.moodAtTime` | Inferred mood value at the time of the appearance (from co-located `InferredState`). |
+| `PersonAppearance.stressAtTime` | Inferred stress value at the time of the appearance. |
 
 `moodCorrelation` is listed sensor-authoritative because it is a statistical estimate from
 objective signal co-occurrences. Whether this correlation reflects a causal relationship
-is unfillable (see §3).
+is unfillable (see §3.3). Per C2.4 it is raw evidence only — never surfaced as a label.
+
+`Person.initials` is structural (derived from `name`).
 
 ### 1.6 `WeeklyRegime` (LifeEventModels.swift)
 
 | Field | Rationale |
 |---|---|
 | `weekStart` | ISO week anchor date. |
-| `meanEnergy` | Mean inferred energy across the week. |
-| `meanStress` | Mean inferred stress across the week. |
-| `meanFocus` | Mean inferred focus across the week. |
-| `meanMood` | Mean inferred mood across the week. |
+| `weekEnd` | Computed end of the week window (weekStart + 6 days). |
+| `energyMean` | Mean inferred energy across the week. |
+| `stressMean` | Mean inferred stress across the week. |
+| `focusMean` | Mean inferred focus across the week. |
+| `moodMean` | Mean inferred mood across the week. |
 | `energyStddev` | Within-week energy variance. |
 | `stressStddev` | Within-week stress variance. |
 | `focusStddev` | Within-week focus variance. |
@@ -127,33 +138,100 @@ is unfillable (see §3).
 | `locationDiversity` | Number of distinct location clusters visited. |
 | `socialEngagement` | Calendar density of social events. |
 | `activityLevel` | Mean step-normalized activity for the week. |
+| `anomalyScore` | Statistical distance from the preceding baseline regime. |
 
 ### 1.7 `LifeEvent` (LifeEventModels.swift)
 
 | Field | Rationale |
 |---|---|
-| `timestamp` | When the regime shift was detected. |
-| `eventType` | Classifier output (energyChange, stressChange, focusChange, moodChange, scheduleChange). |
+| `timestamp` | When the regime shift occurred. |
+| `detectedDate` | When the event was detected (may be later than timestamp). |
+| `eventType` | Classifier output (scheduleChange, locationChange, socialChange, healthChange, workChange, habitChange). |
 | `anomalyScore` | Statistical distance from preceding baseline. |
 | `persistenceScore` | How long the regime shift sustained before reverting. |
 | `classificationScore` | Classifier confidence in the event type assignment. |
 | `confidence` | Combined event detection confidence. |
 | `metadata` | Classifier-generated key-value evidence. |
 
-`eventType` is sensor-authoritative because it describes the dimension of change (energy
-went up/down) — a statistical claim, not an interpretive one. What the event *means*
-(a promotion, a breakup, a move) is subject-authoritative (§2) and the implied valence
-is unfillable (§3).
+`eventType` is sensor-authoritative because it describes the dimension of change —
+a statistical claim, not an interpretive one. What the event *means* is subject-authoritative
+(§2.4); the implied valence is unfillable (§3.1).
 
 ### 1.8 `Calibration` (CalibrationModel.swift)
 
 | Field | Rationale |
 |---|---|
-| `modelName` | Which inference model this calibration record targets. |
-| `weights` | Current feature weights in the model. |
-| `calibratedAt` | When the calibration was last applied. |
-| `errorHistory` | Historical prediction errors that drove recalibration. |
-| `sampleCount` | Number of ground-truth samples used. |
+| `elementType` | Which type of soft element was sharpened ("annotation", "signal", "thread") — system classification. |
+| `dimension` | Which inference dimension this calibration relates to; nil if not dimension-specific. |
+| `calibratedAt` | When the calibration was recorded. |
+| `confidenceBoost` | Model-assigned confidence increment this calibration contributes. |
+| `isProcessed` | Whether the inference engine has consumed this record. |
+
+`label` (the user's clarification) is subject-authoritative — see §2.6.
+`elementText` (a copy of the calibrated element's text) and `isProcessed` are structural.
+
+### 1.9 `UncertaintyRecord` (UncertaintyModels.swift)
+
+| Field | Rationale |
+|---|---|
+| `timestamp` | When this uncertainty snapshot was taken. |
+| `signalCompleteness` | Fraction of expected signals present in this window. |
+| `signalQuality` | Mean confidence across contributing signals. |
+| `energyEpistemic` | Reducible uncertainty component for the energy estimate. |
+| `energyAleatoric` | Irreducible uncertainty component for the energy estimate. |
+| `stressEpistemic` | Reducible uncertainty for stress. |
+| `stressAleatoric` | Irreducible uncertainty for stress. |
+| `focusEpistemic` | Reducible uncertainty for focus. |
+| `focusAleatoric` | Irreducible uncertainty for focus. |
+| `moodEpistemic` | Reducible uncertainty for mood. |
+| `moodAleatoric` | Irreducible uncertainty for mood. |
+| `eventDetectionUncertainty` | Combined uncertainty in the event detection pipeline for this window. |
+
+`notes` is structural metadata appended by the system during recording.
+
+### 1.10 `SensorConflict` (SensorConflict.swift)
+
+| Field | Rationale |
+|---|---|
+| `timestamp` | The hour anchor the conflict refers to (matches an `InferredState.timestamp`). |
+| `dimension` | Which dimension disagreed ("energy", "stress", "focus", or "mood"). |
+| `sensorValue` | The sensor-derived value from `InferredState` for that hour. Sensor authority: this value is never changed by a conflict record. |
+| `userValue` | What the user self-reported for this dimension in an explicit log. |
+| `magnitude` | `abs(sensorValue − userValue)` — the disagreement magnitude on a 0–1 scale. |
+| `recordedAt` | When the conflict was detected and stored. |
+
+`SensorConflict` is an audit record created by C2.2 conflict detection. All fields are
+sensor-authoritative: the record is machine-generated evidence of a disagreement.
+`userValue` is captured as evidence, not as a subject-authoritative override; the sensor
+value remains authoritative for `InferredState`.
+
+### 1.11 `HabitBoard` — derived fields (HabitBoard.swift)
+
+| Field | Rationale |
+|---|---|
+| `preferredReminderTime` | Inferred from logging time patterns in historical log data. |
+| `currentStreak` | Consecutive completed days, computed from the log history. |
+| `longestStreak` | All-time maximum streak, computed from the log history. |
+| `lastCheckedDate` | The most recent day on which a streak completion was recorded. |
+
+User-defined configuration fields are subject-authoritative — see §2.7.
+`needsStreakRecalculation`, `lastReflectionPromptTime`, `colorIndex`, `useColorBackground`,
+`emoji`, `archivedAt`, and the `logs` relationship are structural.
+
+### 1.12 `ComposedView` — sensor-derived fields (ComposedViewModel.swift)
+
+| Field | Rationale |
+|---|---|
+| `energyTimeline` | Sequence of `TimelinePoint` values drawn from `InferredState` records. |
+| `stressTimeline` | Same, for stress. |
+| `focusTimeline` | Same, for focus. |
+| `moodTimeline` | Same, for mood. |
+| `eventMarkers` | `LifeEvent` records projected as markers onto the view's time axis. |
+| `annotations` | Engine-generated `AnnotationPoint` records identifying notable moments. |
+| `renderingGuidance` | Engine-generated display hint (e.g., which dimension to emphasize). |
+
+User-selected fields are subject-authoritative — see §2.9.
+`colorScheme`, `timestamp`, and `isShowingCounterfactual` are structural.
 
 ---
 
@@ -178,15 +256,19 @@ substitute for it. Asking is the only valid acquisition path.*
 | `Direction.intentions` | Short-term intentions derived from the direction statement. |
 | `Direction.settledness` | How resolved the user feels about this direction (0–1). Introspective self-report. |
 | `Fork.statement` | The user's framing of the decision they face. |
-| `Fork.resolution` | How the user resolved the fork (or nil if still open). |
-| `Fork.kind` | Whether the fork is an active choice, a background tension, etc. (ForkKind). |
+| `Fork.kind` | Whether the fork is a decision, an inflection, or an open question (ForkKind). |
+| `Fork.resolved` | Whether the user has resolved this fork (true/false). |
+| `Fork.resolution` | What happened, in the user's own words, if they chose to note it. |
+
+`Direction.settlednessUncertainty` is a system-assigned prior (defaults 0.3) and is
+structural scaffolding — it does not represent a user-reported claim.
 
 ### 2.3 `Person` — identity fields (PersonModel.swift)
 
 | Field | Rationale |
 |---|---|
 | `name` | Who the user says this person is. A co-occurrence pattern has no name until the user provides one. |
-| `RelationshipContext` | The user's characterization of the relationship (work, family, social, romantic). Constitutive: the category is created by the user's understanding, not by a sensor observation. |
+| `primaryContext` | The user's characterization of the relationship (work, family, social, recurring). Constitutive: the category is created by the user's understanding, not by sensor observation. Per C2.3, this field may only be written by a user act — never populated by inference. |
 
 ### 2.4 `LifeEvent` — user response fields (LifeEventModels.swift)
 
@@ -199,16 +281,45 @@ substitute for it. Asking is the only valid acquisition path.*
 
 | Field | Rationale |
 |---|---|
-| `PatternFeedback.resonance` | Whether the inferred pattern feels true to the user. This is the user's judgment, not a sensor outcome. |
+| `PatternFeedback.resonance` | Whether the inferred pattern feels true to the user (−1, 0, 1). This is the user's judgment, not a sensor outcome. |
 | `PatternFeedback.refinement` | User's correction or qualification of the inferred pattern. |
-| `NarrativeFeedback.resonance` | Whether the generated narrative resonates. |
+| `NarrativeFeedback.resonance` | Whether the generated narrative resonates (0–1). |
 | `NarrativeFeedback.notes` | User's free-text response to the narrative. |
+
+`PatternFeedback.patternId` and `NarrativeFeedback.arc` are structural references
+to the entities being evaluated.
 
 ### 2.6 `Calibration` — label field (CalibrationModel.swift)
 
 | Field | Rationale |
 |---|---|
-| `label` | The user's own name or description for this calibration profile (e.g., "work trip mode"). The existence and name of a profile is the user's decision. |
+| `label` | The user's own clarification or name for this calibration event (e.g., "that was a tough week, not my baseline"). The user's interpretation constitutes the label. |
+
+### 2.7 `HabitBoard` — configuration fields (HabitBoard.swift)
+
+| Field | Rationale |
+|---|---|
+| `name` | The user's chosen name for the habit ("Running", "Reading"). Defines what is being tracked. |
+| `metricType` | The user decides whether this habit is binary (done/not done) or quantitative. |
+| `targetValue` | The daily goal the user sets for themselves. |
+| `unitLabel` | The unit the user chooses for a quantitative habit ("mi", "mins", "cal"). |
+
+### 2.8 `LogEntry` (LogEntry.swift)
+
+| Field | Rationale |
+|---|---|
+| `timestamp` | When the user reported performing the habit. May be set by the user for backdated entries. |
+| `value` | The amount the user logged. For binary habits: always 1.0 (the fact of doing it). For quantitative: the amount they entered. |
+| `note` | Optional journal text the user attached to this check-in. |
+
+### 2.9 `ComposedView` — user-selected fields (ComposedViewModel.swift)
+
+| Field | Rationale |
+|---|---|
+| `question` | The question the user asked. Defines what the view is answering. |
+| `startDate` | The start of the time range the user selected. |
+| `endDate` | The end of the time range the user selected. |
+| `counterfactualVariable` | Which dimension the user chose to explore as a counterfactual (nil if not in counterfactual mode). |
 
 ---
 
@@ -232,17 +343,16 @@ changes over time.
 
 **Rule**: `LifeEvent` must not gain a `valence`, `sentiment`, or `isPositive` field.
 
-### 3.2 `Chapter.dominantEventType`
+### 3.2 Chapter dominant characterization
 
-If this field exists, it is the machine's guess at what defined the chapter — "this
-was a high-stress period," "this was a social peak." The definition of a chapter is the
-user's (`name`, `userDescription`). What the machine calls the chapter's dominant
-character is an interpretation that cannot be validated. The sensor-authoritative fields
-(`baselineStress`, `volatility`, etc.) already express the underlying measurements
-without imposing meaning.
+`Chapter.dominantEventType` was a field that asserted what "defined" a chapter —
+the machine's guess at the dominant theme. This field was removed (C2.4) because it
+is the machine imposing meaning on a period the user has not yet interpreted. The
+sensor-authoritative fields (`baselineStress`, `volatility`, etc.) already express
+the underlying measurements without imposing meaning.
 
-**Rule**: No "dominant theme" or "chapter summary" field may be inferred and stored as
-if it were a fact about the chapter.
+**Rule**: No "dominant theme," "chapter summary," or "chapter type" field may be inferred
+and stored as if it were a fact about the chapter.
 
 ### 3.3 `Person.primaryContext` / relationship meaning
 
@@ -253,7 +363,9 @@ draining? is this a net-positive relationship?) is unfillable. The sensor-author
 a claim about whether the user should value this relationship differently.
 
 **Rule**: No "relationship quality," "net impact," or "should see more/less" claim may
-be stored or surfaced as fact. `moodCorrelation` is display-only evidence, not a verdict.
+be stored or surfaced as fact. `moodCorrelation` is raw evidence only — never a verdict.
+Per C2.4, person-state pattern observations ("your energy tends to be lower around X")
+are also forbidden.
 
 ### 3.4 `Direction` — existence and content
 
@@ -280,30 +392,53 @@ noisy").
 
 ## 4. Classification Summary
 
-| Category | Count |
+| Category | Model classes covered |
 |---|---|
-| Sensor-authoritative | 68 fields across 8 model classes |
-| Subject-authoritative | 16 fields across 6 model classes |
-| Unfillable | 5 claim domains (no current field; must not be added) |
+| Sensor-authoritative | `InferredState`, `SignalEvent`, `Trait`, `Chapter` (sensor fields), `Person`/`PersonAppearance` (sensor fields), `WeeklyRegime`, `LifeEvent` (sensor fields), `Calibration` (sensor fields), `UncertaintyRecord`, `SensorConflict`, `HabitBoard` (streak fields), `ComposedView` (derived fields) |
+| Subject-authoritative | `Chapter` (name/description), `Direction`, `Fork`, `Person` (name/primaryContext), `LifeEvent` (user fields), `PatternFeedback`, `NarrativeFeedback`, `Calibration` (label), `HabitBoard` (configuration), `LogEntry`, `ComposedView` (user-selected fields) |
+| Unfillable | 5 claim domains — see §3 |
 
 ---
 
 ## 5. Audit Notes
 
-**No unclassified fields remain.** Every stored field in every `@Model` class appears in
-§1 or §2. Every unfillable domain in §3 either has no current field (correct) or is
-flagged for removal.
+**All 18 `@Model` classes registered in `RippleSchemaV1` are now classified.**
+The previous version of this document omitted `HabitBoard`, `LogEntry`, `UncertaintyRecord`,
+`ComposedView`, and `SensorConflict` entirely, and contained the following errors that
+are corrected here:
+
+- `§1.1`: `rawSignalCount` was listed but does not exist; `isCalibrated` and
+  `calibrationError` were present in the model but absent from the taxonomy.
+- `§1.2`: `signalType` was listed but does not exist; the model uses `source` only.
+- `§1.4`: `dominantTraits` was listed but never existed. The removed field was
+  `dominantEventType` (deleted by C2.4). `isCurrentChapter` was missing.
+- `§1.5`: `PersonAppearance.salience` was listed but does not exist. Six real
+  `PersonAppearance` fields were absent. `Person.nameVariants`,
+  `detectedContexts`, and `moodCorrelationSampleCount` were absent.
+- `§1.6`: Field names were wrong throughout — `meanEnergy/Stress/Focus/Mood` versus
+  the actual `energyMean/stressMean/focusMean/moodMean`. `weekEnd` and `anomalyScore`
+  were absent.
+- `§1.7`: `detectedDate` was absent.
+- `§1.8`: Described a completely different model (weights, errorHistory, sampleCount)
+  that was never implemented. Corrected to match the actual `Calibration` entity.
+- `§2.2`: `Fork.resolved` and `Fork.resolution` were absent.
 
 Fields not listed above are structural / identity fields (`id: UUID`, `createdAt: Date`,
-foreign key references such as `chapterId: UUID?`) that carry no claim content — they
-are scaffolding, not evidence.
+foreign key references such as `personId: UUID`, `boardID: UUID`) that carry no claim
+content — they are scaffolding, not evidence.
 
 **`RelationshipEdge`** (RelationshipGraphEngine.swift) is computed at runtime and not
 persisted — its fields (`strength`, `confidence`, `isConfounded`) are sensor-authoritative
 estimates used transiently for graph queries. They require no classification here because
 they are never stored.
 
+**Enforcement note**: The drift that caused this document to diverge from the schema
+accumulated because there is no seam (test, lint rule, or schema check) binding the
+taxonomy to the actual `@Model` declarations. Any future addition of a `@Model` field
+should be accompanied by a one-line entry in this document before the PR is merged.
+
 ---
 
 *C2.1 complete. This taxonomy is the reference for all subsequent Cycle 2 sessions.*
 *Each C2.x session that touches a claim must cite the category from this document.*
+*Last reconciled: C2 taxonomy reconciliation pass — all 18 `@Model` classes verified.*
