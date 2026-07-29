@@ -166,7 +166,7 @@ class StateInferenceEngine: NSObject, ObservableObject {
                 guard let rawValue = log.metadata[dimension],
                       let userValue = Double(rawValue) else { continue }
                 let magnitude = abs(sensorValue - userValue)
-                guard magnitude >= threshold else { break }
+                guard magnitude >= threshold else { continue }
                 let conflict = SensorConflict(
                     timestamp: state.timestamp,
                     dimension: dimension,
