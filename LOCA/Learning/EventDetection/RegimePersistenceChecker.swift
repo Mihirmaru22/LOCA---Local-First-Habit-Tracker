@@ -55,18 +55,48 @@ class RegimePersistenceChecker {
         return eventDate
     }
 
-    // MARK: - Regime Distance
+    // MARK: - Regime Distance (uncertainty-discounted)
 
+    /// C6A: distance between two regimes, counting only the portion of each metric's
+    /// difference that exceeds the two regimes' COMBINED measurement uncertainty. A
+    /// difference within the combined noise contributes 0, so a "persistent" shift
+    /// built on sparse/uncertain weeks does not accumulate distance and cannot
+    /// confirm. Metrics absent in either regime are skipped (their fabricated 0.0
+    /// mean must not register as distance); the result averages over the metrics
+    /// that were present in both.
     private func computeRegimeDistance(
         from baselineWeek: WeeklyRegime,
         to comparisonWeek: WeeklyRegime
     ) -> Double {
-        let energyDist = abs(comparisonWeek.energyMean - baselineWeek.energyMean)
-        let stressDist = abs(comparisonWeek.stressMean - baselineWeek.stressMean)
-        let focusDist = abs(comparisonWeek.focusMean - baselineWeek.focusMean)
-        let scheduleDist = abs(comparisonWeek.scheduleRegularity - baselineWeek.scheduleRegularity)
+        var sum = 0.0
+        var contributing = 0
 
-        return (energyDist + stressDist + focusDist + scheduleDist) / 4.0
+        func accumulate(
+            _ a: Double, _ b: Double,
+            _ uA: Double, _ uB: Double,
+            _ aAbsent: Bool, _ bAbsent: Bool
+        ) {
+            guard !aAbsent, !bAbsent else { return }
+            let noiseFloor = sqrt(uA * uA + uB * uB)
+            sum += max(0.0, abs(a - b) - noiseFloor)
+            contributing += 1
+        }
+
+        accumulate(baselineWeek.energyMean, comparisonWeek.energyMean,
+                   baselineWeek.energyUncertainty, comparisonWeek.energyUncertainty,
+                   baselineWeek.energyAbsent, comparisonWeek.energyAbsent)
+        accumulate(baselineWeek.stressMean, comparisonWeek.stressMean,
+                   baselineWeek.stressUncertainty, comparisonWeek.stressUncertainty,
+                   baselineWeek.stressAbsent, comparisonWeek.stressAbsent)
+        accumulate(baselineWeek.focusMean, comparisonWeek.focusMean,
+                   baselineWeek.focusUncertainty, comparisonWeek.focusUncertainty,
+                   baselineWeek.focusAbsent, comparisonWeek.focusAbsent)
+        // scheduleRegularity has no uncertainty model in C6A; treat as certain.
+        accumulate(baselineWeek.scheduleRegularity, comparisonWeek.scheduleRegularity,
+                   0.0, 0.0, false, false)
+
+        guard contributing > 0 else { return 0.0 }
+        return sum / Double(contributing)
     }
 
     // MARK: - Correlation (Before vs. After)
