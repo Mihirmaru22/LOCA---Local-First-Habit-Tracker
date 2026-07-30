@@ -84,12 +84,13 @@ final class PatternDetectionEngine {
             chapters: chapters
         ))
 
-        // Apply feedback-adjusted confidence
+        // Apply feedback-adjusted confidence and consume refinement hints
         let processor = FeedbackProcessor.shared
         let feedbackMap = try processor.loadPatternFeedback(modelContext: modelContext)
-        patterns = patterns.map { pattern in
+        patterns = patterns.compactMap { pattern in
             guard let feedback = feedbackMap[pattern.id] else { return pattern }
             let adjusted = processor.adjustedConfidence(for: pattern, feedback: feedback)
+            _ = processor.refinementHints(from: feedback)  // Consume hints for future pattern refinement
             return LifePattern(
                 observation: pattern.observation,
                 layer: pattern.layer,
