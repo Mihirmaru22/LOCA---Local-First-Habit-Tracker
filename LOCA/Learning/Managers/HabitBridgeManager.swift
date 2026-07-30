@@ -70,6 +70,9 @@ final class HabitBridgeManager {
             if let note = entry.note, !note.isEmpty {
                 metadata["note"] = note
             }
+            if let dimension = board?.dimension, !dimension.isEmpty {
+                metadata[dimension] = String(format: "%.2f", entry.value)
+            }
 
             signals.append(SignalEvent(
                 timestamp: entry.timestamp,
