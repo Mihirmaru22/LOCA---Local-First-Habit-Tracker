@@ -32,9 +32,11 @@ class EventClassifier {
         }
 
         guard let afterRegime = afterWeek else {
+            // No after-window to compare against → no classification evidence.
+            // Confidence 0 (computed), not a fabricated 0.3.
             return EventClassificationResult(
                 eventType: .unknown,
-                confidence: 0.3,
+                confidence: 0.0,
                 metadata: [:]
             )
         }
@@ -49,24 +51,30 @@ class EventClassifier {
         scores[.workChange] = scoreWorkChange(before: beforeRegime, after: afterRegime)
         scores[.habitChange] = scoreHabitChange(before: beforeRegime, after: afterRegime)
 
-        // Find highest scoring type
-        guard let (eventType, confidence) = scores.max(by: { $0.value < $1.value }) else {
+        // E5: confidence comes from the RELATIVE MARGIN between the best and
+        // second-best type, not the winner's raw magnitude. A near-tie yields low
+        // confidence (the classification is genuinely ambiguous) rather than a
+        // confident guess between two barely-distinguishable types.
+        let ranked = scores.sorted { $0.value > $1.value }
+        guard let top = ranked.first, top.value > 0 else {
             return EventClassificationResult(
                 eventType: .unknown,
-                confidence: 0.3,
+                confidence: 0.0,
                 metadata: [:]
             )
         }
+        let second = ranked.count > 1 ? ranked[1].value : 0.0
+        let confidence = classificationConfidence(topScore: top.value, secondScore: second)
 
         let metadata = buildMetadata(
-            eventType: eventType,
+            eventType: top.key,
             before: beforeRegime,
             after: afterRegime
         )
 
         return EventClassificationResult(
-            eventType: eventType,
-            confidence: min(1.0, confidence),
+            eventType: top.key,
+            confidence: confidence,
             metadata: metadata
         )
     }

@@ -110,7 +110,7 @@ private struct PatternCard: View {
 
                     HStack(spacing: DS.Space.sm) {
                         Label(
-                            String(pattern.sampleCount),
+                            "\(pattern.sampleCount) observations",
                             systemImage: "checkmark.circle.fill"
                         )
                         .font(.caption2)
@@ -118,7 +118,10 @@ private struct PatternCard: View {
 
                         Spacer()
 
-                        confidenceBadge
+                        // C5: the pattern's real propagated uncertainty as a band —
+                        // replaces a false-precision "NN%" with the same treatment
+                        // Traits use.
+                        ConfidenceChip(uncertainty: pattern.uncertainty)
                     }
                 }
 
@@ -127,22 +130,6 @@ private struct PatternCard: View {
         }
         .padding(DS.Space.md)
         .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: DS.Radius.card))
-    }
-
-    private var confidenceBadge: some View {
-        HStack(spacing: 4) {
-            Image(systemName: "star.fill")
-                .font(.caption2)
-            Text(String(format: "%.0f%%", pattern.confidence * 100))
-                .font(.caption2)
-        }
-        .foregroundStyle(confidenceColor)
-    }
-
-    private var confidenceColor: Color {
-        if pattern.confidence >= 0.7 { return Color(hex: "#10B981") }
-        if pattern.confidence >= 0.5 { return Color(hex: "#F59E0B") }
-        return Color(hex: "#6B7280")
     }
 }
 
@@ -180,7 +167,8 @@ private struct PatternDetailView: View {
 
                     Divider()
 
-                    // Confidence
+                    // Confidence — shown as a band with the pattern's real
+                    // propagated uncertainty rendered as a halo around the estimate.
                     VStack(alignment: .leading, spacing: DS.Space.sm) {
                         HStack {
                             Text("Confidence")
@@ -190,23 +178,15 @@ private struct PatternDetailView: View {
 
                             Spacer()
 
-                            Text(String(format: "%.0f%%", pattern.confidence * 100))
-                                .font(.caption)
-                                .fontWeight(.semibold)
-                                .foregroundStyle(DS.Color.textSecondary)
+                            ConfidenceChip(uncertainty: pattern.uncertainty)
                         }
 
-                        GeometryReader { geo in
-                            ZStack(alignment: .leading) {
-                                RoundedRectangle(cornerRadius: 2)
-                                    .foregroundStyle(DS.Color.surfaceRecessed)
-
-                                RoundedRectangle(cornerRadius: 2)
-                                    .frame(width: geo.size.width * pattern.confidence)
-                                    .foregroundStyle(Color.accentColor)
-                            }
-                        }
-                        .frame(height: 6)
+                        UncertaintyBar(
+                            value: pattern.confidence,
+                            uncertainty: pattern.uncertainty,
+                            color: .accentColor,
+                            showMarker: false
+                        )
 
                         Text("Based on \(pattern.sampleCount) observations")
                             .font(.caption2)

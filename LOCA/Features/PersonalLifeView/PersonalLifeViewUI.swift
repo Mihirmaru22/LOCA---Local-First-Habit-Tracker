@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct PersonalLifeViewUI: View {
     let composedView: ComposedView
@@ -46,6 +47,9 @@ struct PersonalLifeViewUI: View {
                     }
                     .padding(DS.Space.md)
                     .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+
+                    // MARK: - Evidence (C1.2 provenance)
+                    EvidenceSection(start: composedView.startDate, end: composedView.endDate)
 
                     // MARK: - Life Event Markers
                     if !composedView.eventMarkers.isEmpty {
@@ -107,6 +111,14 @@ struct PersonalLifeViewUI: View {
                         .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
                     }
 
+                    // MARK: - Uncertainty Type (C1.3)
+                    // Distinguish reducible from irreducible uncertainty — a field
+                    // carried on every TimelinePoint but never previously shown.
+                    if let type = dominantUncertaintyType(composedView.energyTimeline) {
+                        UncertaintyTypeNote(type: type)
+                            .padding(.horizontal, DS.Space.md)
+                    }
+
                     // MARK: - Uncertainty Legend
                     UncertaintyLegendView()
 
@@ -117,6 +129,56 @@ struct PersonalLifeViewUI: View {
             .navigationTitle("Your Life")
             .navigationBarTitleDisplayMode(.inline)
         }
+    }
+
+    /// C1.3: the majority uncertainty type among the timeline's uncertain (present,
+    /// non-crisp) points. Returns nil when nothing is uncertain — no note to show.
+    private func dominantUncertaintyType(_ timeline: [TimelinePoint]) -> UncertaintyType? {
+        var epistemic = 0
+        var aleatoric = 0
+        for point in timeline where !point.isAbsent && point.confidence != .crisp {
+            switch point.uncertaintyType {
+            case UncertaintyType.epistemic.rawValue: epistemic += 1
+            case UncertaintyType.aleatoric.rawValue: aleatoric += 1
+            default: break
+            }
+        }
+        guard epistemic + aleatoric > 0 else { return nil }
+        return epistemic >= aleatoric ? .epistemic : .aleatoric
+    }
+}
+
+// MARK: - Evidence Section (C1.2 provenance)
+
+/// Queries the inferred states in the composed window and rolls up their stored
+/// provenance into a "what this draws on" summary. No pipeline changes — it reads
+/// provenance already persisted on InferredState.
+private struct EvidenceSection: View {
+    let start: Date
+    let end: Date
+
+    @Environment(\.modelContext) private var modelContext
+    @State private var summary: EvidenceSummary?
+
+    var body: some View {
+        Group {
+            if let summary, !summary.sources.isEmpty {
+                EvidenceSummaryRow(summary: summary)
+                    .padding(DS.Space.md)
+                    .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+            }
+        }
+        .task { await load() }
+    }
+
+    private func load() async {
+        let lower = start
+        let upper = end
+        let descriptor = FetchDescriptor<InferredState>(
+            predicate: #Predicate { $0.timestamp >= lower && $0.timestamp <= upper }
+        )
+        let states = (try? modelContext.fetch(descriptor)) ?? []
+        summary = summarizeEvidence(states: states)
     }
 }
 

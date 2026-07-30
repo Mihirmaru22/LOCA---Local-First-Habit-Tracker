@@ -109,6 +109,7 @@
 		FAA57F5EE1684524A7E69EF1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F0A5A06DC0E2402C8577EA8C /* Assets.xcassets */; };
 		FADE00000000000000000021 /* StreakCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADE00000000000000000011 /* StreakCalculatorTests.swift */; };
 		FADE00000000000000000022 /* AggregationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADE00000000000000000012 /* AggregationTests.swift */; };
+		FEEDCA6A00000000000000B2 /* RegimeHonestyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEEDCA6A00000000000000B1 /* RegimeHonestyTests.swift */; };
 		FADE00000000000000000023 /* HeatmapDataProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADE00000000000000000013 /* HeatmapDataProviderTests.swift */; };
 		FB7C2613B33C4BAAB22BB911 /* HeatmapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CE91B0C5D88414094E4DD05 /* HeatmapView.swift */; };
 		FB97ED22535C7994EFE3CCB3 /* TimingInference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AA86358B6826E173A22E6FA /* TimingInference.swift */; };
@@ -116,8 +117,10 @@
 		FD6101E26D004E2C8AA1ADD5 /* HabitBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C709F0147F14CE0AEDACAE8 /* HabitBoard.swift */; };
 		FD67DA6924D0492880CEB1EA /* PersistenceError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 007029E177424E23BA4737C3 /* PersistenceError.swift */; };
 		FE1C77B02737FF7D02B147F9 /* DSComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE3AFDA24101174CA0C31F34 /* DSComponents.swift */; };
+		FEEDCF00000000000000C002 /* ReflectionComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEEDCF00000000000000C001 /* ReflectionComponents.swift */; };
 		0523E49AAE5243F995956550 /* SignalCollectionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B3B92460BE743CFADF3C6DE /* SignalCollectionCoordinator.swift */; };
 		243DF5BB4534442BAE4CAA1F /* ChapterListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA5DC44C46F541A3BDC55226 /* ChapterListView.swift */; };
+		FEEDF300000000000000F002 /* EventsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEEDF300000000000000F001 /* EventsView.swift */; };
 		D4299A41A8464082A3FE9B4F /* LifeSceneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B46892C881A4E868F105317 /* LifeSceneView.swift */; };
 		1F430BDCCCFA4A3C9B922712 /* MultiEntityComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9871402E3D394DAB818D2D83 /* MultiEntityComposer.swift */; };
 		AD8C8D7F055F47C3904427AF /* PeopleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47334E5DAB804ED49D6E573F /* PeopleView.swift */; };
@@ -143,6 +146,7 @@
 		CC1423EE289542DB8E517FE3 /* TraitInferenceEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDF5D0F2E2E440EA90A108EE /* TraitInferenceEngine.swift */; };
 		D8151D4CE5264FA8AB09BDC7 /* TraitModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 897271B11E814E59B5C885B9 /* TraitModel.swift */; };
 		E06D17FC11E04391AC6EBEFE /* AnomalyDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE07B2B823DA4E2398F1027A /* AnomalyDetector.swift */; };
+		FEEDC6B000000000000000E2 /* EventConfidence.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEEDC6B000000000000000E1 /* EventConfidence.swift */; };
 		DBCFA44522BF49D293AF3CC8 /* EventClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC844D85A9FD4ECF9D89F145 /* EventClassifier.swift */; };
 		16F708C81EA942FAA91F5452 /* EventDetectionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD40BE633CE54E419A4EF713 /* EventDetectionEngine.swift */; };
 		0B36C1F03FCA4592AF3995B2 /* PresentScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DC7CE9713E24116BC370CFA /* PresentScene.swift */; };
@@ -204,10 +208,12 @@
 		E90091F4530042528F3D326F /* SignalManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2B6F24F5644421B9C7DE2A2 /* SignalManager.swift */; };
 		79978C55F37D44D988F02540 /* SignalModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47CE243A75594807A935F050 /* SignalModels.swift */; };
 		9426896D3B89443EA3F342BD /* UncertaintyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D7E106DBFD4436CB57012CD /* UncertaintyModels.swift */; };
+		FEEDCA1C00000000000000A2 /* UncertaintyCalculus.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEEDCA1C00000000000000A1 /* UncertaintyCalculus.swift */; };
 		252DBB9DA99B4BB09950A0FF /* UncertaintyValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD70FA3CF4D34DD1ADE3F040 /* UncertaintyValidator.swift */; };
 		DC4EDB80F8D24BAFAD6F52A4 /* ViewRenderingSpecification.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40136964818440CB183624C /* ViewRenderingSpecification.swift */; };
 		3ACB9A8F2533403292FD6037 /* SignalModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47CE243A75594807A935F050 /* SignalModels.swift */; };
 		B60336F098644039ACA597FD /* UncertaintyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D7E106DBFD4436CB57012CD /* UncertaintyModels.swift */; };
+		FEEDCA1C00000000000000A3 /* UncertaintyCalculus.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEEDCA1C00000000000000A1 /* UncertaintyCalculus.swift */; };
 		BC8047FE689A47BB85E02F3E /* LifeEventModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C5D8BAD568F45938AF6725C /* LifeEventModels.swift */; };
 		118DAEF8F3154CD39D9D2C7E /* ChapterModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86BB7A0D33C447FB8707EA34 /* ChapterModel.swift */; };
 		E801EFE5D014433B8BD86123 /* TraitModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 897271B11E814E59B5C885B9 /* TraitModel.swift */; };
@@ -351,11 +357,14 @@
 		FADE00000000000000000001 /* LOCATests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LOCATests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FADE00000000000000000011 /* StreakCalculatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakCalculatorTests.swift; sourceTree = "<group>"; };
 		FADE00000000000000000012 /* AggregationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AggregationTests.swift; sourceTree = "<group>"; };
+		FEEDCA6A00000000000000B1 /* RegimeHonestyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegimeHonestyTests.swift; sourceTree = "<group>"; };
 		FADE00000000000000000013 /* HeatmapDataProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeatmapDataProviderTests.swift; sourceTree = "<group>"; };
 		FC3230A263C5088C154C34B8 /* ConsistencyChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConsistencyChartView.swift; sourceTree = "<group>"; };
 		FE3AFDA24101174CA0C31F34 /* DSComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSComponents.swift; sourceTree = "<group>"; };
+		FEEDCF00000000000000C001 /* ReflectionComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReflectionComponents.swift; sourceTree = "<group>"; };
 		5B3B92460BE743CFADF3C6DE /* SignalCollectionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalCollectionCoordinator.swift; sourceTree = "<group>"; };
 		CA5DC44C46F541A3BDC55226 /* ChapterListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChapterListView.swift; sourceTree = "<group>"; };
+		FEEDF300000000000000F001 /* EventsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsView.swift; sourceTree = "<group>"; };
 		8B46892C881A4E868F105317 /* LifeSceneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeSceneView.swift; sourceTree = "<group>"; };
 		9871402E3D394DAB818D2D83 /* MultiEntityComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiEntityComposer.swift; sourceTree = "<group>"; };
 		47334E5DAB804ED49D6E573F /* PeopleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleView.swift; sourceTree = "<group>"; };
@@ -373,6 +382,7 @@
 		FDF5D0F2E2E440EA90A108EE /* TraitInferenceEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TraitInferenceEngine.swift; sourceTree = "<group>"; };
 		897271B11E814E59B5C885B9 /* TraitModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TraitModel.swift; sourceTree = "<group>"; };
 		CE07B2B823DA4E2398F1027A /* AnomalyDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnomalyDetector.swift; sourceTree = "<group>"; };
+		FEEDC6B000000000000000E1 /* EventConfidence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventConfidence.swift; sourceTree = "<group>"; };
 		BC844D85A9FD4ECF9D89F145 /* EventClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventClassifier.swift; sourceTree = "<group>"; };
 		CD40BE633CE54E419A4EF713 /* EventDetectionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventDetectionEngine.swift; sourceTree = "<group>"; };
 		3DC7CE9713E24116BC370CFA /* PresentScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentScene.swift; sourceTree = "<group>"; };
@@ -400,6 +410,7 @@
 		E2B6F24F5644421B9C7DE2A2 /* SignalManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalManager.swift; sourceTree = "<group>"; };
 		47CE243A75594807A935F050 /* SignalModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalModels.swift; sourceTree = "<group>"; };
 		8D7E106DBFD4436CB57012CD /* UncertaintyModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UncertaintyModels.swift; sourceTree = "<group>"; };
+		FEEDCA1C00000000000000A1 /* UncertaintyCalculus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UncertaintyCalculus.swift; sourceTree = "<group>"; };
 		BD70FA3CF4D34DD1ADE3F040 /* UncertaintyValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UncertaintyValidator.swift; sourceTree = "<group>"; };
 		D40136964818440CB183624C /* ViewRenderingSpecification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewRenderingSpecification.swift; sourceTree = "<group>"; };
 		126D0D524CF043C7B04C4E5C /* InferredStateModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InferredStateModel.swift; sourceTree = "<group>"; };
@@ -654,6 +665,7 @@
 				A70908D4D7F064AAB567F413 /* DS+Color.swift */,
 				C2D47C4C19429A1E8AB3FB34 /* DS+Motion.swift */,
 				FE3AFDA24101174CA0C31F34 /* DSComponents.swift */,
+				FEEDCF00000000000000C001 /* ReflectionComponents.swift */,
 				37119D6BF608C9E0EDFAA772 /* WeeklyBarChart.swift */,
 				8430612562AB5270D58C46C7 /* ArcGaugeView.swift */,
 				C73F66E3D961FCE292C91914 /* PressableButtonStyle.swift */,
@@ -667,6 +679,7 @@
 			children = (
 				FADE00000000000000000011 /* StreakCalculatorTests.swift */,
 				FADE00000000000000000012 /* AggregationTests.swift */,
+				FEEDCA6A00000000000000B1 /* RegimeHonestyTests.swift */,
 				FADE00000000000000000013 /* HeatmapDataProviderTests.swift */,
 			);
 			path = LOCATests;
@@ -693,6 +706,7 @@
 			isa = PBXGroup;
 			children = (
 				CE07B2B823DA4E2398F1027A /* AnomalyDetector.swift */,
+				FEEDC6B000000000000000E1 /* EventConfidence.swift */,
 				BC844D85A9FD4ECF9D89F145 /* EventClassifier.swift */,
 				CD40BE633CE54E419A4EF713 /* EventDetectionEngine.swift */,
 				11954C214BE34D96BB07C1B9 /* RelationshipGraphEngine.swift */,
@@ -751,6 +765,7 @@
 				AA11000000000000000005AB /* Managers */,
 				AA11000000000000000006AB /* Models */,
 				8D7E106DBFD4436CB57012CD /* UncertaintyModels.swift */,
+				FEEDCA1C00000000000000A1 /* UncertaintyCalculus.swift */,
 				BD70FA3CF4D34DD1ADE3F040 /* UncertaintyValidator.swift */,
 				D40136964818440CB183624C /* ViewRenderingSpecification.swift */,
 			);
@@ -773,6 +788,7 @@
 			isa = PBXGroup;
 			children = (
 				CA5DC44C46F541A3BDC55226 /* ChapterListView.swift */,
+				FEEDF300000000000000F001 /* EventsView.swift */,
 				8B46892C881A4E868F105317 /* LifeSceneView.swift */,
 				9871402E3D394DAB818D2D83 /* MultiEntityComposer.swift */,
 				47334E5DAB804ED49D6E573F /* PeopleView.swift */,
@@ -969,6 +985,7 @@
 				052F419EE842417885F32906 /* Animation+Extensions.swift in Sources */,
 				3ACB9A8F2533403292FD6037 /* SignalModels.swift in Sources */,
 				B60336F098644039ACA597FD /* UncertaintyModels.swift in Sources */,
+				FEEDCA1C00000000000000A3 /* UncertaintyCalculus.swift in Sources */,
 				BC8047FE689A47BB85E02F3E /* LifeEventModels.swift in Sources */,
 				118DAEF8F3154CD39D9D2C7E /* ChapterModel.swift in Sources */,
 				E801EFE5D014433B8BD86123 /* TraitModel.swift in Sources */,
@@ -1006,6 +1023,7 @@
 				32CDC07A4896BFECC0C32797 /* DS+Color.swift in Sources */,
 				CCBD1D27BFEF796EFB9DFD39 /* DS+Motion.swift in Sources */,
 				FE1C77B02737FF7D02B147F9 /* DSComponents.swift in Sources */,
+				FEEDCF00000000000000C002 /* ReflectionComponents.swift in Sources */,
 				9BC55CE15C7D2A795DDDD331 /* HabitListRow.swift in Sources */,
 				290812E393429F92DFF5711C /* HabitListView.swift in Sources */,
 				C925DCC8608E4CC8B96FB1BE /* HabitListLayoutView.swift in Sources */,
@@ -1075,6 +1093,7 @@
 				CAAB0DCEF011CD1E23F2675D /* Haptics.swift in Sources */,
 				0523E49AAE5243F995956550 /* SignalCollectionCoordinator.swift in Sources */,
 				243DF5BB4534442BAE4CAA1F /* ChapterListView.swift in Sources */,
+				FEEDF300000000000000F002 /* EventsView.swift in Sources */,
 				D4299A41A8464082A3FE9B4F /* LifeSceneView.swift in Sources */,
 				1F430BDCCCFA4A3C9B922712 /* MultiEntityComposer.swift in Sources */,
 				AD8C8D7F055F47C3904427AF /* PeopleView.swift in Sources */,
@@ -1114,6 +1133,7 @@
 				CC1423EE289542DB8E517FE3 /* TraitInferenceEngine.swift in Sources */,
 				D8151D4CE5264FA8AB09BDC7 /* TraitModel.swift in Sources */,
 				E06D17FC11E04391AC6EBEFE /* AnomalyDetector.swift in Sources */,
+				FEEDC6B000000000000000E2 /* EventConfidence.swift in Sources */,
 				DBCFA44522BF49D293AF3CC8 /* EventClassifier.swift in Sources */,
 				16F708C81EA942FAA91F5452 /* EventDetectionEngine.swift in Sources */,
 				5E58547710E44338B0203784 /* RelationshipGraphEngine.swift in Sources */,
@@ -1138,6 +1158,7 @@
 				E90091F4530042528F3D326F /* SignalManager.swift in Sources */,
 				79978C55F37D44D988F02540 /* SignalModels.swift in Sources */,
 				9426896D3B89443EA3F342BD /* UncertaintyModels.swift in Sources */,
+				FEEDCA1C00000000000000A2 /* UncertaintyCalculus.swift in Sources */,
 				252DBB9DA99B4BB09950A0FF /* UncertaintyValidator.swift in Sources */,
 				DC4EDB80F8D24BAFAD6F52A4 /* ViewRenderingSpecification.swift in Sources */,
 				E48388FCBA37469DAE5986DB /* InferredStateModel.swift in Sources */,
@@ -1151,6 +1172,7 @@
 			files = (
 				FADE00000000000000000021 /* StreakCalculatorTests.swift in Sources */,
 				FADE00000000000000000022 /* AggregationTests.swift in Sources */,
+				FEEDCA6A00000000000000B2 /* RegimeHonestyTests.swift in Sources */,
 				FADE00000000000000000023 /* HeatmapDataProviderTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -8,7 +8,10 @@
 
 import Foundation
 
+@MainActor
 class FocusInferenceModel {
+    static let shared = FocusInferenceModel()
+
     private var appFocusWeight: Double = 0.3
     private var interruptionWeight: Double = 0.2
     private var consistencyWeight: Double = 0.15
@@ -18,8 +21,37 @@ class FocusInferenceModel {
 
     private var focusableTimeWindows: [Int: Double] = [:]
 
+    private let defaults = UserDefaults.standard
+    private let keyAppFocusWeight = "focus_appFocusWeight"
+    private let keyInterruptionWeight = "focus_interruptionWeight"
+    private let keyConsistencyWeight = "focus_consistencyWeight"
+    private let keyTimeOfDayWeight = "focus_timeOfDayWeight"
+    private let keyEnergyWeight = "focus_energyWeight"
+    private let keyLoggedWeight = "focus_loggedWeight"
+
     init() {
+        loadWeights()
         initializeFocusWindows()
+    }
+
+    private func loadWeights() {
+        if defaults.object(forKey: keyAppFocusWeight) != nil {
+            appFocusWeight = defaults.double(forKey: keyAppFocusWeight)
+            interruptionWeight = defaults.double(forKey: keyInterruptionWeight)
+            consistencyWeight = defaults.double(forKey: keyConsistencyWeight)
+            timeOfDayWeight = defaults.double(forKey: keyTimeOfDayWeight)
+            energyWeight = defaults.double(forKey: keyEnergyWeight)
+            loggedFocusWeight = defaults.double(forKey: keyLoggedWeight)
+        }
+    }
+
+    private func saveWeights() {
+        defaults.set(appFocusWeight, forKey: keyAppFocusWeight)
+        defaults.set(interruptionWeight, forKey: keyInterruptionWeight)
+        defaults.set(consistencyWeight, forKey: keyConsistencyWeight)
+        defaults.set(timeOfDayWeight, forKey: keyTimeOfDayWeight)
+        defaults.set(energyWeight, forKey: keyEnergyWeight)
+        defaults.set(loggedFocusWeight, forKey: keyLoggedWeight)
     }
 
     // MARK: - Main Inference
@@ -231,5 +263,6 @@ class FocusInferenceModel {
         self.timeOfDayWeight = timeOfDayWeight / total
         self.energyWeight = energyWeight / total
         self.loggedFocusWeight = loggedWeight / total
+        saveWeights()
     }
 }

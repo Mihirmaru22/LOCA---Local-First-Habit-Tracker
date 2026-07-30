@@ -218,8 +218,17 @@ class PeopleExtractor {
         let rawContexts = detectedContexts.map { $0.rawValue }
 
         if let existing = try? modelContext.fetch(descriptor).first {
-            existing.salience = existing.salience * 0.7 + salience * 0.3
-            existing.salienceUncertainty = min(existing.salienceUncertainty, uncertainty)
+            // Rule C: temporal blend of the running salience estimate with the new
+            // observation. Replaces the inline 0.7/0.3 value blend AND the forbidden
+            // `min()` uncertainty ratchet — the latter could only shrink, manufacturing
+            // certainty about salience over successive updates.
+            let blended = temporalBlend(
+                existing: (value: existing.salience, uncertainty: existing.salienceUncertainty),
+                new: (value: salience, uncertainty: uncertainty),
+                decayFactor: 0.3
+            )
+            existing.salience = blended.value
+            existing.salienceUncertainty = blended.uncertainty
             existing.appearanceCount += appearanceCount
             existing.lastSeenDate = Date()
             // C2.3: primaryContext is subject-authoritative — never overwritten by sensor inference.

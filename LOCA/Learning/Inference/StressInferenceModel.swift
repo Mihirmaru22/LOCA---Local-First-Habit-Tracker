@@ -8,7 +8,10 @@
 
 import Foundation
 
+@MainActor
 class StressInferenceModel {
+    static let shared = StressInferenceModel()
+
     private var hrvWeight: Double = 0.25
     private var eventDensityWeight: Double = 0.2
     private var locationChangeWeight: Double = 0.2
@@ -18,8 +21,37 @@ class StressInferenceModel {
 
     private var dayOfWeekBaseline: [Int: Double] = [:]
 
+    private let defaults = UserDefaults.standard
+    private let keyHrvWeight = "stress_hrvWeight"
+    private let keyEventDensityWeight = "stress_eventDensityWeight"
+    private let keyLocationChangeWeight = "stress_locationChangeWeight"
+    private let keySentimentWeight = "stress_sentimentWeight"
+    private let keyDayOfWeekWeight = "stress_dayOfWeekWeight"
+    private let keyLoggedWeight = "stress_loggedWeight"
+
     init() {
+        loadWeights()
         initializeDayOfWeekBaseline()
+    }
+
+    private func loadWeights() {
+        if defaults.object(forKey: keyHrvWeight) != nil {
+            hrvWeight = defaults.double(forKey: keyHrvWeight)
+            eventDensityWeight = defaults.double(forKey: keyEventDensityWeight)
+            locationChangeWeight = defaults.double(forKey: keyLocationChangeWeight)
+            sentimentWeight = defaults.double(forKey: keySentimentWeight)
+            dayOfWeekWeight = defaults.double(forKey: keyDayOfWeekWeight)
+            loggedStressWeight = defaults.double(forKey: keyLoggedWeight)
+        }
+    }
+
+    private func saveWeights() {
+        defaults.set(hrvWeight, forKey: keyHrvWeight)
+        defaults.set(eventDensityWeight, forKey: keyEventDensityWeight)
+        defaults.set(locationChangeWeight, forKey: keyLocationChangeWeight)
+        defaults.set(sentimentWeight, forKey: keySentimentWeight)
+        defaults.set(dayOfWeekWeight, forKey: keyDayOfWeekWeight)
+        defaults.set(loggedStressWeight, forKey: keyLoggedWeight)
     }
 
     // MARK: - Main Inference
@@ -237,5 +269,6 @@ class StressInferenceModel {
         self.sentimentWeight = sentimentWeight / total
         self.dayOfWeekWeight = dayOfWeekWeight / total
         self.loggedStressWeight = loggedWeight / total
+        saveWeights()
     }
 }

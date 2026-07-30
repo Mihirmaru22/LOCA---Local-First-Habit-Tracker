@@ -68,6 +68,11 @@ final class HabitBoard {
     /// If `nil`, a default icon is shown. Users set this via HabitFormView.
     var emoji: String? = nil
 
+    /// Which life dimension this habit affects (for calibration feedback).
+    /// Valid values: "energy", "stress", "focus", "mood". `nil` if unspecified.
+    /// Used by CalibrationManager to tag explicit logs for inference model recalibration.
+    var dimension: String? = nil
+
     /// Preferred reminder time in HH:MM format (e.g., "06:30").
     /// `nil` if no reminder is set. Inferred from logging patterns in Phase 2.3.
     var preferredReminderTime: String? = nil

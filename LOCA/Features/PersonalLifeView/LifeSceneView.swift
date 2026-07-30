@@ -232,28 +232,10 @@ private struct InsightRow: View {
             Spacer()
 
             ConfidenceDot(confidence: insight.confidence)
+                .padding(.top, 5)
         }
         .padding(DS.Space.sm)
         .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.control))
-    }
-}
-
-// MARK: - Confidence Dot
-
-private struct ConfidenceDot: View {
-    let confidence: Double
-
-    private var color: Color {
-        if confidence >= 0.8 { return Color(hex: "#10B981") }
-        if confidence >= 0.5 { return Color(hex: "#F59E0B") }
-        return Color(hex: "#6B7280")
-    }
-
-    var body: some View {
-        Circle()
-            .frame(width: 6, height: 6)
-            .foregroundStyle(color)
-            .padding(.top, 5)
     }
 }
 

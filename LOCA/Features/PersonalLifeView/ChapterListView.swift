@@ -220,6 +220,7 @@ struct ChapterDetailView: View {
 
     @State private var editingName = false
     @State private var draftName = ""
+    @State private var openingEvent: LifeEvent?
 
     var body: some View {
         NavigationStack {
@@ -237,6 +238,23 @@ struct ChapterDetailView: View {
                     }
                     .font(DS.Text.caption)
                     .foregroundStyle(DS.Color.textSecondary)
+
+                    // F3: the detected event that opened this chapter, with its honest
+                    // C6B confidence. A chapter is the room; the event is the door.
+                    if let event = openingEvent {
+                        HStack(spacing: DS.Space.sm) {
+                            Image(systemName: event.eventType.iconName)
+                                .font(.caption)
+                                .foregroundStyle(.tint)
+                            Text("Opened by a \(event.eventType.displayName.lowercased())")
+                                .font(.caption)
+                                .foregroundStyle(DS.Color.textSecondary)
+                            Spacer()
+                            ConfidenceChip(level: ConfidenceLevel(uncertainty: 1.0 - event.confidence))
+                        }
+                        .padding(DS.Space.sm)
+                        .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: DS.Radius.control))
+                    }
 
                     Divider()
 
@@ -321,7 +339,16 @@ struct ChapterDetailView: View {
                 }
                 Button("Cancel", role: .cancel) {}
             }
+            .task { await loadOpeningEvent() }
         }
+    }
+
+    /// Resolve the LifeEvent that opened this chapter (if any) so its detected type
+    /// and honest C6B confidence can be shown. One id lookup — no engine call.
+    private func loadOpeningEvent() async {
+        guard let id = chapter.openingEventId else { return }
+        let descriptor = FetchDescriptor<LifeEvent>(predicate: #Predicate { $0.id == id })
+        openingEvent = (try? modelContext.fetch(descriptor))?.first
     }
 }
 

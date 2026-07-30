@@ -8,7 +8,10 @@
 
 import Foundation
 
+@MainActor
 class EnergyInferenceModel {
+    static let shared = EnergyInferenceModel()
+
     private var sleepWeight: Double = 0.4
     private var timeOfDayWeight: Double = 0.2
     private var stepsWeight: Double = 0.15
@@ -18,8 +21,34 @@ class EnergyInferenceModel {
     private var circadianBaseline: [Int: Double] = [:]
     private var sleepTargetHours: Double = 8.0
 
+    private let defaults = UserDefaults.standard
+    private let keySleepWeight = "energy_sleepWeight"
+    private let keyTimeOfDayWeight = "energy_timeOfDayWeight"
+    private let keyStepsWeight = "energy_stepsWeight"
+    private let keyHrvWeight = "energy_hrvWeight"
+    private let keyLoggedWeight = "energy_loggedWeight"
+
     init() {
+        loadWeights()
         initializeCircadianBaseline()
+    }
+
+    private func loadWeights() {
+        if defaults.object(forKey: keySleepWeight) != nil {
+            sleepWeight = defaults.double(forKey: keySleepWeight)
+            timeOfDayWeight = defaults.double(forKey: keyTimeOfDayWeight)
+            stepsWeight = defaults.double(forKey: keyStepsWeight)
+            hrvWeight = defaults.double(forKey: keyHrvWeight)
+            loggedEnergyWeight = defaults.double(forKey: keyLoggedWeight)
+        }
+    }
+
+    private func saveWeights() {
+        defaults.set(sleepWeight, forKey: keySleepWeight)
+        defaults.set(timeOfDayWeight, forKey: keyTimeOfDayWeight)
+        defaults.set(stepsWeight, forKey: keyStepsWeight)
+        defaults.set(hrvWeight, forKey: keyHrvWeight)
+        defaults.set(loggedEnergyWeight, forKey: keyLoggedWeight)
     }
 
     // MARK: - Main Inference
@@ -164,5 +193,6 @@ class EnergyInferenceModel {
         self.stepsWeight = stepsWeight / total
         self.hrvWeight = hrvWeight / total
         self.loggedEnergyWeight = loggedWeight / total
+        saveWeights()
     }
 }

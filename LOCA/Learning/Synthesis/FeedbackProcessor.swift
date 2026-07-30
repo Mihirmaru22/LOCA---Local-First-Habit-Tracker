@@ -43,12 +43,16 @@ import SwiftData
         return weights.reduce(0, +) / Double(weights.count)
     }
 
-    /// Apply feedback-adjusted confidence to a pattern.
+    /// Apply feedback-adjusted confidence to a pattern using Rule E (feedback clamp).
+    /// Under the certainty ceiling, positive resonance is bounded by the evidence
+    /// (corroboration cannot manufacture statistical certainty); negative resonance
+    /// lowers confidence freely. Previously this was an unbounded
+    /// `pattern.confidence + adjustment`, which let affirmation inflate a claim
+    /// above what its evidence supports.
     func adjustedConfidence(for pattern: LifePattern, feedback: [PatternFeedback]) -> Double {
         guard !feedback.isEmpty else { return pattern.confidence }
-        let resonances = feedback.map { $0.resonance }
-        let adjustment = confidenceAdjustment(for: resonances)
-        return max(0.0, min(1.0, pattern.confidence + adjustment))
+        let adjustment = confidenceAdjustment(for: feedback.map { $0.resonance })
+        return feedbackClamp(evidenceConfidence: pattern.confidence, resonanceAdjustment: adjustment)
     }
 
     /// Extract refinement hints (user corrections) that might apply to this pattern.

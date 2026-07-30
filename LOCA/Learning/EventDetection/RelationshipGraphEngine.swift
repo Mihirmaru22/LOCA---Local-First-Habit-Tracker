@@ -237,12 +237,15 @@ final class RelationshipGraphEngine {
         return values.reduce(0, +) / Double(values.count)
     }
 
-    /// Confidence in a correlation edge: more evidence and a stronger association
-    /// both raise it, but a small sample caps it hard.
+    /// Confidence in a correlation edge, via UncertaintyCalculus (Rule B): the
+    /// association magnitude is the effect, and the sample size sets the noise floor
+    /// (standard error ~ 1/√n). A stronger association raises confidence; a small
+    /// sample widens the noise floor and caps it. Replaces the previous hand-rolled
+    /// (0.35 + 0.65·strength)·sizeFactor formula that fabricated confidence outside
+    /// the calculus.
     private func correlationConfidence(magnitude: Double, sampleCount: Int) -> Double {
-        let sizeFactor = min(1.0, Double(sampleCount) / 150.0)
-        let strengthFactor = min(1.0, magnitude / 0.6)
-        return min(1.0, (0.35 + 0.65 * strengthFactor) * sizeFactor)
+        let sampleUncertainty = min(0.5, 1.0 / sqrt(Double(max(1, sampleCount))))
+        return differenceConfidence(delta: magnitude, uncertaintyA: sampleUncertainty, uncertaintyB: 0.0)
     }
 
     private func clampUnit(_ value: Double) -> Double {

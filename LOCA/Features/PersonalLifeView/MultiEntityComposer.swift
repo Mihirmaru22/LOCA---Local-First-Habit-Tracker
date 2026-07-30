@@ -46,7 +46,8 @@ struct TraitSnapshot {
 
 struct PersonSnapshot {
     let person: Person
-    let salienceInChapter: Double?  // Salience within a specific chapter context
+    let salienceInChapter: Double?         // Salience within a specific chapter context
+    let salienceUncertainty: Double?       // C5: binomial uncertainty of that salience
 }
 
 struct SceneInsight {
@@ -58,7 +59,8 @@ struct SceneInsight {
 
     let type: InsightType
     let text: String             // One-sentence human-readable observation
-    let confidence: Double
+    let confidence: Double       // From UncertaintyCalculus (Rule B), never fabricated
+    let uncertainty: Double      // C5: propagated uncertainty behind this insight
     let entities: [String]       // Names of entities involved (chapter names, trait names, etc.)
 }
 
@@ -109,7 +111,7 @@ class MultiEntityComposer {
             generatedAt: Date(),
             chapters: chapterSnapshots,
             traits: globalTraits,
-            people: people.map { PersonSnapshot(person: $0, salienceInChapter: nil) },
+            people: people.map { PersonSnapshot(person: $0, salienceInChapter: nil, salienceUncertainty: nil) },
             insights: insights,
             overallUncertainty: isDataAbsent ? 1.0 : uncertainty,
             isDataAbsent: isDataAbsent
@@ -186,9 +188,14 @@ class MultiEntityComposer {
         return personAppearanceCounts.compactMap { (personId, count) -> PersonSnapshot? in
             guard let person = people.first(where: { $0.id == personId }) else { return nil }
             let salience = min(1.0, Double(count) / (Double(totalDays) * 0.5))
+            // Binomial standard error of the appearance rate — the measurement
+            // uncertainty behind this salience estimate.
+            let p = min(1.0, Double(count) / Double(totalDays))
+            let salienceUncertainty = max(0.05, min(0.6, sqrt(p * (1 - p) / Double(totalDays))))
             return PersonSnapshot(
                 person: person,
-                salienceInChapter: salience
+                salienceInChapter: salience,
+                salienceUncertainty: salienceUncertainty
             )
         }.sorted { ($0.salienceInChapter ?? 0) > ($1.salienceInChapter ?? 0) }
     }
@@ -209,15 +216,20 @@ class MultiEntityComposer {
             insights.append(contentsOf: traitShiftInsights(from: prev, to: curr))
         }
 
-        // Person presence insights: who was most prominent in each chapter
+        // Person presence insights: who was most prominent in each chapter.
+        // Rule B: confidence = how far salience stands clear of its measurement noise;
+        // replaces the previous `min(0.9, salience)` (salience used directly as confidence).
         for snapshot in chapters {
             guard let chapterName = snapshot.chapter.name else { continue }
             if let topPerson = snapshot.peopleForChapter.first,
                let salience = topPerson.salienceInChapter, salience > 0.3 {
+                let salienceUncertainty = topPerson.salienceUncertainty ?? 0.3
+                let confidence = differenceConfidence(delta: salience, uncertaintyA: salienceUncertainty, uncertaintyB: 0.0)
                 insights.append(SceneInsight(
                     type: .personPresence,
                     text: "\(topPerson.person.name) was notably present during \(chapterName)",
-                    confidence: min(0.9, salience),
+                    confidence: confidence,
+                    uncertainty: salienceUncertainty,
                     entities: [topPerson.person.name, chapterName]
                 ))
             }
@@ -239,12 +251,25 @@ class MultiEntityComposer {
             guard abs(delta) >= traitShiftThreshold else { continue }
 
             let direction = delta > 0 ? "increased" : "decreased"
-            let confidence = min(0.85, (1.0 - currTrait.uncertainty) * (1.0 - prevTrait.uncertainty))
+            // Rule B: the shift is credible only insofar as it exceeds the combined
+            // uncertainty of the two trait estimates. Replaces the ad-hoc
+            // min(0.85, (1-u1)(1-u2)) product.
+            let confidence = differenceConfidence(
+                delta: delta,
+                uncertaintyA: currTrait.uncertainty,
+                uncertaintyB: prevTrait.uncertainty
+            )
+            // Rule A: propagated uncertainty behind the shift.
+            let shiftUncertainty = aggregateUncertainty(
+                values: [currTrait.value, prevTrait.value],
+                uncertainties: [currTrait.uncertainty, prevTrait.uncertainty]
+            ).uncertainty
 
             insights.append(SceneInsight(
                 type: .traitShift,
                 text: "\(currTrait.traitType.displayName) \(direction) between \(prevName) and \(currName)",
                 confidence: confidence,
+                uncertainty: shiftUncertainty,
                 entities: [currTrait.traitType.rawValue, prevName, currName]
             ))
         }
@@ -255,9 +280,15 @@ class MultiEntityComposer {
     // MARK: - Uncertainty
 
     private func computeSceneUncertainty(traits: [TraitSnapshot], people: [Person]) -> Double {
-        let traitUncertainty = traits.isEmpty ? 0.8 : traits.map { $0.uncertainty }.reduce(0, +) / Double(traits.count)
-        let peopleConfidence = people.isEmpty ? 0.5 : min(1.0, Double(people.count) / 10.0)
-        return traitUncertainty * 0.6 + (1 - peopleConfidence) * 0.4
+        // Rule A: the scene's uncertainty is the aggregate of its traits' uncertainties.
+        // Replaces the previous inline weighting that folded in a count-based
+        // `min(1, people.count/10)` confidence — the exact count-as-confidence pattern
+        // C5 forbids.
+        guard !traits.isEmpty else { return 0.8 }
+        return aggregateUncertainty(
+            values: traits.map { $0.value },
+            uncertainties: traits.map { $0.uncertainty }
+        ).uncertainty
     }
 
     // MARK: - Trait Label

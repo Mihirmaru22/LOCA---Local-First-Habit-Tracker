@@ -134,6 +134,9 @@ struct PersonalLifeListView: View {
                 ExploreCard(title: "Chapters", subtitle: "Life in intervals", icon: "book.pages") {
                     ChapterListView()
                 }
+                ExploreCard(title: "Events", subtitle: "Shifts in your rhythm", icon: "flag") {
+                    EventsView()
+                }
                 ExploreCard(title: "People", subtitle: "Who's around you", icon: "person.2.fill") {
                     PeopleView()
                 }
