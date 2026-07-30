@@ -120,6 +120,7 @@
 		FEEDCF00000000000000C002 /* ReflectionComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEEDCF00000000000000C001 /* ReflectionComponents.swift */; };
 		0523E49AAE5243F995956550 /* SignalCollectionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B3B92460BE743CFADF3C6DE /* SignalCollectionCoordinator.swift */; };
 		243DF5BB4534442BAE4CAA1F /* ChapterListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA5DC44C46F541A3BDC55226 /* ChapterListView.swift */; };
+		FEEDF300000000000000F002 /* EventsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEEDF300000000000000F001 /* EventsView.swift */; };
 		D4299A41A8464082A3FE9B4F /* LifeSceneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B46892C881A4E868F105317 /* LifeSceneView.swift */; };
 		1F430BDCCCFA4A3C9B922712 /* MultiEntityComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9871402E3D394DAB818D2D83 /* MultiEntityComposer.swift */; };
 		AD8C8D7F055F47C3904427AF /* PeopleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47334E5DAB804ED49D6E573F /* PeopleView.swift */; };
@@ -363,6 +364,7 @@
 		FEEDCF00000000000000C001 /* ReflectionComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReflectionComponents.swift; sourceTree = "<group>"; };
 		5B3B92460BE743CFADF3C6DE /* SignalCollectionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalCollectionCoordinator.swift; sourceTree = "<group>"; };
 		CA5DC44C46F541A3BDC55226 /* ChapterListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChapterListView.swift; sourceTree = "<group>"; };
+		FEEDF300000000000000F001 /* EventsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsView.swift; sourceTree = "<group>"; };
 		8B46892C881A4E868F105317 /* LifeSceneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeSceneView.swift; sourceTree = "<group>"; };
 		9871402E3D394DAB818D2D83 /* MultiEntityComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiEntityComposer.swift; sourceTree = "<group>"; };
 		47334E5DAB804ED49D6E573F /* PeopleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleView.swift; sourceTree = "<group>"; };
@@ -786,6 +788,7 @@
 			isa = PBXGroup;
 			children = (
 				CA5DC44C46F541A3BDC55226 /* ChapterListView.swift */,
+				FEEDF300000000000000F001 /* EventsView.swift */,
 				8B46892C881A4E868F105317 /* LifeSceneView.swift */,
 				9871402E3D394DAB818D2D83 /* MultiEntityComposer.swift */,
 				47334E5DAB804ED49D6E573F /* PeopleView.swift */,
@@ -1090,6 +1093,7 @@
 				CAAB0DCEF011CD1E23F2675D /* Haptics.swift in Sources */,
 				0523E49AAE5243F995956550 /* SignalCollectionCoordinator.swift in Sources */,
 				243DF5BB4534442BAE4CAA1F /* ChapterListView.swift in Sources */,
+				FEEDF300000000000000F002 /* EventsView.swift in Sources */,
 				D4299A41A8464082A3FE9B4F /* LifeSceneView.swift in Sources */,
 				1F430BDCCCFA4A3C9B922712 /* MultiEntityComposer.swift in Sources */,
 				AD8C8D7F055F47C3904427AF /* PeopleView.swift in Sources */,

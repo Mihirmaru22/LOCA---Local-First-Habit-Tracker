@@ -18,6 +18,30 @@ enum LifeEventType: String, Codable {
     case workChange          // Job, role, career shift
     case habitChange         // New regular habit, old habit dropped
     case unknown             // Unclassified
+
+    var displayName: String {
+        switch self {
+        case .scheduleChange: return "Schedule shift"
+        case .locationChange: return "Location change"
+        case .socialChange:   return "Social change"
+        case .healthChange:   return "Health change"
+        case .workChange:     return "Work change"
+        case .habitChange:    return "Habit change"
+        case .unknown:        return "Unclear shift"
+        }
+    }
+
+    var iconName: String {
+        switch self {
+        case .scheduleChange: return "clock.arrow.circlepath"
+        case .locationChange: return "mappin.and.ellipse"
+        case .socialChange:   return "person.2"
+        case .healthChange:   return "heart"
+        case .workChange:     return "briefcase"
+        case .habitChange:    return "repeat"
+        case .unknown:        return "questionmark.circle"
+        }
+    }
 }
 
 // MARK: - Life Event (First-Class Entity)
