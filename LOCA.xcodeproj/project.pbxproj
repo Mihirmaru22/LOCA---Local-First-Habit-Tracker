@@ -145,6 +145,7 @@
 		CC1423EE289542DB8E517FE3 /* TraitInferenceEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDF5D0F2E2E440EA90A108EE /* TraitInferenceEngine.swift */; };
 		D8151D4CE5264FA8AB09BDC7 /* TraitModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 897271B11E814E59B5C885B9 /* TraitModel.swift */; };
 		E06D17FC11E04391AC6EBEFE /* AnomalyDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE07B2B823DA4E2398F1027A /* AnomalyDetector.swift */; };
+		FEEDC6B000000000000000E2 /* EventConfidence.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEEDC6B000000000000000E1 /* EventConfidence.swift */; };
 		DBCFA44522BF49D293AF3CC8 /* EventClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC844D85A9FD4ECF9D89F145 /* EventClassifier.swift */; };
 		16F708C81EA942FAA91F5452 /* EventDetectionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD40BE633CE54E419A4EF713 /* EventDetectionEngine.swift */; };
 		0B36C1F03FCA4592AF3995B2 /* PresentScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DC7CE9713E24116BC370CFA /* PresentScene.swift */; };
@@ -379,6 +380,7 @@
 		FDF5D0F2E2E440EA90A108EE /* TraitInferenceEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TraitInferenceEngine.swift; sourceTree = "<group>"; };
 		897271B11E814E59B5C885B9 /* TraitModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TraitModel.swift; sourceTree = "<group>"; };
 		CE07B2B823DA4E2398F1027A /* AnomalyDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnomalyDetector.swift; sourceTree = "<group>"; };
+		FEEDC6B000000000000000E1 /* EventConfidence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventConfidence.swift; sourceTree = "<group>"; };
 		BC844D85A9FD4ECF9D89F145 /* EventClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventClassifier.swift; sourceTree = "<group>"; };
 		CD40BE633CE54E419A4EF713 /* EventDetectionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventDetectionEngine.swift; sourceTree = "<group>"; };
 		3DC7CE9713E24116BC370CFA /* PresentScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentScene.swift; sourceTree = "<group>"; };
@@ -702,6 +704,7 @@
 			isa = PBXGroup;
 			children = (
 				CE07B2B823DA4E2398F1027A /* AnomalyDetector.swift */,
+				FEEDC6B000000000000000E1 /* EventConfidence.swift */,
 				BC844D85A9FD4ECF9D89F145 /* EventClassifier.swift */,
 				CD40BE633CE54E419A4EF713 /* EventDetectionEngine.swift */,
 				11954C214BE34D96BB07C1B9 /* RelationshipGraphEngine.swift */,
@@ -1126,6 +1129,7 @@
 				CC1423EE289542DB8E517FE3 /* TraitInferenceEngine.swift in Sources */,
 				D8151D4CE5264FA8AB09BDC7 /* TraitModel.swift in Sources */,
 				E06D17FC11E04391AC6EBEFE /* AnomalyDetector.swift in Sources */,
+				FEEDC6B000000000000000E2 /* EventConfidence.swift in Sources */,
 				DBCFA44522BF49D293AF3CC8 /* EventClassifier.swift in Sources */,
 				16F708C81EA942FAA91F5452 /* EventDetectionEngine.swift in Sources */,
 				5E58547710E44338B0203784 /* RelationshipGraphEngine.swift in Sources */,
