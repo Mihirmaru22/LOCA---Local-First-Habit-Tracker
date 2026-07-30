@@ -85,6 +85,13 @@ final class NarrativeComposer {
         // Compose narrative body from arc + threads
         let body = composeBody(arc: arc, threads: threads, patterns: workingPatterns)
 
+        // Mark narrative feedback as processed
+        do {
+            try processor.markNarrativeAsProcessed(narrativeFeedback, modelContext: modelContext)
+        } catch {
+            // Silently continue if marking fails
+        }
+
         return LifeNarrative(
             arc: arc,
             threads: threads,
@@ -147,34 +154,44 @@ final class NarrativeComposer {
             return direction.statement
         }
 
-        // Otherwise, infer from chapter progression + patterns
+        // Generate candidate arcs based on chapter progression + patterns
+        var candidates: [String] = []
         let chapterCount = chapters.count
 
         if chapterCount <= 1 {
             // Early story
             let moodPatterns = patterns.filter { $0.layer == .chapterState }
-            if let moodPattern = moodPatterns.first {
-                return "Beginning to find your rhythm"
-            }
-            return "Finding your way"
-        }
-
-        if chapterCount <= 3 {
+            candidates.append(moodPatterns.first != nil ? "Beginning to find your rhythm" : "Finding your way")
+        } else if chapterCount <= 3 {
             // Mid story: multiple chapters
             let consistentHabits = patterns.filter { $0.layer == .habitChapter }
-            if !consistentHabits.isEmpty {
-                return "Discovering what stays steady through change"
+            candidates.append(consistentHabits.isEmpty ? "Learning what matters across different chapters" : "Discovering what stays steady through change")
+        } else {
+            // Longer story: explicit narrative
+            let strongPatterns = patterns.filter { $0.confidence >= 0.6 }
+            candidates.append(strongPatterns.count >= 3 ? "Your life is shaped by consistent patterns beneath the changing chapters" : "Growing through different chapters")
+        }
+
+        // Use narrative feedback to prefer high-resonance arcs
+        if !narrativeFeedback.isEmpty {
+            let processor = FeedbackProcessor.shared
+            for candidate in candidates {
+                if processor.arcHasConsistentResonance(candidate, feedback: narrativeFeedback) {
+                    // This arc has consistent positive feedback history
+                    return candidate
+                }
             }
-            return "Learning what matters across different chapters"
+
+            // Filter for high-resonance arcs if feedback exists
+            let highResonanceArcs = narrativeFeedback
+                .filter { $0.resonance >= 0.6 }
+                .map { $0.arc }
+            if let preferredArc = highResonanceArcs.first, candidates.contains(preferredArc) {
+                return preferredArc
+            }
         }
 
-        // Longer story: explicit narrative
-        let strongPatterns = patterns.filter { $0.confidence >= 0.6 }
-        if strongPatterns.count >= 3 {
-            return "Your life is shaped by consistent patterns beneath the changing chapters"
-        }
-
-        return "Growing through different chapters"
+        return candidates.first ?? "Growing through different chapters"
     }
 
     // MARK: - Narrative Composition
