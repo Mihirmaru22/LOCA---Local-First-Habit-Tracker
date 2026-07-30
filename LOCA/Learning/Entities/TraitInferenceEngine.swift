@@ -90,24 +90,29 @@ class TraitInferenceEngine {
     private func inferResilience(states: [InferredState]) -> (Double, Double)? {
         let present = states.filter { !$0.stressAbsent }
         var recoveryRates: [Double] = []
+        var recoveryUncertainties: [Double] = []
 
         for i in 1..<present.count {
             let prev = present[i - 1]
             let curr = present[i]
 
             if prev.stress > 0.65 && curr.stress < prev.stress {
-                let recovery = prev.stress - curr.stress
-                recoveryRates.append(recovery)
+                recoveryRates.append(prev.stress - curr.stress)
+                // Uncertainty of a difference: quadrature of the two measurements.
+                recoveryUncertainties.append(
+                    sqrt(prev.stressUncertainty * prev.stressUncertainty +
+                         curr.stressUncertainty * curr.stressUncertainty)
+                )
             }
         }
 
         guard !recoveryRates.isEmpty else { return nil }
 
-        let meanRecovery = recoveryRates.reduce(0, +) / Double(recoveryRates.count)
-        let normalised = min(1.0, meanRecovery / 0.3)
-        let uncertainty = max(0.15, 0.5 - Double(recoveryRates.count) * 0.03)
+        // Rule A: aggregate recovery magnitudes with their propagated uncertainties.
+        let agg = aggregateUncertainty(values: recoveryRates, uncertainties: recoveryUncertainties)
+        let normalised = min(1.0, agg.mean / 0.3)
 
-        return (normalised, uncertainty)
+        return (normalised, agg.uncertainty)
     }
 
     // Consistency: how regular daily energy patterns are across weeks.
@@ -117,23 +122,29 @@ class TraitInferenceEngine {
         let present = states.filter { !$0.energyAbsent }
 
         var hourGroups: [Int: [Double]] = [:]
+        var hourUncertainties: [Int: [Double]] = [:]
         for state in present {
             let hour = calendar.component(.hour, from: state.timestamp)
             hourGroups[hour, default: []].append(state.energy)
+            hourUncertainties[hour, default: []].append(state.energyUncertainty)
         }
 
         var hourVariances: [Double] = []
-        for (_, values) in hourGroups where values.count >= 3 {
-            let mean = values.reduce(0, +) / Double(values.count)
-            let variance = values.map { pow($0 - mean, 2) }.reduce(0, +) / Double(values.count)
+        var hourUncertaintyReps: [Double] = []
+        for (hour, values) in hourGroups where values.count >= 3 {
+            // Rule A: aggregate this hour's energy readings; carry its uncertainty.
+            let agg = aggregateUncertainty(values: values, uncertainties: hourUncertainties[hour] ?? [])
+            let variance = values.map { pow($0 - agg.mean, 2) }.reduce(0, +) / Double(values.count)
             hourVariances.append(variance)
+            hourUncertaintyReps.append(agg.uncertainty)
         }
 
         guard !hourVariances.isEmpty else { return nil }
 
         let meanVariance = hourVariances.reduce(0, +) / Double(hourVariances.count)
         let consistency = 1.0 - min(1.0, meanVariance / 0.1)
-        let uncertainty = max(0.1, 0.4 - Double(hourVariances.count) * 0.01)
+        // Rule A: aggregate the per-hour uncertainties into a trait-level uncertainty.
+        let uncertainty = aggregateUncertainty(values: hourVariances, uncertainties: hourUncertaintyReps).uncertainty
 
         return (consistency, uncertainty)
     }
@@ -141,15 +152,16 @@ class TraitInferenceEngine {
     // Social drive: tendency toward social engagement, proxied through mood lift.
     // C1: filters moodAbsent states; returns nil when no present mood measurements exist.
     private func inferSocialDrive(states: [InferredState]) -> (Double, Double)? {
-        let moodValues = states.filter { !$0.moodAbsent }.map { $0.mood }
+        let present = states.filter { !$0.moodAbsent }
+        let moodValues = present.map { $0.mood }
         guard !moodValues.isEmpty else { return nil }
 
-        let moodMean = moodValues.reduce(0, +) / Double(moodValues.count)
-        let highMoodCount = moodValues.filter { $0 > moodMean + 0.1 }.count
+        // Rule A: aggregate present mood measurements with their uncertainties.
+        let agg = aggregateUncertainty(values: moodValues, uncertainties: present.map { $0.moodUncertainty })
+        let highMoodCount = moodValues.filter { $0 > agg.mean + 0.1 }.count
         let socialDrive = Double(highMoodCount) / Double(moodValues.count)
 
-        let uncertainty = max(0.2, 0.5 - Double(states.count) * 0.005)
-        return (min(1.0, socialDrive * 2.0), uncertainty)
+        return (min(1.0, socialDrive * 2.0), agg.uncertainty)
     }
 
     // Activity drive: tendency toward physical activity, proxied by morning energy.
@@ -159,63 +171,76 @@ class TraitInferenceEngine {
         let presentEnergy = states.filter { !$0.energyAbsent }
 
         var morningEnergies: [Double] = []
+        var morningUncertainties: [Double] = []
         for state in presentEnergy {
             let hour = calendar.component(.hour, from: state.timestamp)
             if (7...10).contains(hour) {
                 morningEnergies.append(state.energy)
+                morningUncertainties.append(state.energyUncertainty)
             }
         }
 
         guard !morningEnergies.isEmpty else { return nil }
 
-        let meanMorningEnergy = morningEnergies.reduce(0, +) / Double(morningEnergies.count)
-        let uncertainty = max(0.15, 0.5 - Double(morningEnergies.count) * 0.01)
-
-        return (meanMorningEnergy, uncertainty)
+        // Rule A: aggregate morning energy with propagated uncertainty.
+        let agg = aggregateUncertainty(values: morningEnergies, uncertainties: morningUncertainties)
+        return (agg.mean, agg.uncertainty)
     }
 
     // Focus depth: sustained concentration in long uninterrupted sessions.
     // C1: filters focusAbsent states; returns nil when no sustained focus runs exist.
     private func inferFocusDepth(states: [InferredState]) -> (Double, Double)? {
         let presentFocus = states.filter { !$0.focusAbsent }
-        let focusValues = presentFocus.map { $0.focus }
 
-        var sustainedRunLengths: [Int] = []
+        var sustainedRunLengths: [Double] = []
+        var sustainedRunUncertainties: [Double] = []
         var currentRun = 0
+        var currentRunUncertainties: [Double] = []
 
-        for focus in focusValues {
-            if focus >= 0.6 {
+        func closeRun() {
+            if currentRun >= 3 {
+                sustainedRunLengths.append(Double(currentRun))
+                sustainedRunUncertainties.append(
+                    aggregateUncertainty(values: currentRunUncertainties, uncertainties: currentRunUncertainties).uncertainty
+                )
+            }
+            currentRun = 0
+            currentRunUncertainties.removeAll()
+        }
+
+        for state in presentFocus {
+            if state.focus >= 0.6 {
                 currentRun += 1
+                currentRunUncertainties.append(state.focusUncertainty)
             } else {
-                if currentRun >= 3 { sustainedRunLengths.append(currentRun) }
-                currentRun = 0
+                closeRun()
             }
         }
-        if currentRun >= 3 { sustainedRunLengths.append(currentRun) }
+        closeRun()
 
         guard !sustainedRunLengths.isEmpty else { return nil }
 
-        let meanRunLength = Double(sustainedRunLengths.reduce(0, +)) / Double(sustainedRunLengths.count)
-        let normalised = min(1.0, meanRunLength / 6.0)
-        let uncertainty = max(0.1, 0.4 - Double(sustainedRunLengths.count) * 0.05)
+        // Rule A: aggregate run lengths with their propagated uncertainties.
+        let agg = aggregateUncertainty(values: sustainedRunLengths, uncertainties: sustainedRunUncertainties)
+        let normalised = min(1.0, agg.mean / 6.0)
 
-        return (normalised, uncertainty)
+        return (normalised, agg.uncertainty)
     }
 
     // Mood stability: low variance in present-measured mood across the window.
     // C1: filters moodAbsent states; returns nil when fewer than 3 present mood samples exist.
     private func inferMoodStability(states: [InferredState]) -> (Double, Double)? {
-        let moods = states.filter { !$0.moodAbsent }.map { $0.mood }
+        let present = states.filter { !$0.moodAbsent }
+        let moods = present.map { $0.mood }
         guard moods.count >= 3 else { return nil }
 
-        let mean = moods.reduce(0, +) / Double(moods.count)
-        let variance = moods.map { pow($0 - mean, 2) }.reduce(0, +) / Double(moods.count)
+        // Rule A: aggregate present moods with their uncertainties.
+        let agg = aggregateUncertainty(values: moods, uncertainties: present.map { $0.moodUncertainty })
+        let variance = moods.map { pow($0 - agg.mean, 2) }.reduce(0, +) / Double(moods.count)
         let stddev = sqrt(variance)
 
         let stability = 1.0 - min(1.0, stddev / 0.25)
-        let uncertainty = max(0.1, 0.35 - Double(states.count) * 0.003)
-
-        return (stability, uncertainty)
+        return (stability, agg.uncertainty)
     }
 
     // MARK: - Upsert
@@ -234,9 +259,17 @@ class TraitInferenceEngine {
         )
 
         if let existing = try? modelContext.fetch(descriptor).first {
-            let blendWeight = 0.3
-            existing.value = existing.value * (1 - blendWeight) + value * blendWeight
-            existing.uncertainty = min(existing.uncertainty, uncertainty)
+            // Rule C: temporal blend of the running estimate with the new window.
+            // Replaces the forbidden `min()` ratchet on uncertainty, which could only
+            // shrink and so manufactured certainty over successive updates. The convex
+            // blend keeps uncertainty within [min, max] of the two inputs.
+            let blended = temporalBlend(
+                existing: (value: existing.value, uncertainty: existing.uncertainty),
+                new: (value: value, uncertainty: uncertainty),
+                decayFactor: 0.3
+            )
+            existing.value = blended.value
+            existing.uncertainty = blended.uncertainty
             existing.updatedAt = Date()
             existing.sampleCount = sampleCount
             existing.windowDays = windowDays
