@@ -56,6 +56,10 @@ struct NarrativeView: View {
                     .foregroundStyle(DS.Color.textPrimary)
                     .lineSpacing(4)
 
+                // C5: the arc's confidence — Rule D (weakest-link) over its patterns.
+                // Previously computed but never shown.
+                ConfidenceChip(uncertainty: narrative.arcUncertainty)
+
                 // Arc feedback
                 VStack(alignment: .leading, spacing: DS.Space.sm) {
                     HStack {
@@ -82,9 +86,16 @@ struct NarrativeView: View {
                     VStack(alignment: .leading, spacing: DS.Space.md) {
                         ForEach(narrative.threads, id: \.title) { thread in
                             VStack(alignment: .leading, spacing: DS.Space.sm) {
-                                Text(thread.title)
-                                    .font(.headline)
-                                    .foregroundStyle(DS.Color.textPrimary)
+                                HStack(alignment: .firstTextBaseline) {
+                                    Text(thread.title)
+                                        .font(.headline)
+                                        .foregroundStyle(DS.Color.textPrimary)
+
+                                    Spacer()
+
+                                    // C5: thread confidence (Rule D over its patterns).
+                                    ConfidenceChip(uncertainty: thread.uncertainty)
+                                }
 
                                 Text(thread.body)
                                     .font(DS.Text.body)
