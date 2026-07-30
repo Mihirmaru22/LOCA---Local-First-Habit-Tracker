@@ -11,9 +11,16 @@ import Foundation
 
 class RegimePersistenceChecker {
     private let persistenceWindowWeeks = 4
-    private let persistenceThreshold = 1.5  // z-score
+    // C6B fix: the threshold is compared against computeRegimeDistance, which since
+    // C6A returns an uncertainty-discounted MEAN distance in [0,1] (small for real
+    // shifts) — NOT a z-score. The previous value 1.5 was unsatisfiable (mean ≤ 1.0),
+    // so persistence never confirmed and the whole pipeline emitted no events. 0.08
+    // sits in the discounted-distance range: a sustained shift clears it, noise does not.
+    private let persistenceThreshold = 0.08
     private let correlationThreshold = 0.5  // max correlation before-to-after
 
+    /// Raw discounted persistence distance from the last confirmed check (evidence).
+    /// The engine converts this to a confidence via persistenceConfidence (C6B).
     var lastPersistenceScore = 0.0
 
     // MARK: - Main Check
@@ -42,8 +49,9 @@ class RegimePersistenceChecker {
 
         guard correlation < correlationThreshold else { return nil }
 
-        // Passed both checks: regime shift is real
-        lastPersistenceScore = min(1.0, meanSubsequentScore / 3.0)
+        // Passed both checks: regime shift is real. Store the raw discounted distance
+        // as evidence; the engine derives a [0,1] confidence from it (C6B).
+        lastPersistenceScore = meanSubsequentScore
 
         // Estimate event timestamp: Sunday of anomalous week
         let calendar = Calendar.current
