@@ -22,6 +22,23 @@ class CalibrationManager {
         self.modelContext = context
     }
 
+    // MARK: - Feedback Lifecycle
+
+    /// Mark unprocessed calibration records as consumed. Call this after
+    /// calibration completes to establish a feedback loop lifecycle.
+    func markCalibrationAsProcessed(modelContext: ModelContext) throws {
+        let descriptor = FetchDescriptor<Calibration>(
+            predicate: #Predicate { $0.isProcessed == false }
+        )
+        let unprocessed = try modelContext.fetch(descriptor)
+        for calibration in unprocessed {
+            calibration.isProcessed = true
+        }
+        if !unprocessed.isEmpty {
+            try modelContext.save()
+        }
+    }
+
     // MARK: - Weekly Calibration Loop
 
     func calibrateModels(modelContext: ModelContext) async {

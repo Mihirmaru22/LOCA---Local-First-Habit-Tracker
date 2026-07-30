@@ -132,6 +132,9 @@ class StateInferenceEngine: NSObject, ObservableObject {
             // Calibrate if user has provided ground truth
             await calibrationManager.calibrateModels(modelContext: ctx)
 
+            // Mark consumed calibrations as processed
+            try calibrationManager.markCalibrationAsProcessed(modelContext: ctx)
+
             lastInferenceTime = Date()
             inferenceError = nil
 
