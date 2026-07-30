@@ -14,6 +14,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 // MARK: - ConfidenceLevel presentation
 
@@ -121,6 +122,84 @@ struct UncertaintyBar: View {
             }
         }
         .frame(height: showMarker ? 10 : 6)
+    }
+}
+
+// MARK: - Evidence Summary (C1.2 provenance)
+
+/// A compact roll-up of what evidence underlies a composed view: which sources
+/// contributed and how many present readings back it. Aggregated from provenance
+/// already stored on InferredState — no new backend plumbing.
+struct EvidenceSummary {
+    let sources: [String]    // SignalSource rawValues, most-frequent first
+    let readingCount: Int    // present inferred states that contributed any source
+}
+
+/// Roll up InferenceProvenance across a set of states without extra queries.
+func summarizeEvidence(states: [InferredState]) -> EvidenceSummary {
+    var counts: [String: Int] = [:]
+    var readings = 0
+    for state in states {
+        let provenances = [
+            state.energyProvenance, state.stressProvenance,
+            state.focusProvenance, state.moodProvenance
+        ].compactMap { $0 }
+
+        var contributed = false
+        for provenance in provenances where !provenance.sources.isEmpty {
+            for source in provenance.sources { counts[source, default: 0] += 1 }
+            contributed = true
+        }
+        if contributed { readings += 1 }
+    }
+    let ordered = counts.sorted { $0.value > $1.value }.map { $0.key }
+    return EvidenceSummary(sources: ordered, readingCount: readings)
+}
+
+/// Human-readable name for a stored SignalSource rawValue.
+func friendlyEvidenceSource(_ raw: String) -> String {
+    switch raw {
+    case "sleep":               return "Sleep"
+    case "heartRateVariability": return "HRV"
+    case "heartRate":           return "Heart rate"
+    case "location":            return "Location"
+    case "calendar":            return "Calendar"
+    case "deviceActivity":      return "Screen time"
+    case "explicitLog":         return "Your logs"
+    case "motionActivity":      return "Movement"
+    case "steps":               return "Steps"
+    case "workout":             return "Workouts"
+    case "mindfulSession":      return "Mindfulness"
+    case "daylight":            return "Daylight"
+    default:                    return raw.capitalized
+    }
+}
+
+/// "What this draws on" — the sources and reading count behind a view. Renders
+/// nothing when there is no provenance to claim (honest about absence).
+struct EvidenceSummaryRow: View {
+    let summary: EvidenceSummary
+
+    var body: some View {
+        if summary.sources.isEmpty {
+            EmptyView()
+        } else {
+            VStack(alignment: .leading, spacing: DS.Space.xs) {
+                Text("What this draws on")
+                    .font(.caption)
+                    .textCase(.uppercase)
+                    .foregroundStyle(DS.Color.textTertiary)
+
+                Text(summary.sources.prefix(6).map(friendlyEvidenceSource).joined(separator: " · "))
+                    .font(DS.Text.caption)
+                    .foregroundStyle(DS.Color.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text("\(summary.readingCount) reading\(summary.readingCount == 1 ? "" : "s")")
+                    .font(.caption2)
+                    .foregroundStyle(DS.Color.textTertiary)
+            }
+        }
     }
 }
 

@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct PersonalLifeViewUI: View {
     let composedView: ComposedView
@@ -46,6 +47,9 @@ struct PersonalLifeViewUI: View {
                     }
                     .padding(DS.Space.md)
                     .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+
+                    // MARK: - Evidence (C1.2 provenance)
+                    EvidenceSection(start: composedView.startDate, end: composedView.endDate)
 
                     // MARK: - Life Event Markers
                     if !composedView.eventMarkers.isEmpty {
@@ -141,6 +145,40 @@ struct PersonalLifeViewUI: View {
         }
         guard epistemic + aleatoric > 0 else { return nil }
         return epistemic >= aleatoric ? .epistemic : .aleatoric
+    }
+}
+
+// MARK: - Evidence Section (C1.2 provenance)
+
+/// Queries the inferred states in the composed window and rolls up their stored
+/// provenance into a "what this draws on" summary. No pipeline changes — it reads
+/// provenance already persisted on InferredState.
+private struct EvidenceSection: View {
+    let start: Date
+    let end: Date
+
+    @Environment(\.modelContext) private var modelContext
+    @State private var summary: EvidenceSummary?
+
+    var body: some View {
+        Group {
+            if let summary, !summary.sources.isEmpty {
+                EvidenceSummaryRow(summary: summary)
+                    .padding(DS.Space.md)
+                    .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+            }
+        }
+        .task { await load() }
+    }
+
+    private func load() async {
+        let lower = start
+        let upper = end
+        let descriptor = FetchDescriptor<InferredState>(
+            predicate: #Predicate { $0.timestamp >= lower && $0.timestamp <= upper }
+        )
+        let states = (try? modelContext.fetch(descriptor)) ?? []
+        summary = summarizeEvidence(states: states)
     }
 }
 
