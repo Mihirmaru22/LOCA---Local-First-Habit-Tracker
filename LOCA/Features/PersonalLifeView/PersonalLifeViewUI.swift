@@ -107,6 +107,14 @@ struct PersonalLifeViewUI: View {
                         .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
                     }
 
+                    // MARK: - Uncertainty Type (C1.3)
+                    // Distinguish reducible from irreducible uncertainty — a field
+                    // carried on every TimelinePoint but never previously shown.
+                    if let type = dominantUncertaintyType(composedView.energyTimeline) {
+                        UncertaintyTypeNote(type: type)
+                            .padding(.horizontal, DS.Space.md)
+                    }
+
                     // MARK: - Uncertainty Legend
                     UncertaintyLegendView()
 
@@ -117,6 +125,22 @@ struct PersonalLifeViewUI: View {
             .navigationTitle("Your Life")
             .navigationBarTitleDisplayMode(.inline)
         }
+    }
+
+    /// C1.3: the majority uncertainty type among the timeline's uncertain (present,
+    /// non-crisp) points. Returns nil when nothing is uncertain — no note to show.
+    private func dominantUncertaintyType(_ timeline: [TimelinePoint]) -> UncertaintyType? {
+        var epistemic = 0
+        var aleatoric = 0
+        for point in timeline where !point.isAbsent && point.confidence != .crisp {
+            switch point.uncertaintyType {
+            case UncertaintyType.epistemic.rawValue: epistemic += 1
+            case UncertaintyType.aleatoric.rawValue: aleatoric += 1
+            default: break
+            }
+        }
+        guard epistemic + aleatoric > 0 else { return nil }
+        return epistemic >= aleatoric ? .epistemic : .aleatoric
     }
 }
 
