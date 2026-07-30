@@ -137,25 +137,34 @@ class EventDetectionEngine: NSObject, ObservableObject {
         return regimes
     }
 
+    /// Expected inferred-state slots per week (~4 readings/day × 7 days). Drives
+    /// dataDensity — the fraction of the week actually covered by present states.
+    private let expectedWeeklySlots = 28.0
+
     private func computeWeeklyRegime(
         weekStart: Date,
         states: [InferredState],
         modelContext: ModelContext
     ) -> WeeklyRegime {
-        let energyValues = states.map { $0.energy }
-        let stressValues = states.map { $0.stress }
-        let focusValues = states.map { $0.focus }
-        let moodValues = states.map { $0.mood }
+        // C6/C1: build each metric from PRESENT states only. Absent states (value
+        // 0.0) are no-data, not measured zeros, and must not pollute the mean.
+        // C6/C5: aggregate present values through Rule A so the regime inherits the
+        // propagated measurement uncertainty of the states beneath it.
+        let energyStates = states.filter { !$0.energyAbsent }
+        let stressStates = states.filter { !$0.stressAbsent }
+        let focusStates  = states.filter { !$0.focusAbsent }
+        let moodStates   = states.filter { !$0.moodAbsent }
+        let energy = metricSummary(values: energyStates.map { $0.energy }, uncertainties: energyStates.map { $0.energyUncertainty })
+        let stress = metricSummary(values: stressStates.map { $0.stress }, uncertainties: stressStates.map { $0.stressUncertainty })
+        let focus  = metricSummary(values: focusStates.map { $0.focus },   uncertainties: focusStates.map { $0.focusUncertainty })
+        let mood   = metricSummary(values: moodStates.map { $0.mood },     uncertainties: moodStates.map { $0.moodUncertainty })
 
-        let energyMean = energyValues.reduce(0, +) / Double(energyValues.count)
-        let stressMean = stressValues.reduce(0, +) / Double(stressValues.count)
-        let focusMean = focusValues.reduce(0, +) / Double(focusValues.count)
-        let moodMean = moodValues.reduce(0, +) / Double(moodValues.count)
-
-        let energyStddev = sqrt(energyValues.map { pow($0 - energyMean, 2) }.reduce(0, +) / Double(energyValues.count))
-        let stressStddev = sqrt(stressValues.map { pow($0 - stressMean, 2) }.reduce(0, +) / Double(stressValues.count))
-        let focusStddev = sqrt(focusValues.map { pow($0 - focusMean, 2) }.reduce(0, +) / Double(focusValues.count))
-        let moodStddev = sqrt(moodValues.map { pow($0 - moodMean, 2) }.reduce(0, +) / Double(moodValues.count))
+        // Data density: how much of the week is actually covered by present states.
+        // A metric with no present readings does not count toward coverage.
+        let presentCount = states.filter {
+            !($0.energyAbsent && $0.stressAbsent && $0.focusAbsent && $0.moodAbsent)
+        }.count
+        let dataDensity = min(1.0, Double(presentCount) / expectedWeeklySlots)
 
         let scheduleRegularity = computeScheduleRegularity(states: states)
         let locationDiversity = computeLocationDiversity(weekStart: weekStart, modelContext: modelContext)
@@ -164,15 +173,39 @@ class EventDetectionEngine: NSObject, ObservableObject {
 
         return WeeklyRegime(
             weekStart: weekStart,
-            energyMean: energyMean, energyStddev: energyStddev,
-            stressMean: stressMean, stressStddev: stressStddev,
-            focusMean: focusMean, focusStddev: focusStddev,
-            moodMean: moodMean, moodStddev: moodStddev,
+            energyMean: energy.mean, energyStddev: energy.stddev,
+            stressMean: stress.mean, stressStddev: stress.stddev,
+            focusMean: focus.mean, focusStddev: focus.stddev,
+            moodMean: mood.mean, moodStddev: mood.stddev,
             scheduleRegularity: scheduleRegularity,
             locationDiversity: locationDiversity,
             socialEngagement: socialEngagement,
-            activityLevel: activityLevel
+            activityLevel: activityLevel,
+            energyUncertainty: energy.uncertainty,
+            stressUncertainty: stress.uncertainty,
+            focusUncertainty: focus.uncertainty,
+            moodUncertainty: mood.uncertainty,
+            energyAbsent: energy.absent,
+            stressAbsent: stress.absent,
+            focusAbsent: focus.absent,
+            moodAbsent: mood.absent,
+            dataDensity: dataDensity
         )
+    }
+
+    /// Summarize one metric's present readings: sample mean/stddev plus the Rule A
+    /// propagated uncertainty. When no present readings exist, the metric is absent
+    /// (mean 0, uncertainty 1) — never a fabricated 0.0 mean.
+    private func metricSummary(
+        values: [Double],
+        uncertainties: [Double]
+    ) -> (mean: Double, stddev: Double, uncertainty: Double, absent: Bool) {
+        guard !values.isEmpty else {
+            return (mean: 0.0, stddev: 0.0, uncertainty: 1.0, absent: true)
+        }
+        let agg = aggregateUncertainty(values: values, uncertainties: uncertainties)  // C5 Rule A
+        let stddev = sqrt(values.map { pow($0 - agg.mean, 2) }.reduce(0, +) / Double(values.count))
+        return (mean: agg.mean, stddev: stddev, uncertainty: agg.uncertainty, absent: false)
     }
 
     private func computeScheduleRegularity(states: [InferredState]) -> Double {
