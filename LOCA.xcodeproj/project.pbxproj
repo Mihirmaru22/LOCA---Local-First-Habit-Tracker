@@ -117,6 +117,7 @@
 		FD6101E26D004E2C8AA1ADD5 /* HabitBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C709F0147F14CE0AEDACAE8 /* HabitBoard.swift */; };
 		FD67DA6924D0492880CEB1EA /* PersistenceError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 007029E177424E23BA4737C3 /* PersistenceError.swift */; };
 		FE1C77B02737FF7D02B147F9 /* DSComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE3AFDA24101174CA0C31F34 /* DSComponents.swift */; };
+		FEEDCF00000000000000C002 /* ReflectionComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEEDCF00000000000000C001 /* ReflectionComponents.swift */; };
 		0523E49AAE5243F995956550 /* SignalCollectionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B3B92460BE743CFADF3C6DE /* SignalCollectionCoordinator.swift */; };
 		243DF5BB4534442BAE4CAA1F /* ChapterListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA5DC44C46F541A3BDC55226 /* ChapterListView.swift */; };
 		D4299A41A8464082A3FE9B4F /* LifeSceneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B46892C881A4E868F105317 /* LifeSceneView.swift */; };
@@ -358,6 +359,7 @@
 		FADE00000000000000000013 /* HeatmapDataProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeatmapDataProviderTests.swift; sourceTree = "<group>"; };
 		FC3230A263C5088C154C34B8 /* ConsistencyChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConsistencyChartView.swift; sourceTree = "<group>"; };
 		FE3AFDA24101174CA0C31F34 /* DSComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSComponents.swift; sourceTree = "<group>"; };
+		FEEDCF00000000000000C001 /* ReflectionComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReflectionComponents.swift; sourceTree = "<group>"; };
 		5B3B92460BE743CFADF3C6DE /* SignalCollectionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalCollectionCoordinator.swift; sourceTree = "<group>"; };
 		CA5DC44C46F541A3BDC55226 /* ChapterListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChapterListView.swift; sourceTree = "<group>"; };
 		8B46892C881A4E868F105317 /* LifeSceneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeSceneView.swift; sourceTree = "<group>"; };
@@ -659,6 +661,7 @@
 				A70908D4D7F064AAB567F413 /* DS+Color.swift */,
 				C2D47C4C19429A1E8AB3FB34 /* DS+Motion.swift */,
 				FE3AFDA24101174CA0C31F34 /* DSComponents.swift */,
+				FEEDCF00000000000000C001 /* ReflectionComponents.swift */,
 				37119D6BF608C9E0EDFAA772 /* WeeklyBarChart.swift */,
 				8430612562AB5270D58C46C7 /* ArcGaugeView.swift */,
 				C73F66E3D961FCE292C91914 /* PressableButtonStyle.swift */,
@@ -1014,6 +1017,7 @@
 				32CDC07A4896BFECC0C32797 /* DS+Color.swift in Sources */,
 				CCBD1D27BFEF796EFB9DFD39 /* DS+Motion.swift in Sources */,
 				FE1C77B02737FF7D02B147F9 /* DSComponents.swift in Sources */,
+				FEEDCF00000000000000C002 /* ReflectionComponents.swift in Sources */,
 				9BC55CE15C7D2A795DDDD331 /* HabitListRow.swift in Sources */,
 				290812E393429F92DFF5711C /* HabitListView.swift in Sources */,
 				C925DCC8608E4CC8B96FB1BE /* HabitListLayoutView.swift in Sources */,

@@ -134,7 +134,7 @@ struct TraitCard: View {
                 ConfidenceChip(level: confidenceLevel)
             }
 
-            TraitBar(value: trait.value, uncertainty: trait.uncertainty, color: trait.traitType.color)
+            UncertaintyBar(value: trait.value, uncertainty: trait.uncertainty, color: trait.traitType.color)
 
             HStack {
                 Text(trait.traitType.lowLabel)
@@ -158,80 +158,6 @@ struct TraitCard: View {
             RoundedRectangle(cornerRadius: DS.Radius.card)
                 .stroke(DS.Color.border, lineWidth: 1)
         )
-    }
-}
-
-// MARK: - Trait Bar
-
-private struct TraitBar: View {
-    let value: Double
-    let uncertainty: Double
-    let color: Color
-
-    var body: some View {
-        GeometryReader { geo in
-            ZStack(alignment: .leading) {
-                // Track
-                RoundedRectangle(cornerRadius: 3)
-                    .frame(height: 6)
-                    .foregroundStyle(DS.Color.surfaceRecessed)
-
-                // Uncertainty halo
-                let haloStart = max(0, value - uncertainty)
-                let haloWidth = min(1, value + uncertainty) - haloStart
-                RoundedRectangle(cornerRadius: 3)
-                    .frame(
-                        width: geo.size.width * haloWidth,
-                        height: 6
-                    )
-                    .offset(x: geo.size.width * haloStart)
-                    .foregroundStyle(color.opacity(0.25))
-
-                // Value bar
-                RoundedRectangle(cornerRadius: 3)
-                    .frame(width: geo.size.width * value, height: 6)
-                    .foregroundStyle(color)
-
-                // Point marker
-                Circle()
-                    .frame(width: 10, height: 10)
-                    .foregroundStyle(color)
-                    .offset(x: geo.size.width * value - 5, y: -2)
-            }
-        }
-        .frame(height: 10)
-    }
-}
-
-// MARK: - Confidence Chip
-
-private struct ConfidenceChip: View {
-    let level: ConfidenceLevel
-
-    private var label: String {
-        switch level {
-        case .crisp:       return "Confident"
-        case .soft:        return "Emerging"
-        case .speculative: return "Uncertain"
-        }
-    }
-
-    private var chipColor: Color {
-        switch level {
-        case .crisp:       return Color(hex: "#10B981")
-        case .soft:        return Color(hex: "#F59E0B")
-        case .speculative: return Color(hex: "#6B7280")
-        }
-    }
-
-    var body: some View {
-        Text(label)
-            .font(.caption2)
-            .fontWeight(.medium)
-            .foregroundStyle(chipColor)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(chipColor.opacity(0.12), in: Capsule())
     }
 }
 
