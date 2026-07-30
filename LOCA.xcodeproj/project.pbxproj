@@ -204,10 +204,12 @@
 		E90091F4530042528F3D326F /* SignalManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2B6F24F5644421B9C7DE2A2 /* SignalManager.swift */; };
 		79978C55F37D44D988F02540 /* SignalModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47CE243A75594807A935F050 /* SignalModels.swift */; };
 		9426896D3B89443EA3F342BD /* UncertaintyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D7E106DBFD4436CB57012CD /* UncertaintyModels.swift */; };
+		FEEDCA1C00000000000000A2 /* UncertaintyCalculus.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEEDCA1C00000000000000A1 /* UncertaintyCalculus.swift */; };
 		252DBB9DA99B4BB09950A0FF /* UncertaintyValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD70FA3CF4D34DD1ADE3F040 /* UncertaintyValidator.swift */; };
 		DC4EDB80F8D24BAFAD6F52A4 /* ViewRenderingSpecification.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40136964818440CB183624C /* ViewRenderingSpecification.swift */; };
 		3ACB9A8F2533403292FD6037 /* SignalModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47CE243A75594807A935F050 /* SignalModels.swift */; };
 		B60336F098644039ACA597FD /* UncertaintyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D7E106DBFD4436CB57012CD /* UncertaintyModels.swift */; };
+		FEEDCA1C00000000000000A3 /* UncertaintyCalculus.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEEDCA1C00000000000000A1 /* UncertaintyCalculus.swift */; };
 		BC8047FE689A47BB85E02F3E /* LifeEventModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C5D8BAD568F45938AF6725C /* LifeEventModels.swift */; };
 		118DAEF8F3154CD39D9D2C7E /* ChapterModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86BB7A0D33C447FB8707EA34 /* ChapterModel.swift */; };
 		E801EFE5D014433B8BD86123 /* TraitModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 897271B11E814E59B5C885B9 /* TraitModel.swift */; };
@@ -400,6 +402,7 @@
 		E2B6F24F5644421B9C7DE2A2 /* SignalManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalManager.swift; sourceTree = "<group>"; };
 		47CE243A75594807A935F050 /* SignalModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalModels.swift; sourceTree = "<group>"; };
 		8D7E106DBFD4436CB57012CD /* UncertaintyModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UncertaintyModels.swift; sourceTree = "<group>"; };
+		FEEDCA1C00000000000000A1 /* UncertaintyCalculus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UncertaintyCalculus.swift; sourceTree = "<group>"; };
 		BD70FA3CF4D34DD1ADE3F040 /* UncertaintyValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UncertaintyValidator.swift; sourceTree = "<group>"; };
 		D40136964818440CB183624C /* ViewRenderingSpecification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewRenderingSpecification.swift; sourceTree = "<group>"; };
 		126D0D524CF043C7B04C4E5C /* InferredStateModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InferredStateModel.swift; sourceTree = "<group>"; };
@@ -751,6 +754,7 @@
 				AA11000000000000000005AB /* Managers */,
 				AA11000000000000000006AB /* Models */,
 				8D7E106DBFD4436CB57012CD /* UncertaintyModels.swift */,
+				FEEDCA1C00000000000000A1 /* UncertaintyCalculus.swift */,
 				BD70FA3CF4D34DD1ADE3F040 /* UncertaintyValidator.swift */,
 				D40136964818440CB183624C /* ViewRenderingSpecification.swift */,
 			);
@@ -969,6 +973,7 @@
 				052F419EE842417885F32906 /* Animation+Extensions.swift in Sources */,
 				3ACB9A8F2533403292FD6037 /* SignalModels.swift in Sources */,
 				B60336F098644039ACA597FD /* UncertaintyModels.swift in Sources */,
+				FEEDCA1C00000000000000A3 /* UncertaintyCalculus.swift in Sources */,
 				BC8047FE689A47BB85E02F3E /* LifeEventModels.swift in Sources */,
 				118DAEF8F3154CD39D9D2C7E /* ChapterModel.swift in Sources */,
 				E801EFE5D014433B8BD86123 /* TraitModel.swift in Sources */,
@@ -1138,6 +1143,7 @@
 				E90091F4530042528F3D326F /* SignalManager.swift in Sources */,
 				79978C55F37D44D988F02540 /* SignalModels.swift in Sources */,
 				9426896D3B89443EA3F342BD /* UncertaintyModels.swift in Sources */,
+				FEEDCA1C00000000000000A2 /* UncertaintyCalculus.swift in Sources */,
 				252DBB9DA99B4BB09950A0FF /* UncertaintyValidator.swift in Sources */,
 				DC4EDB80F8D24BAFAD6F52A4 /* ViewRenderingSpecification.swift in Sources */,
 				E48388FCBA37469DAE5986DB /* InferredStateModel.swift in Sources */,
