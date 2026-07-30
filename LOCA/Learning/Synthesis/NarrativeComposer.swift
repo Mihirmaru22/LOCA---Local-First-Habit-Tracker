@@ -8,6 +8,11 @@
 //  themes, and trajectories. A narrative is not a summary — it's a shaped
 //  observation of how different parts of your life connect and evolve.
 //
+//  C5: arc and thread confidence come from UncertaintyCalculus (Rule D conjunction
+//  of the contributing patterns), and their uncertainty is aggregated from the real
+//  pattern uncertainties (Rule A). Prose is hedged so that assertiveness rises with
+//  confidence — the language contract — never the reverse.
+//
 
 import Foundation
 import SwiftData
@@ -17,6 +22,12 @@ import SwiftData
 struct LifeNarrative {
     /// The main story arc (e.g., "growing into rhythm")
     let arc: String
+
+    /// Confidence in the arc (0–1): Rule D (weakest-link) over contributing patterns.
+    let arcConfidence: Double
+
+    /// Uncertainty in the arc (0–1): Rule A over the contributing patterns' uncertainties.
+    let arcUncertainty: Double
 
     /// Supporting threads (2–3 key themes)
     let threads: [NarrativeThread]
@@ -37,6 +48,12 @@ struct NarrativeThread {
 
     /// Which patterns support this thread?
     let patternIds: [UUID]
+
+    /// Confidence in this thread: Rule D (min) of its supporting patterns' confidence.
+    let confidence: Double
+
+    /// Uncertainty in this thread: Rule A over its supporting patterns' uncertainty.
+    let uncertainty: Double
 }
 
 // MARK: - Engine
@@ -82,8 +99,16 @@ final class NarrativeComposer {
         // Identify life arc from chapter progression + direction
         let arc = identifyArc(chapters: chapters, direction: direction, patterns: workingPatterns, narrativeFeedback: narrativeFeedback)
 
-        // Compose narrative body from arc + threads
-        let body = composeBody(arc: arc, threads: threads, patterns: workingPatterns)
+        // Rule D: arc confidence is the weakest-link of its contributing patterns.
+        let arcConfidence = conjunctionConfidence(componentConfidences: workingPatterns.map { $0.confidence })
+        // Rule A: arc uncertainty aggregates the real pattern uncertainties.
+        let arcUncertainty = aggregateUncertainty(
+            values: workingPatterns.map { $0.confidence },
+            uncertainties: workingPatterns.map { $0.uncertainty }
+        ).uncertainty
+
+        // Compose narrative body from arc + threads, hedged by confidence.
+        let body = composeBody(arc: arc, arcConfidence: arcConfidence, threads: threads, patterns: workingPatterns)
 
         // Mark narrative feedback as processed
         do {
@@ -94,6 +119,8 @@ final class NarrativeComposer {
 
         return LifeNarrative(
             arc: arc,
+            arcConfidence: arcConfidence,
+            arcUncertainty: arcUncertainty,
             threads: threads,
             body: body,
             generatedAt: Date()
@@ -108,33 +135,49 @@ final class NarrativeComposer {
         // Thread 1: Habit theme (if multiple habit-state patterns)
         let habitPatterns = patterns.filter { $0.layer == .habitState }.sorted { $0.confidence > $1.confidence }
         if !habitPatterns.isEmpty {
-            let habits = habitPatterns.prefix(3).map { $0.observation }.joined(separator: " Also, ")
+            let top = Array(habitPatterns.prefix(3))
+            let confidence = conjunctionConfidence(componentConfidences: top.map { $0.confidence })
+            let uncertainty = aggregateUncertainty(
+                values: top.map { $0.confidence }, uncertainties: top.map { $0.uncertainty }
+            ).uncertainty
+            let habits = top.map { $0.observation }.joined(separator: " Also, ")
             threads.append(NarrativeThread(
                 title: "Your anchoring habits",
-                body: habits + " These habits appear to be part of what sustains your baseline.",
-                patternIds: habitPatterns.prefix(3).map { $0.id }
+                body: habits + " " + hedge("These habits appear to be part of what sustains your baseline.", confidence: confidence),
+                patternIds: top.map { $0.id },
+                confidence: confidence,
+                uncertainty: uncertainty
             ))
         }
 
         // Thread 2: People theme (if multiple person-state patterns)
         let peoplePatterns = patterns.filter { $0.layer == .personState }.sorted { $0.confidence > $1.confidence }
         if !peoplePatterns.isEmpty {
-            let people = peoplePatterns.prefix(2).map { $0.observation }.joined(separator: " Similarly, ")
+            let top = Array(peoplePatterns.prefix(2))
+            let confidence = conjunctionConfidence(componentConfidences: top.map { $0.confidence })
+            let uncertainty = aggregateUncertainty(
+                values: top.map { $0.confidence }, uncertainties: top.map { $0.uncertainty }
+            ).uncertainty
+            let people = top.map { $0.observation }.joined(separator: " Similarly, ")
             threads.append(NarrativeThread(
                 title: "The people in your rhythm",
-                body: people + " The specific people around you shape your inner states.",
-                patternIds: peoplePatterns.prefix(2).map { $0.id }
+                body: people + " " + hedge("The specific people around you shape your inner states.", confidence: confidence),
+                patternIds: top.map { $0.id },
+                confidence: confidence,
+                uncertainty: uncertainty
             ))
         }
 
         // Thread 3: Consistency theme (if habit-chapter patterns exist)
         let consistencyPatterns = patterns.filter { $0.layer == .habitChapter }.sorted { $0.confidence > $1.confidence }
-        if !consistencyPatterns.isEmpty {
-            let consistency = consistencyPatterns.first?.observation ?? "Something stays constant"
+        if let topPattern = consistencyPatterns.first {
+            let confidence = topPattern.confidence
             threads.append(NarrativeThread(
                 title: "What persists",
-                body: consistency + " This consistency across your life's chapters suggests a core thread running through everything.",
-                patternIds: consistencyPatterns.prefix(1).map { $0.id }
+                body: topPattern.observation + " " + hedge("This consistency across your life's chapters suggests a core thread running through everything.", confidence: confidence),
+                patternIds: [topPattern.id],
+                confidence: confidence,
+                uncertainty: topPattern.uncertainty
             ))
         }
 
@@ -194,28 +237,60 @@ final class NarrativeComposer {
         return candidates.first ?? "Growing through different chapters"
     }
 
+    // MARK: - Language Contract (Hedging)
+
+    /// Hedge a statement so that assertiveness rises MONOTONICALLY with confidence.
+    /// This is the corrected language contract: crisp only when confidence is high,
+    /// increasingly tentative as it falls. (The prior implementation inverted this —
+    /// it made the weakest claims the most assertive.)
+    ///
+    ///   confidence >= 0.85  → crisp    ("clearly …")
+    ///   confidence >= 0.55  → soft     (leave the hedged wording as written)
+    ///   confidence >= 0.30  → speculative ("One possible reading: …")
+    ///   confidence <  0.30  → tentative  ("Very tentatively, …")
+    private func hedge(_ text: String, confidence: Double) -> String {
+        if confidence >= 0.85 {
+            return text.replacingOccurrences(of: "appear to be", with: "are")
+                       .replacingOccurrences(of: "appears", with: "clearly")
+                       .replacingOccurrences(of: "suggests", with: "shows")
+        } else if confidence >= 0.55 {
+            return text
+        } else if confidence >= 0.30 {
+            return "One possible reading: " + lowercaseFirst(text)
+        } else {
+            return "Very tentatively, " + lowercaseFirst(text)
+        }
+    }
+
+    private func lowercaseFirst(_ s: String) -> String {
+        guard let first = s.first else { return s }
+        return first.lowercased() + s.dropFirst()
+    }
+
     // MARK: - Narrative Composition
 
     private func composeBody(
         arc: String,
+        arcConfidence: Double,
         threads: [NarrativeThread],
         patterns: [LifePattern]
     ) -> String {
         var body = ""
 
-        body += "The arc of your life, as reflected in your data: \(arc).\n\n"
+        // Hedge the arc statement by the arc's confidence.
+        body += hedge("The arc of your life, as reflected in your data: \(arc).", confidence: arcConfidence) + "\n\n"
 
         body += "Several themes support this arc:\n\n"
 
-        for (i, thread) in threads.enumerated() {
+        for thread in threads {
             body += "**\(thread.title).**\n"
             body += thread.body + "\n\n"
         }
 
-        let mostConfident = patterns.sorted { $0.confidence > $1.confidence }.prefix(1)
-        if let pattern = mostConfident.first {
-            body += "The strongest pattern emerging: \(pattern.observation) "
-            body += "(based on \(pattern.sampleCount) observations, with \(String(format: "%.0f", pattern.confidence * 100))% confidence).\n\n"
+        if let pattern = patterns.sorted(by: { $0.confidence > $1.confidence }).first {
+            let hedged = hedge(pattern.observation, confidence: pattern.confidence)
+            body += "The strongest pattern emerging: \(hedged) "
+            body += "(based on \(pattern.sampleCount) observations).\n\n"
         }
 
         body += "These patterns aren't fixed — they're living observations of your life as it actually unfolds. As you add more data and new experiences, the patterns shift, the threads reweave, and your narrative deepens."
