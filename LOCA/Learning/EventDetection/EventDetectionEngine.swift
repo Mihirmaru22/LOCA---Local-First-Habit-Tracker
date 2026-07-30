@@ -20,6 +20,11 @@ class EventDetectionEngine: NSObject, ObservableObject {
     private let regimePersistenceChecker = RegimePersistenceChecker()
     private let eventClassifier = EventClassifier()
 
+    // C6B: an event is surfaced only when its combined (weakest-link) confidence
+    // clears this bar. Downstream consumers (Chapters, timeline) then reflect an
+    // honest confidence rather than a raw classification magnitude.
+    private let eventConfidenceBar = 0.5
+
     private var modelContext: ModelContext?
 
     func setModelContext(_ context: ModelContext) {
@@ -68,12 +73,22 @@ class EventDetectionEngine: NSObject, ObservableObject {
                         regimes: weeklyRegimes
                     )
 
-                    // Only insert high-confidence events, and only if we haven't
-                    // already recorded one near this time. This detector re-scans the
-                    // whole past month every run; the proximity guard keeps it
-                    // idempotent and preserves each event's stable identity across
-                    // runs, so Chapters (which link events by id) don't duplicate.
-                    guard classification.confidence >= 0.7 else { continue }
+                    // C6B: the event's confidence is the weakest-link conjunction of
+                    // the evidence that it happened (anomaly × persistence) and the
+                    // evidence for what it was (classification margin) — not the raw
+                    // classification magnitude.
+                    let eventConfidence = combinedEventConfidence(
+                        anomaly: anomalyConfidence(anomalyScore: anomalousWeek.anomalyScore),
+                        persistence: persistenceConfidence(distance: regimePersistenceChecker.lastPersistenceScore),
+                        classification: classification.confidence
+                    )
+
+                    // Only insert events that clear the confidence bar, and only if we
+                    // haven't already recorded one near this time. This detector
+                    // re-scans the whole past month every run; the proximity guard
+                    // keeps it idempotent and preserves each event's stable identity
+                    // across runs, so Chapters (which link events by id) don't duplicate.
+                    guard eventConfidence >= eventConfidenceBar else { continue }
 
                     let windowStart = eventTimestamp.addingTimeInterval(-3 * 86400)
                     let windowEnd = eventTimestamp.addingTimeInterval(3 * 86400)
@@ -88,7 +103,7 @@ class EventDetectionEngine: NSObject, ObservableObject {
                     let event = LifeEvent(
                         timestamp: eventTimestamp,
                         eventType: classification.eventType,
-                        confidence: classification.confidence,
+                        confidence: eventConfidence,
                         anomalyScore: anomalousWeek.anomalyScore,
                         persistenceScore: regimePersistenceChecker.lastPersistenceScore,
                         classificationScore: classification.confidence,
