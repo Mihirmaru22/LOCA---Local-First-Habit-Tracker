@@ -109,6 +109,7 @@
 		FAA57F5EE1684524A7E69EF1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F0A5A06DC0E2402C8577EA8C /* Assets.xcassets */; };
 		FADE00000000000000000021 /* StreakCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADE00000000000000000011 /* StreakCalculatorTests.swift */; };
 		FADE00000000000000000022 /* AggregationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADE00000000000000000012 /* AggregationTests.swift */; };
+		FEEDCA6A00000000000000B2 /* RegimeHonestyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEEDCA6A00000000000000B1 /* RegimeHonestyTests.swift */; };
 		FADE00000000000000000023 /* HeatmapDataProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADE00000000000000000013 /* HeatmapDataProviderTests.swift */; };
 		FB7C2613B33C4BAAB22BB911 /* HeatmapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CE91B0C5D88414094E4DD05 /* HeatmapView.swift */; };
 		FB97ED22535C7994EFE3CCB3 /* TimingInference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AA86358B6826E173A22E6FA /* TimingInference.swift */; };
@@ -353,6 +354,7 @@
 		FADE00000000000000000001 /* LOCATests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LOCATests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FADE00000000000000000011 /* StreakCalculatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakCalculatorTests.swift; sourceTree = "<group>"; };
 		FADE00000000000000000012 /* AggregationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AggregationTests.swift; sourceTree = "<group>"; };
+		FEEDCA6A00000000000000B1 /* RegimeHonestyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegimeHonestyTests.swift; sourceTree = "<group>"; };
 		FADE00000000000000000013 /* HeatmapDataProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeatmapDataProviderTests.swift; sourceTree = "<group>"; };
 		FC3230A263C5088C154C34B8 /* ConsistencyChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConsistencyChartView.swift; sourceTree = "<group>"; };
 		FE3AFDA24101174CA0C31F34 /* DSComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSComponents.swift; sourceTree = "<group>"; };
@@ -670,6 +672,7 @@
 			children = (
 				FADE00000000000000000011 /* StreakCalculatorTests.swift */,
 				FADE00000000000000000012 /* AggregationTests.swift */,
+				FEEDCA6A00000000000000B1 /* RegimeHonestyTests.swift */,
 				FADE00000000000000000013 /* HeatmapDataProviderTests.swift */,
 			);
 			path = LOCATests;
@@ -1157,6 +1160,7 @@
 			files = (
 				FADE00000000000000000021 /* StreakCalculatorTests.swift in Sources */,
 				FADE00000000000000000022 /* AggregationTests.swift in Sources */,
+				FEEDCA6A00000000000000B2 /* RegimeHonestyTests.swift in Sources */,
 				FADE00000000000000000023 /* HeatmapDataProviderTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

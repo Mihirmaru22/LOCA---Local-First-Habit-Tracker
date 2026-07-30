@@ -64,7 +64,9 @@ class RegimePersistenceChecker {
     /// confirm. Metrics absent in either regime are skipped (their fabricated 0.0
     /// mean must not register as distance); the result averages over the metrics
     /// that were present in both.
-    private func computeRegimeDistance(
+    // internal (not private) so C6A property tests can exercise the discounted
+    // distance directly via @testable import.
+    func computeRegimeDistance(
         from baselineWeek: WeeklyRegime,
         to comparisonWeek: WeeklyRegime
     ) -> Double {
