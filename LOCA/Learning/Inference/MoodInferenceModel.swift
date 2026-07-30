@@ -9,7 +9,10 @@
 
 import Foundation
 
+@MainActor
 class MoodInferenceModel {
+    static let shared = MoodInferenceModel()
+
     private var moodCheckinWeight: Double = 0.25
     private var sentimentWeight: Double = 0.2
     private var socialEngagementWeight: Double = 0.15
@@ -19,8 +22,37 @@ class MoodInferenceModel {
 
     private var baselineHourMood: [Int: Double] = [:]
 
+    private let defaults = UserDefaults.standard
+    private let keyMoodCheckinWeight = "mood_moodCheckinWeight"
+    private let keySentimentWeight = "mood_sentimentWeight"
+    private let keySocialEngagementWeight = "mood_socialEngagementWeight"
+    private let keyVarietyWeight = "mood_varietyWeight"
+    private let keySleepQualityWeight = "mood_sleepQualityWeight"
+    private let keyLoggedWeight = "mood_loggedWeight"
+
     init() {
+        loadWeights()
         initializeBaseline()
+    }
+
+    private func loadWeights() {
+        if defaults.object(forKey: keyMoodCheckinWeight) != nil {
+            moodCheckinWeight = defaults.double(forKey: keyMoodCheckinWeight)
+            sentimentWeight = defaults.double(forKey: keySentimentWeight)
+            socialEngagementWeight = defaults.double(forKey: keySocialEngagementWeight)
+            varietyWeight = defaults.double(forKey: keyVarietyWeight)
+            sleepQualityWeight = defaults.double(forKey: keySleepQualityWeight)
+            loggedMoodWeight = defaults.double(forKey: keyLoggedWeight)
+        }
+    }
+
+    private func saveWeights() {
+        defaults.set(moodCheckinWeight, forKey: keyMoodCheckinWeight)
+        defaults.set(sentimentWeight, forKey: keySentimentWeight)
+        defaults.set(socialEngagementWeight, forKey: keySocialEngagementWeight)
+        defaults.set(varietyWeight, forKey: keyVarietyWeight)
+        defaults.set(sleepQualityWeight, forKey: keySleepQualityWeight)
+        defaults.set(loggedMoodWeight, forKey: keyLoggedWeight)
     }
 
     // MARK: - Main Inference
@@ -271,5 +303,6 @@ class MoodInferenceModel {
         self.varietyWeight = varietyWeight / total
         self.sleepQualityWeight = sleepQualityWeight / total
         self.loggedMoodWeight = loggedWeight / total
+        saveWeights()
     }
 }

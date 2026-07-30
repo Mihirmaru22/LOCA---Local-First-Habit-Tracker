@@ -11,10 +11,10 @@ import SwiftData
 
 @MainActor
 class CalibrationManager {
-    private let energyModel = EnergyInferenceModel()
-    private let stressModel = StressInferenceModel()
-    private let focusModel = FocusInferenceModel()
-    private let moodModel = MoodInferenceModel()
+    private let energyModel = EnergyInferenceModel.shared
+    private let stressModel = StressInferenceModel.shared
+    private let focusModel = FocusInferenceModel.shared
+    private let moodModel = MoodInferenceModel.shared
 
     private var modelContext: ModelContext?
 
@@ -81,6 +81,14 @@ class CalibrationManager {
         calibrateMood(logs: logs, states: allStates.filter { $0.moodUncertaintyType == .epistemic || $0.moodUncertaintyType == nil })
     }
 
+    // MARK: - Helpers
+
+    private func floorToHour(_ timestamp: Date) -> Date {
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.year, .month, .day, .hour], from: timestamp)
+        return calendar.date(from: components) ?? timestamp
+    }
+
     // MARK: - Energy Calibration
 
     private func calibrateEnergy(logs: [SignalEvent], states: [InferredState]) {
@@ -90,7 +98,8 @@ class CalibrationManager {
         for log in logs where log.metadata["energy"] != nil {
             guard let logged = Double(log.metadata["energy"] ?? "") else { continue }
 
-            if let state = states.first(where: { $0.hourStart == log.timestamp }) {
+            let logHourStart = floorToHour(log.timestamp)
+            if let state = states.first(where: { $0.hourStart == logHourStart }) {
                 let error = abs(state.energy - logged)
                 errors.append(error)
                 predictions.append(state.energy)
@@ -133,7 +142,8 @@ class CalibrationManager {
         for log in logs where log.metadata["stress"] != nil {
             guard let logged = Double(log.metadata["stress"] ?? "") else { continue }
 
-            if let state = states.first(where: { $0.hourStart == log.timestamp }) {
+            let logHourStart = floorToHour(log.timestamp)
+            if let state = states.first(where: { $0.hourStart == logHourStart }) {
                 let error = abs(state.stress - logged)
                 errors.append(error)
 
@@ -167,7 +177,8 @@ class CalibrationManager {
         for log in logs where log.metadata["focus"] != nil {
             guard let logged = Double(log.metadata["focus"] ?? "") else { continue }
 
-            if let state = states.first(where: { $0.hourStart == log.timestamp }) {
+            let logHourStart = floorToHour(log.timestamp)
+            if let state = states.first(where: { $0.hourStart == logHourStart }) {
                 let error = abs(state.focus - logged)
                 errors.append(error)
 
@@ -201,7 +212,8 @@ class CalibrationManager {
         for log in logs where log.metadata["mood"] != nil {
             guard let logged = Double(log.metadata["mood"] ?? "") else { continue }
 
-            if let state = states.first(where: { $0.hourStart == log.timestamp }) {
+            let logHourStart = floorToHour(log.timestamp)
+            if let state = states.first(where: { $0.hourStart == logHourStart }) {
                 let error = abs(state.mood - logged)
                 errors.append(error)
 

@@ -21,10 +21,10 @@ class StateInferenceEngine: NSObject, ObservableObject {
     @Published var lastInferenceTime: Date?
     @Published var inferenceError: String?
 
-    private let energyModel = EnergyInferenceModel()
-    private let stressModel = StressInferenceModel()
-    private let focusModel = FocusInferenceModel()
-    private let moodModel = MoodInferenceModel()
+    private let energyModel = EnergyInferenceModel.shared
+    private let stressModel = StressInferenceModel.shared
+    private let focusModel = FocusInferenceModel.shared
+    private let moodModel = MoodInferenceModel.shared
     private let calibrationManager = CalibrationManager()
 
     private var modelContext: ModelContext?
