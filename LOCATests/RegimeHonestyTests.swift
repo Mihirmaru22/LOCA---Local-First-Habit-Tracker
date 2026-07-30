@@ -134,3 +134,86 @@ final class RegimeHonestyTests: XCTestCase {
                        "an absent metric's 0.0 mean must not be read as a deviation")
     }
 }
+
+// MARK: - C6B: honest event confidence (PB1–PB6)
+
+/// A minimal regime for persistence-distance tests: present, low-uncertainty, with
+/// only the fields the distance function reads meaningfully.
+private func eventRegime(energy: Double, stress: Double, u: Double = 0.05) -> WeeklyRegime {
+    WeeklyRegime(
+        weekStart: Date(),
+        energyMean: energy, energyStddev: 0.0,
+        stressMean: stress, stressStddev: 0.0,
+        focusMean: 0.5, focusStddev: 0.0,
+        moodMean: 0.6, moodStddev: 0.0,
+        scheduleRegularity: 0.7,
+        locationDiversity: 0.3,
+        socialEngagement: 0.3,
+        activityLevel: 0.5,
+        energyUncertainty: u, stressUncertainty: u,
+        focusUncertainty: u, moodUncertainty: u,
+        energyAbsent: false, stressAbsent: false,
+        focusAbsent: false, moodAbsent: false,
+        dataDensity: 1.0
+    )
+}
+
+final class EventConfidenceTests: XCTestCase {
+
+    // PB1: a clean anomalous + persistent + unambiguous shift is high-confidence.
+    func test_PB1_CleanEventIsConfident() {
+        let c = combinedEventConfidence(
+            anomaly: anomalyConfidence(anomalyScore: 10),      // strong anomaly
+            persistence: persistenceConfidence(distance: 0.5), // strong persistence
+            classification: classificationConfidence(topScore: 0.5, secondScore: 0.1) // clear winner
+        )
+        XCTAssertGreaterThan(c, 0.6, "a clean, unambiguous event should be confident")
+    }
+
+    // PB2: a classification tie collapses event confidence, even if anomalous+persistent.
+    func test_PB2_ClassificationTieIsLowConfidence() {
+        let tie = classificationConfidence(topScore: 0.41, secondScore: 0.40)
+        XCTAssertLessThan(tie, 0.1, "a near-tie is genuinely ambiguous")
+
+        let c = combinedEventConfidence(anomaly: 0.8, persistence: 0.8, classification: tie)
+        XCTAssertLessThan(c, 0.5, "ambiguous classification must drag event confidence below the bar")
+    }
+
+    // PB3: weak persistence caps the event via weakest-link, even with strong others.
+    func test_PB3_WeakPersistenceCapsConfidence() {
+        let c = combinedEventConfidence(
+            anomaly: 0.83,
+            persistence: persistenceConfidence(distance: 0.01), // barely persistent
+            classification: 0.9
+        )
+        XCTAssertLessThan(c, 0.5, "a shift that doesn't persist is not a confident event")
+    }
+
+    // PB4: no fabricated confidence — no signal ⇒ 0; a lone winner ⇒ full margin.
+    func test_PB4_NoFabricatedConfidence() {
+        XCTAssertEqual(classificationConfidence(topScore: 0, secondScore: 0), 0.0, accuracy: 1e-9)
+        XCTAssertEqual(classificationConfidence(topScore: 0.5, secondScore: 0.0), 1.0, accuracy: 1e-9)
+    }
+
+    // PB5: the persistence threshold (0.08) is now clearable by a real shift and not
+    // by within-noise divergence — the pipeline is no longer inert.
+    func test_PB5_PersistenceThresholdIsReachable() {
+        let checker = RegimePersistenceChecker()
+        let base = eventRegime(energy: 0.5, stress: 0.4)
+
+        let realShift = eventRegime(energy: 0.95, stress: 0.9)         // large, tight
+        XCTAssertGreaterThan(checker.computeRegimeDistance(from: base, to: realShift), 0.08,
+                             "a genuine sustained shift must clear the 0.08 persistence threshold")
+
+        let noise = eventRegime(energy: 0.55, stress: 0.44, u: 0.1)    // within combined noise
+        XCTAssertLessThan(checker.computeRegimeDistance(from: base, to: noise), 0.08,
+                          "within-noise divergence must not clear the threshold")
+    }
+
+    // PB6: monotonicity — a larger classification margin yields higher confidence.
+    func test_PB6_MarginMonotonic() {
+        let narrow = classificationConfidence(topScore: 0.5, secondScore: 0.4)
+        let wide   = classificationConfidence(topScore: 0.5, secondScore: 0.2)
+        XCTAssertGreaterThan(wide, narrow, "a clearer winner is more confident")
+    }
+}
