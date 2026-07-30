@@ -62,7 +62,8 @@ struct StateSignal {
 
     let dimension: Dimension
     let delta: Double       // current − baseline (positive = above, negative = below)
-    let confidence: Double  // how much data supports this
+    let confidence: Double  // how much data supports this (from UncertaintyCalculus)
+    let uncertainty: Double // C5: propagated uncertainty of the aggregated dimension
     let trending: Bool      // is the delta growing in recent days?
 }
 

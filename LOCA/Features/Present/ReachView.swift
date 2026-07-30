@@ -199,6 +199,7 @@ struct ReachView: View {
                     dimension: signal.dimension,
                     delta: adjustedDelta,
                     confidence: signal.confidence,
+                    uncertainty: signal.uncertainty,
                     trending: signal.trending
                 )
 

@@ -152,10 +152,11 @@ final class PresentComposer {
         let baseline = StateBaseline(chapter: chapter)
         guard !recent.isEmpty else { return [] }
 
-        let meanEnergy = mean(recent.map { $0.energy })
-        let meanStress = mean(recent.map { $0.stress })
-        let meanFocus  = mean(recent.map { $0.focus })
-        let meanMood   = mean(recent.map { $0.mood })
+        // Rule A: aggregate each dimension with its per-state uncertainty.
+        let energyAgg = aggregateUncertainty(values: recent.map { $0.energy }, uncertainties: recent.map { $0.energyUncertainty })
+        let stressAgg = aggregateUncertainty(values: recent.map { $0.stress }, uncertainties: recent.map { $0.stressUncertainty })
+        let focusAgg  = aggregateUncertainty(values: recent.map { $0.focus },  uncertainties: recent.map { $0.focusUncertainty })
+        let moodAgg   = aggregateUncertainty(values: recent.map { $0.mood },   uncertainties: recent.map { $0.moodUncertainty })
 
         // Is the most recent 2 days more extreme than the week average?
         let veryRecent = recent.suffix(8) // ~2 days of 4 readings/day
@@ -164,21 +165,25 @@ final class PresentComposer {
             return abs(dim - baseline) > 0.12
         }
 
-        let conf = min(1.0, Double(recent.count) / 28.0)
+        // Rule B: confidence = how far the delta-from-baseline stands clear of the
+        // aggregated measurement noise. Replaces the old count/28 confidence, which
+        // ignored per-state uncertainty entirely.
+        func signal(_ dim: StateSignal.Dimension, _ agg: (mean: Double, uncertainty: Double), _ baselineValue: Double) -> StateSignal {
+            let delta = agg.mean - baselineValue
+            return StateSignal(
+                dimension: dim,
+                delta: delta,
+                confidence: differenceConfidence(delta: delta, uncertaintyA: agg.uncertainty, uncertaintyB: 0.0),
+                uncertainty: agg.uncertainty,
+                trending: trending(agg.mean, baselineValue)
+            )
+        }
 
         return [
-            StateSignal(dimension: .energy, delta: meanEnergy - baseline.energy,
-                        confidence: conf,
-                        trending: trending(mean(veryRecent.map { $0.energy }), baseline.energy)),
-            StateSignal(dimension: .stress, delta: meanStress - baseline.stress,
-                        confidence: conf,
-                        trending: trending(mean(veryRecent.map { $0.stress }), baseline.stress)),
-            StateSignal(dimension: .focus,  delta: meanFocus  - baseline.focus,
-                        confidence: conf,
-                        trending: trending(mean(veryRecent.map { $0.focus }),  baseline.focus)),
-            StateSignal(dimension: .mood,   delta: meanMood   - baseline.mood,
-                        confidence: conf,
-                        trending: trending(mean(veryRecent.map { $0.mood }),   baseline.mood)),
+            signal(.energy, energyAgg, baseline.energy),
+            signal(.stress, stressAgg, baseline.stress),
+            signal(.focus,  focusAgg,  baseline.focus),
+            signal(.mood,   moodAgg,   baseline.mood),
         ]
     }
 
@@ -377,13 +382,6 @@ final class PresentComposer {
             generatedAt: Date(),
             timeOfDay: .current
         )
-    }
-
-    // MARK: - Helpers
-
-    private func mean(_ values: [Double]) -> Double {
-        guard !values.isEmpty else { return 0 }
-        return values.reduce(0, +) / Double(values.count)
     }
 }
 
