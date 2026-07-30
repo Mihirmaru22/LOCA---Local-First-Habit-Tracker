@@ -42,6 +42,10 @@ class TraitInferenceEngine {
             return
         }
 
+        // Load pattern feedback for trait confidence adjustment
+        let processor = FeedbackProcessor.shared
+        let patternFeedback = try processor.loadPatternFeedback(modelContext: modelContext)
+
         for traitType in TraitType.allCases {
             guard let inferred = inferTrait(traitType: traitType, states: states) else {
                 // No present measurements for this dimension — leave any existing record unchanged
