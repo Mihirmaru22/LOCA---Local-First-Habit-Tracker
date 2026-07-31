@@ -30,7 +30,6 @@ struct HabitListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showingCreateSheet = false
-    @State private var showingPersonalLife = false
     @State private var showCheckInError   = false
     @State private var showUndoToast = false
     @State private var lastDeletedHabit: HabitBoard? = nil
@@ -95,23 +94,16 @@ struct HabitListView: View {
             ToolbarItem(placement: .primaryAction) {
                 HStack(spacing: DS.Space.md) {
                     SyncStatusIndicatorView(syncStatus: syncStatus)
-                    Button(action: { showingPersonalLife = true }) {
-                        Image(systemName: "eye")
-                    }
                     SettingsMenuView()
                     Button(action: { showingCreateSheet = true }) {
                         Image(systemName: "plus")
+                            .accessibilityLabel("Create habit")
                     }
                 }
             }
         }
         .sheet(isPresented: $showingCreateSheet) {
             SimpleHabitCreationView()
-        }
-        .fullScreenCover(isPresented: $showingPersonalLife) {
-            NavigationStack {
-                PresentView()
-            }
         }
         .alert("Couldn't Save Check-in", isPresented: $showCheckInError) {
             Button("OK", role: .cancel) {}

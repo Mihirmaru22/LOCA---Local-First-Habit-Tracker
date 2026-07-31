@@ -107,6 +107,10 @@
 		EA67B446FFD340ECBF1E9F6D /* Double+Clamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13289E001E014999A9EFB063 /* Double+Clamp.swift */; };
 		F18CA204FECB9D1C102ECADE /* WidgetRefreshCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2805490003546CEAA6A8872 /* WidgetRefreshCoordinator.swift */; };
 		FAA57F5EE1684524A7E69EF1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F0A5A06DC0E2402C8577EA8C /* Assets.xcassets */; };
+		AA11000000000000000011AB /* AppRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11000000000000000010AB /* AppRootView.swift */; };
+		AA11000000000000000013AB /* LifeHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11000000000000000012AB /* LifeHomeView.swift */; };
+		AA11000000000000000015AB /* LifeOnboardingSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11000000000000000014AB /* LifeOnboardingSheet.swift */; };
+		AA11000000000000000017AB /* LifePatternCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11000000000000000016AB /* LifePatternCard.swift */; };
 		FADE00000000000000000021 /* StreakCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADE00000000000000000011 /* StreakCalculatorTests.swift */; };
 		FADE00000000000000000022 /* AggregationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADE00000000000000000012 /* AggregationTests.swift */; };
 		FEEDCA6A00000000000000B2 /* RegimeHonestyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEEDCA6A00000000000000B1 /* RegimeHonestyTests.swift */; };
@@ -124,7 +128,6 @@
 		D4299A41A8464082A3FE9B4F /* LifeSceneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B46892C881A4E868F105317 /* LifeSceneView.swift */; };
 		1F430BDCCCFA4A3C9B922712 /* MultiEntityComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9871402E3D394DAB818D2D83 /* MultiEntityComposer.swift */; };
 		AD8C8D7F055F47C3904427AF /* PeopleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47334E5DAB804ED49D6E573F /* PeopleView.swift */; };
-		2CFB92818593426EBED0AF43 /* PersonalLifeListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81139E15C57243C89D3BF541 /* PersonalLifeListView.swift */; };
 		2437F7709D5F47908D5439CD /* RelationshipGraphView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5438274A4BC49CD90724D6C /* RelationshipGraphView.swift */; };
 		C2C67C2B18CB4157B1BA33C2 /* PersonalLifeValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC531F8F7F24B14829AA3B6 /* PersonalLifeValidation.swift */; };
 		DCFB2912F8A34AE79CC6DAB3 /* PersonalLifeViewUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C33A4D4C6EE4EC6804620D6 /* PersonalLifeViewUI.swift */; };
@@ -368,9 +371,12 @@
 		8B46892C881A4E868F105317 /* LifeSceneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeSceneView.swift; sourceTree = "<group>"; };
 		9871402E3D394DAB818D2D83 /* MultiEntityComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiEntityComposer.swift; sourceTree = "<group>"; };
 		47334E5DAB804ED49D6E573F /* PeopleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleView.swift; sourceTree = "<group>"; };
-		81139E15C57243C89D3BF541 /* PersonalLifeListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalLifeListView.swift; sourceTree = "<group>"; };
 		B5438274A4BC49CD90724D6C /* RelationshipGraphView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelationshipGraphView.swift; sourceTree = "<group>"; };
 		6DC531F8F7F24B14829AA3B6 /* PersonalLifeValidation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalLifeValidation.swift; sourceTree = "<group>"; };
+		AA11000000000000000010AB /* AppRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRootView.swift; sourceTree = "<group>"; };
+		AA11000000000000000012AB /* LifeHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeHomeView.swift; sourceTree = "<group>"; };
+		AA11000000000000000014AB /* LifeOnboardingSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeOnboardingSheet.swift; sourceTree = "<group>"; };
+		AA11000000000000000016AB /* LifePatternCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifePatternCard.swift; sourceTree = "<group>"; };
 		8C33A4D4C6EE4EC6804620D6 /* PersonalLifeViewUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalLifeViewUI.swift; sourceTree = "<group>"; };
 		0E78DF6BCC124F6EA5C653EF /* TraitSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TraitSummaryView.swift; sourceTree = "<group>"; };
 		E64F904AABAC4554B7B20EBA /* ViewCompositionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewCompositionEngine.swift; sourceTree = "<group>"; };
@@ -494,6 +500,7 @@
 			isa = PBXGroup;
 			children = (
 				80DC4E439C544786958675F7 /* LOCAApp.swift */,
+				AA11000000000000000010AB /* AppRootView.swift */,
 				216268FABBE8F228E875D0EB765B51E1 /* AppCoordinator.swift */,
 				5B3B92460BE743CFADF3C6DE /* SignalCollectionCoordinator.swift */,
 				1F4E506745484B71A76301BD /* CloudKitSyncCoordinator.swift */,
@@ -509,6 +516,7 @@
 			isa = PBXGroup;
 			children = (
 				75EA3DF789134654984688CB /* HabitDetailView.swift */,
+				AA11000000000000000016AB /* LifePatternCard.swift */,
 				4CE91B0C5D88414094E4DD05 /* HeatmapView.swift */,
 
 				ABA9551FC8C82DA8A6FEA0AD /* HabitCheckInsView.swift */,
@@ -649,6 +657,7 @@
 			children = (
 				C98301DF1FB24E4484DAFE03 /* Dashboard */,
 				AA11000000000000000007AB /* PersonalLifeView */,
+				AA11000000000000000018AB /* Life */,
 				EE1E000EEAA34B14B86E4786 /* Present */,
 				AA11000000000000000008AB /* Settings */,
 				707B3ADA96F94C6090385589 /* HabitDetail */,
@@ -792,7 +801,6 @@
 				8B46892C881A4E868F105317 /* LifeSceneView.swift */,
 				9871402E3D394DAB818D2D83 /* MultiEntityComposer.swift */,
 				47334E5DAB804ED49D6E573F /* PeopleView.swift */,
-				81139E15C57243C89D3BF541 /* PersonalLifeListView.swift */,
 				B5438274A4BC49CD90724D6C /* RelationshipGraphView.swift */,
 				46B7109E93264DE9A5FAB54E /* DirectionView.swift */,
 				94E2C16D6CB34D8FB7CB8680 /* DirectionCaptureView.swift */,
@@ -817,6 +825,15 @@
 				A9B0C1D2E3F4A5B6C7D8E9F0 /* ContextPermissionView.swift */,
 			);
 			path = Settings;
+			sourceTree = "<group>";
+		};
+		AA11000000000000000018AB /* Life */ = {
+			isa = PBXGroup;
+			children = (
+				AA11000000000000000012AB /* LifeHomeView.swift */,
+				AA11000000000000000014AB /* LifeOnboardingSheet.swift */,
+			);
+			path = Life;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -1093,11 +1110,14 @@
 				CAAB0DCEF011CD1E23F2675D /* Haptics.swift in Sources */,
 				0523E49AAE5243F995956550 /* SignalCollectionCoordinator.swift in Sources */,
 				243DF5BB4534442BAE4CAA1F /* ChapterListView.swift in Sources */,
+				AA11000000000000000011AB /* AppRootView.swift in Sources */,
+				AA11000000000000000013AB /* LifeHomeView.swift in Sources */,
+				AA11000000000000000015AB /* LifeOnboardingSheet.swift in Sources */,
+				AA11000000000000000017AB /* LifePatternCard.swift in Sources */,
 				FEEDF300000000000000F002 /* EventsView.swift in Sources */,
 				D4299A41A8464082A3FE9B4F /* LifeSceneView.swift in Sources */,
 				1F430BDCCCFA4A3C9B922712 /* MultiEntityComposer.swift in Sources */,
 				AD8C8D7F055F47C3904427AF /* PeopleView.swift in Sources */,
-				2CFB92818593426EBED0AF43 /* PersonalLifeListView.swift in Sources */,
 				2437F7709D5F47908D5439CD /* RelationshipGraphView.swift in Sources */,
 				78B4D940544F4F6988723F5A /* DirectionModel.swift in Sources */,
 				EB9C2F4D1A6E7B8C9D0E3F2A /* CalibrationModel.swift in Sources */,

@@ -122,6 +122,9 @@ struct HabitDetailView: View {
                             RefMonthCard(board: board)
                                 .padding(.horizontal, 18)
 
+                            LifePatternCard(board: board)
+                                .padding(.horizontal, 18)
+
                             Spacer(minLength: 110)
                         }
                         .padding(.top, 10)
