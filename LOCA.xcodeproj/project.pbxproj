@@ -390,7 +390,7 @@
 		AA1100000000000000001FAB /* MonthlyReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthlyReviewView.swift; sourceTree = "<group>"; };
 		AA1100000000000000002BAB /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
 		AA1100000000000000002DAB /* UserProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileView.swift; sourceTree = "<group>"; };
-		AA1100000000000000002FAB /* HealthKitManager+Body.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitManager+Body.swift; sourceTree = "<group>"; };
+		AA1100000000000000002FAB /* HealthKitManager+Body.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HealthKitManager+Body.swift"; sourceTree = "<group>"; };
 		8C33A4D4C6EE4EC6804620D6 /* PersonalLifeViewUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalLifeViewUI.swift; sourceTree = "<group>"; };
 		0E78DF6BCC124F6EA5C653EF /* TraitSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TraitSummaryView.swift; sourceTree = "<group>"; };
 		E64F904AABAC4554B7B20EBA /* ViewCompositionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewCompositionEngine.swift; sourceTree = "<group>"; };
