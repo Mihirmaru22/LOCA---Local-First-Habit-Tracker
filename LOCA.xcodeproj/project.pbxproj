@@ -111,7 +111,13 @@
 		AA11000000000000000013AB /* LifeHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11000000000000000012AB /* LifeHomeView.swift */; };
 		AA11000000000000000015AB /* LifeOnboardingSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11000000000000000014AB /* LifeOnboardingSheet.swift */; };
 		AA11000000000000000017AB /* LifePatternCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11000000000000000016AB /* LifePatternCard.swift */; };
+		AA1100000000000000001CAB /* MicroCheckInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000001BAB /* MicroCheckInView.swift */; };
 		AA1100000000000000001AAB /* LifeEmptyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11000000000000000019AB /* LifeEmptyState.swift */; };
+		AA1100000000000000001EAB /* WeeklyDigestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000001DAB /* WeeklyDigestView.swift */; };
+		AA1100000000000000002AAB /* MonthlyReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000001FAB /* MonthlyReviewView.swift */; };
+		AA1100000000000000002CAB /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000002BAB /* UserProfile.swift */; };
+		AA1100000000000000002EAB /* UserProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000002DAB /* UserProfileView.swift */; };
+		AA1100000000000000003AAB /* HealthKitManager+Body.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000002FAB /* HealthKitManager+Body.swift */; };
 		FADE00000000000000000021 /* StreakCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADE00000000000000000011 /* StreakCalculatorTests.swift */; };
 		FADE00000000000000000022 /* AggregationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADE00000000000000000012 /* AggregationTests.swift */; };
 		FEEDCA6A00000000000000B2 /* RegimeHonestyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEEDCA6A00000000000000B1 /* RegimeHonestyTests.swift */; };
@@ -378,7 +384,13 @@
 		AA11000000000000000012AB /* LifeHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeHomeView.swift; sourceTree = "<group>"; };
 		AA11000000000000000014AB /* LifeOnboardingSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeOnboardingSheet.swift; sourceTree = "<group>"; };
 		AA11000000000000000016AB /* LifePatternCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifePatternCard.swift; sourceTree = "<group>"; };
+		AA1100000000000000001BAB /* MicroCheckInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicroCheckInView.swift; sourceTree = "<group>"; };
 		AA11000000000000000019AB /* LifeEmptyState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeEmptyState.swift; sourceTree = "<group>"; };
+		AA1100000000000000001DAB /* WeeklyDigestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyDigestView.swift; sourceTree = "<group>"; };
+		AA1100000000000000001FAB /* MonthlyReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthlyReviewView.swift; sourceTree = "<group>"; };
+		AA1100000000000000002BAB /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
+		AA1100000000000000002DAB /* UserProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileView.swift; sourceTree = "<group>"; };
+		AA1100000000000000002FAB /* HealthKitManager+Body.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitManager+Body.swift; sourceTree = "<group>"; };
 		8C33A4D4C6EE4EC6804620D6 /* PersonalLifeViewUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalLifeViewUI.swift; sourceTree = "<group>"; };
 		0E78DF6BCC124F6EA5C653EF /* TraitSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TraitSummaryView.swift; sourceTree = "<group>"; };
 		E64F904AABAC4554B7B20EBA /* ViewCompositionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewCompositionEngine.swift; sourceTree = "<group>"; };
@@ -519,6 +531,7 @@
 			children = (
 				75EA3DF789134654984688CB /* HabitDetailView.swift */,
 				AA11000000000000000016AB /* LifePatternCard.swift */,
+				AA1100000000000000001BAB /* MicroCheckInView.swift */,
 				4CE91B0C5D88414094E4DD05 /* HeatmapView.swift */,
 
 				ABA9551FC8C82DA8A6FEA0AD /* HabitCheckInsView.swift */,
@@ -568,6 +581,7 @@
 				2C8098FD69D64D2CB7E400BD /* LogEntry.swift */,
 				8A1E3F118B00458FA0744867 /* VersionedSchema.swift */,
 				31F09F6CFAFE2E2F2B53FA5B /* ReflectionUnit.swift */,
+				AA1100000000000000002BAB /* UserProfile.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -636,6 +650,7 @@
 				F4F66C1B540B481B99AD752F /* HabitTimelineLayoutView.swift */,
 				86A9A6A783B46023591EB5D0 /* HabitListRow.swift */,
 				04AD22D76419B8B94DE6EC40 /* SettingsMenuView.swift */,
+				AA1100000000000000002DAB /* UserProfileView.swift */,
 				75DE0767C9D0EA4F73A069DA /* HabitRecommendationCard.swift */,
 				FA24845C347BC4DCD8209331 /* SyncStatusIndicatorView.swift */,
 			);
@@ -748,6 +763,7 @@
 				FD761CD7D2024B2AAB343DA8 /* CalendarManager.swift */,
 				01A7B9F0356748038FFA4595 /* DeviceActivityManager.swift */,
 				57F41BC5CD854A20A6D4D140 /* HealthKitManager.swift */,
+				AA1100000000000000002FAB /* HealthKitManager+Body.swift */,
 				866A1B52FC0F4202822A0DE8 /* LocationManager.swift */,
 				29BD4C07E8D7423E994BE833 /* MotionActivityManager.swift */,
 				E7F8A9B0C1D2E3F4A5B6C7D8 /* DaylightManager.swift */,
@@ -835,6 +851,8 @@
 				AA11000000000000000012AB /* LifeHomeView.swift */,
 				AA11000000000000000014AB /* LifeOnboardingSheet.swift */,
 				AA11000000000000000019AB /* LifeEmptyState.swift */,
+				AA1100000000000000001DAB /* WeeklyDigestView.swift */,
+				AA1100000000000000001FAB /* MonthlyReviewView.swift */,
 			);
 			path = Life;
 			sourceTree = "<group>";
@@ -1117,7 +1135,13 @@
 				AA11000000000000000013AB /* LifeHomeView.swift in Sources */,
 				AA11000000000000000015AB /* LifeOnboardingSheet.swift in Sources */,
 				AA11000000000000000017AB /* LifePatternCard.swift in Sources */,
+				AA1100000000000000001CAB /* MicroCheckInView.swift in Sources */,
 				AA1100000000000000001AAB /* LifeEmptyState.swift in Sources */,
+				AA1100000000000000001EAB /* WeeklyDigestView.swift in Sources */,
+				AA1100000000000000002AAB /* MonthlyReviewView.swift in Sources */,
+				AA1100000000000000002CAB /* UserProfile.swift in Sources */,
+				AA1100000000000000002EAB /* UserProfileView.swift in Sources */,
+				AA1100000000000000003AAB /* HealthKitManager+Body.swift in Sources */,
 				FEEDF300000000000000F002 /* EventsView.swift in Sources */,
 				D4299A41A8464082A3FE9B4F /* LifeSceneView.swift in Sources */,
 				1F430BDCCCFA4A3C9B922712 /* MultiEntityComposer.swift in Sources */,

@@ -114,18 +114,13 @@ struct LifeHomeView: View {
             browseTierLabel("Browse")
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: DS.Space.md) {
+                    LifeExploreCard(title: "This Week", subtitle: "Habits in review", icon: "calendar.badge.checkmark") { WeeklyDigestView() }
+                    LifeExploreCard(title: "Monthly", subtitle: "Month at a glance", icon: "calendar") { MonthlyReviewView() }
                     LifeExploreCard(title: "Chapters", subtitle: "Life in intervals", icon: "book.pages") { ChapterListView() }
                     LifeExploreCard(title: "Events", subtitle: "Shifts in your rhythm", icon: "flag") { EventsView() }
                     LifeExploreCard(title: "People", subtitle: "Who's around you", icon: "person.2.fill") { PeopleView() }
                     LifeExploreCard(title: "Patterns", subtitle: "What repeats", icon: "sparkles") { PatternsView() }
                     LifeExploreCard(title: "Your Story", subtitle: "Your life story", icon: "book.pages.fill") { NarrativeView() }
-                }
-                .padding(.horizontal, DS.Space.lg)
-            }
-
-            browseTierLabel("Explore More")
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: DS.Space.md) {
                     LifeExploreCard(title: "Your Tendencies", subtitle: "How you're wired", icon: "person.fill") { TraitSummaryView() }
                     LifeExploreCard(title: "Connections", subtitle: "What moves with what", icon: "point.3.connected.trianglepath.dotted") { RelationshipGraphView() }
                     LifeExploreCard(title: "Your Direction", subtitle: "Where you're headed", icon: "arrow.forward.circle") { DirectionView() }

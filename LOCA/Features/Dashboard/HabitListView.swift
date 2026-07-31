@@ -38,6 +38,8 @@ struct HabitListView: View {
     @State private var selectedRecommationTemplate: HabitTemplate?
     @AppStorage("habitListLayout") private var layout: String = "list"
     @State private var syncStatus: SyncStatusCoordinator.SyncStatus = .idle
+    @State private var lifeScene: PresentScene = .empty
+    @State private var showLifePresent = false
 
     /// Future: a HabitSortStrategy seam will allow pluggable sort modes.
     /// Today: manual (stable, user-defined) order. No reordering by state.
@@ -51,6 +53,8 @@ struct HabitListView: View {
                 emptyStateView
             } else {
                 VStack(spacing: DS.Space.lg) {
+                    lifeTodayBanner
+
                     Group {
                         switch layout {
                         case "grid":
@@ -154,6 +158,12 @@ struct HabitListView: View {
                 maxRecommendations: 3
             )
         }
+        .task {
+            lifeScene = (try? PresentComposer.shared.compose(modelContext: modelContext)) ?? .empty
+        }
+        .fullScreenCover(isPresented: $showLifePresent) {
+            PresentView()
+        }
     }
 
     private func undoToast(habit: HabitBoard) -> some View {
@@ -194,6 +204,52 @@ struct HabitListView: View {
             }
         } catch {
             // Error handling - silent fail for now
+        }
+    }
+
+    // MARK: - Life Banner (V2.0A.2)
+
+    /// Compact "Today's Read" card shown above the habit list when a non-empty
+    /// PresentScene is available. Invisible until data accrues — no empty state
+    /// on the Habits tab; that belongs in the Life tab.
+    @ViewBuilder
+    private var lifeTodayBanner: some View {
+        if !lifeScene.isEmpty {
+            Button(action: { showLifePresent = true }) {
+                HStack(alignment: .top, spacing: DS.Space.sm) {
+                    VStack(alignment: .leading, spacing: DS.Space.xs) {
+                        Text("Today's Read")
+                            .font(.caption2)
+                            .foregroundStyle(DS.Color.textTertiary)
+                            .textCase(.uppercase)
+                            .tracking(0.5)
+                        Text(lifeScene.headline)
+                            .font(DS.Text.body)
+                            .foregroundStyle(DS.Color.textPrimary)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                        if let support = lifeScene.support {
+                            Text(support)
+                                .font(.caption)
+                                .foregroundStyle(DS.Color.textSecondary)
+                                .lineLimit(1)
+                        }
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(DS.Color.textTertiary)
+                        .padding(.top, 2)
+                }
+                .padding(DS.Space.md)
+                .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DS.Radius.card)
+                        .stroke(DS.Color.border, lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, DS.Space.lg)
         }
     }
 
