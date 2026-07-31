@@ -285,9 +285,8 @@ struct CheckInEditorView: View {
     private var dateTimeSection: some View {
         VStack(alignment: .leading, spacing: DS.Space.md) {
             Text("When")
-                .font(DS.Text.body)
-                .fontWeight(.semibold)
-                .foregroundStyle(DS.Color.textPrimary)
+                .font(DS.Text.caption)
+                .foregroundStyle(DS.Color.textSecondary)
 
             VStack(alignment: .leading, spacing: DS.Space.sm) {
                 Text("Date")
@@ -339,9 +338,8 @@ struct CheckInEditorView: View {
     private var notesSection: some View {
         VStack(alignment: .leading, spacing: DS.Space.sm) {
             Text("Notes")
-                .font(DS.Text.body)
-                .fontWeight(.semibold)
-                .foregroundStyle(DS.Color.textPrimary)
+                .font(DS.Text.caption)
+                .foregroundStyle(DS.Color.textSecondary)
 
             TextEditor(text: $noteText)
                 .font(DS.Text.body)

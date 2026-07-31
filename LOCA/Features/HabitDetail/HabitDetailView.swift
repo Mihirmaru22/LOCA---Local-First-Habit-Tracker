@@ -136,7 +136,7 @@ struct HabitDetailView: View {
 
             // Toolbar
             HStack(spacing: 0) {
-                HabitDetailTabBar(selectedTab: $selectedTab, reduceMotion: reduceMotion)
+                HabitDetailTabBar(selectedTab: $selectedTab, colorIndex: board.colorIndex, reduceMotion: reduceMotion)
 
                 Spacer()
 
@@ -383,6 +383,7 @@ struct HabitDetailView: View {
 
 private struct HabitDetailTabBar: View {
     @Binding var selectedTab: HabitDetailTab
+    let colorIndex: Int
     let reduceMotion: Bool
 
     private let tabs: [(tab: HabitDetailTab, icon: String)] = [
@@ -409,7 +410,7 @@ private struct HabitDetailTabBar: View {
         .background(
             GeometryReader { geo in
                 Capsule(style: .continuous)
-                    .fill(ColorPalette[0].opacity(0.15))
+                    .fill(ColorPalette[colorIndex].opacity(0.15))
                     .frame(width: geo.size.width / CGFloat(tabs.count), height: geo.size.height)
                     .offset(x: tabOffset(in: geo.size.width), y: 0)
                     .animation(DS.Motion.settle(reduceMotion: reduceMotion), value: selectedTab)
