@@ -224,12 +224,21 @@ struct HabitListView: View {
         do {
             let isNowCheckedIn = try CheckInWriter.toggleBinary(board: board, context: modelContext)
             Haptics.impact(.rigid)
-            // P4.2: Success haptic when checking in (goal completion for binary)
             if isNowCheckedIn {
                 Haptics.notify(.success)
+                nudgeLifeModel()
             }
         } catch {
             showCheckInError = true
+        }
+    }
+
+    /// After a check-in, refresh traits so the Life tab reflects new habit data.
+    /// TraitInferenceEngine guards on minimumSamples so repeated calls are safe.
+    private func nudgeLifeModel() {
+        let ctx = modelContext
+        Task {
+            try? TraitInferenceEngine.shared.updateTraits(modelContext: ctx)
         }
     }
 }
