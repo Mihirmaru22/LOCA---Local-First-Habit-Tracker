@@ -161,6 +161,11 @@ struct PersonalLifeListView: View {
                 ExploreCard(title: "Sensor Gaps", subtitle: "Where data disagreed", icon: "exclamationmark.triangle") {
                     SensorConflictView()
                 }
+#if DEBUG
+                ExploreCard(title: "Runtime Check", subtitle: "P0 verification gate", icon: "checkmark.shield") {
+                    RuntimeSelfCheckView()
+                }
+#endif
             }
             .padding(.horizontal, DS.Space.lg)
         }
@@ -372,6 +377,116 @@ private struct NewQuestionSheet: View {
         }
     }
 }
+
+// MARK: - P0 Runtime Self-Check (DEBUG only)
+
+#if DEBUG
+struct RuntimeSelfCheckView: View {
+    @Environment(\.modelContext) private var modelContext
+    @State private var checks: [CheckRow] = []
+    @State private var isReseeding = false
+
+    struct CheckRow: Identifiable {
+        let id = UUID()
+        let label: String
+        let actual: String
+        let expected: String
+        let pass: Bool
+    }
+
+    var body: some View {
+        List {
+            Section("Entity Counts") {
+                ForEach(checks.filter { $0.label != "Provenance JSON" && $0.label != "UncertaintyType" && $0.label != "Chapter→Event link" }) { row in
+                    checkCell(row)
+                }
+            }
+            Section("Data Integrity") {
+                ForEach(checks.filter { ["Provenance JSON", "UncertaintyType", "Chapter→Event link"].contains($0.label) }) { row in
+                    checkCell(row)
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
+        .navigationTitle("Runtime Check")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button(isReseeding ? "Reseeding…" : "Reset & Reseed") {
+                    isReseeding = true
+                    LifeSeeder.resetAndReseed(context: modelContext)
+                    runChecks()
+                    isReseeding = false
+                }
+                .disabled(isReseeding)
+            }
+        }
+        .onAppear { runChecks() }
+    }
+
+    @ViewBuilder
+    private func checkCell(_ row: CheckRow) -> some View {
+        HStack(spacing: DS.Space.sm) {
+            Image(systemName: row.pass ? "checkmark.circle.fill" : "xmark.circle.fill")
+                .foregroundStyle(row.pass ? .green : .red)
+                .font(.body)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(row.label)
+                    .font(.body)
+                    .foregroundStyle(DS.Color.textPrimary)
+                Text("\(row.actual)  /  expected \(row.expected)")
+                    .font(.caption)
+                    .foregroundStyle(DS.Color.textSecondary)
+            }
+        }
+        .padding(.vertical, 2)
+    }
+
+    private func runChecks() {
+        var rows: [CheckRow] = []
+
+        func countOf<T: PersistentModel>(_ type: T.Type) -> Int {
+            (try? modelContext.fetchCount(FetchDescriptor<T>())) ?? -1
+        }
+
+        func countCheck(_ label: String, count: Int, expected: Int, tolerance: Int = 0) -> CheckRow {
+            let pass = abs(count - expected) <= tolerance
+            return CheckRow(label: label, actual: "\(count)", expected: "\(expected)", pass: pass)
+        }
+
+        rows.append(countCheck("InferredState",    count: countOf(InferredState.self),     expected: 720, tolerance: 4))
+        rows.append(countCheck("LifeEvent",        count: countOf(LifeEvent.self),          expected: 1))
+        rows.append(countCheck("Chapter",          count: countOf(Chapter.self),            expected: 2))
+        rows.append(countCheck("Person",           count: countOf(Person.self),             expected: 3))
+        rows.append(countCheck("PersonAppearance", count: countOf(PersonAppearance.self),   expected: 72, tolerance: 10))
+        rows.append(countCheck("Trait",            count: countOf(Trait.self),              expected: 6))
+        rows.append(countCheck("Direction",        count: countOf(Direction.self),          expected: 1))
+        rows.append(countCheck("Fork",             count: countOf(Fork.self),               expected: 2))
+        rows.append(countCheck("SignalEvent",      count: countOf(SignalEvent.self),        expected: 28, tolerance: 2))
+
+        // Integrity: provenance JSON on first state
+        var stateDesc = FetchDescriptor<InferredState>(); stateDesc.fetchLimit = 1
+        let firstState = (try? modelContext.fetch(stateDesc))?.first
+        let hasProvenance = firstState?.energyProvenanceJSON != nil
+        rows.append(CheckRow(label: "Provenance JSON", actual: hasProvenance ? "present" : "nil",
+                             expected: "present", pass: hasProvenance))
+
+        // Integrity: uncertainty type on first state
+        let hasUncType = firstState?.energyUncertaintyTypeRaw != nil
+        rows.append(CheckRow(label: "UncertaintyType", actual: hasUncType ? "present" : "nil",
+                             expected: "present", pass: hasUncType))
+
+        // Integrity: at least one chapter has openingEventId set
+        var chapterDesc = FetchDescriptor<Chapter>()
+        let chaptersWithEvent = ((try? modelContext.fetch(chapterDesc)) ?? [])
+            .filter { $0.openingEventId != nil }.count
+        rows.append(CheckRow(label: "Chapter→Event link", actual: "\(chaptersWithEvent)",
+                             expected: "≥1", pass: chaptersWithEvent >= 1))
+
+        checks = rows
+    }
+}
+#endif
 
 // MARK: - Preview
 
