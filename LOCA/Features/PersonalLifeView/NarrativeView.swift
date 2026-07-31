@@ -141,7 +141,7 @@ struct NarrativeView: View {
         LifeEmptyState(
             icon: "book.pages.fill",
             headline: "Your story is still forming",
-            body: "Your story is a synthesis of patterns and chapters, composed when there's enough to say honestly. It appears once you have at least a month of consistent data."
+            message: "Your story is a synthesis of patterns and chapters, composed when there's enough to say honestly. It appears once you have at least a month of consistent data."
         )
     }
 

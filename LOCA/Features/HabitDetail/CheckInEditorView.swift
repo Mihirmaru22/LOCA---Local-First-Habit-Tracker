@@ -406,6 +406,7 @@ struct CheckInEditorView: View {
             }
 
             Haptics.notify(.success)
+            LifeModelNudge.afterCheckIn(modelContext: modelContext)
             withAnimation(DS.Motion.confirm(reduceMotion: reduceMotion)) {
                 isSubmitting = false
                 showSaveSuccess = true

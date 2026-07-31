@@ -52,7 +52,7 @@ struct EventsView: View {
         LifeEmptyState(
             icon: "flag.slash",
             headline: "No significant shifts detected yet",
-            body: "Events appear when LOCA notices a real change in your patterns — like a new chapter starting or a sustained shift in energy. They take a few weeks of check-ins to appear."
+            message: "Events appear when LOCA notices a real change in your patterns — like a new chapter starting or a sustained shift in energy. They take a few weeks of check-ins to appear."
         )
     }
 }

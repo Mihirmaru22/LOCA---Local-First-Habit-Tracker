@@ -66,7 +66,7 @@ struct PatternsView: View {
         LifeEmptyState(
             icon: "sparkles",
             headline: "Building your pattern picture",
-            body: "Patterns appear when LOCA finds a consistent relationship in your data — like energy being higher on days you exercise. This takes at least two weeks of consistent check-ins."
+            message: "Patterns appear when LOCA finds a consistent relationship in your data — like energy being higher on days you exercise. This takes at least two weeks of consistent check-ins."
         )
     }
 

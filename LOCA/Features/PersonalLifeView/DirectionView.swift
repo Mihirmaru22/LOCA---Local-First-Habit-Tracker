@@ -228,7 +228,7 @@ struct DirectionView: View {
         LifeEmptyState(
             icon: "arrow.forward.circle",
             headline: "No direction set",
-            body: "Your direction is a statement of where you're headed — what matters to you right now. It's optional, but it helps LOCA understand your context.",
+            message: "Your direction is a statement of where you're headed — what matters to you right now. It's optional, but it helps LOCA understand your context.",
             action: LifeEmptyStateAction(label: "Set my direction") { showCapture = true }
         )
     }

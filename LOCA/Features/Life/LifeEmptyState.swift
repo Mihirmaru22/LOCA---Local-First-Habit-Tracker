@@ -22,7 +22,7 @@ import SwiftUI
 struct LifeEmptyState: View {
     let icon: String
     let headline: String
-    let body: String
+    let message: String
     var action: LifeEmptyStateAction? = nil
 
     var body: some View {
@@ -37,7 +37,7 @@ struct LifeEmptyState: View {
                     .foregroundStyle(DS.Color.textPrimary)
                     .multilineTextAlignment(.center)
 
-                Text(body)
+                Text(message)
                     .font(.caption)
                     .foregroundStyle(DS.Color.textSecondary)
                     .multilineTextAlignment(.center)

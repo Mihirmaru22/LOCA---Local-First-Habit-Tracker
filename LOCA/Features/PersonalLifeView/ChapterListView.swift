@@ -68,7 +68,7 @@ struct ChapterListView: View {
         LifeEmptyState(
             icon: "book.closed",
             headline: "Your first chapter is forming",
-            body: "Chapters are distinct periods of your life — they appear automatically when LOCA detects a real shift in how you've been living. After 3–4 weeks of check-ins, your first chapter will appear."
+            message: "Chapters are distinct periods of your life — they appear automatically when LOCA detects a real shift in how you've been living. After 3–4 weeks of check-ins, your first chapter will appear."
         )
     }
 
