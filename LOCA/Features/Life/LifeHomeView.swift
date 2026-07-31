@@ -121,13 +121,6 @@ struct LifeHomeView: View {
                     LifeExploreCard(title: "People", subtitle: "Who's around you", icon: "person.2.fill") { PeopleView() }
                     LifeExploreCard(title: "Patterns", subtitle: "What repeats", icon: "sparkles") { PatternsView() }
                     LifeExploreCard(title: "Your Story", subtitle: "Your life story", icon: "book.pages.fill") { NarrativeView() }
-                }
-                .padding(.horizontal, DS.Space.lg)
-            }
-
-            browseTierLabel("Explore More")
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: DS.Space.md) {
                     LifeExploreCard(title: "Your Tendencies", subtitle: "How you're wired", icon: "person.fill") { TraitSummaryView() }
                     LifeExploreCard(title: "Connections", subtitle: "What moves with what", icon: "point.3.connected.trianglepath.dotted") { RelationshipGraphView() }
                     LifeExploreCard(title: "Your Direction", subtitle: "Where you're headed", icon: "arrow.forward.circle") { DirectionView() }

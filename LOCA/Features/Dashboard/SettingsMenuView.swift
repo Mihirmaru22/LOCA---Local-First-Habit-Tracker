@@ -201,6 +201,25 @@ struct AppSettingsView: View {
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: DS.Space.lg) {
+                SectionHeader("Profile")
+
+                NavigationLink {
+                    UserProfileView()
+                } label: {
+                    HStack {
+                        Text("My Profile")
+                            .font(DS.Text.body)
+                            .foregroundStyle(DS.Color.textPrimary)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundStyle(DS.Color.textTertiary)
+                    }
+                    .padding(DS.Space.md)
+                    .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+                }
+                .buttonStyle(.pressable)
+
                 SectionHeader("App Settings")
 
                 VStack(spacing: DS.Space.md) {
