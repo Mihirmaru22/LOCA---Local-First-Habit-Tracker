@@ -62,7 +62,7 @@ struct FeedbackAnalyticsView: View {
         LifeEmptyState(
             icon: "hand.thumbsup",
             headline: "No feedback yet",
-            body: "Rate patterns and narratives to track what resonates with you."
+            message: "Rate patterns and narratives to track what resonates with you."
         )
     }
 

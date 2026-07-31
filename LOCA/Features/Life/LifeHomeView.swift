@@ -486,12 +486,19 @@ struct LifeRuntimeSelfCheckView: View {
         List {
             Section("Entity Counts") {
                 ForEach(checks.filter {
-                    !["Provenance JSON", "UncertaintyType", "Chapter→Event link"].contains($0.label)
+                    let dataIntegrity = ["Provenance JSON", "UncertaintyType", "Chapter→Event link"]
+                    let p0Gate = ["Habit bridge signals", "Dimension-tagged signals", "Organic state (today)"]
+                    return !dataIntegrity.contains($0.label) && !p0Gate.contains($0.label)
                 }) { row in checkCell(row) }
             }
             Section("Data Integrity") {
                 ForEach(checks.filter {
                     ["Provenance JSON", "UncertaintyType", "Chapter→Event link"].contains($0.label)
+                }) { row in checkCell(row) }
+            }
+            Section("P0 Runtime Gate") {
+                ForEach(checks.filter {
+                    ["Habit bridge signals", "Dimension-tagged signals", "Organic state (today)"].contains($0.label)
                 }) { row in checkCell(row) }
             }
         }
@@ -566,6 +573,33 @@ struct LifeRuntimeSelfCheckView: View {
             .filter { $0.openingEventId != nil }.count
         rows.append(CheckRow(label: "Chapter→Event link", actual: "\(chaptersWithEvent)",
                              expected: "≥1", pass: chaptersWithEvent >= 1))
+
+        // P0 Runtime Gate — verifies organic pipeline production without seeded data.
+        let now = Date()
+        let calendar = Calendar.current
+        let windowStart = calendar.date(byAdding: .day, value: -90, to: now)!
+        let recentSignals = (try? modelContext.fetch(
+            FetchDescriptor<SignalEvent>(predicate: #Predicate { $0.timestamp >= windowStart })
+        )) ?? []
+        let explicitLogs = recentSignals.filter { $0.source == .explicitLog }
+        let dimensionKeys: Set<String> = ["energy", "mood", "stress", "focus"]
+        let dimensionTagged = explicitLogs.filter { signal in
+            dimensionKeys.contains { signal.metadata[$0] != nil }
+        }
+        rows.append(CheckRow(label: "Habit bridge signals",
+                             actual: "\(explicitLogs.count)", expected: "≥1",
+                             pass: explicitLogs.count >= 1))
+        rows.append(CheckRow(label: "Dimension-tagged signals",
+                             actual: "\(dimensionTagged.count)", expected: "≥1",
+                             pass: dimensionTagged.count >= 1))
+
+        let todayStart = calendar.startOfDay(for: now)
+        let todayStateCount = (try? modelContext.fetchCount(
+            FetchDescriptor<InferredState>(predicate: #Predicate { $0.hourStart >= todayStart })
+        )) ?? 0
+        rows.append(CheckRow(label: "Organic state (today)",
+                             actual: "\(todayStateCount)", expected: "≥1",
+                             pass: todayStateCount >= 1))
 
         checks = rows
     }

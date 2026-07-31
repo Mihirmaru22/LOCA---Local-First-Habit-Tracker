@@ -272,6 +272,7 @@ struct HabitTodaySection: View {
             let isNowLogged = try CheckInWriter.toggleBinary(board: board, context: modelContext)
             if isNowLogged {
                 Haptics.notify(.success)
+                LifeModelNudge.afterCheckIn(modelContext: modelContext)
                 withAnimation(DS.Motion.settle(reduceMotion: reduceMotion)) {
                     showSuccessBadge = true
                 }
@@ -309,6 +310,7 @@ struct HabitTodaySection: View {
             )
 
             Haptics.notify(.success)
+            LifeModelNudge.afterCheckIn(modelContext: modelContext)
             withAnimation(DS.Motion.settle(reduceMotion: reduceMotion)) {
                 showInlineQuantitative = false
                 quantitativeInput = ""

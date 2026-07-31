@@ -59,7 +59,7 @@ struct PeopleView: View {
         LifeEmptyState(
             icon: "person.2",
             headline: "No people detected yet",
-            body: "LOCA notices people from your calendar and patterns. Once it sees recurring appearances, it connects them to how you feel. This requires calendar access."
+            message: "LOCA notices people from your calendar and patterns. Once it sees recurring appearances, it connects them to how you feel. This requires calendar access."
         )
     }
 

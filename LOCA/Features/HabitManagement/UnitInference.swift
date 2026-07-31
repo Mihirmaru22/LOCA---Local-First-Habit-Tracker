@@ -68,3 +68,42 @@ struct UnitInference {
         }
     }
 }
+
+// MARK: - DimensionInference (Version 2.0 · P0)
+
+/// Infers which life dimension a habit most plausibly moves, so a habit check-in
+/// tags its bridged `.explicitLog` signal with a dimension and the life model can
+/// look for habit ↔ state correlations (the V2.0 "T2" layer).
+///
+/// Returns one of the four dimensions the inference engine understands
+/// (`"energy"`, `"mood"`, `"stress"`, `"focus"`) or `nil` when no confident mapping
+/// exists. `nil` is safe: the habit still produces an `.explicitLog` signal and an
+/// `InferredState`; it simply isn't attributed to a specific dimension.
+struct DimensionInference {
+
+    static func infer(from habitName: String) -> String? {
+        let name = habitName.lowercased()
+
+        // Calming / stress-reducing practices
+        if matches(name, ["meditat", "breath", "yoga", "relax", "calm", "mindful", "stretch", "unwind", "pray"]) {
+            return "stress"
+        }
+        // Mood / reflection / connection
+        if matches(name, ["journal", "gratitude", "reflect", "mood", "therapy", "connect", "call", "friend", "social"]) {
+            return "mood"
+        }
+        // Focus / cognitive work
+        if matches(name, ["read", "study", "work", "code", "focus", "learn", "practice", "write", "deep", "review", "plan"]) {
+            return "focus"
+        }
+        // Energy / physical / fuel
+        if matches(name, ["run", "jog", "walk", "bike", "cycl", "gym", "workout", "exercise", "lift", "swim", "cardio", "step", "sleep", "nap", "rest", "hydrat", "water", "eat", "diet", "vitamin"]) {
+            return "energy"
+        }
+        return nil
+    }
+
+    private static func matches(_ text: String, _ patterns: [String]) -> Bool {
+        patterns.contains { text.contains($0) }
+    }
+}
