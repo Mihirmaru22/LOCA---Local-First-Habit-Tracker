@@ -73,6 +73,7 @@ struct CheckInEditorView: View {
     @State private var showDeleteConfirmation = false
     @FocusState private var amountFocused: Bool
     @FocusState private var notesFocused: Bool
+    @State private var interpretation: String? = nil
 
     // MARK: - Computed Properties
 
@@ -110,6 +111,22 @@ struct CheckInEditorView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Space.lg) {
+                    // MARK: - Post-log Interpretation (V2.0A.4)
+
+                    if let interp = interpretation {
+                        HStack(spacing: DS.Space.sm) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                            Text(interp)
+                                .font(DS.Text.body)
+                                .foregroundStyle(DS.Color.textPrimary)
+                        }
+                        .padding(DS.Space.md)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: DS.Radius.control))
+                        .transition(.scale(scale: 0.96).combined(with: .opacity))
+                    }
+
                     // MARK: - Primary Path (Common Case)
 
                     if !isReadOnly {
@@ -407,11 +424,13 @@ struct CheckInEditorView: View {
 
             Haptics.notify(.success)
             LifeModelNudge.afterCheckIn(modelContext: modelContext)
+            let interp = computeInterpretation()
             withAnimation(DS.Motion.confirm(reduceMotion: reduceMotion)) {
                 isSubmitting = false
                 showSaveSuccess = true
+                interpretation = interp
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + (interp != nil ? 1.8 : 0.4)) {
                 dismiss()
             }
         } catch {
@@ -436,6 +455,39 @@ struct CheckInEditorView: View {
             isSubmitting = false
             showSaveError = true
             Haptics.notify(.error)
+        }
+    }
+
+    /// T1 interpretation computed synchronously from board state after a successful
+    /// save. Reads currentStreak (updated by CheckInWriter) and today's logs total.
+    /// Returns nil only if nothing meaningful can be said (e.g. zero amount logged).
+    private func computeInterpretation() -> String? {
+        if isBinary {
+            let streak = board.currentStreak
+            if streak >= 2 { return "Day \(streak) in a row" }
+            let cal = Calendar.current
+            let startOfWeek = cal.dateComponents(
+                [.calendar, .yearForWeekOfYear, .weekOfYear], from: Date()
+            ).date ?? Date()
+            let weekCount = (board.logs ?? []).filter {
+                $0.archivedAt == nil && $0.timestamp >= startOfWeek
+            }.count
+            return weekCount <= 1 ? "First check-in this week" : "Checked in"
+        } else {
+            guard let amount = parsedAmount, amount > 0 else { return nil }
+            let todaysTotal = (board.logs ?? [])
+                .filter { Calendar.current.isDateInToday($0.timestamp) && $0.archivedAt == nil }
+                .reduce(0, { $0 + $1.value })
+            let pct = todaysTotal / board.effectiveTarget
+            let unit = board.unitLabel.map { " \($0)" } ?? ""
+            let fmt = amount.truncatingRemainder(dividingBy: 1) == 0 ? "%.0f" : "%.1f"
+            let amtStr = String(format: fmt, amount)
+            if pct >= 1.0 {
+                let totalFmt = todaysTotal.truncatingRemainder(dividingBy: 1) == 0 ? "%.0f" : "%.1f"
+                return "Goal met · \(String(format: totalFmt, todaysTotal))\(unit) today"
+            } else {
+                return "\(amtStr)\(unit) logged · \(Int(min(pct, 1) * 100))% of today's goal"
+            }
         }
     }
 }
