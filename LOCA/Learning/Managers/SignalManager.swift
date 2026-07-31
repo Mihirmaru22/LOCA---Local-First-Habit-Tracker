@@ -272,12 +272,12 @@ class SignalManager: NSObject, ObservableObject {
 /// and re-derives traits. All work is best-effort and non-blocking — failures
 /// never surface to the check-in flow.
 enum LifeModelNudge {
-    /// Callable from any context (e.g. a SwiftUI view action). The actual work runs
-    /// on the main actor, matching where the singletons and the model context live.
+    /// Must be called from the main actor (all call sites are SwiftUI views or
+    /// @MainActor contexts). Isolation is explicit so modelContext — non-Sendable —
+    /// never crosses actor boundaries and triggers no data-race warning.
+    @MainActor
     static func afterCheckIn(modelContext: ModelContext) {
-        Task { @MainActor in
-            SignalManager.shared.refreshNow()
-            try? TraitInferenceEngine.shared.updateTraits(modelContext: modelContext)
-        }
+        SignalManager.shared.refreshNow()
+        try? TraitInferenceEngine.shared.updateTraits(modelContext: modelContext)
     }
 }
