@@ -57,6 +57,8 @@ struct ConfidenceChip: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
             .background(level.tint.opacity(0.12), in: Capsule())
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Confidence: \(level.label)")
     }
 }
 
@@ -75,6 +77,8 @@ struct ConfidenceDot: View {
         Circle()
             .frame(width: 6, height: 6)
             .foregroundStyle(level.tint)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Confidence: \(level.label)")
     }
 }
 
@@ -90,6 +94,8 @@ struct UncertaintyBar: View {
     /// Some surfaces (salience) want a gentler halo; scale it here.
     var haloScale: Double = 1.0
     var showMarker: Bool = true
+    /// Accessibility label describing what this bar measures (e.g. "Trait strength").
+    var label: String = "Confidence"
 
     var body: some View {
         GeometryReader { geo in
@@ -122,6 +128,9 @@ struct UncertaintyBar: View {
             }
         }
         .frame(height: showMarker ? 10 : 6)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(label)
+        .accessibilityValue("\(Int((value * 100).rounded())) percent, \(ConfidenceLevel(uncertainty: uncertainty).label)")
     }
 }
 

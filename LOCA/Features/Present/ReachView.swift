@@ -256,7 +256,7 @@ struct ReachView: View {
                             .font(.caption)
                             .foregroundStyle(foregroundColor.opacity(lm.isEvent ? 0.7 : 0.45))
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -315,6 +315,19 @@ struct ReachView: View {
             .font(.caption2)
             .foregroundStyle(foregroundColor.opacity(0.18))
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Time depth")
+        .accessibilityValue(depthBandLabel)
+        .accessibilityAdjustableAction { direction in
+            withAnimation(.easeOut(duration: 0.18)) {
+                switch direction {
+                case .increment: depth = min(1.0, depth + 0.25)
+                case .decrement: depth = max(0.0, depth - 0.25)
+                @unknown default: break
+                }
+            }
+            withAnimation(.easeOut(duration: 0.4)) { hasInteracted = true }
+        }
     }
 
     private var depthHint: String {
@@ -325,6 +338,10 @@ struct ReachView: View {
         case 3: return "Chapters as distinct territories"
         default: return ""
         }
+    }
+
+    private var depthBandLabel: String {
+        ["Now", "This week", "This chapter", "Your whole life"][depthBand]
     }
 
     // MARK: - Data

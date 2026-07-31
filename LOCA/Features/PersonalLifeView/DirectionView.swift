@@ -466,6 +466,8 @@ private struct ForkCard: View {
                 Button("Mark resolved") { onResolve() }
                     .font(.caption2)
                     .foregroundStyle(DS.Color.textSecondary)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
             }
         }
         .padding(DS.Space.md)

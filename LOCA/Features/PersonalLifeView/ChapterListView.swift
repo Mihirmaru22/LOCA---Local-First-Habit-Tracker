@@ -195,6 +195,9 @@ private struct StateBar: View {
                 .foregroundStyle(DS.Color.textTertiary)
                 .frame(width: 32, alignment: .trailing)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(label)
+        .accessibilityValue(String(format: "%.0f percent", value * 100))
     }
 }
 
