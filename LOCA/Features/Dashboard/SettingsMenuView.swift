@@ -65,9 +65,11 @@ struct LayoutPickerView: View {
                 VStack(spacing: DS.Space.md) {
                     ForEach(["list", "grid", "timeline"], id: \.self) { option in
                         Button(action: {
-                            layout = option
+                            withAnimation(DS.Motion.confirm(reduceMotion: reduceMotion)) {
+                                layout = option
+                            }
                             Haptics.selection()
-                            dismiss()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { dismiss() }
                         }) {
                             HStack {
                                 Image(systemName: layoutIcon(option))
@@ -88,6 +90,7 @@ struct LayoutPickerView: View {
                         }
                         .padding(DS.Space.md)
                         .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+                        .buttonStyle(.pressable)
                     }
                 }
 
@@ -240,7 +243,7 @@ struct AppSettingsView: View {
                         .padding(DS.Space.md)
                         .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
 
                     Button(action: { lifeOnboardingSeen = false }) {
                         HStack {
@@ -252,7 +255,7 @@ struct AppSettingsView: View {
                         .padding(DS.Space.md)
                         .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
                 }
 
                 Spacer()
