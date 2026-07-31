@@ -32,7 +32,7 @@ struct NarrativeView: View {
                 emptyState
             }
         }
-        .navigationTitle("Your Narrative")
+        .navigationTitle("Your Story")
         .largeNavigationTitleDisplay()
         .task { await loadNarrative() }
     }
@@ -144,11 +144,11 @@ struct NarrativeView: View {
                 .foregroundStyle(DS.Color.textTertiary)
 
             VStack(spacing: DS.Space.sm) {
-                Text("Your narrative")
+                Text("Your story is still forming")
                     .font(.headline)
                     .foregroundStyle(DS.Color.textPrimary)
 
-                Text("LOCA will weave your patterns into a life story when enough patterns emerge.")
+                Text("Your story is a synthesis of patterns and chapters, composed when there's enough to say honestly. It appears once you have at least a month of consistent data.")
                     .font(.caption)
                     .foregroundStyle(DS.Color.textSecondary)
                     .multilineTextAlignment(.center)

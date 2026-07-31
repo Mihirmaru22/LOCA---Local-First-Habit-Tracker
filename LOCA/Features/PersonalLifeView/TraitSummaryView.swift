@@ -25,7 +25,7 @@ struct TraitSummaryView: View {
                 traitList
             }
         }
-        .navigationTitle("Your Traits")
+        .navigationTitle("Your Tendencies")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
@@ -85,11 +85,11 @@ struct TraitSummaryView: View {
                 .foregroundStyle(DS.Color.textTertiary)
 
             VStack(spacing: DS.Space.sm) {
-                Text("No Traits Yet")
+                Text("No tendencies yet")
                     .font(.headline)
                     .foregroundStyle(DS.Color.textPrimary)
 
-                Text("LOCA needs at least 2 weeks of data before it can infer stable traits.")
+                Text("LOCA needs at least 2 weeks of consistent check-ins before it can infer stable tendencies.")
                     .font(.caption)
                     .foregroundStyle(DS.Color.textSecondary)
                     .multilineTextAlignment(.center)

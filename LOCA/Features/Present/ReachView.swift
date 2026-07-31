@@ -37,6 +37,8 @@ struct ReachView: View {
     @State private var showAdjustment = false
     @State private var selectedDimension: StateSignal.Dimension?
 
+    @State private var hasInteracted = false   // fades the entry affordance after first drag
+
     private var currentDepth: Double {
         min(1.0, max(0.0, depth + dragDelta))
     }
@@ -86,6 +88,7 @@ struct ReachView: View {
                 .onEnded { value in
                     let sensitivity = 0.8 / UIScreen.main.bounds.height
                     depth = min(1.0, max(0.0, depth - value.translation.height * sensitivity))
+                    withAnimation(.easeOut(duration: 0.4)) { hasInteracted = true }
                 }
         )
         .task { loadSlices() }
@@ -165,11 +168,6 @@ struct ReachView: View {
                     .font(DS.Text.body)
                     .foregroundStyle(foregroundColor.opacity(0.5))
             }
-
-            Text("Pull up to reach further back.")
-                .font(.caption2)
-                .foregroundStyle(foregroundColor.opacity(0.2))
-                .italic()
         }
     }
 
@@ -314,10 +312,24 @@ struct ReachView: View {
 
     private var depthTrack: some View {
         VStack(spacing: DS.Space.sm) {
-            Text(depthHint)
-                .font(.caption2)
-                .foregroundStyle(foregroundColor.opacity(0.2))
-                .italic()
+            // Entry affordance: visible chevron + text until first interaction.
+            if !hasInteracted && depthBand == 0 {
+                VStack(spacing: 4) {
+                    Image(systemName: "chevron.up")
+                        .font(.caption)
+                        .foregroundStyle(foregroundColor.opacity(0.5))
+                        .symbolEffect(.pulse)
+                    Text("Drag up to move through time")
+                        .font(.caption2)
+                        .foregroundStyle(foregroundColor.opacity(0.45))
+                }
+                .transition(.opacity)
+            } else {
+                Text(depthHint)
+                    .font(.caption2)
+                    .foregroundStyle(foregroundColor.opacity(0.2))
+                    .italic()
+            }
 
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
