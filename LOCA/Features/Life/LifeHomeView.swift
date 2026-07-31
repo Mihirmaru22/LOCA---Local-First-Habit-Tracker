@@ -130,6 +130,7 @@ struct LifeHomeView: View {
                     LifeExploreCard(title: "Connections", subtitle: "What moves with what", icon: "point.3.connected.trianglepath.dotted") { RelationshipGraphView() }
                     LifeExploreCard(title: "Your Direction", subtitle: "Where you're headed", icon: "arrow.forward.circle") { DirectionView() }
                     LifeExploreCard(title: "Life Scene", subtitle: "The whole picture", icon: "binoculars") { LifeSceneView() }
+                    LifeExploreCard(title: "Your Feedback", subtitle: "What resonates", icon: "hand.thumbsup") { FeedbackAnalyticsView() }
                 }
                 .padding(.horizontal, DS.Space.lg)
             }
