@@ -111,6 +111,7 @@
 		AA11000000000000000013AB /* LifeHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11000000000000000012AB /* LifeHomeView.swift */; };
 		AA11000000000000000015AB /* LifeOnboardingSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11000000000000000014AB /* LifeOnboardingSheet.swift */; };
 		AA11000000000000000017AB /* LifePatternCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11000000000000000016AB /* LifePatternCard.swift */; };
+		AA1100000000000000001AAB /* LifeEmptyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11000000000000000019AB /* LifeEmptyState.swift */; };
 		FADE00000000000000000021 /* StreakCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADE00000000000000000011 /* StreakCalculatorTests.swift */; };
 		FADE00000000000000000022 /* AggregationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADE00000000000000000012 /* AggregationTests.swift */; };
 		FEEDCA6A00000000000000B2 /* RegimeHonestyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEEDCA6A00000000000000B1 /* RegimeHonestyTests.swift */; };
@@ -129,7 +130,7 @@
 		1F430BDCCCFA4A3C9B922712 /* MultiEntityComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9871402E3D394DAB818D2D83 /* MultiEntityComposer.swift */; };
 		AD8C8D7F055F47C3904427AF /* PeopleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47334E5DAB804ED49D6E573F /* PeopleView.swift */; };
 		2437F7709D5F47908D5439CD /* RelationshipGraphView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5438274A4BC49CD90724D6C /* RelationshipGraphView.swift */; };
-		C2C67C2B18CB4157B1BA33C2 /* PersonalLifeValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC531F8F7F24B14829AA3B6 /* PersonalLifeValidation.swift */; };
+
 		DCFB2912F8A34AE79CC6DAB3 /* PersonalLifeViewUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C33A4D4C6EE4EC6804620D6 /* PersonalLifeViewUI.swift */; };
 		F3EEFE6DE7594FACA63F1BB0 /* TraitSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E78DF6BCC124F6EA5C653EF /* TraitSummaryView.swift */; };
 		051587161C4246C9A9239035 /* ViewCompositionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = E64F904AABAC4554B7B20EBA /* ViewCompositionEngine.swift */; };
@@ -372,11 +373,12 @@
 		9871402E3D394DAB818D2D83 /* MultiEntityComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiEntityComposer.swift; sourceTree = "<group>"; };
 		47334E5DAB804ED49D6E573F /* PeopleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleView.swift; sourceTree = "<group>"; };
 		B5438274A4BC49CD90724D6C /* RelationshipGraphView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelationshipGraphView.swift; sourceTree = "<group>"; };
-		6DC531F8F7F24B14829AA3B6 /* PersonalLifeValidation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalLifeValidation.swift; sourceTree = "<group>"; };
+
 		AA11000000000000000010AB /* AppRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRootView.swift; sourceTree = "<group>"; };
 		AA11000000000000000012AB /* LifeHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeHomeView.swift; sourceTree = "<group>"; };
 		AA11000000000000000014AB /* LifeOnboardingSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeOnboardingSheet.swift; sourceTree = "<group>"; };
 		AA11000000000000000016AB /* LifePatternCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifePatternCard.swift; sourceTree = "<group>"; };
+		AA11000000000000000019AB /* LifeEmptyState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeEmptyState.swift; sourceTree = "<group>"; };
 		8C33A4D4C6EE4EC6804620D6 /* PersonalLifeViewUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalLifeViewUI.swift; sourceTree = "<group>"; };
 		0E78DF6BCC124F6EA5C653EF /* TraitSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TraitSummaryView.swift; sourceTree = "<group>"; };
 		E64F904AABAC4554B7B20EBA /* ViewCompositionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewCompositionEngine.swift; sourceTree = "<group>"; };
@@ -804,7 +806,7 @@
 				B5438274A4BC49CD90724D6C /* RelationshipGraphView.swift */,
 				46B7109E93264DE9A5FAB54E /* DirectionView.swift */,
 				94E2C16D6CB34D8FB7CB8680 /* DirectionCaptureView.swift */,
-				6DC531F8F7F24B14829AA3B6 /* PersonalLifeValidation.swift */,
+
 				8C33A4D4C6EE4EC6804620D6 /* PersonalLifeViewUI.swift */,
 				0E78DF6BCC124F6EA5C653EF /* TraitSummaryView.swift */,
 				B8C9D0E1F2A3B4C5D6E7F8A9 /* NarrativeView.swift */,
@@ -832,6 +834,7 @@
 			children = (
 				AA11000000000000000012AB /* LifeHomeView.swift */,
 				AA11000000000000000014AB /* LifeOnboardingSheet.swift */,
+				AA11000000000000000019AB /* LifeEmptyState.swift */,
 			);
 			path = Life;
 			sourceTree = "<group>";
@@ -1114,6 +1117,7 @@
 				AA11000000000000000013AB /* LifeHomeView.swift in Sources */,
 				AA11000000000000000015AB /* LifeOnboardingSheet.swift in Sources */,
 				AA11000000000000000017AB /* LifePatternCard.swift in Sources */,
+				AA1100000000000000001AAB /* LifeEmptyState.swift in Sources */,
 				FEEDF300000000000000F002 /* EventsView.swift in Sources */,
 				D4299A41A8464082A3FE9B4F /* LifeSceneView.swift in Sources */,
 				1F430BDCCCFA4A3C9B922712 /* MultiEntityComposer.swift in Sources */,
@@ -1129,7 +1133,7 @@
 				541E0FB6494542E09848C63A /* AskView.swift in Sources */,
 				CC0FA28CBF7F4C7997328A4F /* DirectionView.swift in Sources */,
 				DEC886610E32444B8AE7435B /* DirectionCaptureView.swift in Sources */,
-				C2C67C2B18CB4157B1BA33C2 /* PersonalLifeValidation.swift in Sources */,
+
 				DCFB2912F8A34AE79CC6DAB3 /* PersonalLifeViewUI.swift in Sources */,
 				F3EEFE6DE7594FACA63F1BB0 /* TraitSummaryView.swift in Sources */,
 				C9D0E1F2A3B4C5D6E7F8A9B0 /* NarrativeView.swift in Sources */,

@@ -138,24 +138,11 @@ struct NarrativeView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: DS.Space.lg) {
-            Image(systemName: "book.pages.fill")
-                .font(.system(size: 48))
-                .foregroundStyle(DS.Color.textTertiary)
-
-            VStack(spacing: DS.Space.sm) {
-                Text("Your story is still forming")
-                    .font(.headline)
-                    .foregroundStyle(DS.Color.textPrimary)
-
-                Text("Your story is a synthesis of patterns and chapters, composed when there's enough to say honestly. It appears once you have at least a month of consistent data.")
-                    .font(.caption)
-                    .foregroundStyle(DS.Color.textSecondary)
-                    .multilineTextAlignment(.center)
-            }
-        }
-        .padding(DS.Space.xxxl)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        LifeEmptyState(
+            icon: "book.pages.fill",
+            headline: "Your story is still forming",
+            body: "Your story is a synthesis of patterns and chapters, composed when there's enough to say honestly. It appears once you have at least a month of consistent data."
+        )
     }
 
     private func loadNarrative() async {

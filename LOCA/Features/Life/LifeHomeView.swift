@@ -110,51 +110,49 @@ struct LifeHomeView: View {
     // MARK: - Browse
 
     private var browseSection: some View {
-        VStack(alignment: .leading, spacing: DS.Space.sm) {
-            Text("Browse")
-                .font(DS.Text.caption)
-                .foregroundStyle(DS.Color.textSecondary)
-                .textCase(.uppercase)
-                .padding(.horizontal, DS.Space.lg)
-
+        VStack(alignment: .leading, spacing: DS.Space.lg) {
+            browseTierLabel("Browse")
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: DS.Space.md) {
-                    LifeExploreCard(title: "Chapters", subtitle: "Life in intervals", icon: "book.pages") {
-                        ChapterListView()
-                    }
-                    LifeExploreCard(title: "Events", subtitle: "Shifts in your rhythm", icon: "flag") {
-                        EventsView()
-                    }
-                    LifeExploreCard(title: "People", subtitle: "Who's around you", icon: "person.2.fill") {
-                        PeopleView()
-                    }
-                    LifeExploreCard(title: "Your Tendencies", subtitle: "How you're wired", icon: "person.fill") {
-                        TraitSummaryView()
-                    }
-                    LifeExploreCard(title: "Connections", subtitle: "What moves with what", icon: "point.3.connected.trianglepath.dotted") {
-                        RelationshipGraphView()
-                    }
-                    LifeExploreCard(title: "Your Direction", subtitle: "Where you're headed", icon: "arrow.forward.circle") {
-                        DirectionView()
-                    }
-                    LifeExploreCard(title: "Patterns", subtitle: "What repeats", icon: "sparkles") {
-                        PatternsView()
-                    }
-                    LifeExploreCard(title: "Your Story", subtitle: "Your life story", icon: "book.pages.fill") {
-                        NarrativeView()
-                    }
-                    LifeExploreCard(title: "Life Scene", subtitle: "The whole picture", icon: "binoculars") {
-                        LifeSceneView()
-                    }
-#if DEBUG
-                    LifeExploreCard(title: "Runtime Check", subtitle: "P0 verification gate", icon: "checkmark.shield") {
-                        LifeRuntimeSelfCheckView()
-                    }
-#endif
+                    LifeExploreCard(title: "Chapters", subtitle: "Life in intervals", icon: "book.pages") { ChapterListView() }
+                    LifeExploreCard(title: "Events", subtitle: "Shifts in your rhythm", icon: "flag") { EventsView() }
+                    LifeExploreCard(title: "People", subtitle: "Who's around you", icon: "person.2.fill") { PeopleView() }
+                    LifeExploreCard(title: "Patterns", subtitle: "What repeats", icon: "sparkles") { PatternsView() }
+                    LifeExploreCard(title: "Your Story", subtitle: "Your life story", icon: "book.pages.fill") { NarrativeView() }
                 }
                 .padding(.horizontal, DS.Space.lg)
             }
+
+            browseTierLabel("Explore More")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: DS.Space.md) {
+                    LifeExploreCard(title: "Your Tendencies", subtitle: "How you're wired", icon: "person.fill") { TraitSummaryView() }
+                    LifeExploreCard(title: "Connections", subtitle: "What moves with what", icon: "point.3.connected.trianglepath.dotted") { RelationshipGraphView() }
+                    LifeExploreCard(title: "Your Direction", subtitle: "Where you're headed", icon: "arrow.forward.circle") { DirectionView() }
+                    LifeExploreCard(title: "Life Scene", subtitle: "The whole picture", icon: "binoculars") { LifeSceneView() }
+                    LifeExploreCard(title: "Your Feedback", subtitle: "What resonates", icon: "hand.thumbsup") { FeedbackAnalyticsView() }
+                }
+                .padding(.horizontal, DS.Space.lg)
+            }
+
+#if DEBUG
+            browseTierLabel("Debug")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: DS.Space.md) {
+                    LifeExploreCard(title: "Runtime Check", subtitle: "P0 verification gate", icon: "checkmark.shield") { LifeRuntimeSelfCheckView() }
+                }
+                .padding(.horizontal, DS.Space.lg)
+            }
+#endif
         }
+    }
+
+    private func browseTierLabel(_ label: String) -> some View {
+        Text(label)
+            .font(DS.Text.caption)
+            .foregroundStyle(DS.Color.textSecondary)
+            .textCase(.uppercase)
+            .padding(.horizontal, DS.Space.lg)
     }
 
     // MARK: - Your Questions
@@ -320,12 +318,12 @@ private struct LifeReadCard: View {
 private struct LifeReadEmptyCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.sm) {
-            Text("Not enough data yet.")
+            Text("Your daily read isn't ready yet.")
                 .font(.title3)
                 .fontWeight(.light)
                 .foregroundStyle(DS.Color.textSecondary)
 
-            Text("Check in a few habits. Let a day or two pass. LOCA will have something real to say here.")
+            Text("Check in to your habits to start seeing your daily read. LOCA needs a few days of data to say something honest.")
                 .font(.caption)
                 .foregroundStyle(DS.Color.textTertiary)
                 .fixedSize(horizontal: false, vertical: true)

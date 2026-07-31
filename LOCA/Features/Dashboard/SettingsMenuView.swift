@@ -65,9 +65,11 @@ struct LayoutPickerView: View {
                 VStack(spacing: DS.Space.md) {
                     ForEach(["list", "grid", "timeline"], id: \.self) { option in
                         Button(action: {
-                            layout = option
+                            withAnimation(DS.Motion.confirm(reduceMotion: reduceMotion)) {
+                                layout = option
+                            }
                             Haptics.selection()
-                            dismiss()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { dismiss() }
                         }) {
                             HStack {
                                 Image(systemName: layoutIcon(option))
@@ -88,6 +90,7 @@ struct LayoutPickerView: View {
                         }
                         .padding(DS.Space.md)
                         .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+                        .buttonStyle(.pressable)
                     }
                 }
 
@@ -193,6 +196,7 @@ struct ArchiveListView: View {
 struct AppSettingsView: View {
     @Environment(\.dismiss) var dismiss
     @AppStorage("hapticsEnabled") private var hapticsEnabled = true
+    @AppStorage("life.onboardingSeen") private var lifeOnboardingSeen = true
 
     var body: some View {
         NavigationStack {
@@ -219,6 +223,39 @@ struct AppSettingsView: View {
                     }
                     .padding(DS.Space.md)
                     .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+                }
+
+                SectionHeader("Data Quality")
+
+                VStack(spacing: DS.Space.md) {
+                    NavigationLink {
+                        SensorConflictView()
+                    } label: {
+                        HStack {
+                            Text("Sensor Gaps")
+                                .font(DS.Text.body)
+                                .foregroundStyle(DS.Color.textPrimary)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(DS.Color.textTertiary)
+                        }
+                        .padding(DS.Space.md)
+                        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+                    }
+                    .buttonStyle(.pressable)
+
+                    Button(action: { lifeOnboardingSeen = false }) {
+                        HStack {
+                            Text("Replay Life Introduction")
+                                .font(DS.Text.body)
+                                .foregroundStyle(DS.Color.textPrimary)
+                            Spacer()
+                        }
+                        .padding(DS.Space.md)
+                        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+                    }
+                    .buttonStyle(.pressable)
                 }
 
                 Spacer()
