@@ -114,6 +114,8 @@ struct LifeHomeView: View {
             browseTierLabel("Browse")
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: DS.Space.md) {
+                    LifeExploreCard(title: "This Week", subtitle: "Habits in review", icon: "calendar.badge.checkmark") { WeeklyDigestView() }
+                    LifeExploreCard(title: "Monthly", subtitle: "Month at a glance", icon: "calendar") { MonthlyReviewView() }
                     LifeExploreCard(title: "Chapters", subtitle: "Life in intervals", icon: "book.pages") { ChapterListView() }
                     LifeExploreCard(title: "Events", subtitle: "Shifts in your rhythm", icon: "flag") { EventsView() }
                     LifeExploreCard(title: "People", subtitle: "Who's around you", icon: "person.2.fill") { PeopleView() }
