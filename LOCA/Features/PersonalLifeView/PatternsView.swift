@@ -133,6 +133,8 @@ private struct PatternDetailView: View {
     @State private var feedbackSaved = false
     @State private var context: ContextEnricher.PatternContext?
     @State private var isLoadingContext = true
+    @State private var showAsk = false
+    @State private var askPrefill: String = ""
 
     var body: some View {
         NavigationStack {
@@ -260,8 +262,11 @@ private struct PatternDetailView: View {
 
                     Spacer(minLength: DS.Space.xxxl)
 
-                    // Explore button
-                    Button(action: { /* seed a question */ }) {
+                    // Explore button → contextual Ask
+                    Button(action: {
+                        askPrefill = pattern.explorableQuestion
+                        showAsk = true
+                    }) {
                         Text(pattern.explorableQuestion)
                             .font(.caption)
                             .foregroundStyle(.white)
@@ -279,6 +284,9 @@ private struct PatternDetailView: View {
                 }
             }
             .task { await loadContext() }
+            .sheet(isPresented: $showAsk) {
+                AskView(prefill: askPrefill) { _ in }
+            }
         }
     }
 

@@ -111,6 +111,7 @@ struct LifePatternCard: View {
     @Environment(\.modelContext) private var modelContext
     @State private var t2Pattern: LifePattern? = nil
     @State private var t2Loading = true
+    @State private var showMicroCheckIn = false
 
     private var habitType: HabitType { HabitType(board: board) }
     private var t1: T1Stats { T1Stats.compute(for: board) }
@@ -134,16 +135,36 @@ struct LifePatternCard: View {
                 Divider()
                 t2PatternView(pattern)
             } else {
-                Text(t2EmptyMessage)
-                    .font(.caption)
-                    .foregroundStyle(DS.Color.textTertiary)
-                    .fixedSize(horizontal: false, vertical: true)
+                VStack(alignment: .leading, spacing: DS.Space.sm) {
+                    Text(t2EmptyMessage)
+                        .font(.caption)
+                        .foregroundStyle(DS.Color.textTertiary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    if board.dimension != nil {
+                        Button(action: { showMicroCheckIn = true }) {
+                            Text("Log your state \u{2192}")
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundStyle(accent)
+                                .padding(.horizontal, DS.Space.sm)
+                                .padding(.vertical, 5)
+                                .background(accent.opacity(0.1), in: Capsule())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
             }
         }
         .padding(DS.Space.md)
         .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
         .overlay(RoundedRectangle(cornerRadius: DS.Radius.card).stroke(DS.Color.border, lineWidth: 1))
         .task { await loadT2() }
+        .sheet(isPresented: $showMicroCheckIn) {
+            MicroCheckInView(board: board)
+                .presentationDetents([.height(380)])
+                .presentationDragIndicator(.visible)
+        }
     }
 
     // MARK: - T1 section
