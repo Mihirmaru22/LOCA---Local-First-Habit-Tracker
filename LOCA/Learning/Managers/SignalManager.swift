@@ -55,6 +55,20 @@ class SignalManager: NSObject, ObservableObject {
         }
     }
 
+    /// Version 2.0 · P0 — On-demand pipeline refresh after a user action (e.g. a
+    /// check-in), so a freshly-logged habit produces `InferredState` immediately
+    /// instead of waiting for the next hourly cycle.
+    ///
+    /// `startCollection()` becomes a no-op once the background loop is running (its
+    /// `isCollecting` guard never resets), so this deliberately bypasses it and runs
+    /// a collection pass directly. `collectAllSignals()` has its own reentrancy
+    /// guard, so overlapping with the background loop is safe.
+    func refreshNow() {
+        Task {
+            await collectAllSignals()
+        }
+    }
+
     func stopCollection() {
         backgroundTask?.cancel()
         isCollecting = false
@@ -247,5 +261,23 @@ class SignalManager: NSObject, ObservableObject {
         }
 
         return aggregates
+    }
+}
+
+// MARK: - LifeModelNudge (Version 2.0 · P0)
+
+/// Central hook fired after a habit check-in so the Life model reflects the new
+/// fact right away rather than on the next hourly cycle: it refreshes the passive
+/// inference pipeline (producing fresh `InferredState` from the just-bridged log)
+/// and re-derives traits. All work is best-effort and non-blocking — failures
+/// never surface to the check-in flow.
+enum LifeModelNudge {
+    /// Must be called from the main actor (all call sites are SwiftUI views or
+    /// @MainActor contexts). Isolation is explicit so modelContext — non-Sendable —
+    /// never crosses actor boundaries and triggers no data-race warning.
+    @MainActor
+    static func afterCheckIn(modelContext: ModelContext) {
+        SignalManager.shared.refreshNow()
+        try? TraitInferenceEngine.shared.updateTraits(modelContext: modelContext)
     }
 }

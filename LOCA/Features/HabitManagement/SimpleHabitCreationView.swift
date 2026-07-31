@@ -206,7 +206,9 @@ struct SimpleHabitCreationView: View {
                 .foregroundStyle(DS.Color.textPrimary)
 
             VStack(spacing: DS.Space.md) {
-                Button(action: { step = .name }) {
+                Button(action: {
+                    withAnimation(DS.Motion.settle(reduceMotion: reduceMotion)) { step = .name }
+                }) {
                     HStack(spacing: DS.Space.md) {
                         Image(systemName: "square.and.pencil")
                             .foregroundStyle(ColorPalette[0])
@@ -228,7 +230,9 @@ struct SimpleHabitCreationView: View {
                 }
                 .buttonStyle(.pressable)
 
-                Button(action: { step = .template }) {
+                Button(action: {
+                    withAnimation(DS.Motion.settle(reduceMotion: reduceMotion)) { step = .template }
+                }) {
                     HStack(spacing: DS.Space.md) {
                         Image(systemName: "sparkles")
                             .foregroundStyle(ColorPalette[0])
@@ -343,12 +347,13 @@ struct SimpleHabitCreationView: View {
 
             VStack(spacing: DS.Space.md) {
                 Button(action: {
-                    metricType = .binary
+                    withAnimation(DS.Motion.confirm(reduceMotion: reduceMotion)) { metricType = .binary }
                     Haptics.selection()
                 }) {
                     HStack(spacing: DS.Space.md) {
                         Image(systemName: metricType == .binary ? "checkmark.circle.fill" : "circle")
                             .foregroundStyle(metricType == .binary ? ColorPalette[0] : .secondary)
+                            .id(metricType == .binary)
                             .transition(.scale.combined(with: .opacity))
 
                         VStack(alignment: .leading, spacing: DS.Space.xs) {
@@ -369,12 +374,13 @@ struct SimpleHabitCreationView: View {
                 .buttonStyle(.pressable)
 
                 Button(action: {
-                    metricType = .quantitative
+                    withAnimation(DS.Motion.confirm(reduceMotion: reduceMotion)) { metricType = .quantitative }
                     Haptics.selection()
                 }) {
                     HStack(spacing: DS.Space.md) {
                         Image(systemName: metricType == .quantitative ? "checkmark.circle.fill" : "circle")
                             .foregroundStyle(metricType == .quantitative ? ColorPalette[0] : .secondary)
+                            .id(metricType == .quantitative)
                             .transition(.scale.combined(with: .opacity))
 
                         VStack(alignment: .leading, spacing: DS.Space.xs) {
@@ -435,7 +441,9 @@ struct SimpleHabitCreationView: View {
                 selectedUnit = inferred
             }
         }
-        step = .metricType
+        withAnimation(DS.Motion.settle(reduceMotion: reduceMotion)) {
+            step = .metricType
+        }
     }
 
     private func createHabit() {
@@ -456,6 +464,9 @@ struct SimpleHabitCreationView: View {
         )
 
         board.preferredReminderTime = templateReminderTime
+        // Version 2.0 · P0 — tag the habit with the life dimension it most plausibly
+        // moves, so its check-ins feed habit ↔ state correlations.
+        board.dimension = DimensionInference.infer(from: trimmed)
         modelContext.insert(board)
 
         do {

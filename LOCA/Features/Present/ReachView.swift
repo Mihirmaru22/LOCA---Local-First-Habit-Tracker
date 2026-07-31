@@ -32,10 +32,7 @@ struct ReachView: View {
     @GestureState private var dragDelta: Double = 0
     @State private var slices: [ReachSlice] = []
 
-    // Counterfactual: user adjustments to signals
-    @State private var adjustedSignals: [StateSignal.Dimension: Double] = [:]
-    @State private var showAdjustment = false
-    @State private var selectedDimension: StateSignal.Dimension?
+    @State private var hasInteracted = false   // fades the entry affordance after first drag
 
     private var currentDepth: Double {
         min(1.0, max(0.0, depth + dragDelta))
@@ -86,21 +83,10 @@ struct ReachView: View {
                 .onEnded { value in
                     let sensitivity = 0.8 / UIScreen.main.bounds.height
                     depth = min(1.0, max(0.0, depth - value.translation.height * sensitivity))
+                    withAnimation(.easeOut(duration: 0.4)) { hasInteracted = true }
                 }
         )
         .task { loadSlices() }
-        .sheet(isPresented: $showAdjustment) {
-            if let dim = selectedDimension {
-                SignalAdjustmentSheet(
-                    dimension: dim,
-                    currentDelta: adjustedSignals[dim] ?? (scene.signals.first { $0.dimension == dim }?.delta ?? 0),
-                    onAdjust: { newDelta in
-                        adjustedSignals[dim] = newDelta
-                    },
-                    isPresented: $showAdjustment
-                )
-            }
-        }
     }
 
     // MARK: - Depth Band
@@ -165,11 +151,6 @@ struct ReachView: View {
                     .font(DS.Text.body)
                     .foregroundStyle(foregroundColor.opacity(0.5))
             }
-
-            Text("Pull up to reach further back.")
-                .font(.caption2)
-                .foregroundStyle(foregroundColor.opacity(0.2))
-                .italic()
         }
     }
 
@@ -194,32 +175,17 @@ struct ReachView: View {
     private var weekSignalsView: some View {
         VStack(alignment: .leading, spacing: DS.Space.sm) {
             ForEach(scene.signals.filter { abs($0.delta) >= 0.03 }, id: \.dimension.rawValue) { signal in
-                let adjustedDelta = adjustedSignals[signal.dimension] ?? signal.delta
-                let adjustedSignal = StateSignal(
-                    dimension: signal.dimension,
-                    delta: adjustedDelta,
-                    confidence: signal.confidence,
-                    uncertainty: signal.uncertainty,
-                    trending: signal.trending
-                )
-
                 Button(action: { pullSignalThread(signal) }) {
-                    SignalRow(signal: adjustedSignal, foreground: foregroundColor)
+                    SignalRow(signal: signal, foreground: foregroundColor)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .contextMenu {
-                    Button(action: { openAdjustment(for: signal.dimension) }) {
-                        Label("What if...", systemImage: "slider.horizontal.3")
-                    }
-                }
             }
         }
     }
 
     private func pullSignalThread(_ signal: StateSignal) {
-        let question = "Tell me more about my \(signal.dimension.label.lowercased())"
-        askPrefill = question
+        askPrefill = "Tell me more about my \(signal.dimension.label.lowercased())"
         showAsk = true
         dismiss()
     }
@@ -290,7 +256,7 @@ struct ReachView: View {
                             .font(.caption)
                             .foregroundStyle(foregroundColor.opacity(lm.isEvent ? 0.7 : 0.45))
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -305,19 +271,28 @@ struct ReachView: View {
         dismiss()
     }
 
-    private func openAdjustment(for dimension: StateSignal.Dimension) {
-        selectedDimension = dimension
-        showAdjustment = true
-    }
-
     // MARK: - Depth Track
 
     private var depthTrack: some View {
         VStack(spacing: DS.Space.sm) {
-            Text(depthHint)
-                .font(.caption2)
-                .foregroundStyle(foregroundColor.opacity(0.2))
-                .italic()
+            // Entry affordance: visible chevron + text until first interaction.
+            if !hasInteracted && depthBand == 0 {
+                VStack(spacing: 4) {
+                    Image(systemName: "chevron.up")
+                        .font(.caption)
+                        .foregroundStyle(foregroundColor.opacity(0.5))
+                        .symbolEffect(.pulse)
+                    Text("Drag up to move through time")
+                        .font(.caption2)
+                        .foregroundStyle(foregroundColor.opacity(0.45))
+                }
+                .transition(.opacity)
+            } else {
+                Text(depthHint)
+                    .font(.caption2)
+                    .foregroundStyle(foregroundColor.opacity(0.2))
+                    .italic()
+            }
 
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
@@ -340,6 +315,19 @@ struct ReachView: View {
             .font(.caption2)
             .foregroundStyle(foregroundColor.opacity(0.18))
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Time depth")
+        .accessibilityValue(depthBandLabel)
+        .accessibilityAdjustableAction { direction in
+            withAnimation(.easeOut(duration: 0.18)) {
+                switch direction {
+                case .increment: depth = min(1.0, depth + 0.25)
+                case .decrement: depth = max(0.0, depth - 0.25)
+                @unknown default: break
+                }
+            }
+            withAnimation(.easeOut(duration: 0.4)) { hasInteracted = true }
+        }
     }
 
     private var depthHint: String {
@@ -350,6 +338,10 @@ struct ReachView: View {
         case 3: return "Chapters as distinct territories"
         default: return ""
         }
+    }
+
+    private var depthBandLabel: String {
+        ["Now", "This week", "This chapter", "Your whole life"][depthBand]
     }
 
     // MARK: - Data
@@ -416,77 +408,6 @@ private struct SignalRow: View {
                     .foregroundStyle(foreground.opacity(0.3))
             }
         }
-    }
-}
-
-// MARK: - Signal Adjustment Sheet
-
-private struct SignalAdjustmentSheet: View {
-    let dimension: StateSignal.Dimension
-    let currentDelta: Double
-    let onAdjust: (Double) -> Void
-    @Binding var isPresented: Bool
-
-    @State private var delta: Double = 0
-
-    var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: DS.Space.lg) {
-                Text("What if your \(dimension.label.lowercased()) was different?")
-                    .font(.headline)
-                    .foregroundStyle(DS.Color.textPrimary)
-
-                VStack(alignment: .leading, spacing: DS.Space.md) {
-                    HStack {
-                        Text("Lower")
-                            .font(.caption)
-                            .foregroundStyle(DS.Color.textSecondary)
-                        Slider(value: $delta, in: -0.5...0.5)
-                            .tint(Color.accentColor)
-                        Text("Higher")
-                            .font(.caption)
-                            .foregroundStyle(DS.Color.textSecondary)
-                    }
-
-                    Text("Current: \(String(format: "%.2f", delta))")
-                        .font(.caption)
-                        .foregroundStyle(DS.Color.textTertiary)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                }
-
-                VStack(spacing: DS.Space.sm) {
-                    Text("The view will shift to reflect this hypothetical.")
-                        .font(.caption)
-                        .foregroundStyle(DS.Color.textSecondary)
-                        .italic()
-                }
-
-                Spacer()
-
-                HStack(spacing: DS.Space.md) {
-                    Button("Reset") {
-                        delta = 0
-                        onAdjust(currentDelta)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(DS.Space.md)
-                    .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: DS.Radius.control))
-                    .foregroundStyle(DS.Color.textPrimary)
-
-                    Button("Apply") {
-                        onAdjust(delta)
-                        isPresented = false
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(DS.Space.md)
-                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: DS.Radius.control))
-                    .foregroundStyle(.white)
-                }
-            }
-            .padding(DS.Space.xl)
-            .navigationBarTitleDisplayMode(.inline)
-        }
-        .onAppear { delta = currentDelta }
     }
 }
 

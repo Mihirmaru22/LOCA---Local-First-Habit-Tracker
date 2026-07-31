@@ -59,24 +59,11 @@ struct FeedbackAnalyticsView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: DS.Space.lg) {
-            Image(systemName: "hand.thumbsup.fill")
-                .font(.system(size: 48))
-                .foregroundStyle(DS.Color.textTertiary)
-
-            VStack(spacing: DS.Space.sm) {
-                Text("No feedback yet")
-                    .font(.headline)
-                    .foregroundStyle(DS.Color.textPrimary)
-
-                Text("Rate patterns and narratives to track what resonates with you.")
-                    .font(.caption)
-                    .foregroundStyle(DS.Color.textSecondary)
-                    .multilineTextAlignment(.center)
-            }
-        }
-        .padding(DS.Space.xxxl)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        LifeEmptyState(
+            icon: "hand.thumbsup",
+            headline: "No feedback yet",
+            message: "Rate patterns and narratives to track what resonates with you."
+        )
     }
 
     private var feedbackSummarySection: some View {

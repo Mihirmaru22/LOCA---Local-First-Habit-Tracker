@@ -87,19 +87,9 @@ struct PresentView: View {
                     .font(.body)
                     .foregroundStyle(textColor.opacity(0.4))
                     .padding(DS.Space.md)
+                    .accessibilityLabel("Close")
             }
-
             Spacer()
-
-            // Explore: secondary path to the structured browse surfaces.
-            NavigationLink {
-                PersonalLifeListView()
-            } label: {
-                Image(systemName: "square.grid.2x2")
-                    .font(.body)
-                    .foregroundStyle(textColor.opacity(0.25))
-                    .padding(DS.Space.md)
-            }
         }
         .padding(.top, 52)
         .padding(.horizontal, DS.Space.sm)
@@ -186,19 +176,20 @@ struct PresentView: View {
 
     private var bottomBar: some View {
         HStack(spacing: 0) {
-            // Reach — the time gesture.
+            // Timeline — the time gesture.
             Button {
                 showReach = true
             } label: {
                 VStack(spacing: DS.Space.xs) {
                     Image(systemName: "arrow.up.left.and.arrow.down.right")
                         .font(.title3)
-                    Text("Reach")
+                    Text("Timeline")
                         .font(.caption2)
                 }
                 .foregroundStyle(textColor.opacity(0.4))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, DS.Space.lg)
+                .accessibilityLabel("Open timeline")
             }
 
             Divider()
@@ -219,6 +210,7 @@ struct PresentView: View {
                 .foregroundStyle(textColor.opacity(0.4))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, DS.Space.lg)
+                .accessibilityLabel("Ask a question")
             }
         }
         .background(.ultraThinMaterial)

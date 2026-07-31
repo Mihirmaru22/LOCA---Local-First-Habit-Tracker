@@ -32,7 +32,7 @@ struct NarrativeView: View {
                 emptyState
             }
         }
-        .navigationTitle("Your Narrative")
+        .navigationTitle("Your Story")
         .largeNavigationTitleDisplay()
         .task { await loadNarrative() }
     }
@@ -138,24 +138,11 @@ struct NarrativeView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: DS.Space.lg) {
-            Image(systemName: "book.pages.fill")
-                .font(.system(size: 48))
-                .foregroundStyle(DS.Color.textTertiary)
-
-            VStack(spacing: DS.Space.sm) {
-                Text("Your narrative")
-                    .font(.headline)
-                    .foregroundStyle(DS.Color.textPrimary)
-
-                Text("LOCA will weave your patterns into a life story when enough patterns emerge.")
-                    .font(.caption)
-                    .foregroundStyle(DS.Color.textSecondary)
-                    .multilineTextAlignment(.center)
-            }
-        }
-        .padding(DS.Space.xxxl)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        LifeEmptyState(
+            icon: "book.pages.fill",
+            headline: "Your story is still forming",
+            message: "Your story is a synthesis of patterns and chapters, composed when there's enough to say honestly. It appears once you have at least a month of consistent data."
+        )
     }
 
     private func loadNarrative() async {

@@ -30,7 +30,6 @@ struct HabitListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showingCreateSheet = false
-    @State private var showingPersonalLife = false
     @State private var showCheckInError   = false
     @State private var showUndoToast = false
     @State private var lastDeletedHabit: HabitBoard? = nil
@@ -95,23 +94,16 @@ struct HabitListView: View {
             ToolbarItem(placement: .primaryAction) {
                 HStack(spacing: DS.Space.md) {
                     SyncStatusIndicatorView(syncStatus: syncStatus)
-                    Button(action: { showingPersonalLife = true }) {
-                        Image(systemName: "eye")
-                    }
                     SettingsMenuView()
                     Button(action: { showingCreateSheet = true }) {
                         Image(systemName: "plus")
+                            .accessibilityLabel("Create habit")
                     }
                 }
             }
         }
         .sheet(isPresented: $showingCreateSheet) {
             SimpleHabitCreationView()
-        }
-        .fullScreenCover(isPresented: $showingPersonalLife) {
-            NavigationStack {
-                PresentView()
-            }
         }
         .alert("Couldn't Save Check-in", isPresented: $showCheckInError) {
             Button("OK", role: .cancel) {}
@@ -143,6 +135,11 @@ struct HabitListView: View {
                     syncStatus = status
                 }
             }
+        }
+        .task(id: boards.count) {
+            // Version 2.0 · P0 — ensure every habit is dimension-tagged so its
+            // check-ins feed habit ↔ state correlations.
+            backfillLifeDimensions()
         }
         .task(id: boards.count) {
             // Generate recommendations based on existing habits (Phase 3.4)
@@ -232,13 +229,34 @@ struct HabitListView: View {
         do {
             let isNowCheckedIn = try CheckInWriter.toggleBinary(board: board, context: modelContext)
             Haptics.impact(.rigid)
-            // P4.2: Success haptic when checking in (goal completion for binary)
             if isNowCheckedIn {
                 Haptics.notify(.success)
+                nudgeLifeModel()
             }
         } catch {
             showCheckInError = true
         }
+    }
+
+    /// After a check-in, refresh the Life model so the just-logged habit produces
+    /// fresh inference and traits (Version 2.0 · P0). Both steps are best-effort and
+    /// guarded internally, so repeated calls are safe.
+    private func nudgeLifeModel() {
+        LifeModelNudge.afterCheckIn(modelContext: modelContext)
+    }
+
+    /// Version 2.0 · P0 — one-time backfill so habits created before dimension
+    /// tagging still contribute to habit ↔ state correlations. Idempotent: only
+    /// touches boards whose dimension is still unset.
+    private func backfillLifeDimensions() {
+        var changed = false
+        for board in displayBoards where (board.dimension?.isEmpty ?? true) {
+            if let inferred = DimensionInference.infer(from: board.name) {
+                board.dimension = inferred
+                changed = true
+            }
+        }
+        if changed { try? modelContext.save() }
     }
 }
 

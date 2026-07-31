@@ -41,7 +41,7 @@ struct DirectionView: View {
             }
             .padding(.top, DS.Space.md)
         }
-        .navigationTitle("Direction")
+        .navigationTitle("Your Direction")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
@@ -198,7 +198,7 @@ struct DirectionView: View {
 
     private var forksSection: some View {
         VStack(alignment: .leading, spacing: DS.Space.sm) {
-            SectionLabel(text: "Forks")
+            SectionLabel(text: "Open Questions")
 
             ForEach(forks) { fork in
                 ForkCard(fork: fork, onResolve: { resolve(fork) })
@@ -215,7 +215,7 @@ struct DirectionView: View {
                 Button(kind.label) { addFork(kind: kind, dir: dir) }
             }
         } label: {
-            Label("Add a fork", systemImage: "arrow.triangle.branch")
+            Label("Add an open question", systemImage: "arrow.triangle.branch")
                 .font(.caption)
                 .foregroundStyle(Color.accentColor)
                 .padding(.horizontal, DS.Space.lg)
@@ -225,27 +225,12 @@ struct DirectionView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: DS.Space.lg) {
-            Image(systemName: "arrow.forward.circle")
-                .font(.system(size: 48))
-                .foregroundStyle(DS.Color.textTertiary)
-
-            VStack(spacing: DS.Space.sm) {
-                Text("Where are you headed?")
-                    .font(.headline)
-                    .foregroundStyle(DS.Color.textPrimary)
-
-                Text("LOCA can show you your life clearly, but to understand the aim — what you're moving toward and why — it needs one phrase from you. One is enough.")
-                    .font(.caption)
-                    .foregroundStyle(DS.Color.textSecondary)
-                    .multilineTextAlignment(.center)
-            }
-
-            Button("Tell LOCA where you are") { showCapture = true }
-                .buttonStyle(.bordered)
-        }
-        .padding(DS.Space.xl)
-        .frame(maxHeight: .infinity, alignment: .center)
+        LifeEmptyState(
+            icon: "arrow.forward.circle",
+            headline: "No direction set",
+            message: "Your direction is a statement of where you're headed — what matters to you right now. It's optional, but it helps LOCA understand your context.",
+            action: LifeEmptyStateAction(label: "Set my direction") { showCapture = true }
+        )
     }
 
     // MARK: - Data Loading
@@ -481,6 +466,8 @@ private struct ForkCard: View {
                 Button("Mark resolved") { onResolve() }
                     .font(.caption2)
                     .foregroundStyle(DS.Color.textSecondary)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
             }
         }
         .padding(DS.Space.md)

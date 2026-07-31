@@ -89,12 +89,9 @@ struct LOCAApp: App {
     var body: some Scene {
         WindowGroup {
             if let container {
-                TodayView()
+                AppRootView()
                     .modelContainer(container)
                     .task {
-                        // All app-level coordinator initialization via AppCoordinator (H-10).
-                        // Replaces 7 separate .task modifiers with one unified lifecycle.
-                        // Cancellation propagates to all running coordinators when the task ends.
                         await appCoordinator?.start()
                     }
             } else {

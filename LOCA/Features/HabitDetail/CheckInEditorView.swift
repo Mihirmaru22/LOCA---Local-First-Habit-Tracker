@@ -68,9 +68,11 @@ struct CheckInEditorView: View {
     @State private var selectedTimeQuick: TimeQuickSelect = .now
     @State private var showAdvancedOptions = false
     @State private var isSubmitting = false
+    @State private var showSaveSuccess = false
     @State private var showSaveError = false
     @State private var showDeleteConfirmation = false
     @FocusState private var amountFocused: Bool
+    @FocusState private var notesFocused: Bool
 
     // MARK: - Computed Properties
 
@@ -149,6 +151,10 @@ struct CheckInEditorView: View {
                     if isSubmitting {
                         ProgressView()
                             .tint(ColorPalette[board.colorIndex])
+                    } else if showSaveSuccess {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(ColorPalette[board.colorIndex])
+                            .transition(.scale.combined(with: .opacity))
                     } else if isReadOnly {
                         EmptyView()
                     } else if isEditMode {
@@ -195,6 +201,11 @@ struct CheckInEditorView: View {
                     .frame(height: 44)
                     .padding(.horizontal, DS.Space.md)
                     .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: DS.Radius.control))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DS.Radius.control)
+                            .stroke(amountFocused ? ColorPalette[board.colorIndex] : Color.clear, lineWidth: 1.5)
+                    )
+                    .animation(DS.Motion.confirm(reduceMotion: reduceMotion), value: amountFocused)
 
                 if let unit = board.unitLabel, !unit.isEmpty {
                     Text(unit)
@@ -274,9 +285,8 @@ struct CheckInEditorView: View {
     private var dateTimeSection: some View {
         VStack(alignment: .leading, spacing: DS.Space.md) {
             Text("When")
-                .font(DS.Text.body)
-                .fontWeight(.semibold)
-                .foregroundStyle(DS.Color.textPrimary)
+                .font(DS.Text.caption)
+                .foregroundStyle(DS.Color.textSecondary)
 
             VStack(alignment: .leading, spacing: DS.Space.sm) {
                 Text("Date")
@@ -328,15 +338,20 @@ struct CheckInEditorView: View {
     private var notesSection: some View {
         VStack(alignment: .leading, spacing: DS.Space.sm) {
             Text("Notes")
-                .font(DS.Text.body)
-                .fontWeight(.semibold)
-                .foregroundStyle(DS.Color.textPrimary)
+                .font(DS.Text.caption)
+                .foregroundStyle(DS.Color.textSecondary)
 
             TextEditor(text: $noteText)
                 .font(DS.Text.body)
                 .frame(minHeight: 100)
                 .padding(DS.Space.sm)
+                .focused($notesFocused)
                 .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: DS.Radius.control))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DS.Radius.control)
+                        .stroke(notesFocused ? ColorPalette[board.colorIndex] : Color.clear, lineWidth: 1.5)
+                )
+                .animation(DS.Motion.confirm(reduceMotion: reduceMotion), value: notesFocused)
                 .onChange(of: noteText) { _, new in
                     if new.count > 500 { noteText = String(new.prefix(500)) }
                 }
@@ -391,7 +406,11 @@ struct CheckInEditorView: View {
             }
 
             Haptics.notify(.success)
-            isSubmitting = false
+            LifeModelNudge.afterCheckIn(modelContext: modelContext)
+            withAnimation(DS.Motion.confirm(reduceMotion: reduceMotion)) {
+                isSubmitting = false
+                showSaveSuccess = true
+            }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                 dismiss()
             }

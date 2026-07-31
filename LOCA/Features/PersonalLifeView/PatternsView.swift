@@ -63,24 +63,11 @@ struct PatternsView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: DS.Space.lg) {
-            Image(systemName: "sparkles")
-                .font(.system(size: 48))
-                .foregroundStyle(DS.Color.textTertiary)
-
-            VStack(spacing: DS.Space.sm) {
-                Text("Patterns emerging")
-                    .font(.headline)
-                    .foregroundStyle(DS.Color.textPrimary)
-
-                Text("LOCA needs a few weeks of data across habits, states, and people to see patterns in your life.")
-                    .font(.caption)
-                    .foregroundStyle(DS.Color.textSecondary)
-                    .multilineTextAlignment(.center)
-            }
-        }
-        .padding(DS.Space.xxxl)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        LifeEmptyState(
+            icon: "sparkles",
+            headline: "Building your pattern picture",
+            message: "Patterns appear when LOCA finds a consistent relationship in your data — like energy being higher on days you exercise. This takes at least two weeks of consistent check-ins."
+        )
     }
 
     private func loadPatterns() async {

@@ -71,7 +71,7 @@ final class HabitBridgeManager {
                 metadata["note"] = note
             }
             if let dimension = board?.dimension, !dimension.isEmpty {
-                metadata[dimension] = String(format: "%.2f", entry.value)
+                metadata[dimension] = String(format: "%.2f", completionRatio)
             }
 
             signals.append(SignalEvent(

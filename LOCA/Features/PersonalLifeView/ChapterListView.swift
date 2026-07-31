@@ -65,24 +65,11 @@ struct ChapterListView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: DS.Space.lg) {
-            Image(systemName: "book.closed")
-                .font(.system(size: 48))
-                .foregroundStyle(DS.Color.textTertiary)
-
-            VStack(spacing: DS.Space.sm) {
-                Text("No Chapters Yet")
-                    .font(.headline)
-                    .foregroundStyle(DS.Color.textPrimary)
-
-                Text("Chapters appear automatically when LOCA detects a significant shift in your life pattern.")
-                    .font(.caption)
-                    .foregroundStyle(DS.Color.textSecondary)
-                    .multilineTextAlignment(.center)
-            }
-        }
-        .padding(DS.Space.xl)
-        .frame(maxHeight: .infinity, alignment: .center)
+        LifeEmptyState(
+            icon: "book.closed",
+            headline: "Your first chapter is forming",
+            message: "Chapters are distinct periods of your life — they appear automatically when LOCA detects a real shift in how you've been living. After 3–4 weeks of check-ins, your first chapter will appear."
+        )
     }
 
     // MARK: - Rebuild
@@ -208,6 +195,9 @@ private struct StateBar: View {
                 .foregroundStyle(DS.Color.textTertiary)
                 .frame(width: 32, alignment: .trailing)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(label)
+        .accessibilityValue(String(format: "%.0f percent", value * 100))
     }
 }
 
