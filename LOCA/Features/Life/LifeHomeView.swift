@@ -134,13 +134,13 @@ struct LifeHomeView: View {
                     LifeExploreCard(title: "Connections", subtitle: "What moves with what", icon: "point.3.connected.trianglepath.dotted") {
                         RelationshipGraphView()
                     }
-                    LifeExploreCard(title: "Direction", subtitle: "Where you're headed", icon: "arrow.forward.circle") {
+                    LifeExploreCard(title: "Your Direction", subtitle: "Where you're headed", icon: "arrow.forward.circle") {
                         DirectionView()
                     }
                     LifeExploreCard(title: "Patterns", subtitle: "What repeats", icon: "sparkles") {
                         PatternsView()
                     }
-                    LifeExploreCard(title: "Narrative", subtitle: "Your life story", icon: "book.pages.fill") {
+                    LifeExploreCard(title: "Your Story", subtitle: "Your life story", icon: "book.pages.fill") {
                         NarrativeView()
                     }
                     LifeExploreCard(title: "Life Scene", subtitle: "The whole picture", icon: "binoculars") {

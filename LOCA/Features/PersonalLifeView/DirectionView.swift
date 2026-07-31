@@ -41,7 +41,7 @@ struct DirectionView: View {
             }
             .padding(.top, DS.Space.md)
         }
-        .navigationTitle("Direction")
+        .navigationTitle("Your Direction")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
@@ -198,7 +198,7 @@ struct DirectionView: View {
 
     private var forksSection: some View {
         VStack(alignment: .leading, spacing: DS.Space.sm) {
-            SectionLabel(text: "Forks")
+            SectionLabel(text: "Open Questions")
 
             ForEach(forks) { fork in
                 ForkCard(fork: fork, onResolve: { resolve(fork) })
@@ -215,7 +215,7 @@ struct DirectionView: View {
                 Button(kind.label) { addFork(kind: kind, dir: dir) }
             }
         } label: {
-            Label("Add a fork", systemImage: "arrow.triangle.branch")
+            Label("Add an open question", systemImage: "arrow.triangle.branch")
                 .font(.caption)
                 .foregroundStyle(Color.accentColor)
                 .padding(.horizontal, DS.Space.lg)
