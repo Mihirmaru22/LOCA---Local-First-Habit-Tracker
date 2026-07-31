@@ -111,6 +111,7 @@
 		AA11000000000000000013AB /* LifeHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11000000000000000012AB /* LifeHomeView.swift */; };
 		AA11000000000000000015AB /* LifeOnboardingSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11000000000000000014AB /* LifeOnboardingSheet.swift */; };
 		AA11000000000000000017AB /* LifePatternCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11000000000000000016AB /* LifePatternCard.swift */; };
+		AA1100000000000000001AAB /* LifeEmptyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11000000000000000019AB /* LifeEmptyState.swift */; };
 		FADE00000000000000000021 /* StreakCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADE00000000000000000011 /* StreakCalculatorTests.swift */; };
 		FADE00000000000000000022 /* AggregationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADE00000000000000000012 /* AggregationTests.swift */; };
 		FEEDCA6A00000000000000B2 /* RegimeHonestyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEEDCA6A00000000000000B1 /* RegimeHonestyTests.swift */; };
@@ -377,6 +378,7 @@
 		AA11000000000000000012AB /* LifeHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeHomeView.swift; sourceTree = "<group>"; };
 		AA11000000000000000014AB /* LifeOnboardingSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeOnboardingSheet.swift; sourceTree = "<group>"; };
 		AA11000000000000000016AB /* LifePatternCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifePatternCard.swift; sourceTree = "<group>"; };
+		AA11000000000000000019AB /* LifeEmptyState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeEmptyState.swift; sourceTree = "<group>"; };
 		8C33A4D4C6EE4EC6804620D6 /* PersonalLifeViewUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalLifeViewUI.swift; sourceTree = "<group>"; };
 		0E78DF6BCC124F6EA5C653EF /* TraitSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TraitSummaryView.swift; sourceTree = "<group>"; };
 		E64F904AABAC4554B7B20EBA /* ViewCompositionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewCompositionEngine.swift; sourceTree = "<group>"; };
@@ -832,6 +834,7 @@
 			children = (
 				AA11000000000000000012AB /* LifeHomeView.swift */,
 				AA11000000000000000014AB /* LifeOnboardingSheet.swift */,
+				AA11000000000000000019AB /* LifeEmptyState.swift */,
 			);
 			path = Life;
 			sourceTree = "<group>";
@@ -1114,6 +1117,7 @@
 				AA11000000000000000013AB /* LifeHomeView.swift in Sources */,
 				AA11000000000000000015AB /* LifeOnboardingSheet.swift in Sources */,
 				AA11000000000000000017AB /* LifePatternCard.swift in Sources */,
+				AA1100000000000000001AAB /* LifeEmptyState.swift in Sources */,
 				FEEDF300000000000000F002 /* EventsView.swift in Sources */,
 				D4299A41A8464082A3FE9B4F /* LifeSceneView.swift in Sources */,
 				1F430BDCCCFA4A3C9B922712 /* MultiEntityComposer.swift in Sources */,

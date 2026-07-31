@@ -49,24 +49,11 @@ struct EventsView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: DS.Space.lg) {
-            Image(systemName: "flag.slash")
-                .font(.system(size: 48))
-                .foregroundStyle(DS.Color.textTertiary)
-
-            VStack(spacing: DS.Space.sm) {
-                Text("No Events Yet")
-                    .font(.headline)
-                    .foregroundStyle(DS.Color.textPrimary)
-
-                Text("An event is a sustained shift in your rhythm that persists for weeks. LOCA records one only when the evidence is strong enough — none has cleared that bar yet.")
-                    .font(.caption)
-                    .foregroundStyle(DS.Color.textSecondary)
-                    .multilineTextAlignment(.center)
-            }
-        }
-        .padding(DS.Space.xl)
-        .frame(maxHeight: .infinity, alignment: .center)
+        LifeEmptyState(
+            icon: "flag.slash",
+            headline: "No significant shifts detected yet",
+            body: "Events appear when LOCA notices a real change in your patterns — like a new chapter starting or a sustained shift in energy. They take a few weeks of check-ins to appear."
+        )
     }
 }
 

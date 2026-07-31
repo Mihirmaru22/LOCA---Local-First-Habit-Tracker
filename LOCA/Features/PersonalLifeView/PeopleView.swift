@@ -56,24 +56,11 @@ struct PeopleView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: DS.Space.lg) {
-            Image(systemName: "person.2")
-                .font(.system(size: 48))
-                .foregroundStyle(DS.Color.textTertiary)
-
-            VStack(spacing: DS.Space.sm) {
-                Text("No People Yet")
-                    .font(.headline)
-                    .foregroundStyle(DS.Color.textPrimary)
-
-                Text("LOCA detects recurring people from your calendar events and notes. Grant calendar access in Settings to enable this.")
-                    .font(.caption)
-                    .foregroundStyle(DS.Color.textSecondary)
-                    .multilineTextAlignment(.center)
-            }
-        }
-        .padding(DS.Space.xl)
-        .frame(maxHeight: .infinity, alignment: .center)
+        LifeEmptyState(
+            icon: "person.2",
+            headline: "No people detected yet",
+            body: "LOCA notices people from your calendar and patterns. Once it sees recurring appearances, it connects them to how you feel. This requires calendar access."
+        )
     }
 
     // MARK: - Refresh

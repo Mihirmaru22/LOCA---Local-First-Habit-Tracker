@@ -320,12 +320,12 @@ private struct LifeReadCard: View {
 private struct LifeReadEmptyCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.sm) {
-            Text("Not enough data yet.")
+            Text("Your daily read isn't ready yet.")
                 .font(.title3)
                 .fontWeight(.light)
                 .foregroundStyle(DS.Color.textSecondary)
 
-            Text("Check in a few habits. Let a day or two pass. LOCA will have something real to say here.")
+            Text("Check in to your habits to start seeing your daily read. LOCA needs a few days of data to say something honest.")
                 .font(.caption)
                 .foregroundStyle(DS.Color.textTertiary)
                 .fixedSize(horizontal: false, vertical: true)
