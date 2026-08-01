@@ -24,8 +24,6 @@ struct LifeHomeView: View {
     @State private var isLoadingScene = true
     @State private var isComposing = false
     @State private var showPresent = false
-    @State private var showAsk = false
-    @State private var askPrefill = ""
     @State private var showNewQuestion = false
     @State private var question = ""
     @State private var selectedDateRange: LifeDateRange = .last6Months
@@ -57,9 +55,6 @@ struct LifeHomeView: View {
         }
         .fullScreenCover(isPresented: $showPresent) {
             PresentView()
-        }
-        .sheet(isPresented: $showAsk) {
-            AskView(prefill: askPrefill) { _ in askPrefill = "" }
         }
         .sheet(isPresented: $showNewQuestion) {
             LifeNewQuestionSheet(

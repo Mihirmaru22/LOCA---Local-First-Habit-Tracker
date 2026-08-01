@@ -152,7 +152,6 @@ class SignalManager: NSObject, ObservableObject {
             }
             try modelContext.save()
 
-            await aggregateSignals(modelContext: modelContext)
             await runLifeModelPipeline(modelContext: modelContext)
 
             lastUpdateTime = now
@@ -205,36 +204,6 @@ class SignalManager: NSObject, ObservableObject {
         try? ChapterBuilder.shared.buildChapters(modelContext: modelContext)
         try? TraitInferenceEngine.shared.updateTraits(modelContext: modelContext)
         try? await PeopleExtractor.shared.extractPeople(modelContext: modelContext)
-    }
-
-    // MARK: - Aggregation
-
-    private func aggregateSignals(modelContext: ModelContext) async {
-        let calendar = Calendar.current
-        let now = Date()
-        let oneDayAgo = calendar.date(byAdding: .day, value: -1, to: now)!
-
-        let descriptor = FetchDescriptor<SignalEvent>(
-            predicate: #Predicate { event in
-                event.timestamp >= oneDayAgo && event.timestamp <= now
-            }
-        )
-
-        guard let signals = try? modelContext.fetch(descriptor) else { return }
-        _ = groupSignalsByHour(signals)
-    }
-
-    private func groupSignalsByHour(_ signals: [SignalEvent]) -> [Date: [SignalEvent]] {
-        let calendar = Calendar.current
-        var grouped: [Date: [SignalEvent]] = [:]
-
-        for signal in signals {
-            let hourStart = calendar.dateComponents([.year, .month, .day, .hour], from: signal.timestamp)
-            let hourStartDate = calendar.date(from: hourStart)!
-            grouped[hourStartDate, default: []].append(signal)
-        }
-
-        return grouped
     }
 
     func computeAggregates(_ signals: [SignalEvent]) -> [SignalSource: AggregatedValue] {

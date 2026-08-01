@@ -135,25 +135,18 @@ struct LifePatternCard: View {
                 Divider()
                 t2PatternView(pattern)
             } else {
-                VStack(alignment: .leading, spacing: DS.Space.sm) {
-                    Text(t2EmptyMessage)
-                        .font(.caption)
-                        .foregroundStyle(DS.Color.textTertiary)
-                        .fixedSize(horizontal: false, vertical: true)
+                Text(t2EmptyMessage)
+                    .font(.caption)
+                    .foregroundStyle(DS.Color.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
-                    if board.dimension != nil {
-                        Button(action: { showMicroCheckIn = true }) {
-                            Text("Log your state \u{2192}")
-                                .font(.caption)
-                                .fontWeight(.medium)
-                                .foregroundStyle(accent)
-                                .padding(.horizontal, DS.Space.sm)
-                                .padding(.vertical, 5)
-                                .background(accent.opacity(0.1), in: Capsule())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
+            // Calibration button: always visible once loaded when the habit has a
+            // life dimension, regardless of whether a pattern has been found yet.
+            // Keeping it persistent after a pattern appears lets users refine it.
+            if !t2Loading, board.dimension != nil {
+                Divider()
+                calibrationButton
             }
         }
         .padding(DS.Space.md)
@@ -324,6 +317,25 @@ struct LifePatternCard: View {
         }
     }
 
+    private var calibrationButton: some View {
+        VStack(alignment: .leading, spacing: DS.Space.xs) {
+            Button(action: { showMicroCheckIn = true }) {
+                Text("Log your state \u{2192}")
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundStyle(accent)
+                    .padding(.horizontal, DS.Space.sm)
+                    .padding(.vertical, 5)
+                    .background(accent.opacity(0.1), in: Capsule())
+            }
+            .buttonStyle(.plain)
+
+            Text("Helps LOCA learn how this habit affects you.")
+                .font(.caption2)
+                .foregroundStyle(DS.Color.textTertiary)
+        }
+    }
+
     private var t2EmptyMessage: String {
         switch habitType {
         case .binaryStreak:
@@ -355,11 +367,14 @@ struct LifePatternCard: View {
     private func loadT2() async {
         let engine = PatternDetectionEngine.shared
         let all = (try? engine.detectPatterns(modelContext: modelContext)) ?? []
-        let name = board.name.lowercased()
-        t2Pattern = all.first {
-            $0.layer == .habitState &&
-            $0.observation.localizedCaseInsensitiveContains(name)
-        }
+        // Match by the stable pattern ID derived from (layer, explorableQuestion).
+        // This is exact and collision-free — two habits whose names are substrings
+        // of each other (e.g. "Run" / "Running") no longer cross-match.
+        let expectedID = LifePattern.stableID(
+            layer: .habitState,
+            explorableQuestion: "How does \(board.name) affect my mood?"
+        )
+        t2Pattern = all.first { $0.id == expectedID }
         t2Loading = false
     }
 }

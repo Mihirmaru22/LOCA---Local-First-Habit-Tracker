@@ -27,6 +27,11 @@ struct LifeOnboardingSheet: View {
         ),
         (
             icon: "hand.tap",
+            title: "Teach it how you feel",
+            body: "After logging a habit, you can check in on your energy and mood. The more you do, the sharper the patterns become. LOCA learns from what you say, not just what you track."
+        ),
+        (
+            icon: "binoculars",
             title: "Browse at your own pace",
             body: "Chapters, events, people, patterns — explore any thread or none. Ask a question and LOCA shows you the answer as something to read and conclude from, not a verdict."
         ),
