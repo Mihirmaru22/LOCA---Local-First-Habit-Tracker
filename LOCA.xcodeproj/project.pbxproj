@@ -118,6 +118,7 @@
 		AA1100000000000000002CAB /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000002BAB /* UserProfile.swift */; };
 		AA1100000000000000002EAB /* UserProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000002DAB /* UserProfileView.swift */; };
 		AA1100000000000000003AAB /* HealthKitManager+Body.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000002FAB /* HealthKitManager+Body.swift */; };
+		AA1100000000000000003BAB /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000002BAB /* UserProfile.swift */; };
 		FADE00000000000000000021 /* StreakCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADE00000000000000000011 /* StreakCalculatorTests.swift */; };
 		FADE00000000000000000022 /* AggregationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADE00000000000000000012 /* AggregationTests.swift */; };
 		FEEDCA6A00000000000000B2 /* RegimeHonestyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEEDCA6A00000000000000B1 /* RegimeHonestyTests.swift */; };
@@ -1036,6 +1037,7 @@
 				848B1F9D35DC470B991C3EF8 /* ComposedViewModel.swift in Sources */,
 				E3F4A5B6C7D8E9F0A1B2C3D4 /* SensorConflict.swift in Sources */,
 				B6C7D8E9F0A1B2C3D4E5F6A7 /* SourceProvenance.swift in Sources */,
+				AA1100000000000000003BAB /* UserProfile.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
