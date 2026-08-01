@@ -38,23 +38,27 @@ final class RecordReaderTests: XCTestCase {
             payload = .habitLogged(HabitLogPayload(habitID: UUID(), value: 1.0, note: nil))
         }
 
-        let fact = Fact(
+        let (author, entryMethod, confidence): (FactAuthor, EntryMethod, FactConfidence)
+        switch source {
+        case .healthKit, .motion, .location, .deviceActivity, .calendar:
+            (author, entryMethod, confidence) = (.sensor, .imported, .high)
+        case .systemClock:
+            (author, entryMethod, confidence) = (.system, .automatic, .known)
+        default:
+            (author, entryMethod, confidence) = (.person, .explicit, .known)
+        }
+
+        let draft = FactDraft(
             id: UUID(),
             kind: kind,
             payload: payload,
-            provenance: FactProvenance(
-                source: source,
-                author: .person,
-                entryMethod: .explicit,
-                confidence: .known,
-                sourceIdentifier: nil,
-                externalTimestamp: nil
-            ),
-            recordedAt: occurredAt,
-            occurredAt: occurredAt
+            occurredAt: occurredAt,
+            source: source,
+            author: author,
+            entryMethod: entryMethod,
+            confidence: confidence
         )
-        try await engine.append(fact)
-        return fact
+        return try await engine.append(draft)
     }
 
     // MARK: - allFacts ordering
@@ -134,7 +138,7 @@ final class RecordReaderTests: XCTestCase {
         try await appendFact(to: engine, kind: .habitLogged, occurredAt: inRange)
         try await appendFact(to: engine, kind: .habitLogged, occurredAt: outOfRange)
 
-        let range = DateRange(
+        let range = RecordDateRange(
             start: Date(timeIntervalSinceReferenceDate: 1_000),
             end: Date(timeIntervalSinceReferenceDate: 2_000)
         )
@@ -282,27 +286,13 @@ final class RecordReaderTests: XCTestCase {
         let target = try await appendFact(to: engine)
         let other = try await appendFact(to: engine)
 
-        let correction = Fact(
-            id: UUID(),
-            kind: .correctionSubmitted,
-            payload: .correctionSubmitted(CorrectionPayload(
-                targetFactID: target.id,
-                field: "value",
-                correctedValue: "2.0",
-                reason: "typo"
-            )),
-            provenance: FactProvenance(
-                source: .correction,
-                author: .person,
-                entryMethod: .explicit,
-                confidence: .known,
-                sourceIdentifier: nil,
-                externalTimestamp: nil
-            ),
-            recordedAt: Date(),
-            occurredAt: Date()
+        let correctionDraft = FactDraft.correction(
+            targetFactID: target.id,
+            field: "value",
+            correctedValue: "2.0",
+            reason: "typo"
         )
-        try await engine.append(correction)
+        let correction = try await engine.append(correctionDraft)
 
         let corrections = try await reader.corrections(for: target.id)
         XCTAssertEqual(corrections.count, 1)

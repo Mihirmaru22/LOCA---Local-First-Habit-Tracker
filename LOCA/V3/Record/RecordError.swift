@@ -6,14 +6,11 @@ import Foundation
 /// is an explicit, named outcome the caller must handle.
 enum RecordError: Error, Sendable {
 
-    /// A fact with this ID already exists in the Record. Append-only means
-    /// the same ID may never be written twice (idempotency of retries: the
-    /// first write wins and the caller treats the duplicate as success).
+    /// A fact with this ID already exists in the Record. The first write wins;
+    /// subsequent writes with the same ID are hard errors (not silent no-ops).
+    /// Callers should not retry with the same ID unless the first write is
+    /// known to have failed (e.g. storageFailure).
     case duplicateFact(existingID: UUID)
-
-    /// A sensed/imported fact with this deduplication key already exists.
-    /// Prevents double-counting sensor samples (Build2 dedup contract).
-    case duplicateDedupKey(key: String)
 
     /// The underlying persistent store returned an error.
     case storageFailure(underlying: any Error)

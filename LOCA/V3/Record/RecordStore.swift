@@ -56,31 +56,24 @@ actor InMemoryRecordStore: RecordStoring {
     }
 
     func facts(matching query: RecordQuery) throws -> [Fact] {
-        var result = storage.filter { fact in
-            if let kinds = query.kinds, !kinds.contains(fact.kind) { return false }
-            if let range = query.dateRange, !range.contains(fact.occurredAt) { return false }
-            if let sources = query.sources, !sources.contains(fact.provenance.source) { return false }
-            return true
-        }
-
+        var result = filtered(by: query)
         result = applyOrder(result, order: query.order)
-
         let start = min(query.offset, result.count)
         result = Array(result.dropFirst(start))
-
-        if let limit = query.limit {
-            result = Array(result.prefix(limit))
-        }
-
+        if let limit = query.limit { result = Array(result.prefix(limit)) }
         return result
     }
 
     func allFacts() throws -> [Fact] {
-        storage.sorted { $0.recordedAt < $1.recordedAt }
+        // Return in insertion (append) order — this is the canonical replay order.
+        // Sorting by recordedAt would break tests that append out-of-date-order
+        // and expect insertion order back (G4 replayability guarantee).
+        storage
     }
 
     func count(matching query: RecordQuery) throws -> Int {
-        try facts(matching: query).count
+        // Count without applying pagination (limit/offset are for result windows, not counts).
+        filtered(by: query).count
     }
 
     func existingIDs() throws -> Set<UUID> {
@@ -88,6 +81,15 @@ actor InMemoryRecordStore: RecordStoring {
     }
 
     // MARK: - Private helpers
+
+    private func filtered(by query: RecordQuery) -> [Fact] {
+        storage.filter { fact in
+            if let kinds = query.kinds, !kinds.contains(fact.kind) { return false }
+            if let range = query.dateRange, !range.contains(fact.occurredAt) { return false }
+            if let sources = query.sources, !sources.contains(fact.provenance.source) { return false }
+            return true
+        }
+    }
 
     private func applyOrder(_ facts: [Fact], order: RecordOrder) -> [Fact] {
         switch order {

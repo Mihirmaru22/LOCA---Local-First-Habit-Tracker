@@ -23,8 +23,10 @@ enum RecordInvariant: CaseIterable {
     case appendOnly
 
     /// I2: No duplicates by ID.
-    /// The same Fact.id may never appear twice. Retry-safe: the second
-    /// attempt with the same ID is treated as a successful no-op (idempotent).
+    /// The same Fact.id may never appear twice. The second attempt with the
+    /// same ID throws RecordError.duplicateFact — it is a hard error, not a
+    /// silent no-op. Callers should only retry with the same ID if the first
+    /// write is confirmed to have failed (RecordError.storageFailure).
     case noDuplicateIDs
 
     /// I3: Sensor dedup by key.
@@ -86,7 +88,11 @@ enum RecordGuarantee {
     case immutability
 
     /// G2: Durability.
-    /// A successful write is durable. The person's facts are never lost silently.
+    /// TARGET guarantee: a successful write survives process restarts and device
+    /// reboots. Sprint 1 implements in-memory storage only — facts are lost when
+    /// the process exits. G2 becomes meaningful when a persistent store is
+    /// introduced (Sprint 2+). The G2 case is declared here so the contract is
+    /// complete; enforcement is deferred.
     case durability
 
     /// G3: Ordering.
@@ -122,8 +128,9 @@ enum RecordFailureMode {
     case validationFailed
 
     /// A duplicate Fact.id was submitted.
-    /// Outcome: RecordError.duplicateFact is thrown.
-    /// Idempotency note: the *first* write wins; later duplicates are errors.
+    /// Outcome: RecordError.duplicateFact is thrown (hard error).
+    /// The first write wins; later duplicates are always errors.
+    /// To recover from a storageFailure, retry with a NEW draft (new id).
     case duplicateID
 
     /// A sensed fact with a duplicate deduplication key was submitted.
@@ -133,7 +140,8 @@ enum RecordFailureMode {
 
     /// The app was terminated before a write completed.
     /// Outcome: the write may or may not have reached the store.
-    /// Recovery: retry with the same draft. The engine deduplicates by Fact.id.
+    /// Recovery: use a new draft with a new id (do not retry the same id —
+    /// if the first write reached the store, retrying the same id throws duplicateFact).
     case writtenDuringTermination
 }
 
@@ -155,21 +163,24 @@ extension RecordEngine {
             )
         }
 
-        // I4: Complete provenance on every fact
-        for fact in allFacts {
-            // sourceIdentifier and externalTimestamp are optional by design.
-            // The invariant is that source, author, entryMethod, and confidence are always present.
-            _ = fact.provenance.source
-            _ = fact.provenance.author
-            _ = fact.provenance.entryMethod
-            _ = fact.provenance.confidence
-        }
+        // I4: Complete provenance on every fact.
+        // source, author, entryMethod, and confidence are non-optional Swift types —
+        // structural non-optionality enforces their presence. No runtime assertion needed.
+        // sourceIdentifier and externalTimestamp are intentionally optional (nil for user-entry facts).
 
-        // I5: Timestamps on every fact
+        // I5: Timestamps within plausible bounds
+        let now = Date()
         for fact in allFacts {
-            guard fact.recordedAt <= Date().addingTimeInterval(1) else {
+            guard fact.recordedAt <= now.addingTimeInterval(1) else {
                 throw RecordError.immutabilityViolation(
-                    message: "Fact \(fact.id) has a recordedAt in the future"
+                    message: "Fact \(fact.id) has a recordedAt in the future (\(fact.recordedAt))"
+                )
+            }
+            // occurredAt may predate recordedAt (imports), but must not be more than
+            // 1 day in the future (accounts for timezone edge cases).
+            guard fact.occurredAt <= now.addingTimeInterval(86_400) else {
+                throw RecordError.immutabilityViolation(
+                    message: "Fact \(fact.id) has an occurredAt more than 1 day in the future (\(fact.occurredAt))"
                 )
             }
         }

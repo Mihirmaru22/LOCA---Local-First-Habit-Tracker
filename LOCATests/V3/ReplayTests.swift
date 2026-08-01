@@ -20,23 +20,17 @@ final class ReplayTests: XCTestCase {
         to engine: RecordEngine,
         occurredAt: Date = Date()
     ) async throws -> Fact {
-        let fact = Fact(
+        let draft = FactDraft(
             id: UUID(),
             kind: .habitLogged,
             payload: .habitLogged(HabitLogPayload(habitID: UUID(), value: 1.0, note: nil)),
-            provenance: FactProvenance(
-                source: .userEntry,
-                author: .person,
-                entryMethod: .explicit,
-                confidence: .known,
-                sourceIdentifier: nil,
-                externalTimestamp: nil
-            ),
-            recordedAt: occurredAt,
-            occurredAt: occurredAt
+            occurredAt: occurredAt,
+            source: .userEntry,
+            author: .person,
+            entryMethod: .explicit,
+            confidence: .known
         )
-        try await engine.append(fact)
-        return fact
+        return try await engine.append(draft)
     }
 
     // MARK: - Empty replay
@@ -67,6 +61,7 @@ final class ReplayTests: XCTestCase {
         let t1 = Date(timeIntervalSinceReferenceDate: 1_000)
         let t2 = Date(timeIntervalSinceReferenceDate: 2_000)
 
+        // Append out of chronological order; replay must return insertion order
         let f1 = try await appendFact(to: engine, occurredAt: t3)
         let f2 = try await appendFact(to: engine, occurredAt: t1)
         let f3 = try await appendFact(to: engine, occurredAt: t2)
@@ -115,18 +110,17 @@ final class ReplayTests: XCTestCase {
         for i in 0..<5 {
             let value = Double(i + 1)
             liveTotal += value
-            let fact = Fact(
+            let draft = FactDraft(
                 id: UUID(),
                 kind: .habitLogged,
                 payload: .habitLogged(HabitLogPayload(habitID: habitID, value: value, note: nil)),
-                provenance: FactProvenance(
-                    source: .userEntry, author: .person, entryMethod: .explicit,
-                    confidence: .known, sourceIdentifier: nil, externalTimestamp: nil
-                ),
-                recordedAt: Date(timeIntervalSinceReferenceDate: Double(i * 1000)),
-                occurredAt: Date(timeIntervalSinceReferenceDate: Double(i * 1000))
+                occurredAt: Date(timeIntervalSinceReferenceDate: Double(i * 1000)),
+                source: .userEntry,
+                author: .person,
+                entryMethod: .explicit,
+                confidence: .known
             )
-            try await engine.append(fact)
+            try await engine.append(draft)
         }
 
         // Re-derive from replay
@@ -146,33 +140,42 @@ final class ReplayTests: XCTestCase {
 
     func testReplayExcludesSensorDedupDroppedFacts() async throws {
         let engine = try await makeEngine()
-        let dedupKey = "healthSampleImported:HKStepCount:1000000.0"
+        let ts = Date(timeIntervalSinceReferenceDate: 1_000_000)
 
-        let fact1 = Fact(
+        // Two sensor drafts with same sampleType + externalTimestamp → same dedup key
+        let draft1 = FactDraft(
             id: UUID(),
-            kind: .habitLogged,
-            payload: .habitLogged(HabitLogPayload(habitID: UUID(), value: 1.0, note: nil)),
-            provenance: FactProvenance(
-                source: .userEntry, author: .person, entryMethod: .explicit,
-                confidence: .known, sourceIdentifier: nil, externalTimestamp: nil
-            ),
-            recordedAt: Date(),
-            occurredAt: Date()
+            kind: .healthSampleImported,
+            payload: .healthSampleImported(HealthSamplePayload(
+                sampleType: "HKStepCount", value: 1.0, unit: "count",
+                startDate: ts, endDate: ts
+            )),
+            occurredAt: ts,
+            source: .healthKit,
+            author: .sensor,
+            entryMethod: .imported,
+            confidence: .high,
+            sourceIdentifier: "HKStepCount",
+            externalTimestamp: ts
         )
-        let fact2 = Fact(
+        let draft2 = FactDraft(
             id: UUID(),
-            kind: .habitLogged,
-            payload: .habitLogged(HabitLogPayload(habitID: UUID(), value: 2.0, note: nil)),
-            provenance: FactProvenance(
-                source: .userEntry, author: .person, entryMethod: .explicit,
-                confidence: .known, sourceIdentifier: nil, externalTimestamp: nil
-            ),
-            recordedAt: Date(),
-            occurredAt: Date()
+            kind: .healthSampleImported,
+            payload: .healthSampleImported(HealthSamplePayload(
+                sampleType: "HKStepCount", value: 2.0, unit: "count",
+                startDate: ts, endDate: ts
+            )),
+            occurredAt: ts,
+            source: .healthKit,
+            author: .sensor,
+            entryMethod: .imported,
+            confidence: .high,
+            sourceIdentifier: "HKStepCount",
+            externalTimestamp: ts
         )
 
-        try await engine.append(fact1, dedupKey: dedupKey)
-        try await engine.append(fact2, dedupKey: dedupKey) // silently dropped
+        let fact1 = try await engine.append(draft1)
+        try await engine.append(draft2) // silently dropped
 
         let replay = try await engine.replayableFacts()
         XCTAssertEqual(replay.count, 1)
@@ -184,25 +187,29 @@ final class ReplayTests: XCTestCase {
     func testReplayPreservesAllKindsInOrder() async throws {
         let engine = try await makeEngine()
 
-        let habitFact = Fact(
-            id: UUID(), kind: .habitLogged,
+        let habitDraft = FactDraft(
+            id: UUID(),
+            kind: .habitLogged,
             payload: .habitLogged(HabitLogPayload(habitID: UUID(), value: 1.0, note: nil)),
-            provenance: FactProvenance(source: .userEntry, author: .person, entryMethod: .explicit,
-                                       confidence: .known, sourceIdentifier: nil, externalTimestamp: nil),
-            recordedAt: Date(timeIntervalSinceReferenceDate: 1000),
-            occurredAt: Date(timeIntervalSinceReferenceDate: 1000)
+            occurredAt: Date(timeIntervalSinceReferenceDate: 1000),
+            source: .userEntry,
+            author: .person,
+            entryMethod: .explicit,
+            confidence: .known
         )
-        let reflectionFact = Fact(
-            id: UUID(), kind: .reflectionWritten,
-            payload: .reflectionWritten(ReflectionPayload(text: "good day", mood: nil, energy: nil, tags: [])),
-            provenance: FactProvenance(source: .userEntry, author: .person, entryMethod: .explicit,
-                                       confidence: .known, sourceIdentifier: nil, externalTimestamp: nil),
-            recordedAt: Date(timeIntervalSinceReferenceDate: 2000),
-            occurredAt: Date(timeIntervalSinceReferenceDate: 2000)
+        let reflectionDraft = FactDraft(
+            id: UUID(),
+            kind: .reflectionWritten,
+            payload: .reflectionWritten(ReflectionPayload(text: "good day", promptText: nil, seedFactID: nil)),
+            occurredAt: Date(timeIntervalSinceReferenceDate: 2000),
+            source: .userEntry,
+            author: .person,
+            entryMethod: .explicit,
+            confidence: .known
         )
 
-        try await engine.append(habitFact)
-        try await engine.append(reflectionFact)
+        try await engine.append(habitDraft)
+        try await engine.append(reflectionDraft)
 
         let replay = try await engine.replayableFacts()
         XCTAssertEqual(replay.count, 2)

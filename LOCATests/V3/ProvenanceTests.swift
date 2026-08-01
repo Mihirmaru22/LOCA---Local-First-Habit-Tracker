@@ -19,28 +19,25 @@ final class ProvenanceTests: XCTestCase {
         RecordWriter(engine: engine)
     }
 
-    private func makeFact(
+    private func makeDraft(
         source: FactSource = .userEntry,
         author: FactAuthor = .person,
         entryMethod: EntryMethod = .explicit,
         confidence: FactConfidence = .known,
         sourceIdentifier: String? = nil,
         externalTimestamp: Date? = nil
-    ) -> Fact {
-        Fact(
+    ) -> FactDraft {
+        FactDraft(
             id: UUID(),
             kind: .habitLogged,
             payload: .habitLogged(HabitLogPayload(habitID: UUID(), value: 1.0, note: nil)),
-            provenance: FactProvenance(
-                source: source,
-                author: author,
-                entryMethod: entryMethod,
-                confidence: confidence,
-                sourceIdentifier: sourceIdentifier,
-                externalTimestamp: externalTimestamp
-            ),
-            recordedAt: Date(),
-            occurredAt: Date()
+            occurredAt: Date(),
+            source: source,
+            author: author,
+            entryMethod: entryMethod,
+            confidence: confidence,
+            sourceIdentifier: sourceIdentifier,
+            externalTimestamp: externalTimestamp
         )
     }
 
@@ -50,8 +47,8 @@ final class ProvenanceTests: XCTestCase {
         let engine = try await makeEngine()
 
         for source in FactSource.allCases {
-            let fact = makeFact(source: source)
-            try await engine.append(fact)
+            let draft = makeDraft(source: source)
+            try await engine.append(draft)
         }
 
         let count = try await engine.count(matching: .all)
@@ -63,7 +60,7 @@ final class ProvenanceTests: XCTestCase {
     func testProvenanceFieldsArePreservedThroughEngine() async throws {
         let engine = try await makeEngine()
         let ts = Date(timeIntervalSinceReferenceDate: 1_000_000)
-        let fact = makeFact(
+        let draft = makeDraft(
             source: .healthKit,
             author: .sensor,
             entryMethod: .imported,
@@ -72,7 +69,7 @@ final class ProvenanceTests: XCTestCase {
             externalTimestamp: ts
         )
 
-        try await engine.append(fact)
+        try await engine.append(draft)
 
         let retrieved = try await engine.allFacts()
         let p = try XCTUnwrap(retrieved.first?.provenance)
@@ -86,9 +83,9 @@ final class ProvenanceTests: XCTestCase {
 
     func testUserEntryProvenanceIsPreserved() async throws {
         let engine = try await makeEngine()
-        let fact = makeFact(source: .userEntry, author: .person, entryMethod: .explicit, confidence: .known)
+        let draft = makeDraft(source: .userEntry, author: .person, entryMethod: .explicit, confidence: .known)
 
-        try await engine.append(fact)
+        try await engine.append(draft)
 
         let retrieved = try await engine.allFacts()
         let p = try XCTUnwrap(retrieved.first?.provenance)
@@ -149,8 +146,8 @@ final class ProvenanceTests: XCTestCase {
         let engine = try await makeEngine()
 
         for source in FactSource.allCases {
-            let fact = makeFact(source: source, confidence: .known)
-            try await engine.append(fact)
+            let draft = makeDraft(source: source, confidence: .known)
+            try await engine.append(draft)
         }
 
         let replay = try await engine.replayableFacts()
