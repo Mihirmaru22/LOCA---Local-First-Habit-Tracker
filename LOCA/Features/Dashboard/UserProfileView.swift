@@ -2,7 +2,7 @@
 //  UserProfileView.swift
 //  LOCA
 //
-//  V2.0B.5 — Lightweight user body profile.
+//  V2.5B.5 — Lightweight user body profile.
 //  Accessed via Settings → Profile. Captures height, weight, goal weight,
 //  birth year, sex, and activity level. Derives BMI, TDEE, and a goal
 //  projection live from those values. Optional HealthKit sync pulls the

@@ -111,7 +111,7 @@ struct CheckInEditorView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Space.lg) {
-                    // MARK: - Post-log Interpretation (V2.0A.4)
+                    // MARK: - Post-log Interpretation (V2.5A.4)
 
                     if let interp = interpretation {
                         HStack(spacing: DS.Space.sm) {

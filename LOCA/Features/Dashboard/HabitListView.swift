@@ -141,7 +141,7 @@ struct HabitListView: View {
             }
         }
         .task(id: boards.count) {
-            // Version 2.0 · P0 — ensure every habit is dimension-tagged so its
+            // Version 2.5 · P0 — ensure every habit is dimension-tagged so its
             // check-ins feed habit ↔ state correlations.
             backfillLifeDimensions()
         }
@@ -207,7 +207,7 @@ struct HabitListView: View {
         }
     }
 
-    // MARK: - Life Banner (V2.0A.2)
+    // MARK: - Life Banner (V2.5A.2)
 
     /// Compact "Today's Read" card shown above the habit list when a non-empty
     /// PresentScene is available. Invisible until data accrues — no empty state
@@ -295,13 +295,13 @@ struct HabitListView: View {
     }
 
     /// After a check-in, refresh the Life model so the just-logged habit produces
-    /// fresh inference and traits (Version 2.0 · P0). Both steps are best-effort and
+    /// fresh inference and traits (Version 2.5 · P0). Both steps are best-effort and
     /// guarded internally, so repeated calls are safe.
     private func nudgeLifeModel() {
         LifeModelNudge.afterCheckIn(modelContext: modelContext)
     }
 
-    /// Version 2.0 · P0 — one-time backfill so habits created before dimension
+    /// Version 2.5 · P0 — one-time backfill so habits created before dimension
     /// tagging still contribute to habit ↔ state correlations. Idempotent: only
     /// touches boards whose dimension is still unset.
     private func backfillLifeDimensions() {

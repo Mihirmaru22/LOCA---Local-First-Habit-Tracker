@@ -55,7 +55,7 @@ class SignalManager: NSObject, ObservableObject {
         }
     }
 
-    /// Version 2.0 · P0 — On-demand pipeline refresh after a user action (e.g. a
+    /// Version 2.5 · P0 — On-demand pipeline refresh after a user action (e.g. a
     /// check-in), so a freshly-logged habit produces `InferredState` immediately
     /// instead of waiting for the next hourly cycle.
     ///
@@ -264,7 +264,7 @@ class SignalManager: NSObject, ObservableObject {
     }
 }
 
-// MARK: - LifeModelNudge (Version 2.0 · P0)
+// MARK: - LifeModelNudge (Version 2.5 · P0)
 
 /// Central hook fired after a habit check-in so the Life model reflects the new
 /// fact right away rather than on the next hourly cycle: it refreshes the passive

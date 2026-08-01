@@ -69,11 +69,11 @@ struct UnitInference {
     }
 }
 
-// MARK: - DimensionInference (Version 2.0 · P0)
+// MARK: - DimensionInference (Version 2.5 · P0)
 
 /// Infers which life dimension a habit most plausibly moves, so a habit check-in
 /// tags its bridged `.explicitLog` signal with a dimension and the life model can
-/// look for habit ↔ state correlations (the V2.0 "T2" layer).
+/// look for habit ↔ state correlations (the V2.5 "T2" layer).
 ///
 /// Returns one of the four dimensions the inference engine understands
 /// (`"energy"`, `"mood"`, `"stress"`, `"focus"`) or `nil` when no confident mapping

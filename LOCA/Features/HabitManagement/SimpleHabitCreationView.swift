@@ -464,7 +464,7 @@ struct SimpleHabitCreationView: View {
         )
 
         board.preferredReminderTime = templateReminderTime
-        // Version 2.0 · P0 — tag the habit with the life dimension it most plausibly
+        // Version 2.5 · P0 — tag the habit with the life dimension it most plausibly
         // moves, so its check-ins feed habit ↔ state correlations.
         board.dimension = DimensionInference.infer(from: trimmed)
         modelContext.insert(board)

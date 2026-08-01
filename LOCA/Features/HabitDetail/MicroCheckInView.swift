@@ -2,7 +2,7 @@
 //  MicroCheckInView.swift
 //  LOCA
 //
-//  V2.0C — 2-question contextual state log.
+//  V2.5C — 2-question contextual state log.
 //  Always asks Energy; second question is habit-dimension-aware (stress/mood/focus).
 //  Writes two SignalEvent records with source .explicitLog so CalibrationManager
 //  (F4) can compare them to the colocated InferredState and tighten weights.

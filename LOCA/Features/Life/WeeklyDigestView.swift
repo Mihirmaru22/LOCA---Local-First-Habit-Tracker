@@ -2,7 +2,7 @@
 //  WeeklyDigestView.swift
 //  LOCA
 //
-//  V2.0E.2 — Cross-habit weekly rollup.
+//  V2.5E.2 — Cross-habit weekly rollup.
 //  Navigable week-by-week (← →). Shows each habit's 7-day WeeklyBarChart plus
 //  goal-day count and streak. All stats computed live from board.logs — no
 //  persisted rollup entity needed.

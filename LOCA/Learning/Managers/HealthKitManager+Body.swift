@@ -2,7 +2,7 @@
 //  HealthKitManager+Body.swift
 //  LOCA
 //
-//  V2.0B.5 — Optional HealthKit body-data sync for UserProfileView.
+//  V2.5B.5 — Optional HealthKit body-data sync for UserProfileView.
 //  Isolated from the existing HealthKitManager signal pipeline — does not
 //  touch HealthKitManager.readTypes or SignalCollectionCoordinator.
 //  Requests its own authorization for body types only, so the feature

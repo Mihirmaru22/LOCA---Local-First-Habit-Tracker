@@ -2,7 +2,7 @@
 //  UserProfile.swift
 //  LOCA
 //
-//  V2.0B.5 — Lightweight user body profile.
+//  V2.5B.5 — Lightweight user body profile.
 //  Stores height, weight, goal weight, birth year, sex, and activity level.
 //  Derives BMI, BMR (Mifflin-St Jeor), TDEE, and goal-weight projection as
 //  computed properties so nothing stale is ever persisted.

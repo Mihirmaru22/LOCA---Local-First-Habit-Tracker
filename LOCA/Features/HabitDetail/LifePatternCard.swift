@@ -2,7 +2,7 @@
 //  LifePatternCard.swift
 //  LOCA
 //
-//  V2.0A.3 + V2.0B — Per-type habit intelligence card.
+//  V2.5A.3 + V2.5B — Per-type habit intelligence card.
 //  T1 (deterministic from board.logs) is always visible.
 //  T2 (PatternDetectionEngine correlation) appears as P0 data accrues.
 //

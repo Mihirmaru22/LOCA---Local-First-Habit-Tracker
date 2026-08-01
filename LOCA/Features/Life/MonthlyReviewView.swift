@@ -2,7 +2,7 @@
 //  MonthlyReviewView.swift
 //  LOCA
 //
-//  V2.0E.3 — Cross-habit monthly rollup.
+//  V2.5E.3 — Cross-habit monthly rollup.
 //  Navigable month-by-month (← →). Surfaces each habit's completion rate
 //  vs the previous month, best habit highlight, and a horizontal bar for
 //  each. All stats computed live from board.logs — no persisted rollup.
