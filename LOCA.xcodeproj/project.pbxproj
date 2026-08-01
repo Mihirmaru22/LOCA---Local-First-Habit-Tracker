@@ -235,7 +235,27 @@
 		1FE9F6B42363404BB74AC56A /* ComposedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA052AE8F12E4A9D82739619 /* ComposedViewModel.swift */; };
 		848B1F9D35DC470B991C3EF8 /* ComposedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA052AE8F12E4A9D82739619 /* ComposedViewModel.swift */; };
 		D09B4E7A385C4F1DA92B6CF3 /* SensorConflict.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF89A3B274DC4E56B8F290A1 /* SensorConflict.swift */; };
-/* End PBXBuildFile section */
+
+		/* V3 Record source files */
+		V30000000000000000000030 /* RecordError.swift in Sources */ = {isa = PBXBuildFile; fileRef = V30000000000000000000010 /* RecordError.swift */; };
+		V30000000000000000000031 /* FactProvenance.swift in Sources */ = {isa = PBXBuildFile; fileRef = V30000000000000000000011 /* FactProvenance.swift */; };
+		V30000000000000000000032 /* FactPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = V30000000000000000000012 /* FactPayload.swift */; };
+		V30000000000000000000033 /* Fact.swift in Sources */ = {isa = PBXBuildFile; fileRef = V30000000000000000000013 /* Fact.swift */; };
+		V30000000000000000000034 /* RecordQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = V30000000000000000000014 /* RecordQuery.swift */; };
+		V30000000000000000000035 /* FactValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = V30000000000000000000015 /* FactValidator.swift */; };
+		V30000000000000000000036 /* RecordStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = V30000000000000000000016 /* RecordStore.swift */; };
+		V30000000000000000000037 /* RecordEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = V30000000000000000000017 /* RecordEngine.swift */; };
+		V30000000000000000000038 /* RecordWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = V30000000000000000000018 /* RecordWriter.swift */; };
+		V30000000000000000000039 /* RecordReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = V30000000000000000000019 /* RecordReader.swift */; };
+		V3000000000000000000003A /* RecordContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = V3000000000000000000001A /* RecordContract.swift */; };
+		/* V3 Record test files */
+		V3000000000000000000003B /* RecordEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = V3000000000000000000001B /* RecordEngineTests.swift */; };
+		V3000000000000000000003C /* RecordWriterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = V3000000000000000000001C /* RecordWriterTests.swift */; };
+		V3000000000000000000003D /* RecordReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = V3000000000000000000001D /* RecordReaderTests.swift */; };
+		V3000000000000000000003E /* FactValidatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = V3000000000000000000001E /* FactValidatorTests.swift */; };
+		V3000000000000000000003F /* ReplayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = V3000000000000000000001F /* ReplayTests.swift */; };
+		V30000000000000000000040 /* ProvenanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = V30000000000000000000020 /* ProvenanceTests.swift */; };
+		/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		347E51AC9E3C4E139CB759A3 /* PBXContainerItemProxy */ = {
@@ -436,7 +456,27 @@
 		126D0D524CF043C7B04C4E5C /* InferredStateModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InferredStateModel.swift; sourceTree = "<group>"; };
 		F1E2D3C4B5A6978869504231 /* InferenceTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InferenceTypes.swift; sourceTree = "<group>"; };
 		EA052AE8F12E4A9D82739619 /* ComposedViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposedViewModel.swift; sourceTree = "<group>"; };
-/* End PBXFileReference section */
+
+		/* V3 Record source file references */
+		V30000000000000000000010 /* RecordError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordError.swift; sourceTree = "<group>"; };
+		V30000000000000000000011 /* FactProvenance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FactProvenance.swift; sourceTree = "<group>"; };
+		V30000000000000000000012 /* FactPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FactPayload.swift; sourceTree = "<group>"; };
+		V30000000000000000000013 /* Fact.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Fact.swift; sourceTree = "<group>"; };
+		V30000000000000000000014 /* RecordQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordQuery.swift; sourceTree = "<group>"; };
+		V30000000000000000000015 /* FactValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FactValidator.swift; sourceTree = "<group>"; };
+		V30000000000000000000016 /* RecordStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordStore.swift; sourceTree = "<group>"; };
+		V30000000000000000000017 /* RecordEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordEngine.swift; sourceTree = "<group>"; };
+		V30000000000000000000018 /* RecordWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordWriter.swift; sourceTree = "<group>"; };
+		V30000000000000000000019 /* RecordReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordReader.swift; sourceTree = "<group>"; };
+		V3000000000000000000001A /* RecordContract.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordContract.swift; sourceTree = "<group>"; };
+		/* V3 Record test file references */
+		V3000000000000000000001B /* RecordEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordEngineTests.swift; sourceTree = "<group>"; };
+		V3000000000000000000001C /* RecordWriterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordWriterTests.swift; sourceTree = "<group>"; };
+		V3000000000000000000001D /* RecordReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordReaderTests.swift; sourceTree = "<group>"; };
+		V3000000000000000000001E /* FactValidatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FactValidatorTests.swift; sourceTree = "<group>"; };
+		V3000000000000000000001F /* ReplayTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReplayTests.swift; sourceTree = "<group>"; };
+		V30000000000000000000020 /* ProvenanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProvenanceTests.swift; sourceTree = "<group>"; };
+		/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		3CF7925323354E73890261F4 /* Frameworks */ = {
@@ -589,6 +629,7 @@
 		92A8F67860144A0591B6FE2B /* LOCA */ = {
 			isa = PBXGroup;
 			children = (
+				V30000000000000000000001 /* V3 */,
 				7AF58577C2234442B1B894B8 /* Analytics */,
 				AA11000000000000000001AB /* Learning */,
 				6F74932D21B24EAEAD2C0AF6 /* App */,
@@ -703,6 +744,7 @@
 		FADE0000000000000000000B /* LOCATests */ = {
 			isa = PBXGroup;
 			children = (
+				V30000000000000000000003 /* V3 */,
 				FADE00000000000000000011 /* StreakCalculatorTests.swift */,
 				FADE00000000000000000012 /* AggregationTests.swift */,
 				FEEDCA6A00000000000000B1 /* RegimeHonestyTests.swift */,
@@ -857,7 +899,48 @@
 			path = Life;
 			sourceTree = "<group>";
 		};
-/* End PBXGroup section */
+
+		/* V3 group hierarchy */
+		V30000000000000000000001 /* V3 */ = {
+			isa = PBXGroup;
+			children = (
+				V30000000000000000000002 /* Record */,
+			);
+			path = V3;
+			sourceTree = "<group>";
+		};
+		V30000000000000000000002 /* Record */ = {
+			isa = PBXGroup;
+			children = (
+				V30000000000000000000010 /* RecordError.swift */,
+				V30000000000000000000011 /* FactProvenance.swift */,
+				V30000000000000000000012 /* FactPayload.swift */,
+				V30000000000000000000013 /* Fact.swift */,
+				V30000000000000000000014 /* RecordQuery.swift */,
+				V30000000000000000000015 /* FactValidator.swift */,
+				V30000000000000000000016 /* RecordStore.swift */,
+				V30000000000000000000017 /* RecordEngine.swift */,
+				V30000000000000000000018 /* RecordWriter.swift */,
+				V30000000000000000000019 /* RecordReader.swift */,
+				V3000000000000000000001A /* RecordContract.swift */,
+			);
+			path = Record;
+			sourceTree = "<group>";
+		};
+		V30000000000000000000003 /* V3 (tests) */ = {
+			isa = PBXGroup;
+			children = (
+				V3000000000000000000001B /* RecordEngineTests.swift */,
+				V3000000000000000000001C /* RecordWriterTests.swift */,
+				V3000000000000000000001D /* RecordReaderTests.swift */,
+				V3000000000000000000001E /* FactValidatorTests.swift */,
+				V3000000000000000000001F /* ReplayTests.swift */,
+				V30000000000000000000020 /* ProvenanceTests.swift */,
+			);
+			path = V3;
+			sourceTree = "<group>";
+		};
+		/* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
 		6D6F44104BEA4744A9A96760 /* LOCA */ = {
@@ -1211,6 +1294,19 @@
 				DC4EDB80F8D24BAFAD6F52A4 /* ViewRenderingSpecification.swift in Sources */,
 				E48388FCBA37469DAE5986DB /* InferredStateModel.swift in Sources */,
 				1FE9F6B42363404BB74AC56A /* ComposedViewModel.swift in Sources */,
+			
+				/* V3 Record source files */
+				V30000000000000000000030 /* RecordError.swift in Sources */,
+				V30000000000000000000031 /* FactProvenance.swift in Sources */,
+				V30000000000000000000032 /* FactPayload.swift in Sources */,
+				V30000000000000000000033 /* Fact.swift in Sources */,
+				V30000000000000000000034 /* RecordQuery.swift in Sources */,
+				V30000000000000000000035 /* FactValidator.swift in Sources */,
+				V30000000000000000000036 /* RecordStore.swift in Sources */,
+				V30000000000000000000037 /* RecordEngine.swift in Sources */,
+				V30000000000000000000038 /* RecordWriter.swift in Sources */,
+				V30000000000000000000039 /* RecordReader.swift in Sources */,
+				V3000000000000000000003A /* RecordContract.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1222,6 +1318,14 @@
 				FADE00000000000000000022 /* AggregationTests.swift in Sources */,
 				FEEDCA6A00000000000000B2 /* RegimeHonestyTests.swift in Sources */,
 				FADE00000000000000000023 /* HeatmapDataProviderTests.swift in Sources */,
+			
+				/* V3 Record test files */
+				V3000000000000000000003B /* RecordEngineTests.swift in Sources */,
+				V3000000000000000000003C /* RecordWriterTests.swift in Sources */,
+				V3000000000000000000003D /* RecordReaderTests.swift in Sources */,
+				V3000000000000000000003E /* FactValidatorTests.swift in Sources */,
+				V3000000000000000000003F /* ReplayTests.swift in Sources */,
+				V30000000000000000000040 /* ProvenanceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
