@@ -1,9 +1,10 @@
 import Foundation
 
-// MARK: - DateRange
+// MARK: - RecordDateRange
 
 /// A closed date interval for filtering facts by occurrence time.
-struct DateRange: Sendable {
+/// Named RecordDateRange to avoid collision with other DateRange types in the module.
+struct RecordDateRange: Sendable {
     let start: Date
     let end: Date
 
@@ -11,17 +12,17 @@ struct DateRange: Sendable {
         date >= start && date <= end
     }
 
-    static func lastDays(_ n: Int, from reference: Date = Date()) -> DateRange {
+    static func lastDays(_ n: Int, from reference: Date = Date()) -> RecordDateRange {
         let end = reference
         let start = Calendar.current.date(byAdding: .day, value: -n, to: reference) ?? reference
-        return DateRange(start: start, end: end)
+        return RecordDateRange(start: start, end: end)
     }
 
-    static func week(containing date: Date, calendar: Calendar = .current) -> DateRange {
+    static func week(containing date: Date, calendar: Calendar = .current) -> RecordDateRange {
         let components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)
         let weekStart = calendar.date(from: components) ?? date
         let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart) ?? date
-        return DateRange(start: weekStart, end: weekEnd)
+        return RecordDateRange(start: weekStart, end: weekEnd)
     }
 }
 
@@ -57,7 +58,7 @@ struct RecordQuery: Sendable {
 
     /// Restrict results to facts whose `occurredAt` falls within this range.
     /// nil = all time.
-    let dateRange: DateRange?
+    let dateRange: RecordDateRange?
 
     /// Restrict results to facts from these sources. nil = all sources.
     let sources: Set<FactSource>?
@@ -73,7 +74,7 @@ struct RecordQuery: Sendable {
 
     init(
         kinds: Set<FactKind>? = nil,
-        dateRange: DateRange? = nil,
+        dateRange: RecordDateRange? = nil,
         sources: Set<FactSource>? = nil,
         order: RecordOrder = .occurredAtAscending,
         limit: Int? = nil,
@@ -103,7 +104,7 @@ extension RecordQuery {
     }
 
     /// All facts within a date range, oldest-occurred first.
-    static func inRange(_ range: DateRange) -> RecordQuery {
+    static func inRange(_ range: RecordDateRange) -> RecordQuery {
         RecordQuery(dateRange: range)
     }
 

@@ -18,6 +18,10 @@ struct FactWrittenEvent: Sendable {
 /// All writes are serialized by the actor executor (single-writer discipline, Build2 §IV).
 /// All reads are served directly from the store concurrently (snapshot reads).
 ///
+/// Validation is enforced inside RecordEngine.append — there is no write path
+/// that bypasses it. Callers submit a FactDraft; the engine validates, builds
+/// the immutable Fact, and stores it. No pre-built Fact is accepted directly.
+///
 /// Enforced invariants:
 ///  1. Append-only: no mutation or deletion of a prior Fact.
 ///  2. No duplicate IDs: the same Fact.id may never be written twice.
@@ -30,6 +34,7 @@ actor RecordEngine {
     // MARK: - State
 
     private let store: any RecordStoring
+    private let validator: any FactValidating
 
     /// Known fact IDs. Maintained in memory for O(1) duplicate checks.
     /// Populated from the store on initialisation so restarts are safe.
@@ -46,8 +51,12 @@ actor RecordEngine {
 
     /// Creates a RecordEngine backed by the given store.
     /// Loads existing IDs from the store to support restarts.
-    init(store: any RecordStoring) async throws {
+    init(
+        store: any RecordStoring,
+        validator: any FactValidating = DefaultFactValidator()
+    ) async throws {
         self.store = store
+        self.validator = validator
         self.knownIDs = try await store.existingIDs()
         self.knownDedupKeys = []
         // Note: for a persistent store, dedup keys would also need to be
@@ -57,48 +66,86 @@ actor RecordEngine {
 
     // MARK: - Write (serialized by actor)
 
-    /// Appends a fact to the Record.
+    /// Validates the draft, builds an immutable Fact, and appends it to the Record.
     ///
-    /// - Parameter fact: The Fact to append. Must have a unique id.
-    /// - Parameter dedupKey: Optional deduplication key (for sensed facts).
-    ///   If non-nil and already seen, the write is silently skipped (not an error).
+    /// Pipeline:
+    ///   FactDraft (caller intent)
+    ///     ↓  validate — reject malformed drafts before touching the Record
+    ///     ↓  duplicate-ID check — hard error if id already written
+    ///     ↓  build provenance + Fact (recordedAt set here, not by caller)
+    ///     ↓  sensor dedup — silently drop if dedup key already seen
+    ///     ↓  RecordStoring.append — serialized single-writer store write
+    ///     → Fact (immutable, in the Record)
+    ///
+    /// Validation is mandatory and cannot be bypassed — all callers submit a
+    /// FactDraft; there is no method to append a pre-built Fact directly.
     ///
     /// - Throws:
+    ///   `RecordError.invalidFact` if the draft fails validation.
     ///   `RecordError.duplicateFact` if the id was already written.
     ///   `RecordError.storageFailure` if the underlying store fails.
-    ///
-    /// Called only by RecordWriter. Nothing else may call this.
-    func append(_ fact: Fact, dedupKey: String? = nil) async throws {
-        // 1. Duplicate-ID check (idempotency guard for retries)
-        if knownIDs.contains(fact.id) {
-            throw RecordError.duplicateFact(existingID: fact.id)
+    @discardableResult
+    func append(_ draft: FactDraft) async throws -> Fact {
+        // 1. Validate — reject before touching the Record
+        let validatedDraft: FactDraft
+        switch validator.validate(draft) {
+        case .success(let d):
+            validatedDraft = d
+        case .failure(let error):
+            throw RecordError.invalidFact(error)
         }
 
-        // 2. Sensor dedup (idempotent — not an error; second write is silently dropped)
+        // 2. Duplicate-ID check (hard error — first write wins)
+        if knownIDs.contains(validatedDraft.id) {
+            throw RecordError.duplicateFact(existingID: validatedDraft.id)
+        }
+
+        // 3. Build provenance and the immutable Fact.
+        // recordedAt is set here — the moment it enters the Record — not by the caller.
+        let provenance = FactProvenance(
+            source: validatedDraft.source,
+            author: validatedDraft.author,
+            entryMethod: validatedDraft.entryMethod,
+            confidence: validatedDraft.confidence,
+            sourceIdentifier: validatedDraft.sourceIdentifier,
+            externalTimestamp: validatedDraft.externalTimestamp
+        )
+        let fact = Fact(
+            id: validatedDraft.id,
+            kind: validatedDraft.kind,
+            payload: validatedDraft.payload,
+            provenance: provenance,
+            recordedAt: Date(),
+            occurredAt: validatedDraft.occurredAt
+        )
+
+        // 4. Sensor dedup (idempotent — not an error; second write is silently dropped)
+        let dedupKey = validatedDraft.deduplicationKey
         if let key = dedupKey, knownDedupKeys.contains(key) {
-            // Not an error: this is the intended dedup behavior (Build2 §II Class B).
-            // The caller treats this as a successful no-op.
-            return
+            // Not stored, not emitted. Return the would-be Fact so callers have a value.
+            return fact
         }
 
-        // 3. Write to store (cross-actor call — requires await)
+        // 5. Write to store (cross-actor call — requires await)
         do {
             try await store.append(fact)
         } catch {
             throw RecordError.storageFailure(underlying: error)
         }
 
-        // 4. Update dedup state (only after successful store write)
+        // 6. Update dedup state (only after successful store write)
         knownIDs.insert(fact.id)
         if let key = dedupKey {
             knownDedupKeys.insert(key)
         }
 
-        // 5. Emit event (synchronous; handlers must be non-blocking)
+        // 7. Emit event (synchronous; handlers must be non-blocking)
         let event = FactWrittenEvent(fact: fact, writtenAt: Date())
         for handler in factWrittenHandlers {
             handler(event)
         }
+
+        return fact
     }
 
     // MARK: - Read (concurrent; actor serializes but reads are non-mutating)
@@ -129,7 +176,7 @@ actor RecordEngine {
 
     // MARK: - Replay
 
-    /// Returns all facts in append order (recordedAt ascending).
+    /// Returns all facts in append (insertion) order.
     /// A replay over these facts, through the derivation engine, must
     /// reproduce the same derived state — the Record is the single truth.
     func replayableFacts() async throws -> [Fact] {

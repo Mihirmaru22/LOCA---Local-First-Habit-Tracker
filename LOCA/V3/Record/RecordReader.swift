@@ -64,7 +64,7 @@ struct RecordReader: RecordReading {
         try await facts(matching: .kind(kind))
     }
 
-    func facts(ofKind kind: FactKind, in range: DateRange) async throws -> [Fact] {
+    func facts(ofKind kind: FactKind, in range: RecordDateRange) async throws -> [Fact] {
         try await facts(matching: RecordQuery(kinds: [kind], dateRange: range))
     }
 
