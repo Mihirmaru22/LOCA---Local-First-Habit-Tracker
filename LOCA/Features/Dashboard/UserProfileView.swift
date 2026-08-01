@@ -316,7 +316,7 @@ struct UserProfileView: View {
                     heightInchesText = String(format: "%.1f", inches)
                 }
                 commit()
-                let parts = [snap.weightKg.map { "weight" }, snap.heightCm.map { "height" }]
+                let parts = [snap.weightKg.map { _ in "weight" }, snap.heightCm.map { _ in "height" }]
                     .compactMap { $0 }
                 syncStatus = "Synced \(parts.joined(separator: " & ")) from Health"
             }
