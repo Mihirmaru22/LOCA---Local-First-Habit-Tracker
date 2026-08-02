@@ -255,6 +255,21 @@
 		V3000000000000000000003E /* FactValidatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = V3000000000000000000001E /* FactValidatorTests.swift */; };
 		V3000000000000000000003F /* ReplayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = V3000000000000000000001F /* ReplayTests.swift */; };
 		V30000000000000000000040 /* ProvenanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = V30000000000000000000020 /* ProvenanceTests.swift */; };
+		/* V3 Signal source files */
+		V30000000000000000000060 /* SignalError.swift in Sources */ = {isa = PBXBuildFile; fileRef = V30000000000000000000050 /* SignalError.swift */; };
+		V30000000000000000000061 /* Signal.swift in Sources */ = {isa = PBXBuildFile; fileRef = V30000000000000000000051 /* Signal.swift */; };
+		V30000000000000000000062 /* SignalPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = V30000000000000000000052 /* SignalPayload.swift */; };
+		V30000000000000000000063 /* SignalProvenance.swift in Sources */ = {isa = PBXBuildFile; fileRef = V30000000000000000000053 /* SignalProvenance.swift */; };
+		V30000000000000000000064 /* SignalPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = V30000000000000000000054 /* SignalPipeline.swift */; };
+		V30000000000000000000065 /* SignalStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = V30000000000000000000055 /* SignalStore.swift */; };
+		V30000000000000000000066 /* SignalEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = V30000000000000000000056 /* SignalEngine.swift */; };
+		V30000000000000000000067 /* SignalValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = V30000000000000000000057 /* SignalValidator.swift */; };
+		V30000000000000000000068 /* SignalContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = V30000000000000000000058 /* SignalContract.swift */; };
+		/* V3 Signal test files */
+		V30000000000000000000069 /* SignalEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = V30000000000000000000059 /* SignalEngineTests.swift */; };
+		V3000000000000000000006A /* SignalPipelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = V3000000000000000000005A /* SignalPipelineTests.swift */; };
+		V3000000000000000000006B /* SignalValidatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = V3000000000000000000005B /* SignalValidatorTests.swift */; };
+		V3000000000000000000006C /* SignalReplayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = V3000000000000000000005C /* SignalReplayTests.swift */; };
 		/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -476,6 +491,21 @@
 		V3000000000000000000001E /* FactValidatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FactValidatorTests.swift; sourceTree = "<group>"; };
 		V3000000000000000000001F /* ReplayTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReplayTests.swift; sourceTree = "<group>"; };
 		V30000000000000000000020 /* ProvenanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProvenanceTests.swift; sourceTree = "<group>"; };
+		/* V3 Signal source file references */
+		V30000000000000000000050 /* SignalError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalError.swift; sourceTree = "<group>"; };
+		V30000000000000000000051 /* Signal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Signal.swift; sourceTree = "<group>"; };
+		V30000000000000000000052 /* SignalPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalPayload.swift; sourceTree = "<group>"; };
+		V30000000000000000000053 /* SignalProvenance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalProvenance.swift; sourceTree = "<group>"; };
+		V30000000000000000000054 /* SignalPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalPipeline.swift; sourceTree = "<group>"; };
+		V30000000000000000000055 /* SignalStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalStore.swift; sourceTree = "<group>"; };
+		V30000000000000000000056 /* SignalEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalEngine.swift; sourceTree = "<group>"; };
+		V30000000000000000000057 /* SignalValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalValidator.swift; sourceTree = "<group>"; };
+		V30000000000000000000058 /* SignalContract.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalContract.swift; sourceTree = "<group>"; };
+		/* V3 Signal test file references */
+		V30000000000000000000059 /* SignalEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalEngineTests.swift; sourceTree = "<group>"; };
+		V3000000000000000000005A /* SignalPipelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalPipelineTests.swift; sourceTree = "<group>"; };
+		V3000000000000000000005B /* SignalValidatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalValidatorTests.swift; sourceTree = "<group>"; };
+		V3000000000000000000005C /* SignalReplayTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalReplayTests.swift; sourceTree = "<group>"; };
 		/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -905,6 +935,7 @@
 			isa = PBXGroup;
 			children = (
 				V30000000000000000000002 /* Record */,
+				V30000000000000000000070 /* Signal */,
 			);
 			path = V3;
 			sourceTree = "<group>";
@@ -936,8 +967,37 @@
 				V3000000000000000000001E /* FactValidatorTests.swift */,
 				V3000000000000000000001F /* ReplayTests.swift */,
 				V30000000000000000000020 /* ProvenanceTests.swift */,
+				V30000000000000000000071 /* Signal */,
 			);
 			path = V3;
+			sourceTree = "<group>";
+		};
+		/* V3 Signal group hierarchy */
+		V30000000000000000000070 /* Signal */ = {
+			isa = PBXGroup;
+			children = (
+				V30000000000000000000050 /* SignalError.swift */,
+				V30000000000000000000051 /* Signal.swift */,
+				V30000000000000000000052 /* SignalPayload.swift */,
+				V30000000000000000000053 /* SignalProvenance.swift */,
+				V30000000000000000000054 /* SignalPipeline.swift */,
+				V30000000000000000000055 /* SignalStore.swift */,
+				V30000000000000000000056 /* SignalEngine.swift */,
+				V30000000000000000000057 /* SignalValidator.swift */,
+				V30000000000000000000058 /* SignalContract.swift */,
+			);
+			path = Signal;
+			sourceTree = "<group>";
+		};
+		V30000000000000000000071 /* Signal (tests) */ = {
+			isa = PBXGroup;
+			children = (
+				V30000000000000000000059 /* SignalEngineTests.swift */,
+				V3000000000000000000005A /* SignalPipelineTests.swift */,
+				V3000000000000000000005B /* SignalValidatorTests.swift */,
+				V3000000000000000000005C /* SignalReplayTests.swift */,
+			);
+			path = Signal;
 			sourceTree = "<group>";
 		};
 		/* End PBXGroup section */
@@ -1307,6 +1367,16 @@
 				V30000000000000000000038 /* RecordWriter.swift in Sources */,
 				V30000000000000000000039 /* RecordReader.swift in Sources */,
 				V3000000000000000000003A /* RecordContract.swift in Sources */,
+				/* V3 Signal source files */
+				V30000000000000000000060 /* SignalError.swift in Sources */,
+				V30000000000000000000061 /* Signal.swift in Sources */,
+				V30000000000000000000062 /* SignalPayload.swift in Sources */,
+				V30000000000000000000063 /* SignalProvenance.swift in Sources */,
+				V30000000000000000000064 /* SignalPipeline.swift in Sources */,
+				V30000000000000000000065 /* SignalStore.swift in Sources */,
+				V30000000000000000000066 /* SignalEngine.swift in Sources */,
+				V30000000000000000000067 /* SignalValidator.swift in Sources */,
+				V30000000000000000000068 /* SignalContract.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1326,6 +1396,11 @@
 				V3000000000000000000003E /* FactValidatorTests.swift in Sources */,
 				V3000000000000000000003F /* ReplayTests.swift in Sources */,
 				V30000000000000000000040 /* ProvenanceTests.swift in Sources */,
+				/* V3 Signal test files */
+				V30000000000000000000069 /* SignalEngineTests.swift in Sources */,
+				V3000000000000000000006A /* SignalPipelineTests.swift in Sources */,
+				V3000000000000000000006B /* SignalValidatorTests.swift in Sources */,
+				V3000000000000000000006C /* SignalReplayTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
