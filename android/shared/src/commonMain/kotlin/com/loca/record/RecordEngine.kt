@@ -93,8 +93,10 @@ class RecordEngine(private val store: RecordStoring) {
     // ── Validation ────────────────────────────────────────────────────────────
 
     private fun validate(draft: FactDraft) {
-        if (draft.kind.pillar == Pillar.LIFE && draft.kind.isImplemented.not()) return
-
+        // Every FactKind — including deferred Life kinds — has a defined payload
+        // shape, and the exhaustive `when` below checks all of them. Do not skip
+        // validation for Life: an early return here would let Life facts be
+        // stored with a mismatched payload.
         val payloadKindMatch = when (draft.kind) {
             FactKind.HABIT_DEFINED              -> draft.payload is FactPayload.HabitDefined
             FactKind.HABIT_LOGGED               -> draft.payload is FactPayload.HabitLogged
