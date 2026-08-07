@@ -1,5 +1,6 @@
 package com.loca.record
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -8,7 +9,7 @@ data class FactEntity(
     @PrimaryKey val id: String,
     val kind: String,
     val source: String,
-    val recordedAt: Long,
-    val occurredAt: Long,
+    @ColumnInfo(name = "recorded_at") val recordedAt: Long,
+    @ColumnInfo(name = "occurred_at") val occurredAt: Long,
     val json: String
 )
