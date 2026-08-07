@@ -49,6 +49,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.todayIn
 
 @Composable
 fun TodoScreen() {
@@ -227,13 +228,15 @@ private fun TodoItemCard(item: TodoItem, completed: Boolean) {
 }
 
 private fun buildMeta(item: TodoItem, completed: Boolean, tz: TimeZone): String {
+    val completedDate = item.completedDate
+    val dueDate = item.dueDate
     return when {
-        completed && item.completedDate != null ->
-            "Done ${item.completedDate.display()}"
-        item.isOverdue && item.dueDate != null ->
-            "Overdue · due ${item.dueDate.toLocalDateTime(tz).date.display()}"
-        item.dueDate != null ->
-            "Due ${item.dueDate.toLocalDateTime(tz).date.display()}"
+        completed && completedDate != null ->
+            "Done ${completedDate.display()}"
+        item.isOverdue && dueDate != null ->
+            "Overdue · due ${dueDate.toLocalDateTime(tz).date.display()}"
+        dueDate != null ->
+            "Due ${dueDate.toLocalDateTime(tz).date.display()}"
         else -> ""
     }
 }
