@@ -3,7 +3,7 @@ package com.loca.android.ui
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material3.Icon
@@ -19,8 +19,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-
-// ── Navigation destinations ───────────────────────────────────────────────────
+import com.loca.android.ui.habits.HabitsScreen
+import com.loca.android.ui.journal.JournalScreen
+import com.loca.android.ui.todo.TodoScreen
 
 sealed class LOCADestination(val route: String, val label: String) {
     data object Habits  : LOCADestination("habits",  "Habits")
@@ -33,8 +34,6 @@ private val topLevelDestinations = listOf(
     LOCADestination.Journal,
     LOCADestination.Todo,
 )
-
-// ── Root app composable ───────────────────────────────────────────────────────
 
 @Composable
 fun LOCAApp() {
@@ -62,7 +61,7 @@ fun LOCAApp() {
                             Icon(
                                 imageVector = when (destination) {
                                     LOCADestination.Habits  -> Icons.Default.FitnessCenter
-                                    LOCADestination.Journal -> Icons.Default.Book
+                                    LOCADestination.Journal -> Icons.Default.AutoStories
                                     LOCADestination.Todo    -> Icons.Default.CheckBox
                                 },
                                 contentDescription = destination.label
@@ -84,21 +83,4 @@ fun LOCAApp() {
             composable(LOCADestination.Todo.route)    { TodoScreen()    }
         }
     }
-}
-
-// ── Placeholder screens (replaced in A8) ─────────────────────────────────────
-
-@Composable
-fun HabitsScreen() {
-    PillarPlaceholder(label = "Habits")
-}
-
-@Composable
-fun JournalScreen() {
-    PillarPlaceholder(label = "Journal")
-}
-
-@Composable
-fun TodoScreen() {
-    PillarPlaceholder(label = "Todo")
 }
