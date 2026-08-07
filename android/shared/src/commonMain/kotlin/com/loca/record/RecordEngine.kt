@@ -122,5 +122,42 @@ class RecordEngine(private val store: RecordStoring) {
                 "Payload type does not match FactKind ${draft.kind}"
             )
         }
+
+        validateDomain(draft.payload)
+    }
+
+    /**
+     * Domain-level rules beyond payload-kind matching. Rejects values that would
+     * silently corrupt derivation — a zero/negative habit log counting as a
+     * completion, a blank reflection, a non-positive target, etc.
+     *
+     * Sensor-imported health values are allowed to be zero (0 steps is real);
+     * they must only be finite.
+     */
+    private fun validateDomain(payload: FactPayload) {
+        fun fail(reason: String): Nothing = throw RecordError.ValidationFailure(reason)
+
+        when (payload) {
+            is FactPayload.HabitDefined -> {
+                if (payload.name.isBlank()) fail("Habit name must not be blank")
+                if (!payload.targetValue.isFinite() || payload.targetValue <= 0.0)
+                    fail("Habit target must be a positive number")
+            }
+            is FactPayload.HabitLogged -> {
+                if (!payload.value.isFinite() || payload.value <= 0.0)
+                    fail("Habit log value must be a positive number")
+            }
+            is FactPayload.ReflectionWritten ->
+                if (payload.text.isBlank()) fail("Reflection text must not be blank")
+            is FactPayload.MemorableMomentCaptured ->
+                if (payload.text.isBlank()) fail("Moment text must not be blank")
+            is FactPayload.IntentionSet ->
+                if (payload.text.isBlank()) fail("Intention text must not be blank")
+            is FactPayload.TodoCreated ->
+                if (payload.title.isBlank()) fail("Task title must not be blank")
+            is FactPayload.HealthSampleImported ->
+                if (!payload.value.isFinite()) fail("Health sample value must be finite")
+            else -> Unit
+        }
     }
 }
