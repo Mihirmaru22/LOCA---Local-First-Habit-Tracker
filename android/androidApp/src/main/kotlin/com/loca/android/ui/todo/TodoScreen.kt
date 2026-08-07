@@ -48,6 +48,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.loca.android.LOCAApplication
 import com.loca.android.data.UserEntry
+import com.loca.android.ui.LocalSnackbar
+import com.loca.android.ui.runWrite
 import com.loca.derive.todo.TodoDeriver
 import com.loca.derive.todo.TodoItem
 import com.loca.derive.todo.TodoSummary
@@ -63,6 +65,7 @@ fun TodoScreen() {
     val context = LocalContext.current
     val container = (context.applicationContext as LOCAApplication).container
     val scope = rememberCoroutineScope()
+    val snackbar = LocalSnackbar.current
 
     var summary by remember { mutableStateOf<TodoSummary?>(null) }
     var loading by remember { mutableStateOf(true) }
@@ -87,8 +90,10 @@ fun TodoScreen() {
                 summary = s,
                 onComplete = { item ->
                     scope.launch {
-                        container.record(UserEntry.completeTodo(item.todoID))
-                        reloadKey++
+                        val ok = snackbar.runWrite("Couldn't complete task") {
+                            container.record(UserEntry.completeTodo(item.todoID))
+                        }
+                        if (ok) reloadKey++
                     }
                 }
             )
@@ -109,8 +114,10 @@ fun TodoScreen() {
             onCreate = { title, notes ->
                 showAdd = false
                 scope.launch {
-                    container.record(UserEntry.createTodo(title, notes = notes))
-                    reloadKey++
+                    val ok = snackbar.runWrite("Couldn't add task") {
+                        container.record(UserEntry.createTodo(title, notes = notes))
+                    }
+                    if (ok) reloadKey++
                 }
             }
         )

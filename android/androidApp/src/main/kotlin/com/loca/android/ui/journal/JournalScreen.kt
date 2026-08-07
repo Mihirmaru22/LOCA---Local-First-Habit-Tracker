@@ -48,6 +48,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.loca.android.LOCAApplication
 import com.loca.android.data.UserEntry
+import com.loca.android.ui.LocalSnackbar
+import com.loca.android.ui.runWrite
 import com.loca.derive.journal.IntentionEntry
 import com.loca.derive.journal.JournalDeriver
 import com.loca.derive.journal.JournalSummary
@@ -71,6 +73,7 @@ fun JournalScreen() {
     val context = LocalContext.current
     val container = (context.applicationContext as LOCAApplication).container
     val scope = rememberCoroutineScope()
+    val snackbar = LocalSnackbar.current
 
     var summary by remember { mutableStateOf<JournalSummary?>(null) }
     var loading by remember { mutableStateOf(true) }
@@ -116,8 +119,10 @@ fun JournalScreen() {
                         EntryType.MOMENT -> UserEntry.moment(text, tags)
                         EntryType.INTENTION -> UserEntry.intention(text, period)
                     }
-                    container.record(draft)
-                    reloadKey++
+                    val ok = snackbar.runWrite("Couldn't save entry") {
+                        container.record(draft)
+                    }
+                    if (ok) reloadKey++
                 }
             }
         )

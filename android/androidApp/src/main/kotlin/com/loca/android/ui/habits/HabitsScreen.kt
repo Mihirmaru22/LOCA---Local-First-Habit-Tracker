@@ -47,6 +47,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.loca.android.LOCAApplication
 import com.loca.android.data.UserEntry
+import com.loca.android.ui.LocalSnackbar
+import com.loca.android.ui.runWrite
 import com.loca.derive.habits.HabitDeriver
 import com.loca.derive.habits.HabitSummary
 import com.loca.record.HabitFrequency
@@ -60,6 +62,7 @@ fun HabitsScreen() {
     val context = LocalContext.current
     val container = (context.applicationContext as LOCAApplication).container
     val scope = rememberCoroutineScope()
+    val snackbar = LocalSnackbar.current
 
     var habits by remember { mutableStateOf<List<HabitSummary>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
@@ -82,8 +85,10 @@ fun HabitsScreen() {
                 habits = habits,
                 onLog = { habit ->
                     scope.launch {
-                        container.record(UserEntry.logHabit(habit.habitID))
-                        reloadKey++
+                        val ok = snackbar.runWrite("Couldn't log habit") {
+                            container.record(UserEntry.logHabit(habit.habitID))
+                        }
+                        if (ok) reloadKey++
                     }
                 }
             )
@@ -104,8 +109,10 @@ fun HabitsScreen() {
             onCreate = { name, frequency ->
                 showAdd = false
                 scope.launch {
-                    container.record(UserEntry.defineHabit(name, frequency))
-                    reloadKey++
+                    val ok = snackbar.runWrite("Couldn't create habit") {
+                        container.record(UserEntry.defineHabit(name, frequency))
+                    }
+                    if (ok) reloadKey++
                 }
             }
         )

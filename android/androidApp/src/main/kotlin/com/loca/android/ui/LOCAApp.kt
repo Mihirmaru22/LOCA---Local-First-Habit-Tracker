@@ -10,9 +10,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -40,9 +44,12 @@ fun LOCAApp() {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
+    val snackbarHostState = remember { SnackbarHostState() }
 
+    CompositionLocalProvider(LocalSnackbar provides snackbarHostState) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             NavigationBar {
                 topLevelDestinations.forEach { destination ->
@@ -82,5 +89,6 @@ fun LOCAApp() {
             composable(LOCADestination.Journal.route) { JournalScreen() }
             composable(LOCADestination.Todo.route)    { TodoScreen()    }
         }
+    }
     }
 }
