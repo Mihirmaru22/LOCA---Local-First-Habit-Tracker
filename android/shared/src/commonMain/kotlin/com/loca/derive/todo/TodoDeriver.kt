@@ -45,18 +45,26 @@ object TodoDeriver {
             .groupBy({ it.first }, { it.second })
             .mapValues { (_, sigs) -> sigs.sortedBy { it.occurredAt }.last() }
 
-        // Most recent completion date per todoID — by when the completion
-        // OCCURRED, not by signal-list order (unstable after replay).
-        val completionDateByTodoID: Map<Uuid, LocalDate> = signals
+        // Signal IDs that have been deleted. A deletion may target a creation
+        // fact (delete the whole todo) or a completion fact (un-complete it).
+        // Ids are unique, so one set serves both purposes.
+        val deletedFactIDs: Set<Uuid> = signals
+            .filter { it.kind == SignalKind.DELETION_REQUESTED }
+            .mapNotNull { (it.payload as? SignalPayload.Deletion)?.targetFactID }
+            .toHashSet()
+
+        // Latest non-deleted completion signal per todoID — by when the
+        // completion OCCURRED, not by signal-list order (unstable after replay).
+        // Deleting a completion fact un-completes the todo.
+        val latestCompletionByTodoID: Map<Uuid, Signal> = signals
             .filter { it.kind == SignalKind.TODO_COMPLETION }
+            .filter { it.id !in deletedFactIDs }
             .mapNotNull { signal ->
                 val p = signal.payload as? SignalPayload.TodoCompletion ?: return@mapNotNull null
                 p.todoID to signal
             }
             .groupBy({ it.first }, { it.second })
-            .mapValues { (_, sigs) ->
-                sigs.maxBy { it.occurredAt }.occurredAt.toLocalDateTime(tz).date
-            }
+            .mapValues { (_, sigs) -> sigs.maxBy { it.occurredAt } }
 
         // Corrections per target signal id, sorted oldest→newest so the last write wins
         val correctionsByTargetID: Map<Uuid, List<SignalPayload.Correction>> = signals
@@ -67,12 +75,6 @@ object TodoDeriver {
                 p.targetFactID to p
             }
             .groupBy({ it.first }, { it.second })
-
-        // Signal IDs of creation facts that have been deleted
-        val deletedFactIDs: Set<Uuid> = signals
-            .filter { it.kind == SignalKind.DELETION_REQUESTED }
-            .mapNotNull { (it.payload as? SignalPayload.Deletion)?.targetFactID }
-            .toHashSet()
 
         val items: List<TodoItem> = creationByTodoID.map { (todoID, creationSignal) ->
             val creation = creationSignal.payload as SignalPayload.TodoCreation
@@ -90,7 +92,8 @@ object TodoDeriver {
                 }
             }
 
-            val completedDate = completionDateByTodoID[todoID]
+            val completionSignal = latestCompletionByTodoID[todoID]
+            val completedDate = completionSignal?.occurredAt?.toLocalDateTime(tz)?.date
             val status = when {
                 creationSignal.id in deletedFactIDs -> TodoStatus.DELETED
                 completedDate != null               -> TodoStatus.COMPLETED
@@ -104,6 +107,7 @@ object TodoDeriver {
             TodoItem(
                 todoID = todoID,
                 factID = creationSignal.id,
+                completionFactID = completionSignal?.id,
                 title = title,
                 dueDate = dueDate,
                 notes = notes,

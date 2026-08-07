@@ -13,6 +13,11 @@ data class TodoItem(
      * deletions target this id, so the UI needs it to edit or delete a task.
      */
     val factID: Uuid,
+    /**
+     * Id of the latest completion Fact/Signal, when COMPLETED. Deleting this
+     * fact un-completes the todo. Null when the todo was never completed.
+     */
+    val completionFactID: Uuid?,
     val title: String,
     val dueDate: Instant?,
     val notes: String?,

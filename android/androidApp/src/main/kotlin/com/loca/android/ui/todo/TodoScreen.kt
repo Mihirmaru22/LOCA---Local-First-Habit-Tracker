@@ -150,6 +150,11 @@ fun TodoScreen() {
                 onEdit = { item -> editing = item },
                 onDelete = { item ->
                     submit("Couldn't delete task", listOf(UserEntry.deleteTodo(item.factID)))
+                },
+                onUncomplete = { item ->
+                    item.completionFactID?.let { fid ->
+                        submit("Couldn't update task", listOf(UserEntry.deleteTodo(fid)))
+                    }
                 }
             )
         }
@@ -203,6 +208,7 @@ private fun TodoContent(
     onComplete: (TodoItem) -> Unit,
     onEdit: (TodoItem) -> Unit,
     onDelete: (TodoItem) -> Unit,
+    onUncomplete: (TodoItem) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier
@@ -223,7 +229,8 @@ private fun TodoContent(
                     completed = false,
                     onComplete = { onComplete(item) },
                     onEdit = { onEdit(item) },
-                    onDelete = { onDelete(item) }
+                    onDelete = { onDelete(item) },
+                    onUncomplete = null
                 )
             }
         }
@@ -239,7 +246,8 @@ private fun TodoContent(
                     completed = true,
                     onComplete = {},
                     onEdit = null,
-                    onDelete = { onDelete(item) }
+                    onDelete = { onDelete(item) },
+                    onUncomplete = { onUncomplete(item) }
                 )
             }
         }
@@ -309,6 +317,7 @@ private fun TodoItemCard(
     onComplete: () -> Unit,
     onEdit: (() -> Unit)?,
     onDelete: () -> Unit,
+    onUncomplete: (() -> Unit)?,
 ) {
     val tz = TimeZone.currentSystemDefault()
 
@@ -398,13 +407,17 @@ private fun TodoItemCard(
                     )
                 }
             }
-            TodoOverflowMenu(onEdit = onEdit, onDelete = onDelete)
+            TodoOverflowMenu(onEdit = onEdit, onDelete = onDelete, onUncomplete = onUncomplete)
         }
     }
 }
 
 @Composable
-private fun TodoOverflowMenu(onEdit: (() -> Unit)?, onDelete: () -> Unit) {
+private fun TodoOverflowMenu(
+    onEdit: (() -> Unit)?,
+    onDelete: () -> Unit,
+    onUncomplete: (() -> Unit)?,
+) {
     var expanded by remember { mutableStateOf(false) }
     Box {
         IconButton(onClick = { expanded = true }) {
@@ -422,6 +435,18 @@ private fun TodoOverflowMenu(onEdit: (() -> Unit)?, onDelete: () -> Unit) {
                     onClick = {
                         expanded = false
                         onEdit()
+                    }
+                )
+            }
+            if (onUncomplete != null) {
+                DropdownMenuItem(
+                    text = { Text("Mark not done") },
+                    leadingIcon = {
+                        Icon(Icons.Default.RadioButtonUnchecked, contentDescription = null)
+                    },
+                    onClick = {
+                        expanded = false
+                        onUncomplete()
                     }
                 )
             }
