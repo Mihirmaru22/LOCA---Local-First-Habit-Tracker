@@ -4,14 +4,14 @@ import com.loca.record.FactKind
 import kotlin.uuid.Uuid
 
 /** Errors that can occur in the Signal layer. */
-sealed class SignalError(message: String) : Exception(message) {
-    /** A Fact could not be transformed by the pipeline. */
-    class PipelineFailure(val cause: SignalPipelineError) :
-        SignalError("Pipeline failure: ${cause.message}")
+sealed class SignalError(message: String, cause: Throwable? = null) : Exception(message, cause) {
+    /** A Fact could not be transformed by the pipeline (see [pipelineError]). */
+    class PipelineFailure(val pipelineError: SignalPipelineError) :
+        SignalError("Pipeline failure: ${pipelineError.message}", pipelineError)
 
-    /** The underlying signal store failed. */
-    class StorageFailure(val underlying: Throwable) :
-        SignalError("Storage failure: ${underlying.message}")
+    /** The underlying signal store failed (see [cause]). */
+    class StorageFailure(cause: Throwable) :
+        SignalError("Storage failure: ${cause.message}", cause)
 
     /** A replay operation failed. */
     class ReplayFailure(val reason: String) :

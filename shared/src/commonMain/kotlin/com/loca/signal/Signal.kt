@@ -1,8 +1,12 @@
+@file:UseSerializers(UuidSerializer::class)
+
 package com.loca.signal
 
 import com.loca.record.FactKind
+import com.loca.record.UuidSerializer
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 import kotlin.uuid.Uuid
 
 /**

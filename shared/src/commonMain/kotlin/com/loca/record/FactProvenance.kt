@@ -38,16 +38,18 @@ enum class EntryMethod {
 
 // ── FactConfidence ────────────────────────────────────────────────────────────
 
+/**
+ * Confidence ordering follows declaration order (KNOWN is highest).
+ * Enums are already [Comparable] by ordinal, so `a < b` works directly —
+ * no explicit compareTo is needed (and Enum.compareTo cannot be overridden).
+ */
 @Serializable
 enum class FactConfidence {
     KNOWN,
     HIGH,
     MEDIUM,
     LOW,
-    ESTIMATED;
-
-    operator fun compareTo(other: FactConfidence): Int =
-        this.ordinal.compareTo(other.ordinal)
+    ESTIMATED
 }
 
 // ── FactProvenance ────────────────────────────────────────────────────────────

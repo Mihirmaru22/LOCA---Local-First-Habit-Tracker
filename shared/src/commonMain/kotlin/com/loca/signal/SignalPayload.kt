@@ -1,11 +1,15 @@
+@file:UseSerializers(UuidSerializer::class)
+
 package com.loca.signal
 
 import com.loca.record.DeletionScope
 import com.loca.record.HabitFrequency
 import com.loca.record.IntentionPeriod
+import com.loca.record.UuidSerializer
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 import kotlin.uuid.Uuid
 
 /**

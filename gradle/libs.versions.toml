@@ -39,7 +39,8 @@ room-ktx        = { group = "androidx.room", name = "room-ktx",     version.ref 
 health-connect  = { group = "androidx.health.connect", name = "connect-client", version.ref = "healthConnect" }
 
 # Test
-kotlin-test     = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.ref = "kotlin" }
+kotlin-test                 = { group = "org.jetbrains.kotlin",  name = "kotlin-test",              version.ref = "kotlin"     }
+kotlinx-coroutines-test     = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test",  version.ref = "coroutines" }
 
 [plugins]
 android-application     = { id = "com.android.application",                        version.ref = "agp"                  }
