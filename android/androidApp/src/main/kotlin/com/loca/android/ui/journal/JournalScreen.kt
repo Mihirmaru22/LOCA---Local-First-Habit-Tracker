@@ -96,11 +96,15 @@ fun JournalScreen() {
 
     Box(Modifier.fillMaxSize()) {
         val s = summary
+        val isEmpty = s == null || (
+            s.totalEntries == 0 &&
+                s.activeIntentions.isEmpty() &&
+                s.expiredIntentions.isEmpty()
+            )
         when {
             loading -> LoadingBox()
-            s == null || (s.totalEntries == 0 && s.activeIntentions.isEmpty()) ->
-                EmptyJournal()
-            else -> JournalContent(s)
+            isEmpty -> EmptyJournal()
+            else -> JournalContent(s!!)
         }
         FloatingActionButton(
             onClick = { showAdd = true },
@@ -175,7 +179,48 @@ private fun JournalContent(summary: JournalSummary) {
             }
         }
 
+        if (summary.tagCloud.isNotEmpty()) {
+            item {
+                Spacer(Modifier.height(4.dp))
+                SectionLabel("Tags")
+                Spacer(Modifier.height(4.dp))
+                TagCloud(summary.tagCloud)
+            }
+        }
+
+        if (summary.expiredIntentions.isNotEmpty()) {
+            item {
+                Spacer(Modifier.height(4.dp))
+                SectionLabel("Past intentions")
+            }
+            items(summary.expiredIntentions.take(10), key = { it.id.toString() }) { intention ->
+                IntentionCard(intention, dimmed = true)
+            }
+        }
+
         item { Spacer(Modifier.height(88.dp)) }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun TagCloud(tags: Map<String, Int>) {
+    // Bigger, more-frequent tags read first.
+    val ordered = tags.entries.sortedByDescending { it.value }
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        ordered.forEach { (tag, count) ->
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
+            ) {
+                Text(
+                    text = if (count > 1) "#$tag · $count" else "#$tag",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+                )
+            }
+        }
     }
 }
 
@@ -241,11 +286,17 @@ private fun SectionLabel(title: String) {
 }
 
 @Composable
-private fun IntentionCard(intention: IntentionEntry) {
+private fun IntentionCard(intention: IntentionEntry, dimmed: Boolean = false) {
+    val contentAlpha = if (dimmed) 0.55f else 1f
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = if (dimmed)
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+            else
+                MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (dimmed) 0.dp else 1.dp)
     ) {
         Row(
             modifier = Modifier.padding(14.dp),
@@ -255,20 +306,21 @@ private fun IntentionCard(intention: IntentionEntry) {
                 imageVector = Icons.Default.Flag,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
-                tint = MaterialTheme.colorScheme.secondary
+                tint = MaterialTheme.colorScheme.secondary.copy(alpha = contentAlpha)
             )
             Spacer(Modifier.width(10.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = intention.text,
                     style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = contentAlpha),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = "${intention.date.display()} · ${intention.period.name.lowercase().replaceFirstChar { it.uppercase() }}",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha)
                 )
             }
         }
