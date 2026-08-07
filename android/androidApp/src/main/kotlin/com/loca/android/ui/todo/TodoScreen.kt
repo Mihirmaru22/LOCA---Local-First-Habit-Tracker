@@ -4,6 +4,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -25,6 +27,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -60,10 +63,35 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
+
+private enum class DueOption(val label: String) {
+    NONE("No date"),
+    TODAY("Today"),
+    TOMORROW("Tomorrow"),
+    NEXT_WEEK("Next week"),
+}
+
+/** Resolve a due-date quick-pick to an Instant at the start of that local day. */
+private fun DueOption.toInstant(): Instant? {
+    if (this == DueOption.NONE) return null
+    val tz = TimeZone.currentSystemDefault()
+    val today = Clock.System.todayIn(tz)
+    val date = when (this) {
+        DueOption.NONE -> return null
+        DueOption.TODAY -> today
+        DueOption.TOMORROW -> today.plus(1, DateTimeUnit.DAY)
+        DueOption.NEXT_WEEK -> today.plus(7, DateTimeUnit.DAY)
+    }
+    return date.atStartOfDayIn(tz)
+}
 
 @Composable
 fun TodoScreen() {
@@ -118,11 +146,11 @@ fun TodoScreen() {
     if (showAdd) {
         NewTaskDialog(
             onDismiss = { showAdd = false },
-            onCreate = { title, notes ->
+            onCreate = { title, notes, dueDate ->
                 showAdd = false
                 scope.launch {
                     val ok = snackbar.runWrite("Couldn't add task") {
-                        container.record(UserEntry.createTodo(title, notes = notes))
+                        container.record(UserEntry.createTodo(title, dueDate = dueDate, notes = notes))
                     }
                     if (ok) reloadKey++
                 }
@@ -285,6 +313,17 @@ private fun TodoItemCard(item: TodoItem, completed: Boolean, onComplete: () -> U
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
+                val notes = item.notes
+                if (!notes.isNullOrBlank() && !completed) {
+                    Spacer(Modifier.height(3.dp))
+                    Text(
+                        text = notes,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
                 val meta = buildMeta(item, completed, tz)
                 if (meta.isNotEmpty()) {
                     Spacer(Modifier.height(2.dp))
@@ -316,13 +355,15 @@ private fun buildMeta(item: TodoItem, completed: Boolean, tz: TimeZone): String 
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun NewTaskDialog(
     onDismiss: () -> Unit,
-    onCreate: (title: String, notes: String?) -> Unit,
+    onCreate: (title: String, notes: String?, dueDate: Instant?) -> Unit,
 ) {
     var title by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
+    var due by remember { mutableStateOf(DueOption.NONE) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -344,12 +385,28 @@ private fun NewTaskDialog(
                     minLines = 2,
                     modifier = Modifier.fillMaxWidth()
                 )
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = "Due",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(6.dp))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    DueOption.entries.forEach { option ->
+                        FilterChip(
+                            selected = due == option,
+                            onClick = { due = option },
+                            label = { Text(option.label) }
+                        )
+                    }
+                }
             }
         },
         confirmButton = {
             TextButton(
                 onClick = {
-                    onCreate(title.trim(), notes.trim().ifBlank { null })
+                    onCreate(title.trim(), notes.trim().ifBlank { null }, due.toInstant())
                 },
                 enabled = title.isNotBlank()
             ) { Text("Add") }
