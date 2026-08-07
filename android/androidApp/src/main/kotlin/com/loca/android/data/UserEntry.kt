@@ -9,7 +9,15 @@ import com.loca.record.FactPayload
 import com.loca.record.FactSource
 import com.loca.record.HabitFrequency
 import com.loca.record.IntentionPeriod
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.isoDayNumber
+import kotlinx.datetime.plus
+import kotlinx.datetime.todayIn
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -67,10 +75,35 @@ object UserEntry {
         FactPayload.MemorableMomentCaptured(text = text, tags = tags),
     )
 
+    /**
+     * Set an intention. If no explicit expiry is given, it is derived from the
+     * period so the intention naturally expires at the end of its window —
+     * daily at the start of tomorrow, weekly at the start of next Monday,
+     * monthly at the start of next month.
+     */
     fun intention(text: String, period: IntentionPeriod, expiresAt: Instant? = null): FactDraft = draft(
         FactKind.INTENTION_SET,
-        FactPayload.IntentionSet(text = text, period = period, expiresAt = expiresAt),
+        FactPayload.IntentionSet(
+            text = text,
+            period = period,
+            expiresAt = expiresAt ?: expiryFor(period),
+        ),
     )
+
+    private fun expiryFor(period: IntentionPeriod): Instant {
+        val tz = TimeZone.currentSystemDefault()
+        val today = Clock.System.todayIn(tz)
+        val boundary: LocalDate = when (period) {
+            IntentionPeriod.DAILY ->
+                today.plus(1, DateTimeUnit.DAY)
+            IntentionPeriod.WEEKLY ->
+                // isoDayNumber: Mon=1..Sun=7 → days until the next Monday
+                today.plus(8 - today.dayOfWeek.isoDayNumber, DateTimeUnit.DAY)
+            IntentionPeriod.MONTHLY ->
+                LocalDate(today.year, today.monthNumber, 1).plus(1, DateTimeUnit.MONTH)
+        }
+        return boundary.atStartOfDayIn(tz)
+    }
 
     // ── Todo ────────────────────────────────────────────────────────────────
 

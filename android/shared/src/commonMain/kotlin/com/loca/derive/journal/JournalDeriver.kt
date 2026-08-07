@@ -21,6 +21,12 @@ import kotlinx.datetime.toLocalDateTime
  */
 object JournalDeriver {
 
+    // Newest first, with a stable tiebreak on signal id so entries sharing the
+    // exact same occurredAt always order deterministically (invariant: same
+    // signals → same result).
+    private val newestFirst: Comparator<Signal> =
+        compareByDescending<Signal> { it.occurredAt }.thenByDescending { it.id.toString() }
+
     /**
      * Derive a full JournalSummary from the signal store.
      *
@@ -37,7 +43,7 @@ object JournalDeriver {
     ): JournalSummary {
         val reflections = signals
             .filter { it.kind == SignalKind.REFLECTION }
-            .sortedByDescending { it.occurredAt }
+            .sortedWith(newestFirst)
             .mapNotNull { signal ->
                 val p = signal.payload as? SignalPayload.Reflection ?: return@mapNotNull null
                 ReflectionEntry(
@@ -50,7 +56,7 @@ object JournalDeriver {
 
         val moments = signals
             .filter { it.kind == SignalKind.MEMORABLE_MOMENT }
-            .sortedByDescending { it.occurredAt }
+            .sortedWith(newestFirst)
             .mapNotNull { signal ->
                 val p = signal.payload as? SignalPayload.MemorableMoment ?: return@mapNotNull null
                 MomentEntry(
@@ -63,7 +69,7 @@ object JournalDeriver {
 
         val (activeIntentions, expiredIntentions) = signals
             .filter { it.kind == SignalKind.INTENTION }
-            .sortedByDescending { it.occurredAt }
+            .sortedWith(newestFirst)
             .mapNotNull { signal ->
                 val p = signal.payload as? SignalPayload.Intention ?: return@mapNotNull null
                 IntentionEntry(
