@@ -4,9 +4,12 @@ import android.content.Context
 import com.loca.android.health.HealthConnectManager
 import com.loca.android.health.HealthImporter
 import com.loca.db.LOCADatabase
+import com.loca.record.Fact
+import com.loca.record.FactDraft
 import com.loca.record.RecordEngine
 import com.loca.record.RoomRecordStore
 import com.loca.signal.RoomSignalStore
+import com.loca.signal.Signal
 import com.loca.signal.SignalEngine
 import com.loca.signal.SignalStoring
 import kotlinx.coroutines.CoroutineScope
@@ -14,6 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class AppContainer(context: Context) {
 
@@ -40,5 +44,23 @@ class AppContainer(context: Context) {
     suspend fun importHealth() {
         awaitInit()
         healthImporter.importRecentData()
+    }
+
+    /**
+     * Record a user-authored Fact and immediately derive its Signal.
+     * The single write entry point for the UI — append to the Record,
+     * then process into the Signal layer so derivers see it on next load.
+     */
+    suspend fun record(draft: FactDraft): Fact = withContext(Dispatchers.IO) {
+        awaitInit()
+        val fact = recordEngine.append(draft)
+        signalEngine.process(fact)
+        fact
+    }
+
+    /** Convenience read used by screens to reload after a write. */
+    suspend fun signals(): List<Signal> = withContext(Dispatchers.IO) {
+        awaitInit()
+        signalStore.allSignals()
     }
 }

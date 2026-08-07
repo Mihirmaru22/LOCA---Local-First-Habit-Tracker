@@ -14,21 +14,31 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,12 +46,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.loca.android.LOCAApplication
-import com.loca.android.ui.theme.LOCAColors
+import com.loca.android.data.UserEntry
 import com.loca.derive.habits.HabitDeriver
 import com.loca.derive.habits.HabitSummary
 import com.loca.record.HabitFrequency
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
@@ -50,26 +59,61 @@ import kotlinx.datetime.todayIn
 fun HabitsScreen() {
     val context = LocalContext.current
     val container = (context.applicationContext as LOCAApplication).container
+    val scope = rememberCoroutineScope()
 
     var habits by remember { mutableStateOf<List<HabitSummary>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
+    var reloadKey by remember { mutableIntStateOf(0) }
+    var showAdd by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        val signals = withContext(Dispatchers.IO) { container.signalStore.allSignals() }
+    LaunchedEffect(reloadKey) {
+        loading = true
+        val signals = container.signals()
         val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
         habits = HabitDeriver.deriveAll(signals, today)
         loading = false
     }
 
-    when {
-        loading -> LoadingBox()
-        habits.isEmpty() -> EmptyHabits()
-        else -> HabitList(habits)
+    Box(Modifier.fillMaxSize()) {
+        when {
+            loading -> LoadingBox()
+            habits.isEmpty() -> EmptyHabits()
+            else -> HabitList(
+                habits = habits,
+                onLog = { habit ->
+                    scope.launch {
+                        container.record(UserEntry.logHabit(habit.habitID))
+                        reloadKey++
+                    }
+                }
+            )
+        }
+        FloatingActionButton(
+            onClick = { showAdd = true },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(20.dp)
+        ) {
+            Icon(Icons.Default.Add, contentDescription = "New habit")
+        }
+    }
+
+    if (showAdd) {
+        NewHabitDialog(
+            onDismiss = { showAdd = false },
+            onCreate = { name, frequency ->
+                showAdd = false
+                scope.launch {
+                    container.record(UserEntry.defineHabit(name, frequency))
+                    reloadKey++
+                }
+            }
+        )
     }
 }
 
 @Composable
-private fun HabitList(habits: List<HabitSummary>) {
+private fun HabitList(habits: List<HabitSummary>, onLog: (HabitSummary) -> Unit) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -81,9 +125,9 @@ private fun HabitList(habits: List<HabitSummary>) {
             Spacer(Modifier.height(4.dp))
         }
         items(habits, key = { it.habitID.toString() }) { habit ->
-            HabitCard(habit)
+            HabitCard(habit, onLog = { onLog(habit) })
         }
-        item { Spacer(Modifier.height(16.dp)) }
+        item { Spacer(Modifier.height(88.dp)) }
     }
 }
 
@@ -131,7 +175,7 @@ private fun HabitsHeader(habits: List<HabitSummary>) {
 }
 
 @Composable
-private fun HabitCard(habit: HabitSummary) {
+private fun HabitCard(habit: HabitSummary, onLog: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -171,13 +215,9 @@ private fun HabitCard(habit: HabitSummary) {
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "${(habit.completionRate * 100).toInt()}% this period",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Default.LocalFireDepartment,
@@ -197,6 +237,20 @@ private fun HabitCard(habit: HabitSummary) {
                         else
                             MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+                FilledTonalButton(
+                    onClick = onLog,
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                        horizontal = 14.dp, vertical = 6.dp
+                    )
+                ) {
+                    Icon(
+                        Icons.Default.Check,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text("Log", style = MaterialTheme.typography.labelMedium)
                 }
             }
         }
@@ -219,6 +273,58 @@ private fun FrequencyChip(frequency: HabitFrequency) {
 }
 
 @Composable
+private fun NewHabitDialog(
+    onDismiss: () -> Unit,
+    onCreate: (name: String, frequency: HabitFrequency) -> Unit,
+) {
+    var name by remember { mutableStateOf("") }
+    var frequency by remember { mutableStateOf(HabitFrequency.DAILY) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("New habit") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Name") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    text = "Frequency",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    HabitFrequency.entries.forEach { option ->
+                        FilterChip(
+                            selected = frequency == option,
+                            onClick = { frequency = option },
+                            label = {
+                                Text(option.name.lowercase().replaceFirstChar { it.uppercase() })
+                            }
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onCreate(name.trim(), frequency) },
+                enabled = name.isNotBlank()
+            ) { Text("Create") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
+@Composable
 private fun EmptyHabits() {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -233,6 +339,12 @@ private fun EmptyHabits() {
                 text = "No habits yet",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "Tap + to add one",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
             )
         }
     }

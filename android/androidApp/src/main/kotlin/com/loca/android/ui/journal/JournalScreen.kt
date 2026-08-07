@@ -16,23 +16,30 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,28 +47,39 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.loca.android.LOCAApplication
+import com.loca.android.data.UserEntry
 import com.loca.derive.journal.IntentionEntry
 import com.loca.derive.journal.JournalDeriver
 import com.loca.derive.journal.JournalSummary
 import com.loca.derive.journal.MomentEntry
 import com.loca.derive.journal.ReflectionEntry
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.loca.record.IntentionPeriod
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 
+private enum class EntryType(val label: String) {
+    REFLECTION("Reflection"),
+    MOMENT("Moment"),
+    INTENTION("Intention"),
+}
+
 @Composable
 fun JournalScreen() {
     val context = LocalContext.current
     val container = (context.applicationContext as LOCAApplication).container
+    val scope = rememberCoroutineScope()
 
     var summary by remember { mutableStateOf<JournalSummary?>(null) }
     var loading by remember { mutableStateOf(true) }
+    var reloadKey by remember { mutableIntStateOf(0) }
+    var showAdd by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        val signals = withContext(Dispatchers.IO) { container.signalStore.allSignals() }
+    LaunchedEffect(reloadKey) {
+        loading = true
+        val signals = container.signals()
         val tz = TimeZone.currentSystemDefault()
         val now = Clock.System.now()
         val today = Clock.System.todayIn(tz)
@@ -69,11 +87,40 @@ fun JournalScreen() {
         loading = false
     }
 
-    when {
-        loading -> LoadingBox()
-        summary == null || summary!!.totalEntries == 0 && summary!!.activeIntentions.isEmpty() ->
-            EmptyJournal()
-        else -> JournalContent(summary!!)
+    Box(Modifier.fillMaxSize()) {
+        val s = summary
+        when {
+            loading -> LoadingBox()
+            s == null || (s.totalEntries == 0 && s.activeIntentions.isEmpty()) ->
+                EmptyJournal()
+            else -> JournalContent(s)
+        }
+        FloatingActionButton(
+            onClick = { showAdd = true },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(20.dp)
+        ) {
+            Icon(Icons.Default.Add, contentDescription = "New entry")
+        }
+    }
+
+    if (showAdd) {
+        NewEntryDialog(
+            onDismiss = { showAdd = false },
+            onCreate = { type, text, tags, period ->
+                showAdd = false
+                scope.launch {
+                    val draft = when (type) {
+                        EntryType.REFLECTION -> UserEntry.reflection(text)
+                        EntryType.MOMENT -> UserEntry.moment(text, tags)
+                        EntryType.INTENTION -> UserEntry.intention(text, period)
+                    }
+                    container.record(draft)
+                    reloadKey++
+                }
+            }
+        )
     }
 }
 
@@ -119,7 +166,7 @@ private fun JournalContent(summary: JournalSummary) {
             }
         }
 
-        item { Spacer(Modifier.height(16.dp)) }
+        item { Spacer(Modifier.height(88.dp)) }
     }
 }
 
@@ -309,6 +356,88 @@ private fun TagChip(tag: String) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun NewEntryDialog(
+    onDismiss: () -> Unit,
+    onCreate: (type: EntryType, text: String, tags: List<String>, period: IntentionPeriod) -> Unit,
+) {
+    var type by remember { mutableStateOf(EntryType.REFLECTION) }
+    var text by remember { mutableStateOf("") }
+    var tagsRaw by remember { mutableStateOf("") }
+    var period by remember { mutableStateOf(IntentionPeriod.DAILY) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("New journal entry") },
+        text = {
+            Column {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    EntryType.entries.forEach { option ->
+                        FilterChip(
+                            selected = type == option,
+                            onClick = { type = option },
+                            label = { Text(option.label) }
+                        )
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    label = { Text("What's on your mind?") },
+                    minLines = 2,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                if (type == EntryType.MOMENT) {
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = tagsRaw,
+                        onValueChange = { tagsRaw = it },
+                        label = { Text("Tags (comma-separated)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                if (type == EntryType.INTENTION) {
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        text = "Period",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        IntentionPeriod.entries.forEach { option ->
+                            FilterChip(
+                                selected = period == option,
+                                onClick = { period = option },
+                                label = {
+                                    Text(option.name.lowercase().replaceFirstChar { it.uppercase() })
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val tags = tagsRaw.split(",")
+                        .map { it.trim() }
+                        .filter { it.isNotEmpty() }
+                    onCreate(type, text.trim(), tags, period)
+                },
+                enabled = text.isNotBlank()
+            ) { Text("Save") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
 @Composable
 private fun EmptyJournal() {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -324,6 +453,12 @@ private fun EmptyJournal() {
                 text = "No journal entries yet",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "Tap + to write one",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
             )
         }
     }

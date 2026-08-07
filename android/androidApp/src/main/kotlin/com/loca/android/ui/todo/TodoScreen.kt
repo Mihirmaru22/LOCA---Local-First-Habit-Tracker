@@ -1,5 +1,6 @@
 package com.loca.android.ui.todo
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,24 +15,30 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,11 +47,11 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.loca.android.LOCAApplication
+import com.loca.android.data.UserEntry
 import com.loca.derive.todo.TodoDeriver
 import com.loca.derive.todo.TodoItem
 import com.loca.derive.todo.TodoSummary
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -55,27 +62,63 @@ import kotlinx.datetime.todayIn
 fun TodoScreen() {
     val context = LocalContext.current
     val container = (context.applicationContext as LOCAApplication).container
+    val scope = rememberCoroutineScope()
 
     var summary by remember { mutableStateOf<TodoSummary?>(null) }
     var loading by remember { mutableStateOf(true) }
+    var reloadKey by remember { mutableIntStateOf(0) }
+    var showAdd by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        val signals = withContext(Dispatchers.IO) { container.signalStore.allSignals() }
+    LaunchedEffect(reloadKey) {
+        loading = true
+        val signals = container.signals()
         val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
         summary = TodoDeriver.deriveAll(signals, today)
         loading = false
     }
 
-    when {
-        loading -> LoadingBox()
-        summary == null || (summary!!.active.isEmpty() && summary!!.completed.isEmpty()) ->
-            EmptyTodo()
-        else -> TodoContent(summary!!)
+    Box(Modifier.fillMaxSize()) {
+        val s = summary
+        when {
+            loading -> LoadingBox()
+            s == null || (s.active.isEmpty() && s.completed.isEmpty()) ->
+                EmptyTodo()
+            else -> TodoContent(
+                summary = s,
+                onComplete = { item ->
+                    scope.launch {
+                        container.record(UserEntry.completeTodo(item.todoID))
+                        reloadKey++
+                    }
+                }
+            )
+        }
+        FloatingActionButton(
+            onClick = { showAdd = true },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(20.dp)
+        ) {
+            Icon(Icons.Default.Add, contentDescription = "New task")
+        }
+    }
+
+    if (showAdd) {
+        NewTaskDialog(
+            onDismiss = { showAdd = false },
+            onCreate = { title, notes ->
+                showAdd = false
+                scope.launch {
+                    container.record(UserEntry.createTodo(title, notes = notes))
+                    reloadKey++
+                }
+            }
+        )
     }
 }
 
 @Composable
-private fun TodoContent(summary: TodoSummary) {
+private fun TodoContent(summary: TodoSummary, onComplete: (TodoItem) -> Unit) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -90,7 +133,7 @@ private fun TodoContent(summary: TodoSummary) {
         if (summary.active.isNotEmpty()) {
             item { SectionLabel("Active  ·  ${summary.active.size}") }
             items(summary.active, key = { it.todoID.toString() }) { item ->
-                TodoItemCard(item, completed = false)
+                TodoItemCard(item, completed = false, onComplete = { onComplete(item) })
             }
         }
 
@@ -100,11 +143,11 @@ private fun TodoContent(summary: TodoSummary) {
                 SectionLabel("Done  ·  ${summary.completed.size}")
             }
             items(summary.completed.take(20), key = { it.todoID.toString() }) { item ->
-                TodoItemCard(item, completed = true)
+                TodoItemCard(item, completed = true, onComplete = {})
             }
         }
 
-        item { Spacer(Modifier.height(16.dp)) }
+        item { Spacer(Modifier.height(88.dp)) }
     }
 }
 
@@ -163,7 +206,7 @@ private fun SectionLabel(title: String) {
 }
 
 @Composable
-private fun TodoItemCard(item: TodoItem, completed: Boolean) {
+private fun TodoItemCard(item: TodoItem, completed: Boolean, onComplete: () -> Unit) {
     val tz = TimeZone.currentSystemDefault()
 
     Card(
@@ -189,8 +232,13 @@ private fun TodoItemCard(item: TodoItem, completed: Boolean) {
                     item.isOverdue -> Icons.Default.Warning
                     else -> Icons.Default.RadioButtonUnchecked
                 },
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
+                contentDescription = if (completed) null else "Mark done",
+                modifier = Modifier
+                    .size(20.dp)
+                    .then(
+                        if (!completed) Modifier.clickable(onClick = onComplete)
+                        else Modifier
+                    ),
                 tint = when {
                     completed -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.6f)
                     item.isOverdue -> MaterialTheme.colorScheme.error
@@ -242,6 +290,50 @@ private fun buildMeta(item: TodoItem, completed: Boolean, tz: TimeZone): String 
 }
 
 @Composable
+private fun NewTaskDialog(
+    onDismiss: () -> Unit,
+    onCreate: (title: String, notes: String?) -> Unit,
+) {
+    var title by remember { mutableStateOf("") }
+    var notes by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("New task") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Title") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text("Notes (optional)") },
+                    minLines = 2,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onCreate(title.trim(), notes.trim().ifBlank { null })
+                },
+                enabled = title.isNotBlank()
+            ) { Text("Add") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
+@Composable
 private fun EmptyTodo() {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -256,6 +348,12 @@ private fun EmptyTodo() {
                 text = "No tasks yet",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "Tap + to add one",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
             )
         }
     }
