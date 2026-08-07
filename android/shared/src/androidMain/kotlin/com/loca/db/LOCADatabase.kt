@@ -20,6 +20,16 @@ abstract class LOCADatabase : RoomDatabase() {
 
     companion object {
         fun create(context: Context): LOCADatabase =
-            Room.databaseBuilder(context, LOCADatabase::class.java, "loca.db").build()
+            Room.databaseBuilder(context, LOCADatabase::class.java, "loca.db")
+                // Without this, the first schema change on an installed app crashes
+                // Room on launch (no migration found). Destructive fallback avoids
+                // that during active development.
+                //
+                // LOCAL-FIRST CAVEAT: facts are the irreplaceable source of truth.
+                // Before release, replace this with real Migrations for the `facts`
+                // table. The `signals` table is always safe to drop — it is fully
+                // rederivable by replaying facts through SignalEngine.
+                .fallbackToDestructiveMigration(dropAllTables = true)
+                .build()
     }
 }
