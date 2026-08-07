@@ -45,15 +45,18 @@ object TodoDeriver {
             .groupBy({ it.first }, { it.second })
             .mapValues { (_, sigs) -> sigs.sortedBy { it.occurredAt }.last() }
 
-        // Most recent completion date per todoID
+        // Most recent completion date per todoID — by when the completion
+        // OCCURRED, not by signal-list order (unstable after replay).
         val completionDateByTodoID: Map<Uuid, LocalDate> = signals
             .filter { it.kind == SignalKind.TODO_COMPLETION }
             .mapNotNull { signal ->
                 val p = signal.payload as? SignalPayload.TodoCompletion ?: return@mapNotNull null
-                p.todoID to signal.occurredAt.toLocalDateTime(tz).date
+                p.todoID to signal
             }
             .groupBy({ it.first }, { it.second })
-            .mapValues { (_, dates) -> dates.last() }
+            .mapValues { (_, sigs) ->
+                sigs.maxBy { it.occurredAt }.occurredAt.toLocalDateTime(tz).date
+            }
 
         // Corrections per target signal id, sorted oldest→newest so the last write wins
         val correctionsByTargetID: Map<Uuid, List<SignalPayload.Correction>> = signals

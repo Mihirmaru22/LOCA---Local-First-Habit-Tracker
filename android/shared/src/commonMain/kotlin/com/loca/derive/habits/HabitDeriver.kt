@@ -38,9 +38,13 @@ object HabitDeriver {
     ): List<HabitSummary> {
         val definitions: Map<Uuid, SignalPayload.HabitDefinition> = signals
             .filter { it.kind == SignalKind.HABIT_DEFINITION }
-            .mapNotNull { it.payload as? SignalPayload.HabitDefinition }
-            .groupBy { it.habitID }
-            .mapValues { (_, defs) -> defs.last() }
+            .mapNotNull { signal ->
+                (signal.payload as? SignalPayload.HabitDefinition)?.let { signal to it }
+            }
+            // Latest edit wins by when it OCCURRED, not by signal-list order
+            // (which reflects pipeline processing time and is unstable after replay).
+            .groupBy { it.second.habitID }
+            .mapValues { (_, pairs) -> pairs.maxBy { it.first.occurredAt }.second }
 
         val completionsByHabit: Map<Uuid, List<Pair<LocalDate, Double>>> = signals
             .filter { it.kind == SignalKind.HABIT_COMPLETION }
