@@ -1,6 +1,7 @@
 package com.loca.android.ui.todo
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,7 +43,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -237,26 +240,39 @@ private fun TodoItemCard(item: TodoItem, completed: Boolean, onComplete: () -> U
             modifier = Modifier.padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = when {
-                    completed -> Icons.Default.CheckCircle
-                    item.isOverdue -> Icons.Default.Warning
-                    else -> Icons.Default.RadioButtonUnchecked
-                },
-                contentDescription = if (completed) null else "Mark done",
+            // 48dp touch target (a11y minimum) with the icon drawn at 20dp.
+            // Clickable only for active items; completed items are static.
+            Box(
                 modifier = Modifier
-                    .size(20.dp)
+                    .size(48.dp)
                     .then(
-                        if (!completed) Modifier.clickable(onClick = onComplete)
+                        if (!completed)
+                            Modifier
+                                .clip(CircleShape)
+                                .clickable(
+                                    onClick = onComplete,
+                                    role = Role.Button
+                                )
                         else Modifier
                     ),
-                tint = when {
-                    completed -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.6f)
-                    item.isOverdue -> MaterialTheme.colorScheme.error
-                    else -> MaterialTheme.colorScheme.tertiary
-                }
-            )
-            Spacer(Modifier.width(12.dp))
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = when {
+                        completed -> Icons.Default.CheckCircle
+                        item.isOverdue -> Icons.Default.Warning
+                        else -> Icons.Default.RadioButtonUnchecked
+                    },
+                    contentDescription = if (completed) null else "Mark \"${item.title}\" done",
+                    modifier = Modifier.size(20.dp),
+                    tint = when {
+                        completed -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.6f)
+                        item.isOverdue -> MaterialTheme.colorScheme.error
+                        else -> MaterialTheme.colorScheme.tertiary
+                    }
+                )
+            }
+            Spacer(Modifier.width(4.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = item.title,
