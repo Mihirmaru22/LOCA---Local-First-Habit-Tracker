@@ -52,7 +52,9 @@ import com.loca.android.ui.runWrite
 import com.loca.derive.habits.HabitDeriver
 import com.loca.derive.habits.HabitSummary
 import com.loca.record.HabitFrequency
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
@@ -71,9 +73,13 @@ fun HabitsScreen() {
 
     LaunchedEffect(reloadKey) {
         loading = true
-        val signals = container.signals()
-        val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
-        habits = HabitDeriver.deriveAll(signals, today)
+        // Read + derive off the main thread — deriveAll builds a 365-day grid
+        // per habit and would jank the UI as data grows.
+        habits = withContext(Dispatchers.Default) {
+            val signals = container.signals()
+            val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+            HabitDeriver.deriveAll(signals, today)
+        }
         loading = false
     }
 

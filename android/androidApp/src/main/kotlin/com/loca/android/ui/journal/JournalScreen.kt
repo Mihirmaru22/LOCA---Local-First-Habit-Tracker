@@ -56,7 +56,9 @@ import com.loca.derive.journal.JournalSummary
 import com.loca.derive.journal.MomentEntry
 import com.loca.derive.journal.ReflectionEntry
 import com.loca.record.IntentionPeriod
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -82,11 +84,13 @@ fun JournalScreen() {
 
     LaunchedEffect(reloadKey) {
         loading = true
-        val signals = container.signals()
-        val tz = TimeZone.currentSystemDefault()
-        val now = Clock.System.now()
-        val today = Clock.System.todayIn(tz)
-        summary = JournalDeriver.deriveAll(signals, today, now, tz)
+        summary = withContext(Dispatchers.Default) {
+            val signals = container.signals()
+            val tz = TimeZone.currentSystemDefault()
+            val now = Clock.System.now()
+            val today = Clock.System.todayIn(tz)
+            JournalDeriver.deriveAll(signals, today, now, tz)
+        }
         loading = false
     }
 

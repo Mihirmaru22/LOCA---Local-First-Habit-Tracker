@@ -53,7 +53,9 @@ import com.loca.android.ui.runWrite
 import com.loca.derive.todo.TodoDeriver
 import com.loca.derive.todo.TodoItem
 import com.loca.derive.todo.TodoSummary
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -74,9 +76,11 @@ fun TodoScreen() {
 
     LaunchedEffect(reloadKey) {
         loading = true
-        val signals = container.signals()
-        val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
-        summary = TodoDeriver.deriveAll(signals, today)
+        summary = withContext(Dispatchers.Default) {
+            val signals = container.signals()
+            val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+            TodoDeriver.deriveAll(signals, today)
+        }
         loading = false
     }
 
