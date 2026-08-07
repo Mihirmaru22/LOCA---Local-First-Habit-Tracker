@@ -7,6 +7,10 @@ plugins {
 }
 
 kotlin {
+    compilerOptions {
+        optIn.add("kotlin.uuid.ExperimentalUuidApi")
+    }
+
     androidTarget {
         compilations.all {
             kotlinOptions { jvmTarget = "17" }
