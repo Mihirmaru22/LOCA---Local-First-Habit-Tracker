@@ -103,6 +103,7 @@ object TodoDeriver {
 
             TodoItem(
                 todoID = todoID,
+                factID = creationSignal.id,
                 title = title,
                 dueDate = dueDate,
                 notes = notes,

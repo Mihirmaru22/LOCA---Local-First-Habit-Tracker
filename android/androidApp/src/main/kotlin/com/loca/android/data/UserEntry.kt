@@ -121,4 +121,25 @@ object UserEntry {
         FactKind.TODO_COMPLETED,
         FactPayload.TodoCompleted(todoID = todoID),
     )
+
+    /**
+     * Correct a field of the creation fact (edit a task). [factID] is the
+     * todo's creation Fact id (TodoItem.factID). Field names match what
+     * TodoDeriver applies: "title", "dueDate", "notes". An empty
+     * correctedValue clears the field (null due date / notes).
+     */
+    fun correctTodoField(factID: Uuid, field: String, correctedValue: String): FactDraft = draft(
+        FactKind.CORRECTION_SUBMITTED,
+        FactPayload.CorrectionSubmitted(
+            targetFactID = factID,
+            field = field,
+            correctedValue = correctedValue,
+        ),
+    )
+
+    /** Delete a task by targeting its creation fact id (TodoItem.factID). */
+    fun deleteTodo(factID: Uuid): FactDraft = draft(
+        FactKind.DELETION_REQUESTED,
+        FactPayload.DeletionRequested(targetFactID = factID),
+    )
 }

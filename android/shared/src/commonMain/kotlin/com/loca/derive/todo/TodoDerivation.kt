@@ -8,6 +8,11 @@ enum class TodoStatus { ACTIVE, COMPLETED, DELETED }
 
 data class TodoItem(
     val todoID: Uuid,
+    /**
+     * Id of the creation Fact/Signal for this todo. Corrections (edits) and
+     * deletions target this id, so the UI needs it to edit or delete a task.
+     */
+    val factID: Uuid,
     val title: String,
     val dueDate: Instant?,
     val notes: String?,
