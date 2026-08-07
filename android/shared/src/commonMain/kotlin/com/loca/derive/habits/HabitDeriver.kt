@@ -46,6 +46,18 @@ object HabitDeriver {
             .groupBy { it.second.habitID }
             .mapValues { (_, pairs) -> pairs.maxBy { it.first.occurredAt }.second }
 
+        // Creation date per habit = earliest definition. Used to fairly window
+        // completion rate so a brand-new habit isn't scored against days it
+        // didn't yet exist.
+        val habitStartByID: Map<Uuid, LocalDate> = signals
+            .filter { it.kind == SignalKind.HABIT_DEFINITION }
+            .mapNotNull { signal ->
+                val p = signal.payload as? SignalPayload.HabitDefinition ?: return@mapNotNull null
+                p.habitID to signal.occurredAt.toLocalDateTime(tz).date
+            }
+            .groupBy({ it.first }, { it.second })
+            .mapValues { (_, dates) -> dates.min() }
+
         val completionsByHabit: Map<Uuid, List<Pair<LocalDate, Double>>> = signals
             .filter { it.kind == SignalKind.HABIT_COMPLETION }
             .mapNotNull { signal ->
@@ -59,9 +71,11 @@ object HabitDeriver {
         return definitions.entries
             .map { (habitID, def) ->
                 val completions = completionsByHabit[habitID] ?: emptyList()
-                derive(habitID, def, completions, today)
+                val habitStart = habitStartByID[habitID] ?: today
+                derive(habitID, def, completions, today, habitStart)
             }
-            .sortedBy { it.name }
+            // Case-insensitive so "Zebra" doesn't sort before "apple".
+            .sortedBy { it.name.lowercase() }
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
@@ -70,9 +84,11 @@ object HabitDeriver {
         habitID: Uuid,
         def: SignalPayload.HabitDefinition,
         completions: List<Pair<LocalDate, Double>>,
-        today: LocalDate
+        today: LocalDate,
+        habitStart: LocalDate
     ): HabitSummary {
         val dates = completions.map { it.first }
+        val distinctDays = dates.toHashSet()
         return HabitSummary(
             habitID = habitID,
             name = def.name,
@@ -80,8 +96,9 @@ object HabitDeriver {
             unit = def.unit,
             frequency = def.frequency,
             streak = computeStreak(dates, today),
-            completionRate = minOf(completionRate(dates.toHashSet(), def.frequency, today), 1.0),
-            totalCompletions = dates.size,
+            completionRate = minOf(completionRate(distinctDays, def.frequency, today, habitStart), 1.0),
+            // Distinct days completed — consistent with how streak and rate count.
+            totalCompletions = distinctDays.size,
             grid = buildGrid(completions, today)
         )
     }
@@ -131,20 +148,51 @@ object HabitDeriver {
         return longest
     }
 
-    fun completionRate(days: Set<LocalDate>, frequency: HabitFrequency, today: LocalDate): Double {
-        val windowStart = today.minus(29, DateTimeUnit.DAY)
-        val inWindow = days.filter { it >= windowStart && it <= today }
+    /**
+     * Fraction of expected occurrences completed, windowed by frequency and
+     * clamped to the habit's lifetime.
+     *
+     * The denominator is the number of *buckets* (days / weeks / months) that
+     * have actually elapsed since the habit was created, within a frequency-
+     * appropriate window — so a 3-day-old daily habit is scored out of 3, not
+     * 30, and a weekly habit isn't scored against a hard-coded 4 weeks.
+     *
+     * @param habitStart date the habit was created (earliest definition).
+     */
+    fun completionRate(
+        days: Set<LocalDate>,
+        frequency: HabitFrequency,
+        today: LocalDate,
+        habitStart: LocalDate
+    ): Double {
+        val windowLength = when (frequency) {
+            HabitFrequency.DAILY   -> 30   // ~1 month of days
+            HabitFrequency.WEEKLY  -> 84   // 12 weeks
+            HabitFrequency.MONTHLY -> 365  // ~12 months
+        }
+        val windowStart = today.minus(windowLength - 1, DateTimeUnit.DAY)
+        val start = maxOf(windowStart, habitStart)
+        if (start > today) return 0.0
+        val inWindow = days.filter { it >= start && it <= today }
+
         return when (frequency) {
-            HabitFrequency.DAILY -> inWindow.size / 30.0
+            HabitFrequency.DAILY -> {
+                val totalDays = start.until(today, DateTimeUnit.DAY) + 1
+                if (totalDays <= 0) 0.0 else inWindow.size.toDouble() / totalDays
+            }
             HabitFrequency.WEEKLY -> {
-                // Group by 7-day bucket from a fixed epoch Monday
+                // 7-day buckets from a fixed epoch Monday.
                 val epoch = LocalDate(1970, 1, 5)
-                val weeks = inWindow.map { epoch.until(it, DateTimeUnit.DAY) / 7 }.distinct().size
-                weeks / 4.0
+                fun weekIndex(d: LocalDate) = epoch.until(d, DateTimeUnit.DAY) / 7
+                val completedWeeks = inWindow.map { weekIndex(it) }.distinct().size
+                val totalWeeks = (weekIndex(today) - weekIndex(start)) + 1
+                if (totalWeeks <= 0) 0.0 else completedWeeks.toDouble() / totalWeeks
             }
             HabitFrequency.MONTHLY -> {
-                val hasThisMonth = days.any { it.year == today.year && it.monthNumber == today.monthNumber }
-                if (hasThisMonth) 1.0 else 0.0
+                fun monthIndex(d: LocalDate) = d.year * 12 + (d.monthNumber - 1)
+                val completedMonths = inWindow.map { monthIndex(it) }.distinct().size
+                val totalMonths = (monthIndex(today) - monthIndex(start)) + 1
+                if (totalMonths <= 0) 0.0 else completedMonths.toDouble() / totalMonths
             }
         }
     }
