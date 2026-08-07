@@ -1,0 +1,33 @@
+# Gradle
+.gradle/
+build/
+**/build/
+*.class
+!gradle/wrapper/gradle-wrapper.jar
+
+# Android
+*.apk
+*.aab
+*.ap_
+*.dex
+local.properties
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.DS_Store
+
+# Room schemas (keep for migrations)
+# shared/schemas/
+
+# KMP
+iosApp/Pods/
+iosApp/.build/
+*.xcworkspace/xcuserdata/
+DerivedData/
+
+# Secrets — never commit
+*.keystore
+google-services.json
