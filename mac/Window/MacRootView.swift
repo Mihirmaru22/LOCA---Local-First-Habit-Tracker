@@ -29,14 +29,16 @@ enum MacSection: String, CaseIterable, Identifiable {
 ///
 /// Column roles:
 /// - **Sidebar** (`MacSidebarView`): section picker (Habits, Today, Journal, Life).
-/// - **Content** (section list): list of habits / entries / entries for the day.
-/// - **Detail** (item detail): selected-item detail or placeholder.
+/// - **Content** (`MacHabitContentColumn` etc.): list for the active section.
+/// - **Detail** (`MacHabitDetailColumn` etc.): selected-item detail.
 ///
-/// `columnVisibility` starts at `.all` so all three columns appear on first
-/// launch; the user can collapse sidebar or detail via the View menu.
+/// `selectedHabit` is owned here so it spans both the content and detail columns
+/// without either column owning the other. The content column writes it via a
+/// `@Binding`; the detail column reads it as a plain `let`.
 struct MacRootView: View {
 
     @State private var selectedSection: MacSection? = .habits
+    @State private var selectedHabit:   HabitBoard? = nil
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
 
     var body: some View {
@@ -48,12 +50,18 @@ struct MacRootView: View {
                     max:   DS.Mac.sidebarMaxWidth
                 )
         } content: {
-            MacContentColumn(section: selectedSection)
+            MacContentColumn(section: selectedSection, selectedHabit: $selectedHabit)
                 .navigationSplitViewColumnWidth(min: DS.Mac.contentMinWidth, ideal: 320)
         } detail: {
-            MacDetailPlaceholder()
+            MacDetailColumn(section: selectedSection, selectedHabit: selectedHabit)
+                .navigationSplitViewColumnWidth(min: DS.Mac.detailMinWidth)
         }
         .navigationTitle("LOCA")
+        .onChange(of: selectedSection) { _, _ in
+            // Clear item selection when the section changes so the detail column
+            // resets to its placeholder rather than showing a stale habit.
+            selectedHabit = nil
+        }
         .onReceive(NotificationCenter.default.publisher(for: .locaJumpToSection)) { note in
             if let section = note.object as? MacSection {
                 selectedSection = section
@@ -68,11 +76,12 @@ struct MacRootView: View {
 private struct MacContentColumn: View {
 
     let section: MacSection?
+    @Binding var selectedHabit: HabitBoard?
 
     var body: some View {
         switch section {
         case .habits:
-            HabitListView()
+            MacHabitContentColumn(selection: $selectedHabit)
         case .today:
             MacTodayContentView()
         case .journal:
@@ -85,25 +94,45 @@ private struct MacContentColumn: View {
     }
 }
 
+// MARK: - MacDetailColumn
+
+/// Picks the correct detail view for the active section and selection.
+private struct MacDetailColumn: View {
+
+    let section: MacSection?
+    let selectedHabit: HabitBoard?
+
+    var body: some View {
+        switch section {
+        case .habits:
+            MacHabitDetailColumn(habit: selectedHabit)
+        default:
+            MacDetailPlaceholder()
+        }
+    }
+}
+
 // MARK: - Stub content views
-// These stubs keep the three-pane shell compilable before H/J/Life content
-// columns are built out. Each stub is replaced in its own chapter.
+// These stubs keep the shell compilable before their own chapters are built.
 
 struct MacTodayContentView: View {
     var body: some View {
-        ContentUnavailableView("Today", systemImage: "sun.max", description: Text("Coming in H-chapter"))
+        ContentUnavailableView("Today", systemImage: "sun.max",
+                               description: Text("Coming in S-chapter"))
     }
 }
 
 struct MacJournalContentView: View {
     var body: some View {
-        ContentUnavailableView("Journal", systemImage: "book.closed", description: Text("Coming in J-chapter"))
+        ContentUnavailableView("Journal", systemImage: "book.closed",
+                               description: Text("Coming in J-chapter"))
     }
 }
 
 struct MacLifeContentView: View {
     var body: some View {
-        ContentUnavailableView("Life", systemImage: "binoculars", description: Text("Coming in S-chapter"))
+        ContentUnavailableView("Life", systemImage: "binoculars",
+                               description: Text("Coming in S-chapter"))
     }
 }
 
