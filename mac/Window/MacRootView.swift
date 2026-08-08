@@ -39,6 +39,7 @@ struct MacRootView: View {
 
     @State private var selectedSection: MacSection? = .habits
     @State private var selectedHabit:   HabitBoard? = nil
+    @State private var selectedTodo:    TodoItem?   = nil
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
 
     var body: some View {
@@ -50,17 +51,21 @@ struct MacRootView: View {
                     max:   DS.Mac.sidebarMaxWidth
                 )
         } content: {
-            MacContentColumn(section: selectedSection, selectedHabit: $selectedHabit)
+            MacContentColumn(section: selectedSection,
+                             selectedHabit: $selectedHabit,
+                             selectedTodo:  $selectedTodo)
                 .navigationSplitViewColumnWidth(min: DS.Mac.contentMinWidth, ideal: 320)
         } detail: {
-            MacDetailColumn(section: selectedSection, selectedHabit: selectedHabit)
+            MacDetailColumn(section: selectedSection,
+                            selectedHabit: selectedHabit,
+                            selectedTodo:  selectedTodo)
                 .navigationSplitViewColumnWidth(min: DS.Mac.detailMinWidth)
         }
         .navigationTitle("LOCA")
         .onChange(of: selectedSection) { _, _ in
-            // Clear item selection when the section changes so the detail column
-            // resets to its placeholder rather than showing a stale habit.
+            // Clear all item selections when the user switches sections.
             selectedHabit = nil
+            selectedTodo  = nil
         }
         .onReceive(NotificationCenter.default.publisher(for: .locaJumpToSection)) { note in
             if let section = note.object as? MacSection {
@@ -77,13 +82,14 @@ private struct MacContentColumn: View {
 
     let section: MacSection?
     @Binding var selectedHabit: HabitBoard?
+    @Binding var selectedTodo:  TodoItem?
 
     var body: some View {
         switch section {
         case .habits:
             MacHabitContentColumn(selection: $selectedHabit)
         case .today:
-            MacTodayContentView()
+            MacTodoContentColumn(selection: $selectedTodo)
         case .journal:
             MacJournalContentView()
         case .life:
@@ -101,11 +107,14 @@ private struct MacDetailColumn: View {
 
     let section: MacSection?
     let selectedHabit: HabitBoard?
+    let selectedTodo:  TodoItem?
 
     var body: some View {
         switch section {
         case .habits:
             MacHabitDetailColumn(habit: selectedHabit)
+        case .today:
+            MacTodoDetailColumn(item: selectedTodo)
         default:
             MacDetailPlaceholder()
         }
@@ -113,14 +122,7 @@ private struct MacDetailColumn: View {
 }
 
 // MARK: - Stub content views
-// These stubs keep the shell compilable before their own chapters are built.
-
-struct MacTodayContentView: View {
-    var body: some View {
-        ContentUnavailableView("Today", systemImage: "sun.max",
-                               description: Text("Coming in S-chapter"))
-    }
-}
+// Replaced as their chapters land: MacTodayContentView → MacTodoContentColumn (T2).
 
 struct MacJournalContentView: View {
     var body: some View {
