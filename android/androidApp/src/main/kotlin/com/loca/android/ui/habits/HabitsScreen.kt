@@ -21,7 +21,6 @@ import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
@@ -47,6 +46,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.loca.android.LOCAApplication
 import com.loca.android.data.UserEntry
+import com.loca.android.ui.EmptyStateBox
+import com.loca.android.ui.LoadingBox
 import com.loca.android.ui.LocalSnackbar
 import com.loca.android.ui.runWrite
 import com.loca.derive.habits.HabitDeriver
@@ -300,7 +301,7 @@ private fun NewHabitDialog(
             Column {
                 OutlinedTextField(
                     value = name,
-                    onValueChange = { name = it },
+                    onValueChange = { if (it.length <= 100) name = it },
                     label = { Text("Name") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -339,33 +340,9 @@ private fun NewHabitDialog(
 
 @Composable
 private fun EmptyHabits() {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(
-                imageVector = Icons.Default.FitnessCenter,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-            )
-            Spacer(Modifier.height(12.dp))
-            Text(
-                text = "No habits yet",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = "Tap + to add one",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-            )
-        }
-    }
-}
-
-@Composable
-private fun LoadingBox() {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator()
-    }
+    EmptyStateBox(
+        icon = Icons.Default.FitnessCenter,
+        title = "No habits yet",
+        subtitle = "Tap + to add one"
+    )
 }

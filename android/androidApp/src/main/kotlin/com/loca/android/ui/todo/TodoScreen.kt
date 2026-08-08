@@ -29,7 +29,6 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
@@ -60,7 +59,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.loca.android.LOCAApplication
 import com.loca.android.data.UserEntry
+import com.loca.android.ui.EmptyStateBox
+import com.loca.android.ui.LoadingBox
 import com.loca.android.ui.LocalSnackbar
+import com.loca.android.ui.displayString
 import com.loca.android.ui.runWrite
 import com.loca.derive.todo.TodoDeriver
 import com.loca.derive.todo.TodoItem
@@ -72,7 +74,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
-import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.plus
@@ -473,11 +474,11 @@ private fun buildMeta(item: TodoItem, completed: Boolean, tz: TimeZone): String 
     val dueDate = item.dueDate
     return when {
         completed && completedDate != null ->
-            "Done ${completedDate.display()}"
+            "Done ${completedDate.displayString()}"
         item.isOverdue && dueDate != null ->
-            "Overdue · due ${dueDate.toLocalDateTime(tz).date.display()}"
+            "Overdue · due ${dueDate.toLocalDateTime(tz).date.displayString()}"
         dueDate != null ->
-            "Due ${dueDate.toLocalDateTime(tz).date.display()}"
+            "Due ${dueDate.toLocalDateTime(tz).date.displayString()}"
         else -> ""
     }
 }
@@ -499,7 +500,7 @@ private fun NewTaskDialog(
             Column {
                 OutlinedTextField(
                     value = title,
-                    onValueChange = { title = it },
+                    onValueChange = { if (it.length <= 200) title = it },
                     label = { Text("Title") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -507,7 +508,7 @@ private fun NewTaskDialog(
                 Spacer(Modifier.height(12.dp))
                 OutlinedTextField(
                     value = notes,
-                    onValueChange = { notes = it },
+                    onValueChange = { if (it.length <= 2000) notes = it },
                     label = { Text("Notes (optional)") },
                     minLines = 2,
                     modifier = Modifier.fillMaxWidth()
@@ -560,7 +561,7 @@ private fun EditTaskDialog(
             Column {
                 OutlinedTextField(
                     value = title,
-                    onValueChange = { title = it },
+                    onValueChange = { if (it.length <= 200) title = it },
                     label = { Text("Title") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -568,7 +569,7 @@ private fun EditTaskDialog(
                 Spacer(Modifier.height(12.dp))
                 OutlinedTextField(
                     value = notes,
-                    onValueChange = { notes = it },
+                    onValueChange = { if (it.length <= 2000) notes = it },
                     label = { Text("Notes (optional)") },
                     minLines = 2,
                     modifier = Modifier.fillMaxWidth()
@@ -589,36 +590,9 @@ private fun EditTaskDialog(
 
 @Composable
 private fun EmptyTodo() {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(
-                imageVector = Icons.Default.CheckBox,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-            )
-            Spacer(Modifier.height(12.dp))
-            Text(
-                text = "No tasks yet",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = "Tap + to add one",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-            )
-        }
-    }
+    EmptyStateBox(
+        icon = Icons.Default.CheckBox,
+        title = "No tasks yet",
+        subtitle = "Tap + to add one"
+    )
 }
-
-@Composable
-private fun LoadingBox() {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(color = MaterialTheme.colorScheme.tertiary)
-    }
-}
-
-private fun LocalDate.display(): String =
-    "${month.name.take(3).lowercase().replaceFirstChar { it.uppercase() }} $dayOfMonth"

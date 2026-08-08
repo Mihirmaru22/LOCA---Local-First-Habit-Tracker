@@ -33,7 +33,8 @@ class MainActivity : ComponentActivity() {
                 LOCAApp()
             }
         }
-        triggerHealthImport()
+        // Only trigger on the very first create — not after rotation.
+        if (savedInstanceState == null) triggerHealthImport()
     }
 
     private fun triggerHealthImport() {

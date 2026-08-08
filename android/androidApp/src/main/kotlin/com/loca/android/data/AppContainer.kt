@@ -18,6 +18,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicBoolean
 
 class AppContainer(context: Context) {
 
@@ -39,9 +40,12 @@ class AppContainer(context: Context) {
         signalEngine.initialize()
     }
 
+    private val healthImportedThisSession = AtomicBoolean(false)
+
     suspend fun awaitInit() = initJob.join()
 
     suspend fun importHealth() {
+        if (!healthImportedThisSession.compareAndSet(false, true)) return
         awaitInit()
         healthImporter.importRecentData()
     }

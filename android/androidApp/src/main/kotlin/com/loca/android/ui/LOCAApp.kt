@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.MonitorHeart
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -24,6 +25,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.loca.android.ui.habits.HabitsScreen
+import com.loca.android.ui.health.HealthScreen
 import com.loca.android.ui.journal.JournalScreen
 import com.loca.android.ui.todo.TodoScreen
 
@@ -31,12 +33,14 @@ sealed class LOCADestination(val route: String, val label: String) {
     data object Habits  : LOCADestination("habits",  "Habits")
     data object Journal : LOCADestination("journal", "Journal")
     data object Todo    : LOCADestination("todo",    "Todo")
+    data object Health  : LOCADestination("health",  "Health")
 }
 
 private val topLevelDestinations = listOf(
     LOCADestination.Habits,
     LOCADestination.Journal,
     LOCADestination.Todo,
+    LOCADestination.Health,
 )
 
 @Composable
@@ -70,6 +74,7 @@ fun LOCAApp() {
                                     LOCADestination.Habits  -> Icons.Default.FitnessCenter
                                     LOCADestination.Journal -> Icons.Default.AutoStories
                                     LOCADestination.Todo    -> Icons.Default.CheckBox
+                                    LOCADestination.Health  -> Icons.Default.MonitorHeart
                                 },
                                 contentDescription = destination.label
                             )
@@ -88,6 +93,7 @@ fun LOCAApp() {
             composable(LOCADestination.Habits.route)  { HabitsScreen()  }
             composable(LOCADestination.Journal.route) { JournalScreen() }
             composable(LOCADestination.Todo.route)    { TodoScreen()    }
+            composable(LOCADestination.Health.route)  { HealthScreen()  }
         }
     }
     }

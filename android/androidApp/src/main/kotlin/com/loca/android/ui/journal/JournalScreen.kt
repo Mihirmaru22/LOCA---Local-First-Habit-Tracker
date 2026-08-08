@@ -24,7 +24,6 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -48,7 +47,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.loca.android.LOCAApplication
 import com.loca.android.data.UserEntry
+import com.loca.android.ui.EmptyStateBox
+import com.loca.android.ui.LoadingBox
 import com.loca.android.ui.LocalSnackbar
+import com.loca.android.ui.displayString
 import com.loca.android.ui.runWrite
 import com.loca.derive.journal.IntentionEntry
 import com.loca.derive.journal.JournalDeriver
@@ -60,7 +62,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
-import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 
@@ -318,7 +319,7 @@ private fun IntentionCard(intention: IntentionEntry, dimmed: Boolean = false) {
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "${intention.date.display()} · ${intention.period.name.lowercase().replaceFirstChar { it.uppercase() }}",
+                    text = "${intention.date.displayString()} · ${intention.period.name.lowercase().replaceFirstChar { it.uppercase() }}",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha)
                 )
@@ -344,7 +345,7 @@ private fun ReflectionCard(reflection: ReflectionEntry) {
                 )
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    text = reflection.date.display(),
+                    text = reflection.date.displayString(),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -378,7 +379,7 @@ private fun MomentCard(moment: MomentEntry) {
                 )
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    text = moment.date.display(),
+                    text = moment.date.displayString(),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -445,16 +446,17 @@ private fun NewEntryDialog(
                 Spacer(Modifier.height(12.dp))
                 OutlinedTextField(
                     value = text,
-                    onValueChange = { text = it },
+                    onValueChange = { if (it.length <= 2000) text = it },
                     label = { Text("What's on your mind?") },
                     minLines = 2,
+                    supportingText = { Text("${text.length}/2000") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 if (type == EntryType.MOMENT) {
                     Spacer(Modifier.height(12.dp))
                     OutlinedTextField(
                         value = tagsRaw,
-                        onValueChange = { tagsRaw = it },
+                        onValueChange = { if (it.length <= 200) tagsRaw = it },
                         label = { Text("Tags (comma-separated)") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
@@ -501,36 +503,9 @@ private fun NewEntryDialog(
 
 @Composable
 private fun EmptyJournal() {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(
-                imageVector = Icons.Default.AutoStories,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-            )
-            Spacer(Modifier.height(12.dp))
-            Text(
-                text = "No journal entries yet",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = "Tap + to write one",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-            )
-        }
-    }
+    EmptyStateBox(
+        icon = Icons.Default.AutoStories,
+        title = "No journal entries yet",
+        subtitle = "Tap + to write one"
+    )
 }
-
-@Composable
-private fun LoadingBox() {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(color = MaterialTheme.colorScheme.secondary)
-    }
-}
-
-private fun LocalDate.display(): String =
-    "${month.name.take(3).lowercase().replaceFirstChar { it.uppercase() }} $dayOfMonth"
