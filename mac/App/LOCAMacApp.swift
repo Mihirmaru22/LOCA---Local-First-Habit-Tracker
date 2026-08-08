@@ -1,0 +1,78 @@
+import SwiftUI
+import SwiftData
+import os.log
+
+// MARK: - LOCAMacApp
+
+/// macOS entry point for LOCA.
+///
+/// Mirrors `LOCAApp` in the iOS target but omits iOS-only coordinators
+/// (WidgetRefresh, Reminders, HealthKit framing sheets) and instead
+/// provides a multi-window `WindowGroup` with `NavigationSplitView`
+/// shell and a native menu bar via `LOCACommands`.
+///
+/// Container construction follows the same single-call-site discipline
+/// as the iOS target: `ModelContainerFactory.makeConfiguredContainer()`
+/// is called exactly once here, and the resulting container is injected
+/// into the environment for all child views via `.modelContainer(_:)`.
+///
+/// Deployment target: macOS 14.0 (Sonoma) — required for SwiftData and
+/// the `NavigationSplitView` APIs used by `MacRootView`.
+@main
+@MainActor
+struct LOCAMacApp: App {
+
+    private let container: ModelContainer?
+    nonisolated private let logger = Logger(subsystem: "com.mihirmaru.loca.mac", category: "app")
+
+    init() {
+        do {
+            self.container = try ModelContainerFactory.makeConfiguredContainer()
+            #if DEBUG
+            if let c = self.container {
+                DebugSeeder.seedIfNeeded(context: c.mainContext)
+                LifeSeeder.seedIfNeeded(context: c.mainContext)
+            }
+            #endif
+        } catch {
+            self.container = nil
+        }
+    }
+
+    var body: some Scene {
+        WindowGroup {
+            if let container {
+                MacRootView()
+                    .modelContainer(container)
+                    .frame(minWidth: DS.Mac.windowMinWidth, minHeight: DS.Mac.windowMinHeight)
+            } else {
+                MacContainerUnavailableView()
+                    .frame(minWidth: 480, minHeight: 320)
+            }
+        }
+        .commands {
+            LOCACommands()
+        }
+        .windowStyle(.titleBar)
+        .windowToolbarStyle(.unified(showsTitle: true))
+    }
+}
+
+// MARK: - MacContainerUnavailableView
+
+private struct MacContainerUnavailableView: View {
+    var body: some View {
+        VStack(spacing: DS.Space.lg) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.largeTitle)
+                .foregroundStyle(.secondary)
+            Text("Unable to Load Data")
+                .font(DS.Text.title)
+            Text("LOCA couldn't set up its data store. Please reinstall the app.")
+                .font(DS.Text.body)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding(DS.Space.xxxl)
+    }
+}
