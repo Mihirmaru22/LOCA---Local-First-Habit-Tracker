@@ -69,7 +69,7 @@ struct MacTodoContentColumn: View {
                     emptyState
                 }
             }
-            .listStyle(.insetGrouped)
+            .listStyle(.inset)
         }
         .navigationTitle("Tasks")
     }
