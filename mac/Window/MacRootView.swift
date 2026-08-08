@@ -40,6 +40,7 @@ struct MacRootView: View {
     @State private var selectedSection: MacSection? = .habits
     @State private var selectedHabit:   HabitBoard? = nil
     @State private var selectedTodo:    TodoItem?   = nil
+    @State private var selectedNote:    JournalNote? = nil
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
 
     var body: some View {
@@ -53,12 +54,14 @@ struct MacRootView: View {
         } content: {
             MacContentColumn(section: selectedSection,
                              selectedHabit: $selectedHabit,
-                             selectedTodo:  $selectedTodo)
+                             selectedTodo:  $selectedTodo,
+                             selectedNote:  $selectedNote)
                 .navigationSplitViewColumnWidth(min: DS.Mac.contentMinWidth, ideal: 320)
         } detail: {
             MacDetailColumn(section: selectedSection,
                             selectedHabit: selectedHabit,
-                            selectedTodo:  selectedTodo)
+                            selectedTodo:  selectedTodo,
+                            selectedNote:  selectedNote)
                 .navigationSplitViewColumnWidth(min: DS.Mac.detailMinWidth)
         }
         .navigationTitle("LOCA")
@@ -66,6 +69,7 @@ struct MacRootView: View {
             // Clear all item selections when the user switches sections.
             selectedHabit = nil
             selectedTodo  = nil
+            selectedNote  = nil
         }
         .onReceive(NotificationCenter.default.publisher(for: .locaJumpToSection)) { note in
             if let section = note.object as? MacSection {
@@ -83,6 +87,7 @@ private struct MacContentColumn: View {
     let section: MacSection?
     @Binding var selectedHabit: HabitBoard?
     @Binding var selectedTodo:  TodoItem?
+    @Binding var selectedNote:  JournalNote?
 
     var body: some View {
         switch section {
@@ -91,7 +96,7 @@ private struct MacContentColumn: View {
         case .today:
             MacTodoContentColumn(selection: $selectedTodo)
         case .journal:
-            MacJournalContentView()
+            MacJournalContentColumn(selectedNote: $selectedNote)
         case .life:
             MacLifeContentView()
         case nil:
@@ -108,6 +113,7 @@ private struct MacDetailColumn: View {
     let section: MacSection?
     let selectedHabit: HabitBoard?
     let selectedTodo:  TodoItem?
+    let selectedNote:  JournalNote?
 
     var body: some View {
         switch section {
@@ -115,6 +121,8 @@ private struct MacDetailColumn: View {
             MacHabitDetailColumn(habit: selectedHabit)
         case .today:
             MacTodoDetailColumn(item: selectedTodo)
+        case .journal:
+            MacJournalDetailColumn(note: selectedNote)
         default:
             MacDetailPlaceholder()
         }
@@ -122,14 +130,7 @@ private struct MacDetailColumn: View {
 }
 
 // MARK: - Stub content views
-// Replaced as their chapters land: MacTodayContentView → MacTodoContentColumn (T2).
-
-struct MacJournalContentView: View {
-    var body: some View {
-        ContentUnavailableView("Journal", systemImage: "book.closed",
-                               description: Text("Coming in J-chapter"))
-    }
-}
+// Replaced as their chapters land.
 
 struct MacLifeContentView: View {
     var body: some View {

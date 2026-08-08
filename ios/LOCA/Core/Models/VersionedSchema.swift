@@ -63,6 +63,7 @@ enum RippleSchemaV1: VersionedSchema {
             SourceProvenance.self,
             UserProfile.self,
             TodoItem.self,
+            JournalNote.self,
         ]
     }
 }
