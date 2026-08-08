@@ -42,9 +42,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -57,6 +55,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.loca.android.LOCAApplication
 import com.loca.android.data.UserEntry
 import com.loca.android.ui.EmptyStateBox
@@ -64,13 +64,10 @@ import com.loca.android.ui.LoadingBox
 import com.loca.android.ui.LocalSnackbar
 import com.loca.android.ui.displayString
 import com.loca.android.ui.runWrite
-import com.loca.derive.todo.TodoDeriver
 import com.loca.derive.todo.TodoItem
 import com.loca.derive.todo.TodoSummary
 import com.loca.record.FactDraft
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
@@ -105,34 +102,19 @@ private fun DueOption.toInstant(): Instant? {
 fun TodoScreen() {
     val context = LocalContext.current
     val container = (context.applicationContext as LOCAApplication).container
+    val vm: TodoViewModel = viewModel(factory = TodoViewModel.factory(container.signalRepository))
+    val summary by vm.todos.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val snackbar = LocalSnackbar.current
-
-    var summary by remember { mutableStateOf<TodoSummary?>(null) }
-    var loading by remember { mutableStateOf(true) }
-    var reloadKey by remember { mutableIntStateOf(0) }
     var showAdd by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<TodoItem?>(null) }
 
-    LaunchedEffect(reloadKey) {
-        loading = true
-        summary = withContext(Dispatchers.Default) {
-            val signals = container.signals()
-            val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
-            TodoDeriver.deriveAll(signals, today)
-        }
-        loading = false
-    }
-
-    // Record one or more facts, then reload on success. No-op for an empty list
-    // (e.g. an edit that changed nothing).
+    // Record one or more facts. The Room Flow propagates the DB write to the ViewModel
+    // automatically — no manual reload needed.
     val submit: (String, List<FactDraft>) -> Unit = { failMsg, drafts ->
         if (drafts.isNotEmpty()) {
             scope.launch {
-                val ok = snackbar.runWrite(failMsg) {
-                    drafts.forEach { container.record(it) }
-                }
-                if (ok) reloadKey++
+                snackbar.runWrite(failMsg) { drafts.forEach { container.record(it) } }
             }
         }
     }
@@ -140,9 +122,8 @@ fun TodoScreen() {
     Box(Modifier.fillMaxSize()) {
         val s = summary
         when {
-            loading -> LoadingBox()
-            s == null || (s.active.isEmpty() && s.completed.isEmpty()) ->
-                EmptyTodo()
+            s == null -> LoadingBox()
+            s.active.isEmpty() && s.completed.isEmpty() -> EmptyTodo()
             else -> TodoContent(
                 summary = s,
                 onComplete = { item ->
@@ -189,13 +170,11 @@ fun TodoScreen() {
             onSave = { newTitle, newNotes ->
                 editing = null
                 val drafts = buildList {
-                    if (newTitle != item.title) {
+                    if (newTitle != item.title)
                         add(UserEntry.correctTodoField(item.factID, "title", newTitle))
-                    }
                     val oldNotes = item.notes ?: ""
-                    if (newNotes != oldNotes) {
+                    if (newNotes != oldNotes)
                         add(UserEntry.correctTodoField(item.factID, "notes", newNotes))
-                    }
                 }
                 submit("Couldn't save changes", drafts)
             }

@@ -32,9 +32,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -44,61 +42,44 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.loca.android.LOCAApplication
 import com.loca.android.data.UserEntry
 import com.loca.android.ui.EmptyStateBox
 import com.loca.android.ui.LoadingBox
 import com.loca.android.ui.LocalSnackbar
 import com.loca.android.ui.runWrite
-import com.loca.derive.habits.HabitDeriver
 import com.loca.derive.habits.HabitSummary
 import com.loca.record.HabitFrequency
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.todayIn
 
 @Composable
 fun HabitsScreen() {
     val context = LocalContext.current
     val container = (context.applicationContext as LOCAApplication).container
+    val vm: HabitsViewModel = viewModel(factory = HabitsViewModel.factory(container.signalRepository))
+    val habits by vm.habits.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val snackbar = LocalSnackbar.current
-
-    var habits by remember { mutableStateOf<List<HabitSummary>>(emptyList()) }
-    var loading by remember { mutableStateOf(true) }
-    var reloadKey by remember { mutableIntStateOf(0) }
     var showAdd by remember { mutableStateOf(false) }
 
-    LaunchedEffect(reloadKey) {
-        loading = true
-        // Read + derive off the main thread — deriveAll builds a 365-day grid
-        // per habit and would jank the UI as data grows.
-        habits = withContext(Dispatchers.Default) {
-            val signals = container.signals()
-            val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
-            HabitDeriver.deriveAll(signals, today)
-        }
-        loading = false
-    }
-
     Box(Modifier.fillMaxSize()) {
-        when {
-            loading -> LoadingBox()
-            habits.isEmpty() -> EmptyHabits()
-            else -> HabitList(
-                habits = habits,
-                onLog = { habit ->
-                    scope.launch {
-                        val ok = snackbar.runWrite("Couldn't log habit") {
-                            container.record(UserEntry.logHabit(habit.habitID))
+        when (val h = habits) {
+            null -> LoadingBox()
+            else -> when {
+                h.isEmpty() -> EmptyHabits()
+                else -> HabitList(
+                    habits = h,
+                    onLog = { habit ->
+                        scope.launch {
+                            snackbar.runWrite("Couldn't log habit") {
+                                container.record(UserEntry.logHabit(habit.habitID))
+                            }
                         }
-                        if (ok) reloadKey++
                     }
-                }
-            )
+                )
+            }
         }
         FloatingActionButton(
             onClick = { showAdd = true },
@@ -116,10 +97,9 @@ fun HabitsScreen() {
             onCreate = { name, frequency ->
                 showAdd = false
                 scope.launch {
-                    val ok = snackbar.runWrite("Couldn't create habit") {
+                    snackbar.runWrite("Couldn't create habit") {
                         container.record(UserEntry.defineHabit(name, frequency))
                     }
-                    if (ok) reloadKey++
                 }
             }
         )

@@ -26,13 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -41,62 +35,40 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.health.connect.client.PermissionController
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.loca.android.LOCAApplication
 import com.loca.android.health.HealthConnectManager
 import com.loca.android.ui.LoadingBox
 import com.loca.android.ui.displayString
 import com.loca.derive.health.DailyHealthSummary
-import com.loca.derive.health.HealthDeriver
 import com.loca.derive.health.HealthOverview
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 @Composable
 fun HealthScreen() {
     val context = LocalContext.current
     val container = (context.applicationContext as LOCAApplication).container
-    val scope = rememberCoroutineScope()
-
-    val manager = container.healthConnectManager
-    val isAvailable = remember { manager.isAvailable() }
-
-    var loading by remember { mutableStateOf(true) }
-    var hasPermission by remember { mutableStateOf(false) }
-    var overview by remember { mutableStateOf<HealthOverview?>(null) }
-    var reloadKey by remember { mutableIntStateOf(0) }
+    val vm: HealthViewModel = viewModel(
+        factory = HealthViewModel.factory(container.signalRepository, container.healthConnectManager)
+    )
+    val uiState by vm.uiState.collectAsStateWithLifecycle()
 
     val permLauncher = rememberLauncherForActivityResult(
         contract = PermissionController.createRequestPermissionResultContract()
     ) { granted ->
         if (granted.containsAll(HealthConnectManager.PERMISSIONS)) {
-            scope.launch(Dispatchers.IO) {
-                container.importHealth()
-                reloadKey++
-            }
+            vm.onPermissionGranted()
         }
     }
 
-    LaunchedEffect(reloadKey) {
-        if (!isAvailable) { loading = false; return@LaunchedEffect }
-        loading = true
-        hasPermission = withContext(Dispatchers.IO) { manager.hasPermissions() }
-        if (hasPermission) {
-            overview = withContext(Dispatchers.Default) {
-                HealthDeriver.deriveOverview(container.signals())
-            }
-        }
-        loading = false
-    }
-
-    when {
-        loading -> LoadingBox()
-        !isAvailable -> NotAvailableBox()
-        !hasPermission -> NeedsPermissionBox(
+    when (val state = uiState) {
+        is HealthUiState.Loading -> LoadingBox()
+        is HealthUiState.NotAvailable -> NotAvailableBox()
+        is HealthUiState.NeedsPermission -> NeedsPermissionBox(
             onRequest = { permLauncher.launch(HealthConnectManager.PERMISSIONS) }
         )
-        overview == null || overview!!.days.isEmpty() -> NoDataBox()
-        else -> HealthContent(overview!!)
+        is HealthUiState.NoData -> NoDataBox()
+        is HealthUiState.Ready -> HealthContent(state.overview)
     }
 }
 

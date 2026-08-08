@@ -33,9 +33,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -45,6 +43,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.loca.android.LOCAApplication
 import com.loca.android.data.UserEntry
 import com.loca.android.ui.EmptyStateBox
@@ -53,17 +53,11 @@ import com.loca.android.ui.LocalSnackbar
 import com.loca.android.ui.displayString
 import com.loca.android.ui.runWrite
 import com.loca.derive.journal.IntentionEntry
-import com.loca.derive.journal.JournalDeriver
 import com.loca.derive.journal.JournalSummary
 import com.loca.derive.journal.MomentEntry
 import com.loca.derive.journal.ReflectionEntry
 import com.loca.record.IntentionPeriod
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.todayIn
 
 private enum class EntryType(val label: String) {
     REFLECTION("Reflection"),
@@ -75,25 +69,11 @@ private enum class EntryType(val label: String) {
 fun JournalScreen() {
     val context = LocalContext.current
     val container = (context.applicationContext as LOCAApplication).container
+    val vm: JournalViewModel = viewModel(factory = JournalViewModel.factory(container.signalRepository))
+    val summary by vm.journal.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val snackbar = LocalSnackbar.current
-
-    var summary by remember { mutableStateOf<JournalSummary?>(null) }
-    var loading by remember { mutableStateOf(true) }
-    var reloadKey by remember { mutableIntStateOf(0) }
     var showAdd by remember { mutableStateOf(false) }
-
-    LaunchedEffect(reloadKey) {
-        loading = true
-        summary = withContext(Dispatchers.Default) {
-            val signals = container.signals()
-            val tz = TimeZone.currentSystemDefault()
-            val now = Clock.System.now()
-            val today = Clock.System.todayIn(tz)
-            JournalDeriver.deriveAll(signals, today, now, tz)
-        }
-        loading = false
-    }
 
     Box(Modifier.fillMaxSize()) {
         val s = summary
@@ -103,9 +83,9 @@ fun JournalScreen() {
                 s.expiredIntentions.isEmpty()
             )
         when {
-            loading -> LoadingBox()
+            s == null -> LoadingBox()
             isEmpty -> EmptyJournal()
-            else -> JournalContent(s!!)
+            else -> JournalContent(s)
         }
         FloatingActionButton(
             onClick = { showAdd = true },
@@ -128,10 +108,9 @@ fun JournalScreen() {
                         EntryType.MOMENT -> UserEntry.moment(text, tags)
                         EntryType.INTENTION -> UserEntry.intention(text, period)
                     }
-                    val ok = snackbar.runWrite("Couldn't save entry") {
+                    snackbar.runWrite("Couldn't save entry") {
                         container.record(draft)
                     }
-                    if (ok) reloadKey++
                 }
             }
         )

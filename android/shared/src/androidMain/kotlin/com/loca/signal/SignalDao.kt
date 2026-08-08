@@ -4,11 +4,16 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SignalDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(entity: SignalEntity)
+
+    /** Reactive query — Room re-emits whenever the signals table changes. */
+    @Query("SELECT * FROM signals ORDER BY produced_at ASC")
+    fun observeAll(): Flow<List<SignalEntity>>
 
     @Query("SELECT * FROM signals ORDER BY produced_at ASC")
     suspend fun getAll(): List<SignalEntity>

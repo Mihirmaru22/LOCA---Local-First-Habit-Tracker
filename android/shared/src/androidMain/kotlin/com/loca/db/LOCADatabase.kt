@@ -11,7 +11,7 @@ import com.loca.signal.SignalEntity
 
 @Database(
     entities = [FactEntity::class, SignalEntity::class],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 abstract class LOCADatabase : RoomDatabase() {

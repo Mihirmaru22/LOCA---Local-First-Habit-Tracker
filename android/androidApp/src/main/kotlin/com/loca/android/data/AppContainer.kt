@@ -11,6 +11,7 @@ import com.loca.record.RoomRecordStore
 import com.loca.signal.RoomSignalStore
 import com.loca.signal.Signal
 import com.loca.signal.SignalEngine
+import com.loca.signal.SignalRepository
 import com.loca.signal.SignalStoring
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -30,6 +31,7 @@ class AppContainer(context: Context) {
     private val signalStoreRoom = RoomSignalStore(database.signalDao())
     val signalStore: SignalStoring = signalStoreRoom
     val signalEngine = SignalEngine(signalStoreRoom)
+    val signalRepository = SignalRepository(database.signalDao())
 
     val healthConnectManager = HealthConnectManager(context)
     val healthImporter = HealthImporter(healthConnectManager, recordEngine, signalEngine)

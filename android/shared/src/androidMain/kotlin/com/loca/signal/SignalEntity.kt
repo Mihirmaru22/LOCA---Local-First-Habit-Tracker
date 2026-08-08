@@ -2,9 +2,17 @@ package com.loca.signal
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "signals")
+@Entity(
+    tableName = "signals",
+    indices = [
+        Index(value = ["kind"]),
+        Index(value = ["source_fact_id"]),
+        Index(value = ["produced_at"]),
+    ]
+)
 data class SignalEntity(
     @PrimaryKey val id: String,
     val kind: String,
