@@ -46,12 +46,24 @@ extension View {
     /// Decimal keypad for numeric text entry.
     ///
     /// - iOS: applies `.keyboardType(.decimalPad)`.
-    /// - macOS: no-op — `TextField` has no `keyboardType`; entry uses the
-    ///   hardware keyboard.
+    /// - macOS: no-op — `TextField` has no `keyboardType`; entry uses the hardware keyboard.
     @ViewBuilder
     func decimalKeyboard() -> some View {
         #if os(iOS)
         keyboardType(.decimalPad)
+        #else
+        self
+        #endif
+    }
+
+    /// Number pad for integer text entry.
+    ///
+    /// - iOS: applies `.keyboardType(.numberPad)`.
+    /// - macOS: no-op.
+    @ViewBuilder
+    func numberKeyboard() -> some View {
+        #if os(iOS)
+        keyboardType(.numberPad)
         #else
         self
         #endif

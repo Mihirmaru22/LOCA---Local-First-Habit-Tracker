@@ -139,7 +139,7 @@ struct UserProfileView: View {
                 VStack(alignment: .leading, spacing: DS.Space.sm) {
                     fieldLabel("Birth Year")
                     TextField("e.g. 1990", text: $birthYearText)
-                        .keyboardType(.numberPad)
+                        .numberKeyboard()
                         .font(DS.Text.body)
                         .foregroundStyle(DS.Color.textPrimary)
                         .onChange(of: birthYearText) { saveBirthYear() }
@@ -343,7 +343,7 @@ struct UserProfileView: View {
 
     private func unitTextField(_ text: Binding<String>, placeholder: String, width: CGFloat) -> some View {
         TextField(placeholder, text: text)
-            .keyboardType(.decimalPad)
+            .decimalKeyboard()
             .font(.system(size: 22, weight: .semibold, design: .rounded))
             .foregroundStyle(DS.Color.textPrimary)
             .frame(width: width)

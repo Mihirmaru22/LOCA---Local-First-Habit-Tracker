@@ -38,6 +38,14 @@ struct ReachView: View {
         min(1.0, max(0.0, depth + dragDelta))
     }
 
+    private var screenHeight: CGFloat {
+        #if os(iOS)
+        UIScreen.main.bounds.height
+        #else
+        800.0
+        #endif
+    }
+
     var body: some View {
         ZStack {
             depthBackground
@@ -77,11 +85,11 @@ struct ReachView: View {
             DragGesture(minimumDistance: 8)
                 .updating($dragDelta) { value, state, _ in
                     // Dragging up → going deeper (further back in time).
-                    let sensitivity = 0.8 / UIScreen.main.bounds.height
+                    let sensitivity = 0.8 / screenHeight
                     state = -value.translation.height * sensitivity
                 }
                 .onEnded { value in
-                    let sensitivity = 0.8 / UIScreen.main.bounds.height
+                    let sensitivity = 0.8 / screenHeight
                     depth = min(1.0, max(0.0, depth - value.translation.height * sensitivity))
                     withAnimation(.easeOut(duration: 0.4)) { hasInteracted = true }
                 }
