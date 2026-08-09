@@ -53,7 +53,7 @@ struct LifeHomeView: View {
                 }
             }
         }
-        .fullScreenCover(isPresented: $showPresent) {
+        .fullScreenCoverCompat(isPresented: $showPresent) {
             PresentView()
         }
         .sheet(isPresented: $showNewQuestion) {
@@ -492,7 +492,7 @@ struct LifeRuntimeSelfCheckView: View {
                 }) { row in checkCell(row) }
             }
         }
-        .listStyle(.insetGrouped)
+        .groupedInsetList()
         .navigationTitle("Runtime Check")
         .inlineNavigationTitleDisplay()
         .toolbar {

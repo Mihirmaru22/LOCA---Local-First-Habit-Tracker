@@ -12,7 +12,9 @@
 
 import Foundation
 import SwiftData
+#if os(iOS)
 import HealthKit
+#endif
 import EventKit
 import os.log
 
@@ -125,9 +127,9 @@ class SignalCollectionCoordinator: NSObject, ObservableObject {
         }
     }
 
-    /// Requests HealthKit read authorization for all types in HealthKitManager.readTypes.
-    /// Called after permission framing via enableHealthKit(), not from start().
+    /// Requests HealthKit read authorization. iOS-only; always returns false on macOS.
     func requestHealthKitPermission() async -> Bool {
+        #if os(iOS)
         return await withCheckedContinuation { continuation in
             HKHealthStore().requestAuthorization(
                 toShare: nil,
@@ -139,6 +141,9 @@ class SignalCollectionCoordinator: NSObject, ObservableObject {
                 continuation.resume(returning: granted)
             }
         }
+        #else
+        return false
+        #endif
     }
 
     private func requestCalendarPermission() async -> Bool {
