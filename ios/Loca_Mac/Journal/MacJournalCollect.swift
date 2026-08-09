@@ -1,20 +1,18 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - MacJournalCollect   (J2)
+// MARK: - MacJournalCollect   (J2 — placeholder pending step 3 redesign)
 
-/// Collect mode — write today's note and browse past notes.
+/// Collect mode for the Mac Journal section.
 ///
-/// Two sources are blended into one reverse-chronological list:
-/// 1. `JournalNote` records (free-form daily notes written here).
-/// 2. `LogEntry` records with non-nil `note` (habit check-in notes).
-///
-/// Both sources are day-grouped so the user sees a unified journal,
-/// not two separate lists. The "Today" group always appears first and
-/// shows an inline text field for writing today's note.
+/// Step 3 will replace this with the daily-habit checklist + sleep entry +
+/// moments & wins capture. For now this shows the legacy note view so the
+/// column compiles and displays something useful.
 struct MacJournalCollect: View {
 
-    @Binding var selectedNote: JournalNote?
+    /// Which content-column row triggered this view. Step 3 will use this to
+    /// scroll to the relevant section (moments, wins, etc.).
+    let focusedRow: JournalRow?
 
     @Query(sort: [SortDescriptor(\JournalNote.date, order: .reverse)], animation: .default)
     private var notes: [JournalNote]
@@ -34,30 +32,25 @@ struct MacJournalCollect: View {
         logEntries.filter { $0.note != nil && $0.archivedAt == nil }
     }
 
-    // Today's existing JournalNote, if any
     private var todayNote: JournalNote? {
         activeNotes.first { Calendar.current.isDateInToday($0.date) }
     }
 
     var body: some View {
-        List(selection: $selectedNote) {
-            // Today's write field
+        List {
             Section("Today") {
                 todayWriteArea
             }
 
-            // Past notes (most recent first)
             let pastNotes = activeNotes.filter { !Calendar.current.isDateInToday($0.date) }
             if !pastNotes.isEmpty {
                 Section("Previous") {
                     ForEach(pastNotes, id: \.id) { note in
                         MacJournalNoteRow(note: note)
-                            .tag(note)
                     }
                 }
             }
 
-            // Habit check-in notes blended in
             let checkinNotes = logEntriesWithNotes
             if !checkinNotes.isEmpty {
                 Section("Check-in Notes") {
@@ -69,7 +62,6 @@ struct MacJournalCollect: View {
         }
         .listStyle(.inset)
         .onAppear {
-            // Pre-fill draft from existing today note
             todayDraft = todayNote?.text ?? ""
         }
     }

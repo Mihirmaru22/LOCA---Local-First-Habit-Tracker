@@ -1,106 +1,80 @@
 import SwiftUI
-import SwiftData
 
-// MARK: - MacJournalDetailColumn   (J5)
+// MARK: - MacJournalDetailColumn
 
 /// Detail column for the Journal section.
 ///
-/// Shows the full text of the selected `JournalNote` and lets the user edit it in
-/// place. Changes are persisted immediately via `modelContext.save()` after every
-/// keystroke (same debounce-free pattern used by `MacTodoDetailColumn`).
+/// Header: "Journal" title + today's day/date + Collect / Analyse segmented toggle.
+/// Body: `MacJournalCollect` or `MacJournalAnalyse` based on the active mode.
 ///
-/// When `note` is `nil` (nothing selected in the collect list), a placeholder
-/// is shown instead.
+/// The toggle defaults to the row's `defaultDetailMode` whenever the selection
+/// changes; the user can then switch freely within the same row selection.
 struct MacJournalDetailColumn: View {
 
-    let note: JournalNote?
+    let selectedRow: JournalRow?
+
+    @State private var detailMode: JournalDetailMode = .collect
 
     var body: some View {
-        if let note {
-            MacJournalEditor(note: note)
-        } else {
-            MacJournalDetailPlaceholder()
+        VStack(spacing: 0) {
+            journalHeader
+            Divider()
+
+            switch detailMode {
+            case .collect:
+                MacJournalCollect(focusedRow: selectedRow)
+            case .analyse:
+                MacJournalAnalyse()
+            }
+        }
+        .onChange(of: selectedRow) { _, newRow in
+            if let newRow {
+                detailMode = newRow.defaultDetailMode
+            }
         }
     }
-}
 
-// MARK: - MacJournalEditor
+    // MARK: - Header
 
-private struct MacJournalEditor: View {
-
-    let note: JournalNote
-
-    @Environment(\.modelContext) private var modelContext
-
-    @State private var text: String = ""
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Header: date + metadata
+    private var journalHeader: some View {
+        HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: DS.Space.xs) {
-                Text(note.date, style: .date)
-                    .font(.title2)
+                Text("Journal")
+                    .font(DS.Text.heading)
                     .fontWeight(.semibold)
                     .foregroundStyle(DS.Color.textPrimary)
-
-                HStack(spacing: DS.Space.xs) {
-                    Text("\(wordCount) words")
-                    Text("·")
-                    Text("\(text.count) characters")
-                }
-                .font(DS.Text.caption)
-                .foregroundStyle(DS.Color.textTertiary)
+                Text(todayLabel)
+                    .font(DS.Text.caption)
+                    .foregroundStyle(DS.Color.textTertiary)
             }
-            .padding(DS.Space.lg)
-
-            Divider()
-
-            // Editor
-            TextEditor(text: $text)
-                .font(DS.Text.body)
-                .scrollContentBackground(.hidden)
-                .padding(.horizontal, DS.Space.lg)
-                .padding(.vertical, DS.Space.md)
-                .onChange(of: text) { _, newValue in
-                    note.text = newValue
-                    try? modelContext.save()
+            Spacer()
+            Picker("Mode", selection: $detailMode) {
+                ForEach(JournalDetailMode.allCases) { m in
+                    Text(m.rawValue).tag(m)
                 }
-
-            Divider()
-
-            // Footer: archive button
-            HStack {
-                Spacer()
-                Button(role: .destructive) {
-                    note.archivedAt = Date()
-                    try? modelContext.save()
-                } label: {
-                    Label("Archive", systemImage: "archivebox")
-                        .font(DS.Text.caption)
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(DS.Color.textTertiary)
             }
-            .padding(.horizontal, DS.Space.lg)
-            .padding(.vertical, DS.Space.sm)
+            .pickerStyle(.segmented)
+            .fixedSize()
         }
-        .onAppear { text = note.text }
-        .onChange(of: note.id) { _, _ in text = note.text }
+        .padding(.horizontal, DS.Space.lg)
+        .padding(.vertical, DS.Space.md)
     }
 
-    private var wordCount: Int {
-        text.split(separator: " ").count
+    private var todayLabel: String {
+        let f = DateFormatter()
+        f.dateFormat = "EEEE · MMMM d"
+        return f.string(from: Date())
     }
 }
 
-// MARK: - MacJournalDetailPlaceholder
+// MARK: - Placeholder (no row selected)
 
-private struct MacJournalDetailPlaceholder: View {
+struct MacJournalDetailPlaceholder: View {
     var body: some View {
         ContentUnavailableView(
-            "No Note Selected",
+            "Select a Row",
             systemImage: "book.closed",
-            description: Text("Select a journal entry from the list to read or edit it.")
+            description: Text("Choose Today's log, Moments, Wins, or Analyse.")
         )
     }
 }
