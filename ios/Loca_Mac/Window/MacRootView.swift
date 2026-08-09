@@ -62,7 +62,7 @@ struct MacRootView: View {
                             selectedHabit: selectedHabit,
                             selectedTodo:  selectedTodo,
                             selectedNote:  selectedNote)
-                .navigationSplitViewColumnWidth(min: DS.Mac.detailMinWidth)
+                .navigationSplitViewColumnWidth(min: DS.Mac.detailMinWidth, ideal: DS.Mac.detailMinWidth)
         }
         .navigationTitle("LOCA")
         .onChange(of: selectedSection) { _, _ in
