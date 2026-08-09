@@ -1,246 +1,319 @@
 import SwiftUI
 import SwiftData
+import Charts
 
-// MARK: - MacJournalAnalyse   (J3 + J6)
+// MARK: - MacJournalAnalyse   (J5)
 
-/// Analyse mode for the Mac Journal section.
+/// Analyse view for the Mac Journal section.
 ///
-/// Three sections in one scrollable pane:
-/// 1. **Weekly digest** — per-habit 7-day bar charts with week navigation (J3).
-/// 2. **30-day grid** — cross-habit completion grid (`MacDailyHabitGrid`, J4).
-/// 3. **Reflection card** — one honest sentence from `ReflectionGenerator` (J6).
+/// Three sections shown in one scrollable pane:
+/// 1. **Stat cards** — avg sleep this month, best daily-habit streak, moment count.
+/// 2. **Sleep line chart** — one point per `SleepEntry` in the current month.
+/// 3. **Daily-habit month heatmap** — one row per daily habit, one cell per day.
 struct MacJournalAnalyse: View {
 
-    @Query(sort: [SortDescriptor(\HabitBoard.createdAt)], animation: .default)
-    private var allBoards: [HabitBoard]
+    @Query(sort: [SortDescriptor(\SleepEntry.date)])
+    private var allSleepEntries: [SleepEntry]
 
-    @State private var weekOffset: Int = 0
+    @Query(filter: #Predicate<JournalNote> { $0.noteKindRaw == 1 && $0.archivedAt == nil },
+           sort: [SortDescriptor(\JournalNote.date)])
+    private var allMoments: [JournalNote]
 
-    private var activeBoards: [HabitBoard] { allBoards.filter { $0.archivedAt == nil } }
+    @Query(filter: #Predicate<HabitBoard> { board in
+        board.habitKindRaw == 1 && board.archivedAt == nil
+    }, sort: \HabitBoard.createdAt)
+    private var dailyHabits: [HabitBoard]
 
-    // MARK: - Week boundaries (ISO Monday start, locale-independent)
+    // MARK: Month boundaries (recomputed only when needed — value types)
 
-    private var weekStart: Date {
-        let cal = Calendar.current
-        let now = Date()
-        let weekday = cal.component(.weekday, from: now)
-        let daysBack = weekday == 1 ? 6 : weekday - 2
-        let thisMonday = cal.date(byAdding: .day, value: -daysBack,
-                                  to: cal.startOfDay(for: now)) ?? now
-        return cal.date(byAdding: .weekOfYear, value: weekOffset, to: thisMonday) ?? thisMonday
+    private var monthStart: Date {
+        Calendar.current.date(
+            from: Calendar.current.dateComponents([.year, .month], from: Date())
+        ) ?? Date()
     }
 
-    private var weekEndExclusive: Date {
-        Calendar.current.date(byAdding: .day, value: 7, to: weekStart) ?? weekStart
+    private var monthEnd: Date {
+        Calendar.current.date(byAdding: .month, value: 1, to: monthStart) ?? Date()
     }
 
-    private var isCurrentWeek: Bool { weekOffset == 0 }
-
-    private var elapsedDays: Int {
-        guard isCurrentWeek else { return 7 }
-        let wd = Calendar.current.component(.weekday, from: Date())
-        return (wd - 2 + 7) % 7 + 1
+    private var monthLabel: String {
+        let f = DateFormatter()
+        f.dateFormat = "MMMM"
+        return f.string(from: Date()).uppercased()
     }
 
-    // MARK: - Body
+    // MARK: Derived values
+
+    private var monthlySleep: [SleepEntry] {
+        allSleepEntries.filter {
+            !$0.isArchived && $0.date >= monthStart && $0.date < monthEnd
+        }
+    }
+
+    private var avgSleep: Double {
+        guard !monthlySleep.isEmpty else { return 0 }
+        return monthlySleep.map(\.sleepHours).reduce(0, +) / Double(monthlySleep.count)
+    }
+
+    private var bestStreak: Int {
+        dailyHabits.map(\.currentStreak).max() ?? 0
+    }
+
+    private var momentCount: Int {
+        allMoments.filter { $0.date >= monthStart && $0.date < monthEnd }.count
+    }
+
+    // MARK: Body
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.lg) {
-                weekNavHeader
+            VStack(alignment: .leading, spacing: DS.Space.xl) {
 
-                if activeBoards.isEmpty {
-                    ContentUnavailableView {
-                        Label("No Habits Yet", systemImage: "checkmark.circle")
-                    } description: {
-                        Text("Add habits to see your weekly digest.")
+                statRow
+
+                VStack(alignment: .leading, spacing: DS.Space.sm) {
+                    sectionLabel("SLEEP (HRS) · \(monthLabel)")
+                    sleepChart
+                }
+
+                if !dailyHabits.isEmpty {
+                    VStack(alignment: .leading, spacing: DS.Space.sm) {
+                        sectionLabel("DAILY HABITS — \(monthLabel)")
+                        DailyHabitMonthGrid(
+                            habits:     dailyHabits,
+                            monthStart: monthStart,
+                            monthEnd:   monthEnd
+                        )
                     }
-                } else {
-                    summaryLine
-                    habitRows
-
-                    sectionLabel("30-Day Overview")
-                    MacDailyHabitGrid()
-
-                    reflectionCard
                 }
 
                 Spacer(minLength: DS.Space.xxxl)
             }
-            .padding(DS.Space.md)
+            .padding(DS.Space.lg)
         }
     }
 
-    // MARK: - Week navigation header
+    // MARK: Stat row
 
-    private var weekNavHeader: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(isCurrentWeek ? "This Week" : weekRangeLabel)
-                    .font(DS.Text.heading)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(DS.Color.textPrimary)
-                if isCurrentWeek {
-                    Text(weekRangeLabel)
-                        .font(DS.Text.caption)
+    private var statRow: some View {
+        HStack(spacing: DS.Space.md) {
+            AnalyseStatCard(
+                label: "AVG SLEEP",
+                value: avgSleep > 0 ? String(format: "%.1fh", avgSleep) : "—",
+                icon:  "moon.fill",
+                color: .blue
+            )
+            AnalyseStatCard(
+                label: "BEST STREAK",
+                value: bestStreak > 0 ? "\(bestStreak)" : "—",
+                icon:  "flame.fill",
+                color: .orange
+            )
+            AnalyseStatCard(
+                label: "MOMENTS",
+                value: "\(momentCount)",
+                icon:  "sparkles",
+                color: .purple
+            )
+        }
+    }
+
+    // MARK: Sleep chart
+
+    @ViewBuilder
+    private var sleepChart: some View {
+        if monthlySleep.isEmpty {
+            Text("No sleep data logged yet.")
+                .font(DS.Text.caption)
+                .foregroundStyle(DS.Color.textTertiary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(DS.Space.md)
+                .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+        } else {
+            Chart(monthlySleep, id: \.id) { entry in
+                LineMark(
+                    x: .value("Day", entry.date, unit: .day),
+                    y: .value("Hours", entry.sleepHours)
+                )
+                .foregroundStyle(.blue)
+                .interpolationMethod(.catmullRom)
+
+                PointMark(
+                    x: .value("Day", entry.date, unit: .day),
+                    y: .value("Hours", entry.sleepHours)
+                )
+                .foregroundStyle(.blue)
+                .symbolSize(28)
+            }
+            .chartXScale(domain: monthStart...monthEnd)
+            .chartYScale(domain: 0...12)
+            .chartXAxis {
+                AxisMarks(values: .stride(by: .day, count: 5)) { _ in
+                    AxisValueLabel(format: .dateTime.day())
+                        .font(.system(size: 9))
                         .foregroundStyle(DS.Color.textTertiary)
+                    AxisGridLine().foregroundStyle(DS.Color.border)
                 }
             }
-            Spacer()
+            .chartYAxis {
+                AxisMarks(values: [0, 2, 4, 6, 8, 10]) { value in
+                    AxisValueLabel {
+                        if let h = value.as(Double.self) {
+                            Text("\(Int(h))h")
+                                .font(.system(size: 9))
+                                .foregroundStyle(DS.Color.textTertiary)
+                        }
+                    }
+                    AxisGridLine().foregroundStyle(DS.Color.border)
+                }
+            }
+            .frame(height: 140)
+            .padding(DS.Space.md)
+            .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+        }
+    }
+
+    // MARK: Helpers
+
+    private func sectionLabel(_ text: String) -> some View {
+        Text(text)
+            .font(DS.Text.caption)
+            .foregroundStyle(DS.Color.textTertiary)
+            .tracking(0.8)
+    }
+}
+
+// MARK: - AnalyseStatCard
+
+private struct AnalyseStatCard: View {
+
+    let label: String
+    let value: String
+    let icon:  String
+    let color: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Space.xs) {
             HStack(spacing: DS.Space.xs) {
-                navButton(isBack: true)
-                navButton(isBack: false)
+                Image(systemName: icon)
+                    .font(.caption)
+                    .foregroundStyle(color)
+                Text(label)
+                    .font(DS.Text.footnote)
+                    .foregroundStyle(DS.Color.textSecondary)
+                    .tracking(0.5)
+            }
+            Text(value)
+                .font(DS.Text.value)
+                .foregroundStyle(color)
+                .contentTransition(.numericText())
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(DS.Space.md)
+        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+    }
+}
+
+// MARK: - DailyHabitMonthGrid
+
+/// Month-scoped heatmap for daily habits only.
+///
+/// One row per daily habit (habitKindRaw == 1), one cell per calendar day
+/// in the given month. Completed days are filled with the habit's accent color;
+/// future days show a faint placeholder; today's cell has a subtle border.
+private struct DailyHabitMonthGrid: View {
+
+    let habits:     [HabitBoard]
+    let monthStart: Date
+    let monthEnd:   Date
+
+    private let cellSize:  CGFloat = 10
+    private let cellGap:   CGFloat = 2
+    private let nameWidth: CGFloat = 64
+
+    private var monthDays: [Date] {
+        var days: [Date] = []
+        var cursor = monthStart
+        while cursor < monthEnd {
+            days.append(cursor)
+            cursor = Calendar.current.date(byAdding: .day, value: 1, to: cursor) ?? monthEnd
+        }
+        return days
+    }
+
+    private var todayStart: Date {
+        Calendar.current.startOfDay(for: Date())
+    }
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            VStack(alignment: .leading, spacing: cellGap) {
+                columnHeaders
+                ForEach(habits, id: \.id) { habit in
+                    habitRow(habit)
+                }
             }
         }
+        .padding(DS.Space.md)
+        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
     }
 
-    private func navButton(isBack: Bool) -> some View {
-        Button {
-            withAnimation(.easeInOut(duration: 0.18)) {
-                weekOffset = isBack ? weekOffset - 1 : min(weekOffset + 1, 0)
-            }
-        } label: {
-            Image(systemName: isBack ? "chevron.left" : "chevron.right")
-                .font(.caption)
-                .frame(width: 28, height: 28)
-                .background(DS.Color.surfaceRecessed, in: Circle())
-        }
-        .buttonStyle(.plain)
-        .disabled(isBack ? weekOffset <= -52 : weekOffset == 0)
-    }
-
-    // MARK: - Summary line
-
-    private var summaryLine: some View {
-        let onTrack = activeBoards.filter {
-            guard elapsedDays > 0 else { return false }
-            return Double(goalDays(for: $0)) / Double(elapsedDays) >= 0.7
-        }.count
-        let all = onTrack == activeBoards.count
-        return Text(all
-            ? (activeBoards.count == 1 ? "Habit on track" : "All \(activeBoards.count) habits on track")
-            : "\(onTrack) of \(activeBoards.count) habits on track")
-            .font(DS.Text.body)
-            .foregroundStyle(DS.Color.textSecondary)
-    }
-
-    // MARK: - Per-habit weekly rows
-
-    private var habitRows: some View {
-        VStack(spacing: DS.Space.xs) {
-            ForEach(activeBoards, id: \.id) { board in
-                habitRow(board)
+    private var columnHeaders: some View {
+        HStack(spacing: 0) {
+            Text("").frame(width: nameWidth)
+            HStack(spacing: cellGap) {
+                ForEach(Array(monthDays.enumerated()), id: \.offset) { idx, day in
+                    let dom = Calendar.current.component(.day, from: day)
+                    Text(idx % 5 == 0 ? "\(dom)" : "")
+                        .font(.system(size: 7))
+                        .foregroundStyle(DS.Color.textTertiary)
+                        .frame(width: cellSize)
+                }
             }
         }
     }
 
     private func habitRow(_ board: HabitBoard) -> some View {
-        let totals = dailyTotals(for: board)
-        let days   = goalDays(for: board)
-        let accent = ColorPalette[board.colorIndex]
-        let target = board.metric == .binary ? 1.0 : board.effectiveTarget
+        let completed = completedDaySet(for: board)
+        return HStack(spacing: 0) {
+            Text(board.name)
+                .font(.system(size: 10))
+                .lineLimit(1)
+                .foregroundStyle(DS.Color.textSecondary)
+                .frame(width: nameWidth, alignment: .trailing)
+                .padding(.trailing, DS.Space.xs)
 
-        return VStack(alignment: .leading, spacing: DS.Space.xs) {
-            HStack(spacing: DS.Space.xs) {
-                Circle().fill(accent).frame(width: 8, height: 8)
-                Text(board.name)
-                    .font(DS.Text.body)
-                    .foregroundStyle(DS.Color.textPrimary)
-                Spacer()
-                Text("\(days)/\(elapsedDays)d")
-                    .font(.caption2).monospacedDigit()
-                    .foregroundStyle(DS.Color.textTertiary)
-                if board.currentStreak > 1 {
-                    Label("\(board.currentStreak)", systemImage: "flame.fill")
-                        .font(.caption2).monospacedDigit()
-                        .foregroundStyle(.orange)
-                        .labelStyle(.titleAndIcon)
-                }
-            }
-            WeeklyBarChart(dailyTotals: totals, target: target,
-                           accentColor: accent, size: .compact)
-            let labels = ["M", "T", "W", "T", "F", "S", "S"]
-            HStack(spacing: 0) {
-                ForEach(0..<7, id: \.self) { i in
-                    Text(labels[i])
-                        .font(.system(size: 8))
-                        .foregroundStyle(DS.Color.textTertiary)
-                        .frame(maxWidth: .infinity)
+            HStack(spacing: cellGap) {
+                ForEach(monthDays, id: \.self) { day in
+                    let done   = completed.contains(day)
+                    let future = day > todayStart
+                    let today  = Calendar.current.isDateInToday(day)
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(done
+                              ? ColorPalette[board.colorIndex]
+                              : future
+                                  ? DS.Color.heatmapCellFuture
+                                  : DS.Color.heatmapCellEmpty)
+                        .frame(width: cellSize, height: cellSize)
+                        .overlay(
+                            today
+                                ? RoundedRectangle(cornerRadius: 2)
+                                    .strokeBorder(DS.Color.textTertiary, lineWidth: 0.5)
+                                : nil
+                        )
                 }
             }
         }
-        .padding(DS.Space.sm)
-        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
-        .overlay(RoundedRectangle(cornerRadius: DS.Radius.card)
-            .stroke(DS.Color.border, lineWidth: 1))
     }
 
-    // MARK: - J6 Reflection card
-
-    @ViewBuilder
-    private var reflectionCard: some View {
-        let allLogs = activeBoards.flatMap { board in
-            board.activeLogs.map { LogSnapshot(from: $0) }
-        }
-        if let reflection = ReflectionGenerator.generateInsightReflection(
-            boards: activeBoards,
-            allLogs: allLogs
-        ) {
-            VStack(alignment: .leading, spacing: DS.Space.xs) {
-                Label("Reflection", systemImage: "lightbulb")
-                    .font(DS.Text.caption)
-                    .textCase(.uppercase)
-                    .foregroundStyle(DS.Color.textTertiary)
-
-                Text(reflection.text)
-                    .font(DS.Text.body)
-                    .foregroundStyle(DS.Color.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(DS.Space.md)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
-            .overlay(RoundedRectangle(cornerRadius: DS.Radius.card)
-                .stroke(DS.Color.border, lineWidth: 1))
-        }
-    }
-
-    // MARK: - Helpers
-
-    private func sectionLabel(_ title: String) -> some View {
-        Text(title)
-            .font(DS.Text.caption)
-            .textCase(.uppercase)
-            .foregroundStyle(DS.Color.textTertiary)
-    }
-
-    private var weekRangeLabel: String {
-        let f = DateFormatter(); f.dateFormat = "MMM d"
-        let endDay = Calendar.current.date(byAdding: .day, value: 6, to: weekStart) ?? weekStart
-        return "\(f.string(from: weekStart)) – \(f.string(from: endDay))"
-    }
-
-    private func dailyTotals(for board: HabitBoard) -> [Double] {
-        let cal = Calendar.current
-        var totals = Array(repeating: 0.0, count: 7)
+    private func completedDaySet(for board: HabitBoard) -> Set<Date> {
+        let cal    = Calendar.current
+        let target = board.effectiveTarget
+        var totals: [Date: Double] = [:]
         for log in board.activeLogs {
-            guard log.timestamp >= weekStart, log.timestamp < weekEndExclusive else { continue }
-            let wd = cal.component(.weekday, from: log.timestamp)
-            let idx = (wd - 2 + 7) % 7
-            totals[idx] += log.value
+            guard log.timestamp >= monthStart, log.timestamp < monthEnd else { continue }
+            totals[cal.startOfDay(for: log.timestamp), default: 0] += log.value
         }
-        return totals
-    }
-
-    private func goalDays(for board: HabitBoard) -> Int {
-        let cal = Calendar.current
-        var dayTotals: [Date: Double] = [:]
-        for log in board.activeLogs {
-            guard log.timestamp >= weekStart, log.timestamp < weekEndExclusive else { continue }
-            let day = cal.startOfDay(for: log.timestamp)
-            dayTotals[day, default: 0] += log.value
-        }
-        let target = board.metric == .binary ? 1.0 : board.effectiveTarget
-        return dayTotals.values.filter { $0 >= target }.count
+        return Set(totals.filter { $0.value >= target }.keys)
     }
 }
