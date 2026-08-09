@@ -19,19 +19,17 @@ struct MacHabitContentColumn: View {
 
     @Binding var selection: HabitBoard?
 
-    @Query(sort: [SortDescriptor(\HabitBoard.name)], animation: .default)
+    @Query(filter: #Predicate<HabitBoard> { board in
+        board.habitKindRaw == 0 && board.archivedAt == nil
+    }, sort: [SortDescriptor(\HabitBoard.name)], animation: .default)
     private var boards: [HabitBoard]
 
     @Environment(\.modelContext) private var modelContext
     @State private var showingCreateSheet = false
     @State private var showCheckInError   = false
 
-    private var activeBoards: [HabitBoard] {
-        boards.filter { $0.archivedAt == nil }
-    }
-
     var body: some View {
-        List(activeBoards, id: \.id, selection: $selection) { board in
+        List(boards, id: \.id, selection: $selection) { board in
             MacHabitRow(board: board, onCheckBinary: { checkInBinary(board) })
                 .tag(board)
         }
@@ -50,7 +48,7 @@ struct MacHabitContentColumn: View {
             }
         }
         .overlay {
-            if activeBoards.isEmpty {
+            if boards.isEmpty {
                 ContentUnavailableView {
                     Label("No Habits", systemImage: "checkmark.circle")
                 } description: {
