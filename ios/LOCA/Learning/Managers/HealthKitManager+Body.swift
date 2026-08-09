@@ -8,14 +8,13 @@
 //  Requests its own authorization for body types only, so the feature
 //  degrades silently if HealthKit is unavailable or access is denied.
 //
+//  HealthKit is iOS-only; the macOS build uses a no-op stub.
+//
 
 import Foundation
-import HealthKit
 
 // MARK: - BodyDataFetcher
 
-/// Standalone fetcher for body mass and height from HealthKit.
-/// Returns the most recent sample for each type, or nil if unavailable.
 @MainActor
 struct BodyDataFetcher {
 
@@ -25,6 +24,23 @@ struct BodyDataFetcher {
     }
 
     static func fetchLatest() async -> BodySnapshot {
+        #if os(iOS)
+        return await _fetchLatestHealthKit()
+        #else
+        return BodySnapshot(weightKg: nil, heightCm: nil)
+        #endif
+    }
+}
+
+// MARK: - iOS implementation
+
+#if os(iOS)
+import HealthKit
+
+@MainActor
+private extension BodyDataFetcher {
+
+    static func _fetchLatestHealthKit() async -> BodySnapshot {
         guard HKHealthStore.isHealthDataAvailable() else {
             return BodySnapshot(weightKg: nil, heightCm: nil)
         }
@@ -56,9 +72,7 @@ struct BodyDataFetcher {
         return await BodySnapshot(weightKg: weightKg, heightCm: heightCm)
     }
 
-    // MARK: - Private helpers
-
-    private static func latestQuantity(
+    static func latestQuantity(
         store: HKHealthStore,
         type: HKQuantityType,
         extract: @Sendable @escaping (HKQuantitySample) -> Double
@@ -77,3 +91,4 @@ struct BodyDataFetcher {
         }
     }
 }
+#endif

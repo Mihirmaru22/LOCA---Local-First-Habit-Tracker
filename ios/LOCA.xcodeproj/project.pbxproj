@@ -119,6 +119,10 @@
 		AA1100000000000000002EAB /* UserProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000002DAB /* UserProfileView.swift */; };
 		AA1100000000000000003AAB /* HealthKitManager+Body.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000002FAB /* HealthKitManager+Body.swift */; };
 		AA1100000000000000003BAB /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000002BAB /* UserProfile.swift */; };
+		AA1100000000000000004CAB /* TodoItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000004BAB /* TodoItem.swift */; };
+		AA1100000000000000004DAB /* TodoItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000004BAB /* TodoItem.swift */; };
+		AA1100000000000000005CAB /* JournalNote.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000005BAB /* JournalNote.swift */; };
+		AA1100000000000000005DAB /* JournalNote.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000005BAB /* JournalNote.swift */; };
 		FADE00000000000000000021 /* StreakCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADE00000000000000000011 /* StreakCalculatorTests.swift */; };
 		FADE00000000000000000022 /* AggregationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADE00000000000000000012 /* AggregationTests.swift */; };
 		FEEDCA6A00000000000000B2 /* RegimeHonestyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEEDCA6A00000000000000B1 /* RegimeHonestyTests.swift */; };
@@ -425,6 +429,8 @@
 		AA1100000000000000001DAB /* WeeklyDigestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyDigestView.swift; sourceTree = "<group>"; };
 		AA1100000000000000001FAB /* MonthlyReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthlyReviewView.swift; sourceTree = "<group>"; };
 		AA1100000000000000002BAB /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
+		AA1100000000000000004BAB /* TodoItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoItem.swift; sourceTree = "<group>"; };
+		AA1100000000000000005BAB /* JournalNote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalNote.swift; sourceTree = "<group>"; };
 		AA1100000000000000002DAB /* UserProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileView.swift; sourceTree = "<group>"; };
 		AA1100000000000000002FAB /* HealthKitManager+Body.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HealthKitManager+Body.swift"; sourceTree = "<group>"; };
 		8C33A4D4C6EE4EC6804620D6 /* PersonalLifeViewUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalLifeViewUI.swift; sourceTree = "<group>"; };
@@ -653,6 +659,8 @@
 				8A1E3F118B00458FA0744867 /* VersionedSchema.swift */,
 				31F09F6CFAFE2E2F2B53FA5B /* ReflectionUnit.swift */,
 				AA1100000000000000002BAB /* UserProfile.swift */,
+				AA1100000000000000004BAB /* TodoItem.swift */,
+				AA1100000000000000005BAB /* JournalNote.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -1181,6 +1189,8 @@
 				E3F4A5B6C7D8E9F0A1B2C3D4 /* SensorConflict.swift in Sources */,
 				B6C7D8E9F0A1B2C3D4E5F6A7 /* SourceProvenance.swift in Sources */,
 				AA1100000000000000003BAB /* UserProfile.swift in Sources */,
+				AA1100000000000000004DAB /* TodoItem.swift in Sources */,
+				AA1100000000000000005DAB /* JournalNote.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1285,6 +1295,8 @@
 				AA1100000000000000001EAB /* WeeklyDigestView.swift in Sources */,
 				AA1100000000000000002AAB /* MonthlyReviewView.swift in Sources */,
 				AA1100000000000000002CAB /* UserProfile.swift in Sources */,
+				AA1100000000000000004CAB /* TodoItem.swift in Sources */,
+				AA1100000000000000005CAB /* JournalNote.swift in Sources */,
 				AA1100000000000000002EAB /* UserProfileView.swift in Sources */,
 				AA1100000000000000003AAB /* HealthKitManager+Body.swift in Sources */,
 				FEEDF300000000000000F002 /* EventsView.swift in Sources */,

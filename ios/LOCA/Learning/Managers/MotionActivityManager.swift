@@ -8,8 +8,12 @@
 //  Returns one SignalEvent per hour, using the dominant activity type for
 //  that hour weighted by confidence.
 //
+//  CMMotionActivityManager is iOS-only; the macOS build uses a no-op stub.
+//
 
 import Foundation
+
+#if os(iOS)
 import CoreMotion
 
 @MainActor
@@ -87,3 +91,13 @@ class MotionActivityManager: NSObject {
         }
     }
 }
+
+#else
+
+// macOS stub — CMMotionActivityManager is iOS-only.
+@MainActor
+class MotionActivityManager: NSObject {
+    func collectMotion() async -> [SignalEvent] { [] }
+}
+
+#endif

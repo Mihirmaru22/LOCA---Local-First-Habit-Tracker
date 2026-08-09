@@ -62,6 +62,8 @@ enum RippleSchemaV1: VersionedSchema {
             SensorConflict.self,
             SourceProvenance.self,
             UserProfile.self,
+            TodoItem.self,
+            JournalNote.self,
         ]
     }
 }
