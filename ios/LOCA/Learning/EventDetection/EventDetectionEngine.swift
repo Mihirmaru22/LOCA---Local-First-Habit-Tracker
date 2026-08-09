@@ -8,6 +8,7 @@
 
 import Foundation
 import SwiftData
+import Combine
 
 @MainActor
 class EventDetectionEngine: NSObject, ObservableObject {

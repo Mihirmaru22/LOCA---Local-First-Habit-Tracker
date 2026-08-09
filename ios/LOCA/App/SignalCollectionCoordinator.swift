@@ -12,6 +12,7 @@
 
 import Foundation
 import SwiftData
+import Combine
 #if os(iOS)
 import HealthKit
 #endif

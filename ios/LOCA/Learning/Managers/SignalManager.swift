@@ -8,6 +8,8 @@
 
 import Foundation
 import SwiftData
+import Combine
+import CoreLocation
 
 // MARK: - Signal Manager
 
