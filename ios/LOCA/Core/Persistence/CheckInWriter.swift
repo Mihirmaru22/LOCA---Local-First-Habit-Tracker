@@ -155,7 +155,9 @@ enum CheckInWriter {
     private static func saveAndReload(context: ModelContext) throws {
         do {
             try context.save()
+            #if os(iOS)
             WidgetRefreshCoordinator.shared.scheduleReload()
+            #endif
         } catch {
             context.rollback()
             throw error
