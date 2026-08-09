@@ -127,7 +127,7 @@ struct PersonalLifeViewUI: View {
                 .padding(DS.Space.lg)
             }
             .navigationTitle("Your Life")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitleDisplay()
         }
     }
 

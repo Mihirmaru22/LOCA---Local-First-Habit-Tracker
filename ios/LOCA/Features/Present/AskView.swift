@@ -45,7 +45,7 @@ struct AskView: View {
                     askInput
                 }
             }
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitleDisplay()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") {
@@ -374,7 +374,7 @@ private struct CalibrationSheet: View {
                 }
             }
             .padding(DS.Space.xl)
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitleDisplay()
         }
         .onAppear { fieldFocused = true }
     }

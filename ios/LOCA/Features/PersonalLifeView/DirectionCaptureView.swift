@@ -69,7 +69,7 @@ struct DirectionCaptureView: View {
                     .padding(.horizontal, DS.Space.xl)
                     .padding(.bottom, DS.Space.xxxl)
             }
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitleDisplay()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { finish(save: !statement.isEmpty) }

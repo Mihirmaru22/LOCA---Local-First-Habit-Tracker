@@ -48,7 +48,7 @@ struct UserProfileView: View {
             .padding(DS.Space.lg)
         }
         .navigationTitle("Profile")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitleDisplay()
         .task { ensureProfile() }
         .onAppear { loadState() }
     }

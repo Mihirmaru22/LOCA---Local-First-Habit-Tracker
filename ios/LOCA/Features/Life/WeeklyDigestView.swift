@@ -99,7 +99,7 @@ struct WeeklyDigestView: View {
             .padding(DS.Space.lg)
         }
         .navigationTitle("This Week")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitleDisplay()
     }
 
     // MARK: - Week header + navigation

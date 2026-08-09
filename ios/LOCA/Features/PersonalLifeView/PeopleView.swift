@@ -22,7 +22,7 @@ struct PeopleView: View {
             }
         }
         .navigationTitle("People")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitleDisplay()
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button(action: refreshPeople) {

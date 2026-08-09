@@ -26,7 +26,7 @@ struct SensorConflictView: View {
             }
         }
         .navigationTitle("Sensor Gaps")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitleDisplay()
     }
 
     // MARK: - Content

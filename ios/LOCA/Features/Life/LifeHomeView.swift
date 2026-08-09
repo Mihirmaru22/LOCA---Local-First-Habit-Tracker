@@ -42,7 +42,7 @@ struct LifeHomeView: View {
                 .padding(.top, DS.Space.md)
             }
             .navigationTitle("Life")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitleDisplay()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(action: { showNewQuestion = true }) {
@@ -446,7 +446,7 @@ private struct LifeNewQuestionSheet: View {
                 }
             }
             .navigationTitle("Ask About Your Life")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitleDisplay()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { isPresented = false }
@@ -494,7 +494,7 @@ struct LifeRuntimeSelfCheckView: View {
         }
         .listStyle(.insetGrouped)
         .navigationTitle("Runtime Check")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitleDisplay()
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button(isReseeding ? "Reseeding…" : "Reset & Reseed") {

@@ -277,7 +277,7 @@ private struct PatternDetailView: View {
                 }
                 .padding(DS.Space.xl)
             }
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitleDisplay()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }
