@@ -127,6 +127,8 @@
 		AA1100000000000000004CAB /* TodoItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000004BAB /* TodoItem.swift */; };
 		AA1100000000000000004DAB /* TodoItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000004BAB /* TodoItem.swift */; };
 		AA1100000000000000005CAB /* JournalNote.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000005BAB /* JournalNote.swift */; };
+		AA1100000000000000006CAB /* SleepEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000006BAB /* SleepEntry.swift */; };
+		DDCCA595485AB9B2C4DCCD07 /* SleepEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000006BAB /* SleepEntry.swift */; };
 		AA1100000000000000005DAB /* JournalNote.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000005BAB /* JournalNote.swift */; };
 		AD8C8D7F055F47C3904427AF /* PeopleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47334E5DAB804ED49D6E573F /* PeopleView.swift */; };
 		B060EF1136D5B9B2214B6BA8 /* GoalTuningCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B85B29ECA2A1A5FA09F0EC6 /* GoalTuningCard.swift */; };
@@ -588,6 +590,7 @@
 		AA1100000000000000002FAB /* HealthKitManager+Body.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HealthKitManager+Body.swift"; sourceTree = "<group>"; };
 		AA1100000000000000004BAB /* TodoItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoItem.swift; sourceTree = "<group>"; };
 		AA1100000000000000005BAB /* JournalNote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalNote.swift; sourceTree = "<group>"; };
+		AA1100000000000000006BAB /* SleepEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepEntry.swift; sourceTree = "<group>"; };
 		ABA9551FC8C82DA8A6FEA0AD /* HabitCheckInsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HabitCheckInsView.swift; sourceTree = "<group>"; };
 		ABB47131688E7C5399681358 /* ReflectionGenerator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReflectionGenerator.swift; sourceTree = "<group>"; };
 		AC2A0A306DFA5ED6612B1D4B /* SyncStatusCoordinator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SyncStatusCoordinator.swift; sourceTree = "<group>"; };
@@ -886,6 +889,7 @@
 				AA1100000000000000002BAB /* UserProfile.swift */,
 				AA1100000000000000004BAB /* TodoItem.swift */,
 				AA1100000000000000005BAB /* JournalNote.swift */,
+				AA1100000000000000006BAB /* SleepEntry.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -1575,6 +1579,7 @@
 				E0455E00FAC0D143A393A9F8 /* UserProfile.swift in Sources */,
 				43CF8045B3B0F6A5C281FD1C /* TodoItem.swift in Sources */,
 				52582857A68BB8B58875B9B9 /* JournalNote.swift in Sources */,
+				DDCCA595485AB9B2C4DCCD07 /* SleepEntry.swift in Sources */,
 				B3034613D4BFF54609FAC7F0 /* UserProfileView.swift in Sources */,
 				196D531151455D8CE3D3D758 /* HealthKitManager+Body.swift in Sources */,
 				2E23CFB5D205F9B4D5E1842B /* EventsView.swift in Sources */,
@@ -1828,6 +1833,7 @@
 				AA1100000000000000002CAB /* UserProfile.swift in Sources */,
 				AA1100000000000000004CAB /* TodoItem.swift in Sources */,
 				AA1100000000000000005CAB /* JournalNote.swift in Sources */,
+				AA1100000000000000006CAB /* SleepEntry.swift in Sources */,
 				AA1100000000000000002EAB /* UserProfileView.swift in Sources */,
 				AA1100000000000000003AAB /* HealthKitManager+Body.swift in Sources */,
 				FEEDF300000000000000F002 /* EventsView.swift in Sources */,
