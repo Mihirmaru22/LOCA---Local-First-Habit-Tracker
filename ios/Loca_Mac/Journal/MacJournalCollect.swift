@@ -13,10 +13,10 @@ struct MacJournalCollect: View {
 
     let focusedRow: JournalRow?
 
-    @Query(filter: #Predicate<HabitBoard> { board in
-        board.habitKindRaw == 1 && board.archivedAt == nil
-    }, sort: \HabitBoard.createdAt)
-    private var dailyHabits: [HabitBoard]
+    @Query(filter: #Predicate<HabitBoard> { $0.habitKindRaw == 1 },
+           sort: \HabitBoard.createdAt)
+    private var dailyHabitCandidates: [HabitBoard]
+    private var dailyHabits: [HabitBoard] { dailyHabitCandidates.filter { $0.archivedAt == nil } }
 
     @Query(sort: [SortDescriptor(\JournalNote.date, order: .reverse)])
     private var allNotes: [JournalNote]

@@ -15,14 +15,22 @@ struct MacJournalAnalyse: View {
     @Query(sort: [SortDescriptor(\SleepEntry.date)])
     private var allSleepEntries: [SleepEntry]
 
-    @Query(filter: #Predicate<JournalNote> { $0.noteKindRaw == 1 && $0.archivedAt == nil },
+    // Compound `&& == nil` in #Predicate causes type-check timeouts; nil check is
+    // moved to computed properties so each query stays single-condition.
+    @Query(filter: #Predicate<JournalNote> { $0.noteKindRaw == 1 },
            sort: [SortDescriptor(\JournalNote.date)])
-    private var allMoments: [JournalNote]
+    private var momentCandidates: [JournalNote]
+    private var allMoments: [JournalNote] { momentCandidates.filter { $0.archivedAt == nil } }
 
-    @Query(filter: #Predicate<HabitBoard> { board in
-        board.habitKindRaw == 1 && board.archivedAt == nil
-    }, sort: \HabitBoard.createdAt)
-    private var dailyHabits: [HabitBoard]
+    @Query(filter: #Predicate<HabitBoard> { $0.habitKindRaw == 1 },
+           sort: \HabitBoard.createdAt)
+    private var habitCandidates: [HabitBoard]
+    private var dailyHabits: [HabitBoard] { habitCandidates.filter { $0.archivedAt == nil } }
+
+    // Explicit init: all @Query stored properties are private, which would make the
+    // synthesized memberwise init private — blocking MacJournalDetailColumn from
+    // calling MacJournalAnalyse().
+    init() {}
 
     // MARK: Month boundaries (recomputed only when needed — value types)
 

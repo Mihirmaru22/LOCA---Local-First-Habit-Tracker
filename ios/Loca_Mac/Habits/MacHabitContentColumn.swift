@@ -19,14 +19,23 @@ struct MacHabitContentColumn: View {
 
     @Binding var selection: HabitBoard?
 
-    @Query(filter: #Predicate<HabitBoard> { board in
-        board.habitKindRaw == 0 && board.archivedAt == nil
-    }, sort: [SortDescriptor(\HabitBoard.name)], animation: .default)
-    private var boards: [HabitBoard]
+    // #Predicate with compound `&& == nil` causes type-check timeouts; split into
+    // a single-condition query + in-memory nil check.
+    @Query(filter: #Predicate<HabitBoard> { $0.habitKindRaw == 0 },
+           sort: [SortDescriptor(\HabitBoard.name)], animation: .default)
+    private var keystoneBoards: [HabitBoard]
+
+    private var boards: [HabitBoard] { keystoneBoards.filter { $0.archivedAt == nil } }
 
     @Environment(\.modelContext) private var modelContext
     @State private var showingCreateSheet = false
     @State private var showCheckInError   = false
+
+    // Explicit init prevents the synthesized memberwise init (which is private
+    // because keystoneBoards is a private @Query property) from leaking to call sites.
+    init(selection: Binding<HabitBoard?>) {
+        self._selection = selection
+    }
 
     var body: some View {
         List(boards, id: \.id, selection: $selection) { board in
