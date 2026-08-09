@@ -36,7 +36,11 @@ class LocationManager: NSObject {
     /// significant-change monitoring when granted. Called from the ContextPermissionView
     /// flow (C3.2), not from init.
     func requestAuthorization() {
+        #if os(iOS)
         manager.requestWhenInUseAuthorization()
+        #else
+        manager.requestAlwaysAuthorization()
+        #endif
     }
 
     // MARK: - Start Monitoring (called after permission granted)
@@ -48,9 +52,12 @@ class LocationManager: NSObject {
     }
 
     func updateAuthorization(_ status: CLAuthorizationStatus) {
-        if status == .authorizedAlways || status == .authorizedWhenInUse {
-            startMonitoringSignificantLocationChanges()
-        }
+        #if os(iOS)
+        let granted = status == .authorizedAlways || status == .authorizedWhenInUse
+        #else
+        let granted = status == .authorized || status == .authorizedAlways
+        #endif
+        if granted { startMonitoringSignificantLocationChanges() }
     }
 
     func recordLocation(_ location: CLLocation) {
@@ -61,7 +68,12 @@ class LocationManager: NSObject {
 
     func collectLocationHistory() async -> [SignalEvent] {
         let authStatus = manager.authorizationStatus
-        guard authStatus == .authorizedAlways || authStatus == .authorizedWhenInUse else { return [] }
+        #if os(iOS)
+        let authorized = authStatus == .authorizedAlways || authStatus == .authorizedWhenInUse
+        #else
+        let authorized = authStatus == .authorized || authStatus == .authorizedAlways
+        #endif
+        guard authorized else { return [] }
         guard let location = lastLocation else { return [] }
 
         let placeType = classifyPlaceType(location)

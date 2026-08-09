@@ -7,13 +7,12 @@
 //  as SignalEvents. Authorization is requested once, through the
 //  HealthKitPermissionView framing flow, not eagerly from init().
 //
-//  HealthKit's privacy model: read authorization is never exposed to apps.
-//  Denied types simply return no samples. Each collector therefore runs
-//  unconditionally and returns [] when the user hasn't granted access —
-//  graceful degradation without an isAuthorized guard.
+//  HealthKit is iOS-only; the macOS build uses a no-op stub.
 //
 
 import Foundation
+
+#if os(iOS)
 import HealthKit
 
 // MARK: - HKWorkoutActivityType name helper
@@ -140,8 +139,6 @@ class HealthKitManager: NSObject {
     // MARK: - Heart Rate Collection
 
     /// Collects hourly-averaged heart rate. Normalize: bpm / 100 → [0, 1].
-    /// Inference models receive the raw normalized value; they assign meaning
-    /// (e.g. elevated HR correlating with stress) via their own weighting.
     func collectHeartRate() async -> [SignalEvent] {
         guard let hrType = HKObjectType.quantityType(forIdentifier: .heartRate) else { return [] }
         let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: Date())!
@@ -326,3 +323,19 @@ class HealthKitManager: NSObject {
         }
     }
 }
+
+#else
+
+// macOS stub — HealthKit is iOS-only.
+@MainActor
+class HealthKitManager: NSObject {
+    static let readTypes: Set<AnyObject> = []
+    func collectSleep() async -> [SignalEvent] { [] }
+    func collectHeartRateVariability() async -> [SignalEvent] { [] }
+    func collectHeartRate() async -> [SignalEvent] { [] }
+    func collectSteps() async -> [SignalEvent] { [] }
+    func collectWorkouts() async -> [SignalEvent] { [] }
+    func collectMindfulMinutes() async -> [SignalEvent] { [] }
+}
+
+#endif
