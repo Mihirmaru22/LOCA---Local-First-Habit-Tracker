@@ -10,8 +10,9 @@ import SwiftData
 /// - **Upcoming** — tasks with a future due date.
 /// - **Anytime** — tasks with no due date.
 ///
-/// Completed tasks are de-emphasised in-list but not hidden; they move to the
-/// bottom of their section so the user can still see and un-complete them (T4).
+/// Within each section, incomplete tasks appear first sorted by due date.
+/// Completed tasks are hidden under a "N completed" toggle so the active list
+/// stays focused — clicking the toggle expands them across all sections at once.
 struct MacTodoContentColumn: View {
 
     @Binding var selection: TodoItem?
@@ -19,75 +20,88 @@ struct MacTodoContentColumn: View {
     @Query(sort: [SortDescriptor(\TodoItem.createdAt)], animation: .default)
     private var allItems: [TodoItem]
 
+    @State private var showCompleted = false
+
     private var activeItems: [TodoItem] {
         allItems.filter { !$0.isArchived }
     }
 
-    private var todayItems:    [TodoItem] { activeItems.filter { $0.bucket == .today    } }
-    private var upcomingItems: [TodoItem] { activeItems.filter { $0.bucket == .upcoming } }
-    private var anytimeItems:  [TodoItem] { activeItems.filter { $0.bucket == .anytime  } }
+    private func openItems(in bucket: TodoBucket) -> [TodoItem] {
+        activeItems
+            .filter { $0.bucket == bucket && !$0.isCompleted }
+            .sorted { ($0.dueDate ?? $0.createdAt) < ($1.dueDate ?? $1.createdAt) }
+    }
+
+    private func doneItems(in bucket: TodoBucket) -> [TodoItem] {
+        activeItems
+            .filter { $0.bucket == bucket && $0.isCompleted }
+            .sorted { ($0.completedAt ?? $0.createdAt) > ($1.completedAt ?? $1.createdAt) }
+    }
+
+    private var totalDone: Int {
+        TodoBucket.allCases.reduce(0) { $0 + doneItems(in: $1).count }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
-            // Quick-add bar pinned at top (T1)
             MacTodoQuickAdd()
                 .padding(.horizontal, DS.Space.md)
                 .padding(.vertical, DS.Space.sm)
 
             Divider()
 
-            // Sectioned list with selection
             List(selection: $selection) {
-                if !todayItems.isEmpty {
-                    Section("Today") {
-                        ForEach(sortedSection(todayItems), id: \.id) { item in
-                            MacTodoRow(item: item)
-                                .tag(item)
+                ForEach(TodoBucket.allCases, id: \.self) { bucket in
+                    let open = openItems(in: bucket)
+                    let done = doneItems(in: bucket)
+
+                    if !open.isEmpty || !done.isEmpty {
+                        Section(bucket.rawValue) {
+                            ForEach(open, id: \.id) { item in
+                                MacTodoRow(item: item).tag(item)
+                            }
+
+                            if !done.isEmpty && showCompleted {
+                                ForEach(done, id: \.id) { item in
+                                    MacTodoRow(item: item).tag(item)
+                                }
+                            }
                         }
                     }
                 }
 
-                if !upcomingItems.isEmpty {
-                    Section("Upcoming") {
-                        ForEach(sortedSection(upcomingItems), id: \.id) { item in
-                            MacTodoRow(item: item)
-                                .tag(item)
+                // Single toggle at the bottom for all completed tasks
+                if totalDone > 0 {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            showCompleted.toggle()
                         }
+                    } label: {
+                        Label(
+                            showCompleted ? "Hide completed" : "\(totalDone) completed",
+                            systemImage: showCompleted ? "chevron.up" : "checkmark.circle.fill"
+                        )
+                        .font(DS.Text.caption)
+                        .foregroundStyle(DS.Color.textTertiary)
                     }
-                }
-
-                if !anytimeItems.isEmpty {
-                    Section("Anytime") {
-                        ForEach(sortedSection(anytimeItems), id: \.id) { item in
-                            MacTodoRow(item: item)
-                                .tag(item)
-                        }
-                    }
-                }
-
-                if activeItems.isEmpty {
-                    emptyState
+                    .buttonStyle(.plain)
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                    .padding(.vertical, DS.Space.xs)
                 }
             }
             .listStyle(.inset)
+            .overlay {
+                if activeItems.isEmpty {
+                    ContentUnavailableView {
+                        Label("No Tasks", systemImage: "checkmark.circle")
+                    } description: {
+                        Text("Type a task in the bar above and press Return.")
+                    }
+                }
+            }
         }
         .navigationTitle("Tasks")
-    }
-
-    // Completed items sink to the bottom of their section
-    private func sortedSection(_ items: [TodoItem]) -> [TodoItem] {
-        items.sorted {
-            if $0.isCompleted != $1.isCompleted { return !$0.isCompleted }
-            return ($0.dueDate ?? $0.createdAt) < ($1.dueDate ?? $1.createdAt)
-        }
-    }
-
-    private var emptyState: some View {
-        ContentUnavailableView {
-            Label("No Tasks", systemImage: "checkmark.circle")
-        } description: {
-            Text("Type a task in the bar above and press Return.")
-        }
     }
 }
 
@@ -95,17 +109,23 @@ struct MacTodoContentColumn: View {
 
 /// A single row in the todo list.
 ///
-/// - Leading circle toggles completion in-list (T4).
-/// - Title is struck-through when completed.
-/// - Due-date chip shown when set.
+/// Leading priority dot (hidden when priority == 0) → completion circle → title/date.
+/// The dot is always allocated its 6 pt width to keep title alignment consistent.
 private struct MacTodoRow: View {
 
     @Bindable var item: TodoItem
     @Environment(\.modelContext) private var modelContext
 
     var body: some View {
-        HStack(spacing: DS.Space.md) {
-            // Completion circle (T4 — toggle)
+        HStack(spacing: DS.Space.sm) {
+
+            // Priority dot (always same width; invisible when priority == 0)
+            Circle()
+                .fill(priorityColor(item.priority))
+                .frame(width: 6, height: 6)
+                .opacity(item.priority > 0 ? 1 : 0)
+
+            // Completion toggle
             Button(action: toggleComplete) {
                 Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(item.isCompleted ? DS.Color.textTertiary : DS.Color.textSecondary)
@@ -113,7 +133,7 @@ private struct MacTodoRow: View {
             .buttonStyle(.plain)
             .help(item.isCompleted ? "Mark not done" : "Mark done")
 
-            // Title
+            // Title + optional due date
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.title)
                     .strikethrough(item.isCompleted, color: DS.Color.textTertiary)
@@ -142,5 +162,14 @@ private struct MacTodoRow: View {
 
     private func isOverdue(_ date: Date) -> Bool {
         Calendar.current.startOfDay(for: date) < Calendar.current.startOfDay(for: .now)
+    }
+
+    private func priorityColor(_ p: Int) -> Color {
+        switch p {
+        case 1: return .green
+        case 2: return .orange
+        case 3: return .red
+        default: return .clear
+        }
     }
 }

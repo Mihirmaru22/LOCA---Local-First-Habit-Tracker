@@ -82,6 +82,25 @@ private struct MacTodoEditor: View {
 
                 Divider()
 
+                // MARK: Priority (T3)
+                VStack(alignment: .leading, spacing: DS.Space.xs) {
+                    Label("Priority", systemImage: "flag.fill")
+                        .font(DS.Text.caption)
+                        .foregroundStyle(DS.Color.textSecondary)
+
+                    Picker("Priority", selection: $item.priority) {
+                        Text("None").tag(0)
+                        Text("Low").tag(1)
+                        Text("Medium").tag(2)
+                        Text("High").tag(3)
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .onChange(of: item.priority) { _, _ in autosave() }
+                }
+
+                Divider()
+
                 // MARK: Notes (T3 — inline edit)
                 VStack(alignment: .leading, spacing: DS.Space.xs) {
                     Label("Notes", systemImage: "note.text")
