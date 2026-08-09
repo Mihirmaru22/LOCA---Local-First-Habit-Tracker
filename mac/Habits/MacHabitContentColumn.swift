@@ -35,7 +35,7 @@ struct MacHabitContentColumn: View {
             MacHabitRow(board: board, onCheckBinary: { checkInBinary(board) })
                 .tag(board)
         }
-        .listStyle(.insetGrouped)    // macOS inset-grouped is clean; sidebar is reserved for sections
+        .listStyle(.inset)    // macOS: use .inset (.insetGrouped is iOS/Catalyst only)
         .navigationTitle("Habits")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {

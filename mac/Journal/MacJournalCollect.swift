@@ -67,7 +67,7 @@ struct MacJournalCollect: View {
                 }
             }
         }
-        .listStyle(.insetGrouped)
+        .listStyle(.inset)
         .onAppear {
             // Pre-fill draft from existing today note
             todayDraft = todayNote?.text ?? ""
