@@ -122,11 +122,58 @@ Open `ios/LOCA.xcodeproj` in Xcode 16+. See `ios/HOW_TO_RUN.md` for setup instru
 | Shortcuts | App Intents |
 | Platforms | iOS 17+, macOS 14+ |
 
+### Architecture
+
+```
+ios/
+├── LOCA/
+│   ├── Core/
+│   │   └── Models/
+│   │       ├── TodoItem.swift       # SwiftData task model (scheduling fields below)
+│   │       └── HabitItem.swift      # SwiftData habit model
+│   └── Features/                   # Shared iOS feature views
+├── Loca_Mac/                        # macOS-only views (PBXFileSystemSynchronizedRootGroup)
+│   ├── Root/
+│   │   └── MacRootView.swift        # Three-pane NavigationSplitView
+│   ├── Todo/
+│   │   ├── MacTodoContentColumn.swift   # Plan | List sub-pillar toggle
+│   │   ├── MacDayPlannerColumn.swift    # Time-blocked vertical timeline
+│   │   ├── MacTodoListColumn.swift      # GTD Today / Upcoming / Anytime bucket list
+│   │   └── MacTodoDetailColumn.swift    # Inline-edit detail panel (right pane)
+│   └── Journal/
+│       └── MacJournalContentColumn.swift  # Collect | Analyse toggle
+└── Docs/                            # Architecture and design docs
+```
+
+All Swift files under `ios/Loca_Mac/` are picked up automatically by Xcode 16's `PBXFileSystemSynchronizedRootGroup` — no `.pbxproj` edits are needed when adding new files there.
+
 ### Feature status
 
 **Habit Engine** — complete: create/edit/archive habits, binary and quantitative check-ins, streak analytics, 365-day heatmap, CloudKit sync, WidgetKit, Siri Shortcuts.
 
 **Personal Life Model** — complete: hourly sensor inference (energy/stress/focus/mood), absence-aware epistemics, life event detection, chapter segmentation, trait inference, person extraction, relationship graph, pattern detection, narrative composition, Present tab.
+
+**Todo / Day Planner** — in progress: GTD bucket list (Today / Upcoming / Anytime) with inline priority, completion toggle, and CloudKit sync is live. A **Plan | List** segmented toggle (mirroring the Journal Collect/Analyse pattern) exposes a time-blocked vertical day-planner timeline alongside the bucket list. The day-planner timeline renders scheduled blocks in chronological order, shows free-gap labels between blocks, and has an Unscheduled tray for tasks due today that haven't been given a start time. The detail panel lets users schedule any task by toggling "Schedule on timeline", then picking a start time and duration (in 15-minute steps).
+
+`TodoItem` scheduling fields (CloudKit-safe — all Optional or have Swift defaults):
+
+| Field | Type | Purpose |
+|---|---|---|
+| `startTime` | `Date?` | When set, places the task on the day-planner timeline at this date + time |
+| `durationMinutes` | `Int` (default 0) | Length of the scheduled block in minutes; 0 = point in time |
+| `iconName` | `String?` | SF Symbol name for the timeline icon bubble; `nil` falls back to a default glyph |
+
+| Sprint | Scope | Status |
+|---|---|---|
+| T1 | Quick-add bar (Return to create) | ✅ Done |
+| T2 | GTD bucket list (Today / Upcoming / Anytime) | ✅ Done |
+| T3 | Inline edit (title, due date, priority, notes, archive) | ✅ Done |
+| T4 | Completion toggle (complete / un-complete) | ✅ Done |
+| T5 | Plan \| List sub-pillar toggle + day-planner scaffold | ✅ Done |
+| T6 | Timeline visual polish (accent bubbles, chips, free gaps) | 🔲 Next |
+| T7 | Per-task icon picker | 🔲 Planned |
+| T8 | Subtasks + progress ring | 🔲 Planned |
+| T9 | Recurrence + flagged | 🔲 Planned |
 
 ### Documentation
 
