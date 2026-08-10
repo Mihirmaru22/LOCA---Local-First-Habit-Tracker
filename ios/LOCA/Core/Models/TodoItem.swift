@@ -39,6 +39,20 @@ final class TodoItem {
 
     var priority: Int = 0
 
+    // MARK: Day-planner scheduling (optional — nil = not on the timeline)
+
+    /// When set, the task is placed on the day-planner timeline at this exact
+    /// date + time. `nil` means the task lives only in the bucket list (T2) or,
+    /// when due today, in the planner's Unscheduled tray. CloudKit-safe (Optional).
+    var startTime: Date? = nil
+
+    /// Length of the scheduled block in minutes. 0 = a point in time (no range).
+    var durationMinutes: Int = 0
+
+    /// SF Symbol name shown in the timeline icon bubble. `nil` falls back to a
+    /// default glyph. Lets a planned block read at a glance (alarm, envelope…).
+    var iconName: String? = nil
+
     // MARK: Lifecycle
 
     /// Non-nil when the task is done. Nullify to un-complete (T4).
@@ -51,6 +65,18 @@ final class TodoItem {
 
     var isCompleted: Bool { completedAt != nil }
     var isArchived:  Bool { archivedAt  != nil }
+
+    /// True when the task is placed on the day-planner timeline.
+    var isScheduled: Bool { startTime != nil }
+
+    /// End of the scheduled block, or `nil` when unscheduled. A zero-duration
+    /// block returns its start time (a point on the timeline).
+    var endTime: Date? {
+        guard let start = startTime else { return nil }
+        return Calendar.current.date(byAdding: .minute,
+                                     value: max(0, durationMinutes),
+                                     to: start)
+    }
 
     /// Which display bucket this task belongs to.
     ///
@@ -67,20 +93,26 @@ final class TodoItem {
     // MARK: - Init
 
     init(
-        id:          UUID    = UUID(),
-        title:       String  = "",
-        notes:       String? = nil,
-        dueDate:     Date?   = nil,
-        priority:    Int     = 0,
-        completedAt: Date?   = nil,
-        archivedAt:  Date?   = nil
+        id:              UUID    = UUID(),
+        title:           String  = "",
+        notes:           String? = nil,
+        dueDate:         Date?   = nil,
+        priority:        Int     = 0,
+        startTime:       Date?   = nil,
+        durationMinutes: Int     = 0,
+        iconName:        String? = nil,
+        completedAt:     Date?   = nil,
+        archivedAt:      Date?   = nil
     ) {
-        self.id          = id
-        self.title       = title
-        self.notes       = notes
-        self.dueDate     = dueDate
-        self.priority    = priority
-        self.completedAt = completedAt
-        self.archivedAt  = archivedAt
+        self.id              = id
+        self.title           = title
+        self.notes           = notes
+        self.dueDate         = dueDate
+        self.priority        = priority
+        self.startTime       = startTime
+        self.durationMinutes = durationMinutes
+        self.iconName        = iconName
+        self.completedAt     = completedAt
+        self.archivedAt      = archivedAt
     }
 }

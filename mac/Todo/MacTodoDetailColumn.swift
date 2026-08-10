@@ -37,10 +37,12 @@ private struct MacTodoEditor: View {
     @Environment(\.modelContext) private var modelContext
     @State private var showDeleteConfirm = false
     @State private var hasDueDate: Bool
+    @State private var isScheduled: Bool
 
     init(item: TodoItem) {
         self.item = item
-        self._hasDueDate = State(initialValue: item.dueDate != nil)
+        self._hasDueDate  = State(initialValue: item.dueDate != nil)
+        self._isScheduled = State(initialValue: item.startTime != nil)
     }
 
     var body: some View {
@@ -77,6 +79,47 @@ private struct MacTodoEditor: View {
                         )
                         .datePickerStyle(.graphical)
                         .labelsHidden()
+                    }
+                }
+
+                Divider()
+
+                // MARK: Schedule on timeline (day-planner sub-pillar)
+                VStack(alignment: .leading, spacing: DS.Space.sm) {
+                    Toggle("Schedule on timeline", isOn: $isScheduled)
+                        .toggleStyle(.switch)
+                        .controlSize(.small)
+                        .onChange(of: isScheduled) { _, on in
+                            item.startTime = on ? (item.startTime ?? defaultStart()) : nil
+                            autosave()
+                        }
+
+                    if isScheduled {
+                        DatePicker(
+                            "Start",
+                            selection: Binding(
+                                get: { item.startTime ?? defaultStart() },
+                                set: { item.startTime = $0; autosave() }
+                            ),
+                            displayedComponents: [.date, .hourAndMinute]
+                        )
+                        .controlSize(.small)
+
+                        Stepper(
+                            value: Binding(
+                                get: { item.durationMinutes },
+                                set: { item.durationMinutes = max(0, $0); autosave() }
+                            ),
+                            in: 0...600,
+                            step: 15
+                        ) {
+                            Text(item.durationMinutes == 0
+                                 ? "No duration"
+                                 : "\(item.durationMinutes) min")
+                                .font(DS.Text.body)
+                                .foregroundStyle(DS.Color.textSecondary)
+                        }
+                        .controlSize(.small)
                     }
                 }
 
@@ -153,5 +196,13 @@ private struct MacTodoEditor: View {
 
     private func autosave() {
         try? modelContext.save()
+    }
+
+    /// Default timeline slot when a task is first scheduled: 9:00 AM on its due
+    /// day (or today if it has no due date).
+    private func defaultStart() -> Date {
+        let cal = Calendar.current
+        let day = item.dueDate ?? Date()
+        return cal.date(bySettingHour: 9, minute: 0, second: 0, of: day) ?? day
     }
 }
