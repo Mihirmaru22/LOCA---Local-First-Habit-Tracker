@@ -45,8 +45,8 @@ struct LifeOnboardingSheet: View {
                         .tag(i)
                 }
             }
-            .tabViewStyle(.page(indexDisplayMode: .always))
-            .indexViewStyle(.page(backgroundDisplayMode: .always))
+            .pagedTabViewWithIndex()
+            .pageIndexViewStyle()
 
             Button(action: {
                 if page < cards.count - 1 {

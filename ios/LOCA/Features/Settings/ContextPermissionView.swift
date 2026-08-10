@@ -79,7 +79,7 @@ struct ContextPermissionView: View {
                 }
             }
             .navigationTitle("Context Access")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitleDisplay()
             .safeAreaInset(edge: .bottom) {
                 VStack(spacing: DS.Space.sm) {
                     Button {

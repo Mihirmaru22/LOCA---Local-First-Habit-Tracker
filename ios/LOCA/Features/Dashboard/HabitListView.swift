@@ -161,7 +161,7 @@ struct HabitListView: View {
         .task {
             lifeScene = (try? PresentComposer.shared.compose(modelContext: modelContext)) ?? .empty
         }
-        .fullScreenCover(isPresented: $showLifePresent) {
+        .fullScreenCoverCompat(isPresented: $showLifePresent) {
             PresentView()
         }
     }

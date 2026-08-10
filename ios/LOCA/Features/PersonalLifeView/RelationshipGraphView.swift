@@ -31,7 +31,7 @@ struct RelationshipGraphView: View {
             }
         }
         .navigationTitle("Connections")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitleDisplay()
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button(action: refresh) {

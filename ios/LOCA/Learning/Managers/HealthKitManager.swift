@@ -329,7 +329,6 @@ class HealthKitManager: NSObject {
 // macOS stub — HealthKit is iOS-only.
 @MainActor
 class HealthKitManager: NSObject {
-    static let readTypes: Set<AnyObject> = []
     func collectSleep() async -> [SignalEvent] { [] }
     func collectHeartRateVariability() async -> [SignalEvent] { [] }
     func collectHeartRate() async -> [SignalEvent] { [] }

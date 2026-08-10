@@ -26,7 +26,7 @@ struct TraitSummaryView: View {
             }
         }
         .navigationTitle("Your Tendencies")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitleDisplay()
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button(action: refreshTraits) {

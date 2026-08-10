@@ -37,11 +37,11 @@ enum MacSection: String, CaseIterable, Identifiable {
 /// `@Binding`; the detail column reads it as a plain `let`.
 struct MacRootView: View {
 
-    @State private var selectedSection: MacSection? = .habits
-    @State private var selectedHabit:   HabitBoard? = nil
-    @State private var selectedTodo:    TodoItem?   = nil
-    @State private var selectedNote:    JournalNote? = nil
-    @State private var columnVisibility: NavigationSplitViewVisibility = .all
+    @State private var selectedSection:     MacSection?      = .habits
+    @State private var selectedHabit:       HabitBoard?      = nil
+    @State private var selectedTodo:        TodoItem?        = nil
+    @State private var selectedJournalRow:  JournalRow?      = .todaysLog
+    @State private var columnVisibility:    NavigationSplitViewVisibility = .all
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -53,23 +53,22 @@ struct MacRootView: View {
                 )
         } content: {
             MacContentColumn(section: selectedSection,
-                             selectedHabit: $selectedHabit,
-                             selectedTodo:  $selectedTodo,
-                             selectedNote:  $selectedNote)
+                             selectedHabit:      $selectedHabit,
+                             selectedTodo:       $selectedTodo,
+                             selectedJournalRow: $selectedJournalRow)
                 .navigationSplitViewColumnWidth(min: DS.Mac.contentMinWidth, ideal: 320)
         } detail: {
             MacDetailColumn(section: selectedSection,
-                            selectedHabit: selectedHabit,
-                            selectedTodo:  selectedTodo,
-                            selectedNote:  selectedNote)
-                .navigationSplitViewColumnWidth(min: DS.Mac.detailMinWidth)
+                            selectedHabit:      selectedHabit,
+                            selectedTodo:       selectedTodo,
+                            selectedJournalRow: selectedJournalRow)
+                .navigationSplitViewColumnWidth(min: DS.Mac.detailMinWidth, ideal: DS.Mac.detailMinWidth)
         }
         .navigationTitle("LOCA")
         .onChange(of: selectedSection) { _, _ in
-            // Clear all item selections when the user switches sections.
-            selectedHabit = nil
-            selectedTodo  = nil
-            selectedNote  = nil
+            selectedHabit      = nil
+            selectedTodo       = nil
+            selectedJournalRow = .todaysLog
         }
         .onReceive(NotificationCenter.default.publisher(for: .locaJumpToSection)) { note in
             if let section = note.object as? MacSection {
@@ -85,9 +84,9 @@ struct MacRootView: View {
 private struct MacContentColumn: View {
 
     let section: MacSection?
-    @Binding var selectedHabit: HabitBoard?
-    @Binding var selectedTodo:  TodoItem?
-    @Binding var selectedNote:  JournalNote?
+    @Binding var selectedHabit:      HabitBoard?
+    @Binding var selectedTodo:       TodoItem?
+    @Binding var selectedJournalRow: JournalRow?
 
     var body: some View {
         switch section {
@@ -96,7 +95,7 @@ private struct MacContentColumn: View {
         case .today:
             MacTodoContentColumn(selection: $selectedTodo)
         case .journal:
-            MacJournalContentColumn(selectedNote: $selectedNote)
+            MacJournalContentColumn(selectedRow: $selectedJournalRow)
         case .life:
             MacLifeContentView()
         case nil:
@@ -111,9 +110,9 @@ private struct MacContentColumn: View {
 private struct MacDetailColumn: View {
 
     let section: MacSection?
-    let selectedHabit: HabitBoard?
-    let selectedTodo:  TodoItem?
-    let selectedNote:  JournalNote?
+    let selectedHabit:      HabitBoard?
+    let selectedTodo:       TodoItem?
+    let selectedJournalRow: JournalRow?
 
     var body: some View {
         switch section {
@@ -122,7 +121,7 @@ private struct MacDetailColumn: View {
         case .today:
             MacTodoDetailColumn(item: selectedTodo)
         case .journal:
-            MacJournalDetailColumn(note: selectedNote)
+            MacJournalDetailColumn(selectedRow: selectedJournalRow)
         default:
             MacDetailPlaceholder()
         }

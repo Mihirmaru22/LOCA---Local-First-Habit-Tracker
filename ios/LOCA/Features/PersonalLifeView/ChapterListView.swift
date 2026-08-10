@@ -25,7 +25,7 @@ struct ChapterListView: View {
             }
         }
         .navigationTitle("Chapters")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitleDisplay()
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button(action: rebuildChapters) {
@@ -305,7 +305,7 @@ struct ChapterDetailView: View {
                 .padding(DS.Space.lg)
             }
             .navigationTitle(chapter.name ?? "Unnamed Chapter")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitleDisplay()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") {

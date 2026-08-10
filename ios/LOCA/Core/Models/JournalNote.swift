@@ -3,28 +3,50 @@ import Foundation
 
 // MARK: - JournalNote
 
-/// A free-form daily note written in the Mac Journal → Collect surface.
+/// A Journal entry captured in the Journal → Collect surface.
 ///
-/// One note per calendar day is the intended pattern (the write surface
-/// auto-loads today's note on entry), but nothing enforces uniqueness —
-/// CloudKit forbids unique constraints. If the user writes multiple notes
-/// in one day, all appear in the collect list in createdAt order.
+/// Three kinds share this model (`.dailyNote`, `.moment`, `.win`), stored as
+/// `noteKindRaw: Int` for CloudKit compatibility. Kind determines which section
+/// of the Collect view captures it and which row of the content column aggregates it.
 ///
-/// Notes are independent of `LogEntry`: they capture general daily reflection,
-/// not habit-specific check-in context. Habit-specific notes live on
-/// `LogEntry.note`; daily life notes live here.
+/// One daily note per calendar day is the intended pattern; moments and wins are
+/// multi-capture (many per day). Nothing enforces uniqueness — CloudKit forbids
+/// unique constraints.
 @Model
 final class JournalNote {
 
-    var id:         UUID    = UUID()
-    var date:       Date    = Date()   // day the note was written
-    var text:       String  = ""
-    var archivedAt: Date?   = nil
+    var id:          UUID   = UUID()
+    var date:        Date   = Date()
+    var text:        String = ""
+    var archivedAt:  Date?  = nil
+
+    /// Stores `NoteKind` as an `Int` for CloudKit compatibility.
+    /// Raw values are permanent — do not renumber.
+    var noteKindRaw: Int = NoteKind.dailyNote.rawValue
 
     var isArchived: Bool { archivedAt != nil }
 
-    init(date: Date = Date(), text: String = "") {
-        self.date = Calendar.current.startOfDay(for: date)
-        self.text = text
+    /// Type-safe accessor. Falls back to `.dailyNote` for records written by
+    /// older builds (field absent → default 0 → `.dailyNote`).
+    var noteKind: NoteKind {
+        get { NoteKind(rawValue: noteKindRaw) ?? .dailyNote }
+        set { noteKindRaw = newValue.rawValue }
+    }
+
+    init(date: Date = Date(), text: String = "", kind: NoteKind = .dailyNote) {
+        self.date        = Calendar.current.startOfDay(for: date)
+        self.text        = text
+        self.noteKindRaw = kind.rawValue
+    }
+}
+
+// MARK: - NoteKind
+
+extension JournalNote {
+
+    enum NoteKind: Int, CaseIterable {
+        case dailyNote = 0
+        case moment    = 1
+        case win       = 2
     }
 }

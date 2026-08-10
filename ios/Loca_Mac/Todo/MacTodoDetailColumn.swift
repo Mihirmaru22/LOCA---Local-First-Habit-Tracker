@@ -8,6 +8,8 @@ import SwiftData
 /// All fields are edited inline — no separate "edit mode":
 /// - Title via a `TextField` at the top.
 /// - Due date via `DatePicker` (clearable).
+/// - Schedule on the day-planner timeline (start time + duration).
+/// - Priority via a segmented `Picker`.
 /// - Notes via a resizable `TextEditor`.
 ///
 /// Completion toggle (T4) lives in the toolbar so it's always reachable
@@ -121,6 +123,25 @@ private struct MacTodoEditor: View {
                         }
                         .controlSize(.small)
                     }
+                }
+
+                Divider()
+
+                // MARK: Priority (T3)
+                VStack(alignment: .leading, spacing: DS.Space.xs) {
+                    Label("Priority", systemImage: "flag.fill")
+                        .font(DS.Text.caption)
+                        .foregroundStyle(DS.Color.textSecondary)
+
+                    Picker("Priority", selection: $item.priority) {
+                        Text("None").tag(0)
+                        Text("Low").tag(1)
+                        Text("Medium").tag(2)
+                        Text("High").tag(3)
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .onChange(of: item.priority) { _, _ in autosave() }
                 }
 
                 Divider()

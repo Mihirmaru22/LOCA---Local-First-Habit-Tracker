@@ -19,19 +19,26 @@ struct MacHabitContentColumn: View {
 
     @Binding var selection: HabitBoard?
 
-    @Query(sort: [SortDescriptor(\HabitBoard.name)], animation: .default)
-    private var boards: [HabitBoard]
+    // #Predicate with compound `&& == nil` causes type-check timeouts; split into
+    // a single-condition query + in-memory nil check.
+    @Query(filter: #Predicate<HabitBoard> { $0.habitKindRaw == 0 },
+           sort: [SortDescriptor(\HabitBoard.name)], animation: .default)
+    private var keystoneBoards: [HabitBoard]
+
+    private var boards: [HabitBoard] { keystoneBoards.filter { $0.archivedAt == nil } }
 
     @Environment(\.modelContext) private var modelContext
     @State private var showingCreateSheet = false
     @State private var showCheckInError   = false
 
-    private var activeBoards: [HabitBoard] {
-        boards.filter { $0.archivedAt == nil }
+    // Explicit init prevents the synthesized memberwise init (which is private
+    // because keystoneBoards is a private @Query property) from leaking to call sites.
+    init(selection: Binding<HabitBoard?>) {
+        self._selection = selection
     }
 
     var body: some View {
-        List(activeBoards, id: \.id, selection: $selection) { board in
+        List(boards, id: \.id, selection: $selection) { board in
             MacHabitRow(board: board, onCheckBinary: { checkInBinary(board) })
                 .tag(board)
         }
@@ -50,7 +57,7 @@ struct MacHabitContentColumn: View {
             }
         }
         .overlay {
-            if activeBoards.isEmpty {
+            if boards.isEmpty {
                 ContentUnavailableView {
                     Label("No Habits", systemImage: "checkmark.circle")
                 } description: {

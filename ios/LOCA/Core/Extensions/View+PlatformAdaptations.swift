@@ -46,12 +46,24 @@ extension View {
     /// Decimal keypad for numeric text entry.
     ///
     /// - iOS: applies `.keyboardType(.decimalPad)`.
-    /// - macOS: no-op — `TextField` has no `keyboardType`; entry uses the
-    ///   hardware keyboard.
+    /// - macOS: no-op — `TextField` has no `keyboardType`; entry uses the hardware keyboard.
     @ViewBuilder
     func decimalKeyboard() -> some View {
         #if os(iOS)
         keyboardType(.decimalPad)
+        #else
+        self
+        #endif
+    }
+
+    /// Number pad for integer text entry.
+    ///
+    /// - iOS: applies `.keyboardType(.numberPad)`.
+    /// - macOS: no-op.
+    @ViewBuilder
+    func numberKeyboard() -> some View {
+        #if os(iOS)
+        keyboardType(.numberPad)
         #else
         self
         #endif
@@ -73,16 +85,54 @@ extension View {
 
     /// Swipeable paged `TabView` without the page-dot index.
     ///
-    /// - iOS: `.tabViewStyle(.page(indexDisplayMode: .never))` — horizontal swipe
-    ///   between surfaces, with the selector supplied by the caller.
-    /// - macOS: no-op — `PageTabViewStyle` is unavailable; the `TabView` falls
-    ///   back to its automatic (tabbed) style, which is the native idiom there.
+    /// - iOS: `.tabViewStyle(.page(indexDisplayMode: .never))`.
+    /// - macOS: no-op — `PageTabViewStyle` is unavailable.
     @ViewBuilder
     func pagedTabView() -> some View {
         #if os(iOS)
         tabViewStyle(.page(indexDisplayMode: .never))
         #else
         self
+        #endif
+    }
+
+    /// Swipeable paged `TabView` with a visible page-dot index.
+    ///
+    /// - iOS: `.tabViewStyle(.page(indexDisplayMode: .always))`.
+    /// - macOS: no-op.
+    @ViewBuilder
+    func pagedTabViewWithIndex() -> some View {
+        #if os(iOS)
+        tabViewStyle(.page(indexDisplayMode: .always))
+        #else
+        self
+        #endif
+    }
+
+    /// Page index dots with always-visible background.
+    ///
+    /// - iOS: `.indexViewStyle(.page(backgroundDisplayMode: .always))`.
+    /// - macOS: no-op — `indexViewStyle` is unavailable.
+    @ViewBuilder
+    func pageIndexViewStyle() -> some View {
+        #if os(iOS)
+        indexViewStyle(.page(backgroundDisplayMode: .always))
+        #else
+        self
+        #endif
+    }
+
+    /// Full-screen cover on iOS, sheet on macOS (fullScreenCover is unavailable there).
+    @ViewBuilder
+    func fullScreenCoverCompat<Content: View>(
+        isPresented: Binding<Bool>,
+        onDismiss: (() -> Void)? = nil,
+        @ViewBuilder content: @escaping () -> Content
+    ) -> some View {
+        #if os(iOS)
+        fullScreenCover(isPresented: isPresented, onDismiss: onDismiss, content: content)
+        #else
+        sheet(isPresented: isPresented, onDismiss: onDismiss, content: content)
         #endif
     }
 }

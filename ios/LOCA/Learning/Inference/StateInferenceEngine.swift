@@ -8,6 +8,7 @@
 
 import Foundation
 import SwiftData
+import Combine
 
 // The InferredState @Model lives in InferredStateModel.swift so it can be
 // registered in RippleSchemaV1 from targets that don't build this engine.

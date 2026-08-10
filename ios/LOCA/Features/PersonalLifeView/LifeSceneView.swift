@@ -29,7 +29,7 @@ struct LifeSceneView: View {
             }
         }
         .navigationTitle("Your Life")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitleDisplay()
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button(action: refresh) {

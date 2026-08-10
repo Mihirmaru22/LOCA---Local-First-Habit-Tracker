@@ -52,7 +52,7 @@ struct PresentView: View {
             }
         }
         .ignoresSafeArea()
-        .fullScreenCover(isPresented: $showReach) {
+        .fullScreenCoverCompat(isPresented: $showReach) {
             ReachView(scene: scene, showAsk: $showAsk, askPrefill: $askPrefill)
         }
         .sheet(isPresented: $showAsk) {

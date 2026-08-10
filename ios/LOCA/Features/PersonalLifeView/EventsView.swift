@@ -26,7 +26,7 @@ struct EventsView: View {
             }
         }
         .navigationTitle("Events")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitleDisplay()
     }
 
     private var eventList: some View {

@@ -14,6 +14,7 @@
 //
 
 import Foundation
+import Combine
 
 /// The set of passive sources the user can individually revoke.
 /// `explicitLog` is intentionally excluded — habit logs are the user's own

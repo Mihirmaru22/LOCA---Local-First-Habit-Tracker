@@ -42,7 +42,7 @@ struct DirectionView: View {
             .padding(.top, DS.Space.md)
         }
         .navigationTitle("Your Direction")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitleDisplay()
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 if activeDirection != nil {

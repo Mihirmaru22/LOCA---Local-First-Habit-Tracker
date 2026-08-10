@@ -73,6 +73,11 @@ final class HabitBoard {
     /// Used by CalibrationManager to tag explicit logs for inference model recalibration.
     var dimension: String? = nil
 
+    /// Stores `HabitKind` as an `Int` for CloudKit compatibility.
+    /// Use the `habitKind` computed property for type-safe access.
+    /// Raw values are permanent — do not renumber.
+    var habitKindRaw: Int = HabitKind.keystone.rawValue
+
     /// Preferred reminder time in HH:MM format (e.g., "06:30").
     /// `nil` if no reminder is set. Inferred from logging patterns in Phase 2.3.
     var preferredReminderTime: String? = nil
@@ -209,6 +214,29 @@ final class HabitBoard {
         self.unitLabel = unitLabel
         self.colorIndex = colorIndex
         self.createdAt = createdAt
+    }
+}
+
+// MARK: - HabitKind
+
+extension HabitBoard {
+
+    /// Distinguishes keystone habits (Habits pillar, full feature set) from daily
+    /// routines (Journal checklist, lightweight checkbox only).
+    ///
+    /// Persisted as `habitKindRaw: Int` for CloudKit compatibility.
+    /// Raw values are permanent — do not renumber cases across releases.
+    enum HabitKind: Int, CaseIterable {
+        case keystone = 0
+        case daily    = 1
+    }
+
+    /// Type-safe accessor for `habitKindRaw`. Falls back to `.keystone` so any
+    /// record written by an older build (before this field existed, defaulting to 0)
+    /// is treated as a keystone habit — the correct default.
+    var habitKind: HabitKind {
+        get { HabitKind(rawValue: habitKindRaw) ?? .keystone }
+        set { habitKindRaw = newValue.rawValue }
     }
 }
 

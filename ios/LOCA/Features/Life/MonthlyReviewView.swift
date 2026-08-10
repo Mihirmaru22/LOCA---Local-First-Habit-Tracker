@@ -110,7 +110,7 @@ struct MonthlyReviewView: View {
             .padding(DS.Space.lg)
         }
         .navigationTitle("Monthly Review")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitleDisplay()
     }
 
     // MARK: - Month header + navigation

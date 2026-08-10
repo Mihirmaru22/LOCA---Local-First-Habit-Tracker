@@ -46,7 +46,7 @@ struct HealthKitPermissionView: View {
                 }
             }
             .navigationTitle("Health Access")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitleDisplay()
             .safeAreaInset(edge: .bottom) {
                 VStack(spacing: DS.Space.sm) {
                     Button {
