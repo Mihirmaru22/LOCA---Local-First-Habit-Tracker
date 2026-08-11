@@ -39,6 +39,7 @@ private struct MacTodoEditor: View {
     @Bindable var item: TodoItem
     @Environment(\.modelContext) private var modelContext
     @State private var showDeleteConfirm = false
+    @State private var showIconPicker    = false
     @State private var hasDueDate: Bool
     @State private var isScheduled: Bool
 
@@ -58,6 +59,52 @@ private struct MacTodoEditor: View {
                     .textFieldStyle(.plain)
                     .onChange(of: item.title) { _, _ in autosave() }
                     .padding(.top, DS.Space.xl)
+
+                Divider()
+
+                // MARK: Icon (T7 — per-task icon)
+                HStack(spacing: DS.Space.sm) {
+                    Label("Icon", systemImage: "square.grid.2x2")
+                        .font(DS.Text.caption)
+                        .foregroundStyle(DS.Color.textSecondary)
+
+                    Spacer()
+
+                    Button { showIconPicker.toggle() } label: {
+                        HStack(spacing: DS.Space.xs) {
+                            Image(systemName: item.iconName ?? "checkmark")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(Color.white)
+                                .frame(width: 28, height: 28)
+                                .background {
+                                    Circle()
+                                        .fill(Color.accentColor)
+                                        .overlay {
+                                            Circle().fill(
+                                                LinearGradient(
+                                                    colors: [Color.white.opacity(0.28), Color.clear],
+                                                    startPoint: .topLeading,
+                                                    endPoint: .center
+                                                )
+                                            )
+                                        }
+                                }
+
+                            Text(TodoIcon.label(for: item.iconName ?? "checkmark"))
+                                .font(DS.Text.caption)
+                                .foregroundStyle(DS.Color.textSecondary)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .popover(isPresented: $showIconPicker, arrowEdge: .trailing) {
+                        IconPickerPopover(
+                            selected: Binding(
+                                get: { item.iconName },
+                                set: { item.iconName = $0; showIconPicker = false; autosave() }
+                            )
+                        )
+                    }
+                }
 
                 Divider()
 
