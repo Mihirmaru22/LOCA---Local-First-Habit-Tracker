@@ -21,6 +21,7 @@ struct MacTodoDetailColumn: View {
     var body: some View {
         if let item {
             MacTodoEditor(item: item)
+                .id(item.id)
         } else {
             ContentUnavailableView(
                 "No Task Selected",

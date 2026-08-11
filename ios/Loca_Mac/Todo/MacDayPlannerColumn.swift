@@ -200,10 +200,12 @@ struct MacDayPlannerColumn: View {
 
     private var unscheduledSection: some View {
         VStack(alignment: .leading, spacing: DS.Space.xs) {
-            Text("Unscheduled")
+            Divider()
+                .padding(.top, DS.Space.md)
+            Label("Unscheduled", systemImage: "tray")
                 .font(DS.Text.caption)
                 .foregroundStyle(DS.Color.textSecondary)
-                .padding(.top, DS.Space.lg)
+                .padding(.top, DS.Space.sm)
                 .padding(.bottom, DS.Space.xs)
 
             ForEach(unscheduled, id: \.id) { item in
@@ -343,13 +345,23 @@ private struct PlannerBlockRow: View {
             }
             .frame(width: PlannerMetrics.timeGutter, alignment: .trailing)
 
-            // Icon bubble
-            Image(systemName: item.iconName ?? "circle.fill")
+            // Icon bubble — gradient fill + white gloss highlight
+            Image(systemName: item.iconName ?? "checkmark")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(Color.white)
                 .frame(width: PlannerMetrics.bubble, height: PlannerMetrics.bubble)
                 .background {
-                    Circle().fill(item.isCompleted ? DS.Color.textTertiary : Color.accentColor)
+                    Circle()
+                        .fill(item.isCompleted ? DS.Color.textTertiary : Color.accentColor)
+                        .overlay {
+                            Circle().fill(
+                                LinearGradient(
+                                    colors: [Color.white.opacity(item.isCompleted ? 0 : 0.28), Color.clear],
+                                    startPoint: .topLeading,
+                                    endPoint: .center
+                                )
+                            )
+                        }
                 }
 
             // Title + meta
@@ -360,9 +372,14 @@ private struct PlannerBlockRow: View {
                     .foregroundStyle(item.isCompleted ? DS.Color.textTertiary : DS.Color.textPrimary)
                     .lineLimit(1)
 
-                Text(metaText)
-                    .font(DS.Text.footnote)
-                    .foregroundStyle(DS.Color.textTertiary)
+                if item.durationMinutes > 0 {
+                    Text(durationLabel)
+                        .font(DS.Text.footnote)
+                        .foregroundStyle(DS.Color.textSecondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(DS.Color.surface, in: Capsule())
+                }
             }
 
             Spacer(minLength: DS.Space.sm)
@@ -378,8 +395,16 @@ private struct PlannerBlockRow: View {
         .padding(DS.Space.sm)
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.control)
-                .fill(isSelected ? Color.accentColor.opacity(0.12) : Color.clear)
+                .fill(isSelected ? Color.accentColor.opacity(0.14) : Color.clear)
         )
+        .overlay(alignment: .leading) {
+            if isSelected {
+                RoundedRectangle(cornerRadius: 1.5)
+                    .fill(Color.accentColor)
+                    .frame(width: 3)
+                    .padding(.vertical, DS.Space.xs)
+            }
+        }
         .contentShape(Rectangle())
         .onTapGesture(perform: onSelect)
     }
@@ -388,12 +413,11 @@ private struct PlannerBlockRow: View {
         item.startTime.map(timeString) ?? "—"
     }
 
-    /// "8:00 AM · 15 min" or just the start time for a zero-duration block.
-    private var metaText: String {
-        guard item.durationMinutes > 0 else { return startText }
+    private var durationLabel: String {
         let h = item.durationMinutes / 60, m = item.durationMinutes % 60
-        let dur = h > 0 ? (m > 0 ? "\(h)h \(m)m" : "\(h)h") : "\(m) min"
-        return "\(dur)"
+        if h > 0 && m > 0 { return "\(h)h \(m)m" }
+        if h > 0 { return "\(h)h" }
+        return "\(m) min"
     }
 
     private func timeString(_ date: Date) -> String {
