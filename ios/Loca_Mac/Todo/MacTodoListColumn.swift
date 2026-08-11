@@ -1,18 +1,13 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - MacTodoListColumn   (T2 — Today / Upcoming / Anytime)
+// MARK: - MacTodoListColumn   (task inventory)
 
-/// The "List" sub-pillar of the Today section: a GTD-style bucket list.
+/// The "List" sub-pillar — a flat task inventory.
 ///
-/// Three named sections mirror the buckets computed by `TodoItem.bucket`:
-/// - **Today** — tasks due today or overdue.
-/// - **Upcoming** — tasks with a future due date.
-/// - **Anytime** — tasks with no due date.
-///
-/// Within each section, incomplete tasks appear first sorted by due date.
-/// Completed tasks are hidden under a "N completed" toggle so the active list
-/// stays focused — clicking the toggle expands them across all sections at once.
+/// No date-based grouping. All non-archived top-level tasks appear in a single
+/// continuous collection ordered by creation date. Completed tasks hide under a
+/// toggle at the bottom. Date/time metadata is shown per-row but never drives grouping.
 struct MacTodoListColumn: View {
 
     @Binding var selection: TodoItem?
@@ -26,25 +21,18 @@ struct MacTodoListColumn: View {
         allItems.filter { !$0.isArchived && $0.parentID == nil }
     }
 
-    private func openItems(in bucket: TodoBucket) -> [TodoItem] {
-        activeItems
-            .filter { $0.bucket == bucket && !$0.isCompleted }
-            .sorted { ($0.dueDate ?? $0.createdAt) < ($1.dueDate ?? $1.createdAt) }
+    private var openItems: [TodoItem] {
+        activeItems.filter { !$0.isCompleted }
     }
 
-    private func doneItems(in bucket: TodoBucket) -> [TodoItem] {
+    private var doneItems: [TodoItem] {
         activeItems
-            .filter { $0.bucket == bucket && $0.isCompleted }
-            .sorted { ($0.completedAt ?? $0.createdAt) > ($1.completedAt ?? $1.createdAt) }
-    }
-
-    private var totalDone: Int {
-        TodoBucket.allCases.reduce(0) { $0 + doneItems(in: $1).count }
+            .filter { $0.isCompleted }
+            .sorted { ($0.completedAt ?? .distantPast) > ($1.completedAt ?? .distantPast) }
     }
 
     var body: some View {
         VStack(spacing: 0) {
-            // Quick-add bar pinned at top (T1)
             MacTodoQuickAdd()
                 .padding(.horizontal, DS.Space.md)
                 .padding(.vertical, DS.Space.sm)
@@ -52,34 +40,22 @@ struct MacTodoListColumn: View {
             Divider()
 
             List(selection: $selection) {
-                ForEach(TodoBucket.allCases, id: \.self) { bucket in
-                    let open = openItems(in: bucket)
-                    let done = doneItems(in: bucket)
-
-                    if !open.isEmpty || !done.isEmpty {
-                        Section(bucket.rawValue) {
-                            ForEach(open, id: \.id) { item in
-                                MacTodoRow(item: item).tag(item)
-                            }
-
-                            if !done.isEmpty && showCompleted {
-                                ForEach(done, id: \.id) { item in
-                                    MacTodoRow(item: item).tag(item)
-                                }
-                            }
-                        }
-                    }
+                ForEach(openItems, id: \.id) { item in
+                    MacTodoRow(item: item).tag(item)
                 }
 
-                // Single toggle at the bottom for all completed tasks
-                if totalDone > 0 {
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.15)) {
-                            showCompleted.toggle()
+                if !doneItems.isEmpty {
+                    if showCompleted {
+                        ForEach(doneItems, id: \.id) { item in
+                            MacTodoRow(item: item).tag(item)
                         }
+                    }
+
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.15)) { showCompleted.toggle() }
                     } label: {
                         Label(
-                            showCompleted ? "Hide completed" : "\(totalDone) completed",
+                            showCompleted ? "Hide completed" : "\(doneItems.count) completed",
                             systemImage: showCompleted ? "chevron.up" : "checkmark.circle.fill"
                         )
                         .font(DS.Text.caption)
@@ -152,21 +128,32 @@ struct MacTodoRow: View {
                     .lineLimit(1)
                     .animation(DS.Motion.settle, value: item.isCompleted)
 
-                if let due = item.dueDate {
-                    Text(due, style: .date)
-                        .font(DS.Text.footnote)
-                        .foregroundStyle(isOverdue(due) && !item.isCompleted
-                                         ? .red : DS.Color.textTertiary)
-                }
+                // Metadata line: date · time (or date · subtask count)
+                if item.dueDate != nil || item.startTime != nil || !subtasks.isEmpty {
+                    HStack(spacing: 4) {
+                        if let due = item.dueDate {
+                            Text(due, style: .date)
+                                .foregroundStyle(isOverdue(due) && !item.isCompleted
+                                                 ? .red : DS.Color.textTertiary)
+                        }
 
-                if !subtasks.isEmpty {
-                    HStack(spacing: DS.Space.xs) {
-                        TodoProgressRing(progress: subtaskProgress, diameter: 14, lineWidth: 2)
-                        Text("\(completedSubtaskCount)/\(subtasks.count)")
-                            .font(DS.Text.footnote)
-                            .foregroundStyle(DS.Color.textTertiary)
-                            .monospacedDigit()
+                        if let start = item.startTime {
+                            if item.dueDate != nil { Text("·").foregroundStyle(DS.Color.textTertiary) }
+                            Text(start, format: .dateTime.hour(.defaultDigits(amPM: .abbreviated)).minute())
+                                .foregroundStyle(DS.Color.textTertiary)
+                        }
+
+                        if !subtasks.isEmpty {
+                            if item.dueDate != nil || item.startTime != nil {
+                                Text("·").foregroundStyle(DS.Color.textTertiary)
+                            }
+                            TodoProgressRing(progress: subtaskProgress, diameter: 12, lineWidth: 1.5)
+                            Text("\(completedSubtaskCount)/\(subtasks.count)")
+                                .foregroundStyle(DS.Color.textTertiary)
+                                .monospacedDigit()
+                        }
                     }
+                    .font(DS.Text.footnote)
                 }
             }
 
