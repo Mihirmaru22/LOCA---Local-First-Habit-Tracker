@@ -1,19 +1,8 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - MacTodoDetailColumn   (T3 edit / delete · T4 un-complete)
+// MARK: - MacTodoDetailColumn   (T9 — calm document panel)
 
-/// Right detail column showing the selected `TodoItem`.
-///
-/// All fields are edited inline — no separate "edit mode":
-/// - Title via a `TextField` at the top.
-/// - Due date via `DatePicker` (clearable).
-/// - Schedule on the day-planner timeline (start time + duration).
-/// - Priority via a segmented `Picker`.
-/// - Notes via a resizable `TextEditor`.
-///
-/// Completion toggle (T4) lives in the toolbar so it's always reachable
-/// without scrolling. Archive (soft-delete, T3) is a destructive toolbar button.
 struct MacTodoDetailColumn: View {
 
     let item: TodoItem?
@@ -39,10 +28,10 @@ private struct MacTodoEditor: View {
     @Bindable var item: TodoItem
     @Environment(\.modelContext) private var modelContext
     @Query(sort: [SortDescriptor(\TodoItem.createdAt)]) private var allItems: [TodoItem]
+
     @State private var showDeleteConfirm = false
     @State private var showIconPicker    = false
-    @State private var hasDueDate: Bool
-    @State private var isScheduled: Bool
+    @State private var showStartPicker   = false
 
     private var subtasks: [TodoItem] {
         allItems.filter { $0.parentID == item.id && !$0.isArchived }
@@ -51,18 +40,14 @@ private struct MacTodoEditor: View {
     private var subtaskProgress: Double {
         subtasks.isEmpty ? 0 : Double(completedSubtaskCount) / Double(subtasks.count)
     }
-
-    init(item: TodoItem) {
-        self.item = item
-        self._hasDueDate  = State(initialValue: item.dueDate != nil)
-        self._isScheduled = State(initialValue: item.startTime != nil)
-    }
+    /// List task = no scheduled time; plan task = has startTime (no priority shown).
+    private var isListTask: Bool { item.startTime == nil }
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.xl) {
+            VStack(alignment: .leading, spacing: 0) {
 
-                // MARK: Hero — icon bubble + display-font title (T-Phase8)
+                // MARK: Hero — icon bubble + display-font title
                 HStack(alignment: .center, spacing: DS.Space.md) {
                     Button { showIconPicker.toggle() } label: {
                         Image(systemName: item.iconName ?? "checkmark")
@@ -88,174 +73,29 @@ private struct MacTodoEditor: View {
                         .onChange(of: item.title) { _, _ in autosave() }
                 }
                 .padding(.top, DS.Space.xl)
+                .padding(.bottom, DS.Space.md)
 
-                // MARK: Meta chips (date · scheduled time · subtask progress)
-                if item.dueDate != nil || item.isScheduled || !subtasks.isEmpty {
-                    HStack(spacing: DS.Space.sm) {
-                        if let due = item.dueDate {
-                            metaChip(icon: "calendar", text: due.formatted(.dateTime.month(.abbreviated).day()))
-                        }
-                        if item.isScheduled, let start = item.startTime {
-                            metaChip(icon: "clock", text: start.formatted(.dateTime.hour().minute()))
-                        }
-                        if !subtasks.isEmpty {
-                            HStack(spacing: DS.Space.xs) {
-                                TodoProgressRing(progress: subtaskProgress, diameter: 14, lineWidth: 2)
-                                Text("\(completedSubtaskCount)/\(subtasks.count)")
-                                    .font(DS.Text.caption)
-                                    .monospacedDigit()
-                            }
-                            .foregroundStyle(Color.accentColor)
-                            .padding(.horizontal, 9)
-                            .padding(.vertical, 5)
-                            .background(Color.accentColor.opacity(0.12), in: Capsule())
-                        }
-                    }
-                }
+                // MARK: Chip row — date · time · flag · subtask count
+                chipRow
+                    .padding(.bottom, DS.Space.xl)
 
-                Divider()
+                // MARK: Schedule card
+                scheduleCard
+                    .padding(.bottom, DS.Space.md)
 
-                // MARK: Due date (T3 — set / clear)
-                VStack(alignment: .leading, spacing: DS.Space.sm) {
-                    Toggle("Due date", isOn: $hasDueDate)
-                        .toggleStyle(.switch)
-                        .controlSize(.small)
-                        .onChange(of: hasDueDate) { _, on in
-                            item.dueDate = on ? (item.dueDate ?? Date()) : nil
-                            autosave()
-                        }
+                // MARK: Subtasks card
+                subtasksCard
+                    .padding(.bottom, DS.Space.lg)
 
-                    if hasDueDate {
-                        DatePicker(
-                            "Due",
-                            selection: Binding(
-                                get:  { item.dueDate ?? Date() },
-                                set:  { item.dueDate = $0; autosave() }
-                            ),
-                            displayedComponents: .date
-                        )
-                        .datePickerStyle(.graphical)
-                        .labelsHidden()
-                    }
-                }
-
-                Divider()
-
-                // MARK: Schedule on timeline (day-planner sub-pillar)
-                VStack(alignment: .leading, spacing: DS.Space.sm) {
-                    Toggle("Schedule on timeline", isOn: $isScheduled)
-                        .toggleStyle(.switch)
-                        .controlSize(.small)
-                        .onChange(of: isScheduled) { _, on in
-                            item.startTime = on ? (item.startTime ?? defaultStart()) : nil
-                            autosave()
-                        }
-
-                    if isScheduled {
-                        DatePicker(
-                            "Start",
-                            selection: Binding(
-                                get: { item.startTime ?? defaultStart() },
-                                set: { item.startTime = $0; autosave() }
-                            ),
-                            displayedComponents: [.date, .hourAndMinute]
-                        )
-                        .controlSize(.small)
-
-                        Stepper(
-                            value: Binding(
-                                get: { item.durationMinutes },
-                                set: { item.durationMinutes = max(0, $0); autosave() }
-                            ),
-                            in: 0...600,
-                            step: 15
-                        ) {
-                            Text(item.durationMinutes == 0
-                                 ? "No duration"
-                                 : "\(item.durationMinutes) min")
-                                .font(DS.Text.body)
-                                .foregroundStyle(DS.Color.textSecondary)
-                        }
-                        .controlSize(.small)
-                    }
-                }
-
-                Divider()
-
-                // MARK: Priority (T3)
-                VStack(alignment: .leading, spacing: DS.Space.xs) {
-                    Label("Priority", systemImage: "flag.fill")
-                        .font(DS.Text.caption)
-                        .foregroundStyle(DS.Color.textSecondary)
-
-                    Picker("Priority", selection: $item.priority) {
-                        Text("None").tag(0)
-                        Text("Low").tag(1)
-                        Text("Medium").tag(2)
-                        Text("High").tag(3)
-                    }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                    .onChange(of: item.priority) { _, _ in autosave() }
-                }
-
-                Divider()
-
-                // MARK: Subtasks (T8)
-                VStack(alignment: .leading, spacing: DS.Space.sm) {
-                    HStack(spacing: DS.Space.xs) {
-                        Label("Subtasks", systemImage: "checklist")
-                            .font(DS.Text.caption)
-                            .foregroundStyle(DS.Color.textSecondary)
-
-                        if !subtasks.isEmpty {
-                            TodoProgressRing(progress: subtaskProgress, diameter: 16, lineWidth: 2)
-                            Text("\(completedSubtaskCount)/\(subtasks.count)")
-                                .font(DS.Text.footnote)
-                                .foregroundStyle(DS.Color.textTertiary)
-                                .monospacedDigit()
-                        }
-
-                        Spacer()
-
-                        Button(action: addSubtask) {
-                            Image(systemName: "plus.circle")
-                                .foregroundStyle(.tint)
-                        }
-                        .buttonStyle(.plain)
-                        .help("Add subtask")
-                    }
-
-                    ForEach(subtasks) { sub in
-                        SubtaskRow(sub: sub) { deleteSubtask(sub) }
-                    }
-                }
-
-                Divider()
-
-                // MARK: Notes (T3 — inline edit)
-                VStack(alignment: .leading, spacing: DS.Space.xs) {
-                    Label("Notes", systemImage: "note.text")
-                        .font(DS.Text.caption)
-                        .foregroundStyle(DS.Color.textSecondary)
-
-                    TextEditor(text: Binding(
-                        get:  { item.notes ?? "" },
-                        set:  { item.notes = $0.isEmpty ? nil : $0; autosave() }
-                    ))
-                    .font(DS.Text.body)
-                    .frame(minHeight: 120)
-                    .scrollContentBackground(.hidden)
-                    .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.control))
-                }
-
-                Spacer(minLength: DS.Space.xxxl)
+                // MARK: Note
+                noteSection
+                    .padding(.bottom, DS.Space.xxxl)
             }
             .padding(.horizontal, DS.Space.xl)
         }
         .navigationTitle(item.title.isEmpty ? "Task" : item.title)
         .toolbar {
-            // T4 — Complete / un-complete
+            // Complete / un-complete
             ToolbarItem(placement: .primaryAction) {
                 Button(action: toggleComplete) {
                     Label(
@@ -263,13 +103,30 @@ private struct MacTodoEditor: View {
                         systemImage: item.isCompleted ? "checkmark.circle.fill" : "circle"
                     )
                 }
-                .help(item.isCompleted ? "Mark not done (un-complete)" : "Mark done")
+                .help(item.isCompleted ? "Mark not done" : "Mark done")
                 .tint(item.isCompleted ? DS.Color.textSecondary : .accentColor)
             }
 
-            // T3 — Delete (archive)
+            // Flag — list tasks only; amber when a priority is set
+            if isListTask {
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button("None")   { item.priority = 0; autosave() }
+                        Divider()
+                        Button("Low")    { item.priority = 1; autosave() }
+                        Button("Medium") { item.priority = 2; autosave() }
+                        Button("High")   { item.priority = 3; autosave() }
+                    } label: {
+                        Label("Priority", systemImage: item.priority > 0 ? "flag.fill" : "flag")
+                    }
+                    .tint(item.priority > 0 ? .orange : DS.Color.textSecondary)
+                    .help(item.priority > 0 ? "Priority: \(priorityLabel(item.priority))" : "Set priority")
+                }
+            }
+
+            // Delete (archive)
             ToolbarItem(placement: .destructiveAction) {
-                Button(role: .destructive, action: { showDeleteConfirm = true }) {
+                Button(role: .destructive) { showDeleteConfirm = true } label: {
                     Label("Delete Task", systemImage: "trash")
                 }
                 .help("Archive this task")
@@ -287,9 +144,228 @@ private struct MacTodoEditor: View {
         }
     }
 
+    // MARK: Chip row
+
+    @ViewBuilder
+    private var chipRow: some View {
+        HStack(spacing: DS.Space.sm) {
+            if item.startTime != nil {
+                // Plan task — combined date · time chip
+                let dateText = (item.dueDate ?? item.startTime ?? Date())
+                    .formatted(.dateTime.month(.abbreviated).day())
+                let timeText = (item.startTime ?? Date())
+                    .formatted(.dateTime.hour().minute())
+                removableChip(icon: "calendar", text: "\(dateText) · \(timeText)") {
+                    item.dueDate  = nil
+                    item.startTime = nil
+                    item.durationMinutes = 0
+                    autosave()
+                }
+            } else if let due = item.dueDate {
+                // List task with due date
+                removableChip(icon: "calendar",
+                              text: due.formatted(.dateTime.month(.abbreviated).day())) {
+                    item.dueDate = nil
+                    autosave()
+                }
+            } else {
+                // No date — dashed add chip
+                Button {
+                    item.dueDate = Calendar.current.startOfDay(for: .now)
+                    autosave()
+                } label: {
+                    HStack(spacing: DS.Space.xs) {
+                        Image(systemName: "plus").font(.caption2)
+                        Text("Date").font(DS.Text.caption)
+                    }
+                    .foregroundStyle(DS.Color.textTertiary)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 5)
+                    .overlay(
+                        Capsule()
+                            .stroke(
+                                DS.Color.textTertiary.opacity(0.45),
+                                style: StrokeStyle(lineWidth: 1, dash: [3, 2])
+                            )
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+
+            // Flag chip — list tasks only, visible when priority is set
+            if isListTask && item.priority > 0 {
+                removableChip(icon: "flag.fill",
+                              text: priorityLabel(item.priority),
+                              tint: .orange) {
+                    item.priority = 0
+                    autosave()
+                }
+            }
+
+            // Subtask progress chip
+            if !subtasks.isEmpty {
+                HStack(spacing: DS.Space.xs) {
+                    TodoProgressRing(progress: subtaskProgress, diameter: 14, lineWidth: 2)
+                    Text("\(completedSubtaskCount)/\(subtasks.count)")
+                        .font(DS.Text.caption)
+                        .monospacedDigit()
+                }
+                .foregroundStyle(Color.accentColor)
+                .padding(.horizontal, 9)
+                .padding(.vertical, 5)
+                .background(Color.accentColor.opacity(0.12), in: Capsule())
+            }
+
+            Spacer()
+        }
+    }
+
+    // MARK: Schedule card
+
+    @ViewBuilder
+    private var scheduleCard: some View {
+        GroupedCard(label: "SCHEDULE ON TIMELINE") {
+            // On-timeline toggle
+            HStack {
+                Text("On timeline")
+                    .font(DS.Text.body)
+                    .foregroundStyle(DS.Color.textPrimary)
+                Spacer()
+                Toggle("", isOn: Binding(
+                    get: { item.startTime != nil },
+                    set: { on in
+                        if on {
+                            item.startTime = defaultStart()
+                            if item.durationMinutes == 0 { item.durationMinutes = 30 }
+                        } else {
+                            item.startTime = nil
+                            item.durationMinutes = 0
+                        }
+                        autosave()
+                    }
+                ))
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .labelsHidden()
+            }
+
+            if item.startTime != nil {
+                Divider()
+
+                // Start — tapping opens a compact date+time popover
+                HStack {
+                    Text("Start")
+                        .font(DS.Text.body)
+                        .foregroundStyle(DS.Color.textPrimary)
+                    Spacer()
+                    Button { showStartPicker.toggle() } label: {
+                        Text(
+                            (item.startTime ?? defaultStart())
+                                .formatted(.dateTime.weekday(.abbreviated)
+                                    .month(.abbreviated).day()
+                                    .hour().minute())
+                        )
+                        .font(DS.Text.body)
+                        .foregroundStyle(Color.accentColor)
+                    }
+                    .buttonStyle(.plain)
+                    .popover(isPresented: $showStartPicker, arrowEdge: .trailing) {
+                        VStack(spacing: 0) {
+                            DatePicker(
+                                "Start",
+                                selection: Binding(
+                                    get: { item.startTime ?? defaultStart() },
+                                    set: { item.startTime = $0; autosave() }
+                                ),
+                                displayedComponents: [.date, .hourAndMinute]
+                            )
+                            .datePickerStyle(.graphical)
+                            .labelsHidden()
+                            .padding(DS.Space.md)
+                        }
+                        .frame(width: 320)
+                    }
+                }
+
+                Divider()
+
+                // Duration — custom − / + stepper
+                HStack {
+                    Text("Duration")
+                        .font(DS.Text.body)
+                        .foregroundStyle(DS.Color.textPrimary)
+                    Spacer()
+                    DurationStepper(
+                        minutes: Binding(
+                            get: { item.durationMinutes },
+                            set: { item.durationMinutes = max(0, $0); autosave() }
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    // MARK: Subtasks card
+
+    @ViewBuilder
+    private var subtasksCard: some View {
+        let cardLabel = subtasks.isEmpty
+            ? "SUBTASKS"
+            : "SUBTASKS · \(completedSubtaskCount) OF \(subtasks.count)"
+
+        GroupedCard(label: cardLabel) {
+            ForEach(Array(subtasks.enumerated()), id: \.element.id) { idx, sub in
+                if idx > 0 { Divider() }
+                SubtaskRow(sub: sub) { deleteSubtask(sub) }
+            }
+
+            if !subtasks.isEmpty { Divider() }
+
+            // Dashed add-subtask row
+            Button(action: addSubtask) {
+                HStack(spacing: DS.Space.sm) {
+                    Image(systemName: "plus.circle")
+                        .foregroundStyle(DS.Color.textTertiary)
+                    Text("Add subtask")
+                        .font(DS.Text.body)
+                        .foregroundStyle(DS.Color.textTertiary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, DS.Space.xs)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    // MARK: Note section
+
+    @ViewBuilder
+    private var noteSection: some View {
+        VStack(alignment: .leading, spacing: DS.Space.xs) {
+            detLabel("NOTE")
+
+            ZStack(alignment: .topLeading) {
+                if (item.notes ?? "").isEmpty {
+                    Text("Add a note…")
+                        .font(DS.Text.body)
+                        .foregroundStyle(DS.Color.textTertiary)
+                        .padding(.top, 2)
+                        .allowsHitTesting(false)
+                }
+                TextEditor(text: Binding(
+                    get:  { item.notes ?? "" },
+                    set:  { item.notes = $0.isEmpty ? nil : $0; autosave() }
+                ))
+                .font(DS.Text.body)
+                .frame(minHeight: 96)
+                .scrollContentBackground(.hidden)
+            }
+        }
+    }
+
     // MARK: - Actions
 
-    // T8 — subtask management
     private func addSubtask() {
         let sub = TodoItem(parentID: item.id)
         modelContext.insert(sub)
@@ -302,14 +378,12 @@ private struct MacTodoEditor: View {
         autosave()
     }
 
-    // T4 — toggle completion
     private func toggleComplete() {
         item.completedAt = item.isCompleted ? nil : Date()
         autosave()
         Haptics.impact(.light)
     }
 
-    // T3 — soft delete
     private func archiveItem() {
         item.archivedAt = Date()
         autosave()
@@ -319,25 +393,119 @@ private struct MacTodoEditor: View {
         try? modelContext.save()
     }
 
-    /// A violet-tinted pill summarising one attribute (date, time) in the hero.
-    @ViewBuilder
-    private func metaChip(icon: String, text: String) -> some View {
-        HStack(spacing: DS.Space.xs) {
-            Image(systemName: icon).font(.caption2)
-            Text(text).font(DS.Text.caption)
-        }
-        .foregroundStyle(Color.accentColor)
-        .padding(.horizontal, 9)
-        .padding(.vertical, 5)
-        .background(Color.accentColor.opacity(0.12), in: Capsule())
-    }
-
-    /// Default timeline slot when a task is first scheduled: 9:00 AM on its due
-    /// day (or today if it has no due date).
     private func defaultStart() -> Date {
         let cal = Calendar.current
         let day = item.dueDate ?? Date()
         return cal.date(bySettingHour: 9, minute: 0, second: 0, of: day) ?? day
+    }
+
+    // MARK: Helpers
+
+    @ViewBuilder
+    private func removableChip(
+        icon: String,
+        text: String,
+        tint: Color = .accentColor,
+        onRemove: @escaping () -> Void
+    ) -> some View {
+        HStack(spacing: DS.Space.xs) {
+            Image(systemName: icon).font(.caption2)
+            Text(text).font(DS.Text.caption)
+            Button(action: onRemove) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 8, weight: .bold))
+            }
+            .buttonStyle(.plain)
+        }
+        .foregroundStyle(tint)
+        .padding(.horizontal, 9)
+        .padding(.vertical, 5)
+        .background(tint.opacity(0.12), in: Capsule())
+    }
+
+    private func detLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 11, weight: .semibold))
+            .tracking(0.6)
+            .foregroundStyle(DS.Color.textTertiary)
+    }
+
+    private func priorityLabel(_ p: Int) -> String {
+        switch p {
+        case 1: return "Low"
+        case 2: return "Medium"
+        case 3: return "High"
+        default: return "None"
+        }
+    }
+}
+
+// MARK: - GroupedCard
+
+private struct GroupedCard<Content: View>: View {
+
+    let label: String
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Space.xs) {
+            Text(label)
+                .font(.system(size: 11, weight: .semibold))
+                .tracking(0.6)
+                .foregroundStyle(DS.Color.textTertiary)
+
+            VStack(alignment: .leading, spacing: DS.Space.sm) {
+                content()
+            }
+            .padding(DS.Space.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+        }
+    }
+}
+
+// MARK: - DurationStepper
+
+private struct DurationStepper: View {
+
+    @Binding var minutes: Int
+
+    var body: some View {
+        HStack(spacing: DS.Space.sm) {
+            Button {
+                withAnimation(DS.Motion.confirm) { minutes = max(0, minutes - 15) }
+            } label: {
+                Image(systemName: "minus")
+                    .font(.system(size: 11, weight: .semibold))
+                    .frame(width: 26, height: 26)
+                    .background(DS.Color.surface, in: Circle())
+            }
+            .buttonStyle(.plain)
+            .disabled(minutes <= 0)
+
+            Text(minutes == 0 ? "None" : durationText)
+                .font(DS.Text.body)
+                .monospacedDigit()
+                .frame(minWidth: 52, alignment: .center)
+                .foregroundStyle(minutes == 0 ? DS.Color.textTertiary : DS.Color.textSecondary)
+
+            Button {
+                withAnimation(DS.Motion.confirm) { minutes += 15 }
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 11, weight: .semibold))
+                    .frame(width: 26, height: 26)
+                    .background(DS.Color.surface, in: Circle())
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var durationText: String {
+        let h = minutes / 60, m = minutes % 60
+        if h > 0 && m > 0 { return "\(h)h \(m)m" }
+        if h > 0 { return "\(h)h" }
+        return "\(m)m"
     }
 }
 
@@ -347,6 +515,7 @@ private struct SubtaskRow: View {
 
     @Bindable var sub: TodoItem
     @Environment(\.modelContext) private var modelContext
+    @State private var isHovered = false
     let onDelete: () -> Void
 
     var body: some View {
@@ -368,16 +537,19 @@ private struct SubtaskRow: View {
                 .foregroundStyle(sub.isCompleted ? DS.Color.textTertiary : DS.Color.textPrimary)
                 .onChange(of: sub.title) { _, _ in try? modelContext.save() }
 
-            Button(action: onDelete) {
-                Image(systemName: "xmark")
-                    .font(.caption2)
-                    .foregroundStyle(DS.Color.textTertiary)
+            if isHovered {
+                Button(action: onDelete) {
+                    Image(systemName: "xmark")
+                        .font(.caption2)
+                        .foregroundStyle(DS.Color.textTertiary)
+                }
+                .buttonStyle(.plain)
+                .help("Remove subtask")
+                .transition(.opacity)
             }
-            .buttonStyle(.plain)
-            .help("Remove subtask")
         }
         .padding(.vertical, DS.Space.xs)
-        .padding(.horizontal, DS.Space.sm)
-        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.control))
+        .onHover { isHovered = $0 }
+        .animation(DS.Motion.confirm, value: isHovered)
     }
 }
