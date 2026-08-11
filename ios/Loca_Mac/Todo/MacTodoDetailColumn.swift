@@ -38,10 +38,19 @@ private struct MacTodoEditor: View {
 
     @Bindable var item: TodoItem
     @Environment(\.modelContext) private var modelContext
+    @Query(sort: [SortDescriptor(\TodoItem.createdAt)]) private var allItems: [TodoItem]
     @State private var showDeleteConfirm = false
     @State private var showIconPicker    = false
     @State private var hasDueDate: Bool
     @State private var isScheduled: Bool
+
+    private var subtasks: [TodoItem] {
+        allItems.filter { $0.parentID == item.id && !$0.isArchived }
+    }
+    private var completedSubtaskCount: Int { subtasks.filter(\.isCompleted).count }
+    private var subtaskProgress: Double {
+        subtasks.isEmpty ? 0 : Double(completedSubtaskCount) / Double(subtasks.count)
+    }
 
     init(item: TodoItem) {
         self.item = item
@@ -194,6 +203,38 @@ private struct MacTodoEditor: View {
 
                 Divider()
 
+                // MARK: Subtasks (T8)
+                VStack(alignment: .leading, spacing: DS.Space.sm) {
+                    HStack(spacing: DS.Space.xs) {
+                        Label("Subtasks", systemImage: "checklist")
+                            .font(DS.Text.caption)
+                            .foregroundStyle(DS.Color.textSecondary)
+
+                        if !subtasks.isEmpty {
+                            TodoProgressRing(progress: subtaskProgress, diameter: 16, lineWidth: 2)
+                            Text("\(completedSubtaskCount)/\(subtasks.count)")
+                                .font(DS.Text.footnote)
+                                .foregroundStyle(DS.Color.textTertiary)
+                                .monospacedDigit()
+                        }
+
+                        Spacer()
+
+                        Button(action: addSubtask) {
+                            Image(systemName: "plus.circle")
+                                .foregroundStyle(.tint)
+                        }
+                        .buttonStyle(.plain)
+                        .help("Add subtask")
+                    }
+
+                    ForEach(subtasks) { sub in
+                        SubtaskRow(sub: sub) { deleteSubtask(sub) }
+                    }
+                }
+
+                Divider()
+
                 // MARK: Notes (T3 — inline edit)
                 VStack(alignment: .leading, spacing: DS.Space.xs) {
                     Label("Notes", systemImage: "note.text")
@@ -250,6 +291,19 @@ private struct MacTodoEditor: View {
 
     // MARK: - Actions
 
+    // T8 — subtask management
+    private func addSubtask() {
+        let sub = TodoItem(parentID: item.id)
+        modelContext.insert(sub)
+        autosave()
+        Haptics.impact(.light)
+    }
+
+    private func deleteSubtask(_ sub: TodoItem) {
+        sub.archivedAt = Date()
+        autosave()
+    }
+
     // T4 — toggle completion
     private func toggleComplete() {
         item.completedAt = item.isCompleted ? nil : Date()
@@ -273,5 +327,46 @@ private struct MacTodoEditor: View {
         let cal = Calendar.current
         let day = item.dueDate ?? Date()
         return cal.date(bySettingHour: 9, minute: 0, second: 0, of: day) ?? day
+    }
+}
+
+// MARK: - SubtaskRow
+
+private struct SubtaskRow: View {
+
+    @Bindable var sub: TodoItem
+    @Environment(\.modelContext) private var modelContext
+    let onDelete: () -> Void
+
+    var body: some View {
+        HStack(spacing: DS.Space.sm) {
+            Button {
+                sub.completedAt = sub.isCompleted ? nil : Date()
+                try? modelContext.save()
+                Haptics.impact(.light)
+            } label: {
+                Image(systemName: sub.isCompleted ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(sub.isCompleted ? DS.Color.textTertiary : DS.Color.textSecondary)
+            }
+            .buttonStyle(.plain)
+
+            TextField("Subtask", text: $sub.title)
+                .font(DS.Text.body)
+                .textFieldStyle(.plain)
+                .strikethrough(sub.isCompleted, color: DS.Color.textTertiary)
+                .foregroundStyle(sub.isCompleted ? DS.Color.textTertiary : DS.Color.textPrimary)
+                .onChange(of: sub.title) { _, _ in try? modelContext.save() }
+
+            Button(action: onDelete) {
+                Image(systemName: "xmark")
+                    .font(.caption2)
+                    .foregroundStyle(DS.Color.textTertiary)
+            }
+            .buttonStyle(.plain)
+            .help("Remove subtask")
+        }
+        .padding(.vertical, DS.Space.xs)
+        .padding(.horizontal, DS.Space.sm)
+        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.control))
     }
 }

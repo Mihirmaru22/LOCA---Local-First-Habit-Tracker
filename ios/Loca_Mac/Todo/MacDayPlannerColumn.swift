@@ -32,7 +32,7 @@ struct MacDayPlannerColumn: View {
 
     // MARK: Derived collections
 
-    private var active: [TodoItem] { allItems.filter { !$0.isArchived } }
+    private var active: [TodoItem] { allItems.filter { !$0.isArchived && $0.parentID == nil } }
 
     /// Scheduled blocks on the selected day, ordered by start time.
     private var scheduled: [TodoItem] {

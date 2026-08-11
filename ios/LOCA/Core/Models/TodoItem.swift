@@ -53,6 +53,12 @@ final class TodoItem {
     /// default glyph. Lets a planned block read at a glance (alarm, envelope…).
     var iconName: String? = nil
 
+    // MARK: Subtasks (parent link — CloudKit-safe, optional)
+
+    /// `id` of this task's parent, or `nil` for a top-level task.
+    /// Children are found by querying `allItems.filter { $0.parentID == parent.id }`.
+    var parentID: UUID? = nil
+
     // MARK: Lifecycle
 
     /// Non-nil when the task is done. Nullify to un-complete (T4).
@@ -101,6 +107,7 @@ final class TodoItem {
         startTime:       Date?   = nil,
         durationMinutes: Int     = 0,
         iconName:        String? = nil,
+        parentID:        UUID?   = nil,
         completedAt:     Date?   = nil,
         archivedAt:      Date?   = nil
     ) {
@@ -112,6 +119,7 @@ final class TodoItem {
         self.startTime       = startTime
         self.durationMinutes = durationMinutes
         self.iconName        = iconName
+        self.parentID        = parentID
         self.completedAt     = completedAt
         self.archivedAt      = archivedAt
     }

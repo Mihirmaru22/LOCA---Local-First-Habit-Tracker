@@ -23,7 +23,7 @@ struct MacTodoListColumn: View {
     @State private var showCompleted = false
 
     private var activeItems: [TodoItem] {
-        allItems.filter { !$0.isArchived }
+        allItems.filter { !$0.isArchived && $0.parentID == nil }
     }
 
     private func openItems(in bucket: TodoBucket) -> [TodoItem] {
@@ -115,6 +115,15 @@ struct MacTodoRow: View {
 
     @Bindable var item: TodoItem
     @Environment(\.modelContext) private var modelContext
+    @Query(sort: [SortDescriptor(\TodoItem.createdAt)]) private var allItems: [TodoItem]
+
+    private var subtasks: [TodoItem] {
+        allItems.filter { $0.parentID == item.id && !$0.isArchived }
+    }
+    private var completedSubtaskCount: Int { subtasks.filter(\.isCompleted).count }
+    private var subtaskProgress: Double {
+        subtasks.isEmpty ? 0 : Double(completedSubtaskCount) / Double(subtasks.count)
+    }
 
     var body: some View {
         HStack(spacing: DS.Space.sm) {
@@ -145,6 +154,16 @@ struct MacTodoRow: View {
                         .font(DS.Text.footnote)
                         .foregroundStyle(isOverdue(due) && !item.isCompleted
                                          ? .red : DS.Color.textTertiary)
+                }
+
+                if !subtasks.isEmpty {
+                    HStack(spacing: DS.Space.xs) {
+                        TodoProgressRing(progress: subtaskProgress, diameter: 14, lineWidth: 2)
+                        Text("\(completedSubtaskCount)/\(subtasks.count)")
+                            .font(DS.Text.footnote)
+                            .foregroundStyle(DS.Color.textTertiary)
+                            .monospacedDigit()
+                    }
                 }
             }
 
