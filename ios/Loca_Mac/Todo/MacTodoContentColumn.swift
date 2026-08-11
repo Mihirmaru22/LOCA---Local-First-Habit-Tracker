@@ -30,6 +30,7 @@ struct MacTodoContentColumn: View {
 
     @Binding var selection: TodoItem?
     @State private var mode: TodoMode = .plan
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         VStack(spacing: 0) {
@@ -45,13 +46,31 @@ struct MacTodoContentColumn: View {
 
             Divider()
 
-            switch mode {
-            case .plan:
-                MacDayPlannerColumn(selection: $selection)
-            case .list:
-                MacTodoListColumn(selection: $selection)
+            // Plan ↔ List crossfade with directional slide
+            ZStack {
+                if mode == .plan {
+                    MacDayPlannerColumn(selection: $selection)
+                        .transition(.asymmetric(
+                            insertion: .opacity.combined(with: .move(edge: .leading)),
+                            removal:   .opacity.combined(with: .move(edge: .trailing))
+                        ))
+                } else {
+                    MacTodoListColumn(selection: $selection)
+                        .transition(.asymmetric(
+                            insertion: .opacity.combined(with: .move(edge: .trailing)),
+                            removal:   .opacity.combined(with: .move(edge: .leading))
+                        ))
+                }
             }
+            .animation(reduceMotion ? .linear(duration: 0.1) : DS.Motion.settle, value: mode)
         }
         .navigationTitle("Today")
+        // Vend context-sensitive ⌘N action to the menu bar
+        .focusedValue(\.todayNewItemAction, {
+            switch mode {
+            case .plan: NotificationCenter.default.post(name: .locaAddBlock, object: nil)
+            case .list: NotificationCenter.default.post(name: .locaFocusQuickAdd, object: nil)
+            }
+        })
     }
 }
