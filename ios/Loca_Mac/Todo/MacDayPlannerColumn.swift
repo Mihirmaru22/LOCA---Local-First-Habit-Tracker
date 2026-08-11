@@ -330,6 +330,8 @@ private struct PlannerBlockRow: View {
     let onSelect: () -> Void
     let onToggle: () -> Void
 
+    @State private var isHovered = false
+
     var body: some View {
         HStack(alignment: .top, spacing: DS.Space.sm) {
             // Time gutter — start (no meridiem) over end/period
@@ -378,10 +380,19 @@ private struct PlannerBlockRow: View {
         .padding(DS.Space.sm)
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.control)
-                .fill(isSelected ? Color.accentColor.opacity(0.14) : Color.clear)
+                .fill(rowFill)
         )
         .contentShape(Rectangle())
         .onTapGesture(perform: onSelect)
+        .onHover { isHovered = $0 }
+        .animation(.easeOut(duration: 0.12), value: isHovered)
+    }
+
+    /// Selection wins; hover shows a faint surface wash on unselected rows.
+    private var rowFill: Color {
+        if isSelected { return Color.accentColor.opacity(0.14) }
+        if isHovered  { return DS.Color.textPrimary.opacity(0.05) }
+        return .clear
     }
 
     /// Start time with the AM/PM omitted (e.g. "11:00").

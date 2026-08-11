@@ -35,6 +35,7 @@ struct MacTodoQuickAdd: View {
                 .textFieldStyle(.plain)
                 .focused($focused)
                 .onSubmit(submit)
+                .onExitCommand { text = ""; focused = false }
         }
         .padding(.horizontal, DS.Space.lg)
         .padding(.vertical, DS.Space.md)
