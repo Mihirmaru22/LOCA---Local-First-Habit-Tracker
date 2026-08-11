@@ -212,7 +212,7 @@ struct MacDayPlannerColumn: View {
                 HStack(spacing: DS.Space.sm) {
                     Button { toggleComplete(item) } label: {
                         Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
-                            .foregroundStyle(item.isCompleted ? DS.Color.textTertiary : DS.Color.textSecondary)
+                            .foregroundStyle(item.isCompleted ? Color.accentColor : DS.Color.textSecondary)
                     }
                     .buttonStyle(.plain)
 
@@ -317,7 +317,7 @@ struct MacDayPlannerColumn: View {
 /// stay aligned across block rows and gap labels.
 private enum PlannerMetrics {
     static let timeGutter: CGFloat = 56   // width reserved for the time label
-    static let bubble:     CGFloat = 36   // icon bubble diameter
+    static let bubble:     CGFloat = 34   // icon bubble diameter
 }
 
 // MARK: - PlannerBlockRow
@@ -332,39 +332,25 @@ private struct PlannerBlockRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: DS.Space.sm) {
-            // Time gutter
-            VStack(alignment: .trailing, spacing: 2) {
-                Text(startText)
+            // Time gutter — start (no meridiem) over end/period
+            VStack(alignment: .trailing, spacing: 1) {
+                Text(gutterTop)
                     .font(DS.Text.valueSmall)
+                    .monospacedDigit()
                     .foregroundStyle(item.isCompleted ? DS.Color.textTertiary : DS.Color.textPrimary)
-                if item.durationMinutes > 0, let end = item.endTime {
-                    Text(timeString(end))
-                        .font(DS.Text.footnote)
-                        .foregroundStyle(DS.Color.textTertiary)
-                }
+                Text(gutterBottom)
+                    .font(DS.Text.footnote)
+                    .monospacedDigit()
+                    .foregroundStyle(DS.Color.textTertiary)
             }
             .frame(width: PlannerMetrics.timeGutter, alignment: .trailing)
 
-            // Icon bubble — gradient fill + white gloss highlight
+            // Icon bubble — two-tone violet gradient + coloured glow
             Image(systemName: item.iconName ?? "checkmark")
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Color.white)
-                .frame(width: PlannerMetrics.bubble, height: PlannerMetrics.bubble)
-                .background {
-                    Circle()
-                        .fill(item.isCompleted ? DS.Color.textTertiary : Color.accentColor)
-                        .overlay {
-                            Circle().fill(
-                                LinearGradient(
-                                    colors: [Color.white.opacity(item.isCompleted ? 0 : 0.28), Color.clear],
-                                    startPoint: .topLeading,
-                                    endPoint: .center
-                                )
-                            )
-                        }
-                }
+                .todoBubble(diameter: PlannerMetrics.bubble, done: item.isCompleted)
 
-            // Title + meta
+            // Title + plain subtitle
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.title.isEmpty ? "Untitled" : item.title)
                     .font(DS.Text.body)
@@ -375,19 +361,16 @@ private struct PlannerBlockRow: View {
                 if item.durationMinutes > 0 {
                     Text(durationLabel)
                         .font(DS.Text.footnote)
-                        .foregroundStyle(DS.Color.textSecondary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(DS.Color.surface, in: Capsule())
+                        .foregroundStyle(DS.Color.textTertiary)
                 }
             }
 
             Spacer(minLength: DS.Space.sm)
 
-            // Completion circle
+            // Completion circle — accent-filled when done
             Button(action: onToggle) {
                 Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(item.isCompleted ? DS.Color.textTertiary : DS.Color.textSecondary)
+                    .foregroundStyle(item.isCompleted ? Color.accentColor : DS.Color.textSecondary)
             }
             .buttonStyle(.plain)
             .help(item.isCompleted ? "Mark not done" : "Mark done")
@@ -397,21 +380,32 @@ private struct PlannerBlockRow: View {
             RoundedRectangle(cornerRadius: DS.Radius.control)
                 .fill(isSelected ? Color.accentColor.opacity(0.14) : Color.clear)
         )
-        .overlay(alignment: .leading) {
-            if isSelected {
-                RoundedRectangle(cornerRadius: 1.5)
-                    .fill(Color.accentColor)
-                    .frame(width: 3)
-                    .padding(.vertical, DS.Space.xs)
-            }
-        }
         .contentShape(Rectangle())
         .onTapGesture(perform: onSelect)
     }
 
-    private var startText: String {
-        item.startTime.map(timeString) ?? "—"
+    /// Start time with the AM/PM omitted (e.g. "11:00").
+    private var gutterTop: String {
+        guard let start = item.startTime else { return "—" }
+        return start.formatted(.dateTime.hour(.defaultDigits(amPM: .omitted)).minute())
     }
+
+    /// End time with meridiem when the block has a duration (e.g. "11:15 AM"),
+    /// otherwise just the start's meridiem (e.g. "AM").
+    private var gutterBottom: String {
+        guard let start = item.startTime else { return "" }
+        if item.durationMinutes > 0, let end = item.endTime {
+            return timeString(end)
+        }
+        return Self.periodFormatter.string(from: start)
+    }
+
+    /// AM/PM only, for zero-duration blocks.
+    private static let periodFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "a"
+        return f
+    }()
 
     private var durationLabel: String {
         let h = item.durationMinutes / 60, m = item.durationMinutes % 60

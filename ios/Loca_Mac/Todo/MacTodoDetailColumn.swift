@@ -62,56 +62,54 @@ private struct MacTodoEditor: View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.xl) {
 
-                // MARK: Title (T3 — inline edit)
-                TextField("Task title", text: $item.title, axis: .vertical)
-                    .font(DS.Text.title)
-                    .textFieldStyle(.plain)
-                    .onChange(of: item.title) { _, _ in autosave() }
-                    .padding(.top, DS.Space.xl)
-
-                Divider()
-
-                // MARK: Icon (T7 — per-task icon)
-                HStack(spacing: DS.Space.sm) {
-                    Label("Icon", systemImage: "square.grid.2x2")
-                        .font(DS.Text.caption)
-                        .foregroundStyle(DS.Color.textSecondary)
-
-                    Spacer()
-
+                // MARK: Hero — icon bubble + display-font title (T-Phase8)
+                HStack(alignment: .center, spacing: DS.Space.md) {
                     Button { showIconPicker.toggle() } label: {
-                        HStack(spacing: DS.Space.xs) {
-                            Image(systemName: item.iconName ?? "checkmark")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(Color.white)
-                                .frame(width: 28, height: 28)
-                                .background {
-                                    Circle()
-                                        .fill(Color.accentColor)
-                                        .overlay {
-                                            Circle().fill(
-                                                LinearGradient(
-                                                    colors: [Color.white.opacity(0.28), Color.clear],
-                                                    startPoint: .topLeading,
-                                                    endPoint: .center
-                                                )
-                                            )
-                                        }
-                                }
-
-                            Text(TodoIcon.label(for: item.iconName ?? "checkmark"))
-                                .font(DS.Text.caption)
-                                .foregroundStyle(DS.Color.textSecondary)
-                        }
+                        Image(systemName: item.iconName ?? "checkmark")
+                            .font(.system(size: 18, weight: .semibold))
+                            .todoBubble(diameter: 42, done: item.isCompleted)
                     }
                     .buttonStyle(.plain)
-                    .popover(isPresented: $showIconPicker, arrowEdge: .trailing) {
+                    .help("Change icon")
+                    .popover(isPresented: $showIconPicker, arrowEdge: .bottom) {
                         IconPickerPopover(
                             selected: Binding(
                                 get: { item.iconName },
                                 set: { item.iconName = $0; showIconPicker = false; autosave() }
                             )
                         )
+                    }
+
+                    TextField("Task title", text: $item.title, axis: .vertical)
+                        .font(.system(size: 26, weight: .bold))
+                        .tracking(-0.5)
+                        .textFieldStyle(.plain)
+                        .strikethrough(item.isCompleted, color: DS.Color.textTertiary)
+                        .onChange(of: item.title) { _, _ in autosave() }
+                }
+                .padding(.top, DS.Space.xl)
+
+                // MARK: Meta chips (date · scheduled time · subtask progress)
+                if item.dueDate != nil || item.isScheduled || !subtasks.isEmpty {
+                    HStack(spacing: DS.Space.sm) {
+                        if let due = item.dueDate {
+                            metaChip(icon: "calendar", text: due.formatted(.dateTime.month(.abbreviated).day()))
+                        }
+                        if item.isScheduled, let start = item.startTime {
+                            metaChip(icon: "clock", text: start.formatted(.dateTime.hour().minute()))
+                        }
+                        if !subtasks.isEmpty {
+                            HStack(spacing: DS.Space.xs) {
+                                TodoProgressRing(progress: subtaskProgress, diameter: 14, lineWidth: 2)
+                                Text("\(completedSubtaskCount)/\(subtasks.count)")
+                                    .font(DS.Text.caption)
+                                    .monospacedDigit()
+                            }
+                            .foregroundStyle(Color.accentColor)
+                            .padding(.horizontal, 9)
+                            .padding(.vertical, 5)
+                            .background(Color.accentColor.opacity(0.12), in: Capsule())
+                        }
                     }
                 }
 
@@ -321,6 +319,19 @@ private struct MacTodoEditor: View {
         try? modelContext.save()
     }
 
+    /// A violet-tinted pill summarising one attribute (date, time) in the hero.
+    @ViewBuilder
+    private func metaChip(icon: String, text: String) -> some View {
+        HStack(spacing: DS.Space.xs) {
+            Image(systemName: icon).font(.caption2)
+            Text(text).font(DS.Text.caption)
+        }
+        .foregroundStyle(Color.accentColor)
+        .padding(.horizontal, 9)
+        .padding(.vertical, 5)
+        .background(Color.accentColor.opacity(0.12), in: Capsule())
+    }
+
     /// Default timeline slot when a task is first scheduled: 9:00 AM on its due
     /// day (or today if it has no due date).
     private func defaultStart() -> Date {
@@ -346,7 +357,7 @@ private struct SubtaskRow: View {
                 Haptics.impact(.light)
             } label: {
                 Image(systemName: sub.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(sub.isCompleted ? DS.Color.textTertiary : DS.Color.textSecondary)
+                    .foregroundStyle(sub.isCompleted ? Color.accentColor : DS.Color.textSecondary)
             }
             .buttonStyle(.plain)
 

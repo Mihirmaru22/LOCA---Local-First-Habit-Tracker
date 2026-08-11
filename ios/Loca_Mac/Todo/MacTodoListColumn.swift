@@ -137,7 +137,7 @@ struct MacTodoRow: View {
             // Completion toggle
             Button(action: toggleComplete) {
                 Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(item.isCompleted ? DS.Color.textTertiary : DS.Color.textSecondary)
+                    .foregroundStyle(item.isCompleted ? Color.accentColor : DS.Color.textSecondary)
             }
             .buttonStyle(.plain)
             .help(item.isCompleted ? "Mark not done" : "Mark done")

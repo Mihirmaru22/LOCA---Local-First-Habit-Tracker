@@ -113,18 +113,11 @@ struct IconPickerPopover: View {
                                     .frame(width: 36, height: 36)
                                     .background {
                                         Circle()
-                                            .fill(isActive ? Color.accentColor : DS.Color.surface)
-                                            .overlay {
-                                                if isActive {
-                                                    Circle().fill(
-                                                        LinearGradient(
-                                                            colors: [Color.white.opacity(0.28), Color.clear],
-                                                            startPoint: .topLeading,
-                                                            endPoint: .center
-                                                        )
-                                                    )
-                                                }
-                                            }
+                                            .fill(isActive
+                                                  ? AnyShapeStyle(TodoPalette.bubbleGradient)
+                                                  : AnyShapeStyle(DS.Color.surface))
+                                            .shadow(color: isActive ? TodoPalette.bubbleGlow : .clear,
+                                                    radius: 3, x: 0, y: 1)
                                     }
                             }
                             .buttonStyle(.plain)
