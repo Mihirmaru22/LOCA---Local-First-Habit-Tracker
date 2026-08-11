@@ -11,6 +11,11 @@ struct MacTodoDetailColumn: View {
         if let item {
             MacTodoEditor(item: item)
                 .id(item.id)
+                .transition(.asymmetric(
+                    insertion: .opacity.combined(with: .move(edge: .trailing)),
+                    removal:   .opacity.combined(with: .move(edge: .leading))
+                ))
+                .animation(DS.Motion.settle, value: item.id)
         } else {
             ContentUnavailableView(
                 "No Task Selected",

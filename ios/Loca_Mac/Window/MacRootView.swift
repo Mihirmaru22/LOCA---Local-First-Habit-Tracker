@@ -42,6 +42,7 @@ struct MacRootView: View {
     @State private var selectedTodo:        TodoItem?        = nil
     @State private var selectedJournalRow:  JournalRow?      = .todaysLog
     @State private var columnVisibility:    NavigationSplitViewVisibility = .all
+    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -74,6 +75,17 @@ struct MacRootView: View {
             if let section = note.object as? MacSection {
                 selectedSection = section
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .locaCompleteSelected)) { _ in
+            guard let todo = selectedTodo else { return }
+            todo.completedAt = todo.isCompleted ? nil : Date()
+            try? modelContext.save()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .locaArchiveSelected)) { _ in
+            guard let todo = selectedTodo else { return }
+            todo.archivedAt = Date()
+            selectedTodo = nil
+            try? modelContext.save()
         }
     }
 }

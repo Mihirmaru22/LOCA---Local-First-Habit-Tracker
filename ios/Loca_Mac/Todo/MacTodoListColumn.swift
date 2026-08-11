@@ -116,6 +116,7 @@ struct MacTodoRow: View {
     @Bindable var item: TodoItem
     @Environment(\.modelContext) private var modelContext
     @Query(sort: [SortDescriptor(\TodoItem.createdAt)]) private var allItems: [TodoItem]
+    @State private var circleScale: CGFloat = 1.0
 
     private var subtasks: [TodoItem] {
         allItems.filter { $0.parentID == item.id && !$0.isArchived }
@@ -134,10 +135,11 @@ struct MacTodoRow: View {
                 .frame(width: 6, height: 6)
                 .opacity(item.priority > 0 ? 1 : 0)
 
-            // Completion toggle
+            // Completion toggle with spring bounce
             Button(action: toggleComplete) {
                 Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(item.isCompleted ? Color.accentColor : DS.Color.textSecondary)
+                    .scaleEffect(circleScale)
             }
             .buttonStyle(.plain)
             .help(item.isCompleted ? "Mark not done" : "Mark done")
@@ -148,6 +150,7 @@ struct MacTodoRow: View {
                     .strikethrough(item.isCompleted, color: DS.Color.textTertiary)
                     .foregroundStyle(item.isCompleted ? DS.Color.textTertiary : DS.Color.textPrimary)
                     .lineLimit(1)
+                    .animation(DS.Motion.settle, value: item.isCompleted)
 
                 if let due = item.dueDate {
                     Text(due, style: .date)
@@ -174,7 +177,12 @@ struct MacTodoRow: View {
     }
 
     private func toggleComplete() {
-        item.completedAt = item.isCompleted ? nil : Date()
+        // Bounce the circle on every tap
+        withAnimation(.spring(response: 0.18, dampingFraction: 0.4)) { circleScale = 1.25 }
+        withAnimation(.spring(response: 0.25, dampingFraction: 0.7).delay(0.12)) { circleScale = 1.0 }
+        withAnimation(DS.Motion.settle) {
+            item.completedAt = item.isCompleted ? nil : Date()
+        }
         try? modelContext.save()
         Haptics.impact(.light)
     }
