@@ -15,20 +15,30 @@ struct MacJournalDetailColumn: View {
 
     @State private var detailMode: JournalDetailMode = .collect
 
+    private var isNotesRow: Bool {
+        selectedRow == .moments || selectedRow == .wins
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             journalHeader
             Divider()
 
-            switch detailMode {
-            case .collect:
-                MacJournalCollect(focusedRow: selectedRow)
-            case .analyse:
-                MacJournalAnalyse()
+            if selectedRow == .moments {
+                MacJournalNotesView(kind: .moment)
+            } else if selectedRow == .wins {
+                MacJournalNotesView(kind: .win)
+            } else {
+                switch detailMode {
+                case .collect:
+                    MacJournalCollect(focusedRow: selectedRow)
+                case .analyse:
+                    MacJournalAnalyse()
+                }
             }
         }
         .onChange(of: selectedRow) { _, newRow in
-            if let newRow {
+            if let newRow, !isNotesRow {
                 detailMode = newRow.defaultDetailMode
             }
         }
@@ -43,18 +53,20 @@ struct MacJournalDetailColumn: View {
                     .font(DS.Text.heading)
                     .fontWeight(.semibold)
                     .foregroundStyle(DS.Color.textPrimary)
-                Text(todayLabel)
+                Text(isNotesRow ? notesLabel : todayLabel)
                     .font(DS.Text.caption)
                     .foregroundStyle(DS.Color.textTertiary)
             }
             Spacer()
-            Picker("Mode", selection: $detailMode) {
-                ForEach(JournalDetailMode.allCases) { m in
-                    Text(m.rawValue).tag(m)
+            if !isNotesRow {
+                Picker("Mode", selection: $detailMode) {
+                    ForEach(JournalDetailMode.allCases) { m in
+                        Text(m.rawValue).tag(m)
+                    }
                 }
+                .pickerStyle(.segmented)
+                .fixedSize()
             }
-            .pickerStyle(.segmented)
-            .fixedSize()
         }
         .padding(.horizontal, DS.Space.lg)
         .padding(.vertical, DS.Space.md)
@@ -64,6 +76,10 @@ struct MacJournalDetailColumn: View {
         let f = DateFormatter()
         f.dateFormat = "EEEE · MMMM d"
         return f.string(from: Date())
+    }
+
+    private var notesLabel: String {
+        selectedRow == .moments ? "All moments" : "All wins"
     }
 }
 
