@@ -32,6 +32,7 @@ private struct MacTodoEditor: View {
     @State private var showDeleteConfirm = false
     @State private var showIconPicker    = false
     @State private var showStartPicker   = false
+    @State private var showDatePicker    = false
 
     private var subtasks: [TodoItem] {
         allItems.filter { $0.parentID == item.id && !$0.isArchived }
@@ -161,35 +162,9 @@ private struct MacTodoEditor: View {
                     item.durationMinutes = 0
                     autosave()
                 }
-            } else if let due = item.dueDate {
-                // List task with due date
-                removableChip(icon: "calendar",
-                              text: due.formatted(.dateTime.month(.abbreviated).day())) {
-                    item.dueDate = nil
-                    autosave()
-                }
             } else {
-                // No date — dashed add chip
-                Button {
-                    item.dueDate = Calendar.current.startOfDay(for: .now)
-                    autosave()
-                } label: {
-                    HStack(spacing: DS.Space.xs) {
-                        Image(systemName: "plus").font(.caption2)
-                        Text("Date").font(DS.Text.caption)
-                    }
-                    .foregroundStyle(DS.Color.textTertiary)
-                    .padding(.horizontal, 9)
-                    .padding(.vertical, 5)
-                    .overlay(
-                        Capsule()
-                            .stroke(
-                                DS.Color.textTertiary.opacity(0.45),
-                                style: StrokeStyle(lineWidth: 1, dash: [3, 2])
-                            )
-                    )
-                }
-                .buttonStyle(.plain)
+                // List task — tappable date chip: add / modify / remove
+                dateChipButton
             }
 
             // Flag chip — list tasks only, visible when priority is set
@@ -217,6 +192,73 @@ private struct MacTodoEditor: View {
             }
 
             Spacer()
+        }
+    }
+
+    /// List-task date affordance: a filled chip when a date is set, a dashed
+    /// "+ Date" pill when not. Tapping either opens a graphical `DatePicker`
+    /// popover to add, change, or (via the destructive button) remove the date.
+    @ViewBuilder
+    private var dateChipButton: some View {
+        Button { showDatePicker.toggle() } label: {
+            if let due = item.dueDate {
+                HStack(spacing: DS.Space.xs) {
+                    Image(systemName: "calendar").font(.caption2)
+                    Text(due.formatted(.dateTime.month(.abbreviated).day()))
+                        .font(DS.Text.caption)
+                }
+                .foregroundStyle(Color.accentColor)
+                .padding(.horizontal, 9)
+                .padding(.vertical, 5)
+                .background(Color.accentColor.opacity(0.12), in: Capsule())
+            } else {
+                HStack(spacing: DS.Space.xs) {
+                    Image(systemName: "plus").font(.caption2)
+                    Text("Date").font(DS.Text.caption)
+                }
+                .foregroundStyle(DS.Color.textTertiary)
+                .padding(.horizontal, 9)
+                .padding(.vertical, 5)
+                .overlay(
+                    Capsule()
+                        .stroke(
+                            DS.Color.textTertiary.opacity(0.45),
+                            style: StrokeStyle(lineWidth: 1, dash: [3, 2])
+                        )
+                )
+            }
+        }
+        .buttonStyle(.plain)
+        .popover(isPresented: $showDatePicker, arrowEdge: .bottom) {
+            VStack(spacing: 0) {
+                DatePicker(
+                    "Due",
+                    selection: Binding(
+                        get: { item.dueDate ?? Calendar.current.startOfDay(for: .now) },
+                        set: { item.dueDate = $0; autosave() }
+                    ),
+                    displayedComponents: .date
+                )
+                .datePickerStyle(.graphical)
+                .labelsHidden()
+                .padding(DS.Space.md)
+
+                if item.dueDate != nil {
+                    Divider()
+                    Button(role: .destructive) {
+                        item.dueDate = nil
+                        autosave()
+                        showDatePicker = false
+                    } label: {
+                        Label("Remove Date", systemImage: "calendar.badge.minus")
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.vertical, DS.Space.sm)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.red)
+                }
+            }
+            .frame(width: 300)
         }
     }
 
