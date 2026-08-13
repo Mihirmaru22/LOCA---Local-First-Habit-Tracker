@@ -145,4 +145,5 @@ extension Notification.Name {
     static let locaCompleteSelected = Notification.Name("com.mihirmaru.loca.mac.completeSelected")
     static let locaArchiveSelected  = Notification.Name("com.mihirmaru.loca.mac.archiveSelected")
     static let locaFocusQuickAdd   = Notification.Name("com.mihirmaru.loca.mac.focusQuickAdd")
+    static let locaOpenTask        = Notification.Name("com.mihirmaru.loca.mac.openTask")
 }
