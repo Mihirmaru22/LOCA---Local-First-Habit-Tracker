@@ -42,10 +42,42 @@ struct MacRootView: View {
     @State private var selectedHabit:       HabitBoard?      = nil
     @State private var selectedTodo:        TodoItem?        = nil
     @State private var selectedJournalRow:  JournalRow?      = .todaysLog
+    @State private var openedTask:          TodoItem?        = nil
     @State private var columnVisibility:    NavigationSplitViewVisibility = .all
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
+        ZStack {
+            splitView
+
+            // Dedicated Task Workspace — a full-window overlay opened from the
+            // List. Backing out clears both it and the list selection so the
+            // next click re-triggers cleanly.
+            if let task = openedTask {
+                MacTaskWorkspace(item: task) {
+                    openedTask   = nil
+                    selectedTodo = nil
+                }
+                .transition(.asymmetric(
+                    insertion: .opacity.combined(with: .move(edge: .trailing)),
+                    removal:   .opacity.combined(with: .move(edge: .trailing))
+                ))
+                .zIndex(1)
+            }
+        }
+        .animation(reduceMotion ? .linear(duration: 0.1) : DS.Motion.settle, value: openedTask?.id)
+        .onReceive(NotificationCenter.default.publisher(for: .locaOpenTask)) { note in
+            if let task = note.object as? TodoItem {
+                openedTask = task
+            }
+        }
+        .onChange(of: selectedSection) { _, _ in
+            openedTask = nil
+        }
+    }
+
+    private var splitView: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             MacSidebarView(selection: $selectedSection)
                 .navigationSplitViewColumnWidth(

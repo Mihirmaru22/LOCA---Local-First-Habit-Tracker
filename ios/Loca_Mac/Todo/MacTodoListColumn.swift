@@ -78,6 +78,13 @@ struct MacTodoListColumn: View {
                 }
             }
         }
+        // Selecting a task in the List opens the dedicated Task Workspace.
+        // Scoped to the List so Plan-mode block selection is unaffected.
+        .onChange(of: selection) { _, newValue in
+            if let task = newValue {
+                NotificationCenter.default.post(name: .locaOpenTask, object: task)
+            }
+        }
     }
 }
 
