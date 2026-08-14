@@ -1034,17 +1034,41 @@
             a.remove();
         }
 
-        // Live Supabase Sync Engine
-        let supabaseUrl = "https://rqujshlqgffuabpxiujw.supabase.co";
-        let supabaseKey = "";
+        // Supabase Ingestion & Configuration Modal Engine
+        let supabaseUrl = localStorage.getItem('pluto_supabase_url') || "";
+        let supabaseKey = localStorage.getItem('pluto_supabase_key') || "";
+
+        function openSupabaseModal() {
+            const currentUrl = localStorage.getItem('pluto_supabase_url') || "https://your-project.supabase.co";
+            const currentKey = localStorage.getItem('pluto_supabase_key') || "";
+            
+            const enteredUrl = prompt("Enter your Supabase Project URL (e.g. https://xyz.supabase.co):", currentUrl);
+            if (!enteredUrl) return;
+            
+            const enteredKey = prompt("Enter your Supabase Anon or Service Role Key:", currentKey);
+            if (!enteredKey) return;
+
+            supabaseUrl = enteredUrl.trim().replace(/\/$/, "");
+            supabaseKey = enteredKey.trim();
+
+            localStorage.setItem('pluto_supabase_url', supabaseUrl);
+            localStorage.setItem('pluto_supabase_key', supabaseKey);
+
+            connectAndSyncSupabase();
+        }
 
         async function connectAndSyncSupabase() {
-            const key = prompt("Enter your Supabase Anon or Service Role Key:", supabaseKey);
-            if (!key) return;
-            supabaseKey = key;
+            if (!supabaseUrl || !supabaseKey) {
+                openSupabaseModal();
+                return;
+            }
 
             try {
-                const headers = { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` };
+                const headers = { 
+                    "apikey": supabaseKey, 
+                    "Authorization": `Bearer ${supabaseKey}` 
+                };
+                
                 const res = await fetch(`${supabaseUrl}/rest/v1/alpha_events?select=*&order=timestamp.desc&limit=100`, { headers });
                 
                 if (res.ok) {
@@ -1071,16 +1095,16 @@
                                 database[0].reflection += ` [Sleep logged: ${p.duration_hours || 8}h]`;
                             }
                         });
-                        alert(`Successfully synced ${rawEvents.length} live events from Supabase!`);
+                        alert(`✅ Connected! Successfully synced ${rawEvents.length} live events from Supabase.`);
                         render();
                     } else {
-                        alert("Connected to Supabase! (No new events found yet).");
+                        alert("✅ Connected to Supabase! (Table is currently empty. Check off a habit in your Mac app to send events).");
                     }
                 } else {
-                    alert(`Supabase Error (${res.status}): ${res.statusText}`);
+                    alert(`⚠️ Supabase Error (${res.status}): ${res.statusText}\nCheck that the table 'alpha_events' exists and RLS policies allow reading.`);
                 }
             } catch (err) {
-                alert(`Fetch error: ${err.message}`);
+                alert(`⚠️ Fetch error: ${err.message}\n\nTroubleshooting:\n1. Ensure your Project URL is valid (e.g. https://xyz.supabase.co).\n2. If testing locally without cloud Supabase, use '📁 Load Local JSON' to load files directly from: ~/Library/Application Support/PLUTO/AlphaTelemetry/Queue/`);
             }
         }
 
@@ -1091,17 +1115,30 @@
             reader.onload = (e) => {
                 try {
                     const parsed = JSON.parse(e.target.result);
+                    let count = 0;
                     if (Array.isArray(parsed)) {
                         parsed.forEach(evt => {
+                            count++;
+                            const p = evt.properties || {};
                             if (evt.event_name === 'habit_checked') {
-                                database[0].habits.unshift({ name: evt.properties?.habit_name || 'gym', status: 'Completed today', color: '#38bdf8', streak: 1, isCompleted: true });
+                                const hName = p.habit_name || 'gym';
+                                const existing = database[0].habits.find(h => h.name.toLowerCase() === hName.toLowerCase());
+                                if (existing) {
+                                    existing.streak = p.current_streak || (existing.streak ? existing.streak + 1 : 1);
+                                    existing.status = "Completed today";
+                                    existing.isCompleted = true;
+                                } else {
+                                    database[0].habits.unshift({ name: hName, status: "Completed today", color: "#38bdf8", streak: 1, isCompleted: true });
+                                }
+                            } else if (evt.event_name === 'task_created') {
+                                database[0].tasks.unshift({ time: "Today", title: p.title || "New Task", priority: "P2 Normal", done: false });
                             }
                         });
                     }
                     render();
-                    alert(`Loaded ${file.name} successfully!`);
+                    alert(`✅ Successfully loaded ${count} events from ${file.name}!`);
                 } catch (err) {
-                    alert(`Invalid JSON: ${err.message}`);
+                    alert(`Invalid JSON format: ${err.message}`);
                 }
             };
             reader.readAsText(file);
