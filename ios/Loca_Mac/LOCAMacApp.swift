@@ -45,7 +45,8 @@ struct LOCAMacApp: App {
             }
             #endif
         } catch {
-            self.container = nil
+            logger.error("Configured container init failed: \(error.localizedDescription). Initializing fallback local container.")
+            self.container = (try? ModelContainerFactory.makeLocalContainer()) ?? (try? ModelContainerFactory.makeInMemoryContainer())
         }
     }
 

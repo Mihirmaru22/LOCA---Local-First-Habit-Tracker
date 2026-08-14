@@ -129,7 +129,6 @@ enum ModelContainerFactory {
     static func makeLocalContainer() throws -> ModelContainer {
         let schema = Schema(RippleSchemaV1.models)
         let configuration = ModelConfiguration(
-            schema: schema,
             isStoredInMemoryOnly: false,
             cloudKitDatabase: .none
         )
@@ -139,49 +138,36 @@ enum ModelContainerFactory {
                 migrationPlan: RippleMigrationPlan.self,
                 configurations: [configuration]
             )
-            logger.info("Local development ModelContainer initialised (no App Group, no CloudKit).")
+            logger.info("Local persistent ModelContainer initialised (no App Group, no CloudKit).")
             return container
         } catch {
             logger.error(
-                "Local development ModelContainer init failed: \(error.localizedDescription, privacy: .public)"
+                "Local persistent ModelContainer init failed: \(error.localizedDescription, privacy: .public)"
             )
             throw PersistenceError.containerInitFailed(underlying: error)
         }
     }
 
-    // MARK: - Configured Container (Single Switch Point)
+    // MARK: - Configured Container (With Resilient Fallback)
 
-    // MARK: The Only #if In This File (ADR-009)
-    //
-    // This is the sole compile-time branch between production (App Group +
-    // CloudKit) and local development (neither) anywhere in the codebase.
-    // LOCA_LOCAL_DEVELOPMENT is a custom Active Compilation Condition set only
-    // on the Debug configuration's build settings — deliberately NOT the
-    // built-in DEBUG flag, since "is this an optimized build" and "does this
-    // build have real entitlements" are orthogonal questions. A team member
-    // with a paid account building in Debug mode should still be able to
-    // exercise real CloudKit sync; hardcoding this to DEBUG would prevent that.
-    //
-    // To re-enable production configuration once a paid account is available:
-    // remove LOCAL_DEVELOPMENT from the Debug configuration's
-    // SWIFT_ACTIVE_COMPILATION_CONDITIONS build setting. Zero code changes.
-
-    /// The single entry point every caller should use. Resolves to
-    /// `makeSharedContainer()` (production: App Group + CloudKit) or
-    /// `makeLocalContainer()` (local development: neither) based on the
-    /// `LOCAL_DEVELOPMENT` compilation condition — never based on the identity
-    /// of the caller.
-    ///
-    /// `LOCAApp.swift` is the only caller. Its own logic is identical
-    /// regardless of which branch resolves here.
-    ///
-    /// - Returns: A `ModelContainer` appropriate for the current build configuration.
-    /// - Throws: Whatever the resolved factory method throws.
+    /// The single entry point every caller should use.
+    /// Tries production shared container first, and seamlessly falls back to
+    /// local persistent on-disk container if CloudKit or App Groups are not provisioned.
     static func makeConfiguredContainer() throws -> ModelContainer {
         #if LOCAL_DEVELOPMENT
         return try makeLocalContainer()
         #else
-        return try makeSharedContainer()
+        do {
+            return try makeSharedContainer()
+        } catch {
+            logger.warning("Shared/CloudKit container unavailable (\(error.localizedDescription)). Falling back to local persistent container.")
+            do {
+                return try makeLocalContainer()
+            } catch {
+                logger.error("Local container creation failed: \(error.localizedDescription). Falling back to in-memory store.")
+                return try makeInMemoryContainer()
+            }
+        }
         #endif
     }
 
