@@ -3,28 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PLUTO V3.5 — Creator Product Intelligence</title>
+    <title>PLUTO V3.5 — Tester Profiles & Telemetry</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-page: #08090c;
-            --bg-card: #101218;
-            --bg-card-subtle: #141720;
-            --bg-chip: #1a1d28;
-            --border-subtle: rgba(255, 255, 255, 0.08);
-            --border-strong: rgba(255, 255, 255, 0.16);
+            --bg-card: #101217;
+            --bg-card-hover: #151820;
+            --bg-subtle: #161922;
+            --bg-chip: #1e2230;
             
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-active: rgba(255, 255, 255, 0.18);
+
             --text-primary: #ffffff;
-            --text-secondary: #8e95a5;
-            --text-tertiary: #52596c;
+            --text-secondary: #9499ad;
+            --text-tertiary: #585e72;
 
             --accent: #8b5cf6;
-            --accent-soft: rgba(139, 92, 246, 0.12);
             --success: #10b981;
-            --success-soft: rgba(16, 185, 129, 0.12);
             --warning: #f59e0b;
+            --info: #3b82f6;
 
             --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
@@ -43,22 +44,21 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            line-height: 1.5;
             -webkit-font-smoothing: antialiased;
         }
 
         /* Top Header */
         header {
             border-bottom: 1px solid var(--border-subtle);
-            padding: 16px 36px;
+            padding: 14px 32px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: rgba(8, 9, 12, 0.9);
-            backdrop-filter: blur(12px);
+            background: rgba(8, 9, 12, 0.95);
+            backdrop-filter: blur(16px);
             position: sticky;
             top: 0;
-            z-index: 50;
+            z-index: 100;
         }
 
         .brand {
@@ -83,14 +83,44 @@
         .brand-title {
             font-size: 14px;
             font-weight: 700;
-            letter-spacing: -0.2px;
         }
 
-        .brand-badge {
-            font-size: 11px;
+        /* Tester Selector Pills */
+        .tester-switch-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-subtle);
+            padding: 4px;
+            border-radius: 8px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .tester-btn {
+            background: transparent;
+            border: none;
             color: var(--text-secondary);
-            font-family: var(--font-mono);
-            margin-left: 8px;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+            font-family: var(--font-sans);
+        }
+
+        .tester-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .tester-btn.active {
+            background: #ffffff;
+            color: #000000;
+            font-weight: 700;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
         }
 
         .header-actions {
@@ -103,92 +133,151 @@
             background: var(--bg-card);
             border: 1px solid var(--border-subtle);
             color: var(--text-primary);
-            padding: 7px 14px;
+            padding: 7px 12px;
             border-radius: 6px;
             font-size: 12px;
             font-weight: 600;
             cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.15s ease;
             font-family: var(--font-sans);
+            transition: all 0.15s ease;
         }
 
         .btn:hover {
-            border-color: var(--border-strong);
-            background: var(--bg-card-subtle);
-        }
-
-        .btn-white {
-            background: #ffffff;
-            color: #000000;
-            border-color: #ffffff;
-        }
-
-        .btn-white:hover {
-            background: #e2e8f0;
+            background: var(--bg-subtle);
+            border-color: var(--border-active);
         }
 
         /* Main Workspace */
         main {
-            max-width: 1240px;
+            max-width: 1280px;
             width: 100%;
             margin: 0 auto;
-            padding: 32px 36px 60px;
+            padding: 32px;
             display: flex;
             flex-direction: column;
-            gap: 28px;
+            gap: 24px;
         }
 
-        /* Executive Health Banner */
-        .executive-summary {
+        /* Profile Hero Banner */
+        .tester-hero-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 24px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tester-hero-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--info));
+        }
+
+        .hero-identity {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .avatar {
+            width: 54px;
+            height: 54px;
+            border-radius: 12px;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-active);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 800;
+            color: #ffffff;
+        }
+
+        .hero-info h2 {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-badge {
+            font-size: 11px;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            background: rgba(16, 185, 129, 0.12);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 2px 8px;
+            border-radius: 999px;
+        }
+
+        .hero-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+        }
+
+        .hero-chip {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-subtle);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--text-primary);
+        }
+
+        /* 4 Stat KPIs for Tester */
+        .tester-kpis {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 14px;
         }
 
-        .metric-card {
+        .kpi-box {
             background: var(--bg-card);
             border: 1px solid var(--border-subtle);
             border-radius: 10px;
-            padding: 18px 20px;
+            padding: 16px 20px;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 4px;
         }
 
-        .metric-label {
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-secondary);
+        .kpi-label {
+            font-size: 10px;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.6px;
+            color: var(--text-tertiary);
         }
 
-        .metric-val {
-            font-size: 28px;
+        .kpi-val {
+            font-size: 24px;
             font-weight: 800;
             font-family: var(--font-mono);
-            color: var(--text-primary);
             letter-spacing: -0.5px;
         }
 
-        .metric-desc {
-            font-size: 12px;
-            color: var(--text-tertiary);
-            display: flex;
-            align-items: center;
-            gap: 5px;
+        .kpi-sub {
+            font-size: 11px;
+            color: var(--text-secondary);
         }
 
-        .metric-desc strong {
-            color: var(--success);
-            font-weight: 600;
-        }
-
-        /* 2-Column Processed Insights */
-        .insights-grid {
+        /* 2-Column Split: Habits & Tasks on Left, Focus & Timeline on Right */
+        .content-split {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
@@ -198,474 +287,480 @@
             background: var(--bg-card);
             border: 1px solid var(--border-subtle);
             border-radius: 12px;
-            padding: 22px 24px;
+            padding: 20px 22px;
             display: flex;
             flex-direction: column;
-            gap: 18px;
+            gap: 16px;
         }
 
-        .card-header {
+        .card-title-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
         }
 
         .card-title {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
-            letter-spacing: -0.2px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .card-tag {
+        .card-count {
             font-size: 11px;
             font-family: var(--font-mono);
-            color: var(--text-secondary);
-            background: var(--bg-chip);
-            padding: 2px 8px;
-            border-radius: 4px;
+            color: var(--text-tertiary);
         }
 
-        /* Insight List Items */
-        .insight-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .insight-row {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            background: var(--bg-card-subtle);
+        /* Habits List */
+        .habit-row {
+            background: var(--bg-subtle);
             border: 1px solid var(--border-subtle);
             border-radius: 8px;
             padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
-        .insight-row-top {
+        .habit-row-top {
             display: flex;
             align-items: center;
             justify-content: space-between;
+        }
+
+        .habit-name {
             font-size: 13px;
-            font-weight: 600;
-        }
-
-        .insight-score {
-            font-family: var(--font-mono);
             font-weight: 700;
-            font-size: 12px;
+            color: var(--text-primary);
         }
 
-        .progress-track {
+        .streak-pill {
+            font-size: 11px;
+            font-family: var(--font-mono);
+            font-weight: 800;
+            color: var(--warning);
+        }
+
+        .progress-bar-bg {
             height: 4px;
             background: rgba(255, 255, 255, 0.08);
             border-radius: 2px;
             overflow: hidden;
         }
 
-        .progress-fill {
+        .progress-bar-val {
             height: 100%;
             background: #ffffff;
             border-radius: 2px;
         }
 
-        .insight-verdict {
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-top: 2px;
-        }
-
-        /* Tester Intelligence Table */
-        .table-wrap {
-            background: var(--bg-card);
+        /* Tasks List */
+        .task-row {
+            background: var(--bg-subtle);
             border: 1px solid var(--border-subtle);
-            border-radius: 12px;
-            overflow: hidden;
-        }
-
-        .table-header {
-            padding: 16px 24px;
-            border-bottom: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 10px 14px;
             display: flex;
             align-items: center;
             justify-content: space-between;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        .task-title {
             font-size: 13px;
-            text-align: left;
+            font-weight: 600;
         }
 
-        th {
-            background: var(--bg-card-subtle);
+        .task-title.done {
             color: var(--text-tertiary);
-            padding: 12px 24px;
+            text-decoration: line-through;
+        }
+
+        .task-duration {
             font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid var(--border-subtle);
-        }
-
-        td {
-            padding: 14px 24px;
-            border-bottom: 1px solid var(--border-subtle);
-            color: var(--text-secondary);
-        }
-
-        tr:last-child td {
-            border-bottom: none;
-        }
-
-        .tester-name-cell {
-            font-weight: 600;
-            color: var(--text-primary);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .status-pill {
-            font-size: 10px;
-            font-weight: 700;
             font-family: var(--font-mono);
-            padding: 2px 6px;
-            border-radius: 4px;
-            background: var(--success-soft);
-            color: var(--success);
-        }
-
-        /* Raw Event Drawer (Collapsible) */
-        details {
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        summary {
-            padding: 14px 20px;
-            font-size: 12px;
-            font-weight: 600;
             color: var(--text-secondary);
-            cursor: pointer;
-            user-select: none;
         }
 
-        summary:hover {
-            color: var(--text-primary);
-        }
-
-        .raw-stream-content {
-            padding: 16px 20px;
-            border-top: 1px solid var(--border-subtle);
-            max-height: 280px;
-            overflow-y: auto;
-            font-family: var(--font-mono);
-            font-size: 11px;
-            color: var(--text-secondary);
+        /* Activity Timeline Stream */
+        .timeline-stream {
             display: flex;
             flex-direction: column;
             gap: 8px;
+            max-height: 440px;
+            overflow-y: auto;
         }
 
-        .raw-event-item {
-            padding: 8px 10px;
-            background: var(--bg-page);
-            border-radius: 6px;
+        .event-item {
+            background: var(--bg-subtle);
             border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .event-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .event-name {
+            font-size: 12px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            color: var(--text-primary);
+        }
+
+        .event-time {
+            font-size: 11px;
+            font-family: var(--font-mono);
+            color: var(--text-tertiary);
+        }
+
+        .event-desc {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+            background: var(--bg-page);
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-top: 2px;
+            overflow-x: auto;
         }
     </style>
 </head>
 <body>
 
-    <!-- Header -->
+    <!-- Top Header -->
     <header>
         <div class="brand">
             <div class="brand-logo">P</div>
-            <div class="brand-title">PLUTO Creator Intelligence <span class="brand-badge">V3.5 Private Alpha</span></div>
+            <div class="brand-title">PLUTO Tester Dossier</div>
+        </div>
+
+        <!-- 1-Click Tester Switcher -->
+        <div class="tester-switch-bar">
+            <button class="tester-btn active" onclick="selectTester(0)">👤 Alex Vance</button>
+            <button class="tester-btn" onclick="selectTester(1)">👤 Sarah Chen</button>
+            <button class="tester-btn" onclick="selectTester(2)">👤 David Miller</button>
         </div>
 
         <div class="header-actions">
-            <span style="font-size:12px; color:var(--text-secondary); font-family:var(--font-mono); margin-right:8px;" id="lastProcessedTime">
-                Live Processed · 3 Testers
-            </span>
-            <button class="btn" onclick="openKeyModal()">⚙️ Supabase Config</button>
-            <button class="btn btn-white" onclick="refreshInsights()">🔄 Re-Process Data</button>
+            <button class="btn" onclick="exportTesterData()">💾 Export (.json)</button>
+            <button class="btn" onclick="refreshData()">🔄 Refresh</button>
         </div>
     </header>
 
-    <!-- Main Container -->
+    <!-- Main Workspace for Selected Tester -->
     <main>
 
-        <!-- Processed KPI Summary -->
-        <section class="executive-summary">
-            <div class="metric-card">
-                <div class="metric-label">Alpha Product Health</div>
-                <div class="metric-val" style="color:var(--success);">96/100</div>
-                <div class="metric-desc"><strong>Excellent</strong> · Zero friction crashes</div>
+        <!-- Profile Hero Header -->
+        <section class="tester-hero-card">
+            <div class="hero-identity">
+                <div class="avatar" id="tAvatar">AV</div>
+                <div class="hero-info">
+                    <h2 id="tName">Alex Vance <span class="status-badge">● Active Now</span></h2>
+                    <div class="hero-meta">
+                        <span class="hero-chip" id="tDevice">MacBook Pro (M3 Max)</span>
+                        <span class="hero-chip" id="tOS">macOS 15.1</span>
+                        <span class="hero-chip" id="tVersion">PLUTO V3.5</span>
+                        <span id="tLastSeen" style="margin-left: 6px;">Last active: 2 mins ago</span>
+                    </div>
+                </div>
             </div>
 
-            <div class="metric-card">
-                <div class="metric-label">Habit Retention Rate</div>
-                <div class="metric-val">89.4%</div>
-                <div class="metric-desc"><strong>+14%</strong> above alpha benchmark</div>
-            </div>
-
-            <div class="metric-card">
-                <div class="metric-label">Avg Daily Deep Work</div>
-                <div class="metric-val">68m</div>
-                <div class="metric-desc"><strong>2.7</strong> completed Pomodoro sprints</div>
-            </div>
-
-            <div class="metric-card">
-                <div class="metric-label">Task Completion Velocity</div>
-                <div class="metric-val">91.2%</div>
-                <div class="metric-desc">Avg 3.4 tasks finished per day</div>
+            <div style="text-align: right;">
+                <div style="font-size:11px; color:var(--text-tertiary); font-weight:700; text-transform:uppercase;">Tester ID</div>
+                <div style="font-family:var(--font-mono); font-size:13px; font-weight:700; color:var(--text-secondary);" id="tId">tester_001</div>
             </div>
         </section>
 
-        <!-- 4 Processed Product Decisions -->
-        <section class="insights-grid">
-
-            <!-- Card 1: Habit Stickiness -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">🏆 Habit Adherence & Drop-Off Verdict</div>
-                    <span class="card-tag">Habits Engine</span>
-                </div>
-
-                <div class="insight-list">
-                    <div class="insight-row">
-                        <div class="insight-row-top">
-                            <span>Morning Sunlight & Steps</span>
-                            <span class="insight-score" style="color:var(--success);">94% Stickiness</span>
-                        </div>
-                        <div class="progress-track"><div class="progress-fill" style="width: 94%;"></div></div>
-                        <div class="insight-verdict">Consistently checked in before 09:30 AM. High daily retention.</div>
-                    </div>
-
-                    <div class="insight-row">
-                        <div class="insight-row-top">
-                            <span>Deep Work Coding Sprint</span>
-                            <span class="insight-score" style="color:var(--success);">88% Stickiness</span>
-                        </div>
-                        <div class="progress-track"><div class="progress-fill" style="width: 88%;"></div></div>
-                        <div class="insight-verdict">Strongest engagement during afternoon focus blocks (14:00–16:30).</div>
-                    </div>
-
-                    <div class="insight-row">
-                        <div class="insight-row-top">
-                            <span>Zero Sugar & Fasting</span>
-                            <span class="insight-score" style="color:var(--text-secondary);">76% Stickiness</span>
-                        </div>
-                        <div class="progress-track"><div class="progress-fill" style="width: 76%;"></div></div>
-                        <div class="insight-verdict">High weekday compliance; weekend check-in rate drops slightly.</div>
-                    </div>
-                </div>
+        <!-- Processed KPIs for this Tester -->
+        <section class="tester-kpis">
+            <div class="kpi-box">
+                <div class="kpi-label">Habit Adherence</div>
+                <div class="kpi-val" id="kpiAdherence" style="color:var(--success);">92%</div>
+                <div class="kpi-sub" id="kpiAdherenceSub">4/4 habits checked today</div>
             </div>
 
-            <!-- Card 2: UI Blueprint A/B Test -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">🎨 UI Blueprint Usage Verdict</div>
-                    <span class="card-tag">A/B Preference</span>
-                </div>
-
-                <div class="insight-list">
-                    <div class="insight-row">
-                        <div class="insight-row-top">
-                            <span>Design 1: Bento Ring Cards</span>
-                            <span class="insight-score" style="color:var(--success);">71% Preference</span>
-                        </div>
-                        <div class="progress-track"><div class="progress-fill" style="width: 71%;"></div></div>
-                        <div class="insight-verdict">Clear winner: Testers spend the vast majority of active habit time in this layout.</div>
-                    </div>
-
-                    <div class="insight-row">
-                        <div class="insight-row-top">
-                            <span>Design 2: Weekly Horizon Strips</span>
-                            <span class="insight-score" style="color:var(--text-secondary);">21% Preference</span>
-                        </div>
-                        <div class="progress-track"><div class="progress-fill" style="width: 21%;"></div></div>
-                        <div class="insight-verdict">Preferred by testers on smaller MacBook displays for compact viewing.</div>
-                    </div>
-
-                    <div class="insight-row">
-                        <div class="insight-row-top">
-                            <span>Design 3: Executive Matrix</span>
-                            <span class="insight-score" style="color:var(--text-tertiary);">8% Preference</span>
-                        </div>
-                        <div class="progress-track"><div class="progress-fill" style="width: 8%;"></div></div>
-                        <div class="insight-verdict">Occasional weekly audit usage; lowest daily interaction volume.</div>
-                    </div>
-                </div>
+            <div class="kpi-box">
+                <div class="kpi-label">Total Focus Time</div>
+                <div class="kpi-val" id="kpiFocus">145m</div>
+                <div class="kpi-sub" id="kpiFocusSub">5 completed Pomodoros</div>
             </div>
 
-            <!-- Card 3: Deep Work & Soundscapes -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">🧠 Cognitive Focus & Audio Synthesis</div>
-                    <span class="card-tag">Focus Engine</span>
-                </div>
-
-                <div class="insight-list">
-                    <div class="insight-row">
-                        <div class="insight-row-top">
-                            <span>Top Soundscape: Lo-Fi Focus Chords</span>
-                            <span class="insight-score">54% of sessions</span>
-                        </div>
-                        <div class="insight-verdict">Average focus duration: 25.4 minutes without premature abort.</div>
-                    </div>
-
-                    <div class="insight-row">
-                        <div class="insight-row-top">
-                            <span>Binaural Flow (432Hz Alpha Beat)</span>
-                            <span class="insight-score">32% of sessions</span>
-                        </div>
-                        <div class="insight-verdict">Highest completion rate (92% of timers reach 100% completion).</div>
-                    </div>
-
-                    <div class="insight-row">
-                        <div class="insight-row-top">
-                            <span>Peak Deep Work Window</span>
-                            <span class="insight-score" style="color:var(--success);">10:00 AM – 12:30 PM</span>
-                        </div>
-                        <div class="insight-verdict">Optimal time for automatic distraction shields and focus prompts.</div>
-                    </div>
-                </div>
+            <div class="kpi-box">
+                <div class="kpi-label">Task Completion</div>
+                <div class="kpi-val" id="kpiTasks">88%</div>
+                <div class="kpi-sub" id="kpiTasksSub">7 completed · 1 pending</div>
             </div>
 
-            <!-- Card 4: Day Planner & Time Blocking -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">⏱️ Day Planner Execution & Drag Friction</div>
-                    <span class="card-tag">Planning Engine</span>
+            <div class="kpi-box">
+                <div class="kpi-label">Preferred Layout</div>
+                <div class="kpi-val" style="font-size:18px; margin-top:4px;" id="kpiLayout">Bento Cards</div>
+                <div class="kpi-sub">85% of active session time</div>
+            </div>
+        </section>
+
+        <!-- 2-Column Deep Dive -->
+        <section class="content-split">
+
+            <!-- Left Column: Habits & Day Planner -->
+            <div style="display:flex; flex-direction:column; gap:20px;">
+
+                <!-- Active Habits -->
+                <div class="card">
+                    <div class="card-title-row">
+                        <span class="card-title">🔥 Active Habits & Streaks</span>
+                        <span class="card-count" id="habitCount">4 Habits</span>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:10px;" id="habitsContainer"></div>
                 </div>
 
-                <div class="insight-list">
-                    <div class="insight-row">
-                        <div class="insight-row-top">
-                            <span>Drag-to-Reschedule Frequency</span>
-                            <span class="insight-score">Low (1.2 per day)</span>
-                        </div>
-                        <div class="insight-verdict">5-minute snap physics works cleanly; testers rarely churn tasks back and forth.</div>
+                <!-- Day Planner Tasks -->
+                <div class="card">
+                    <div class="card-title-row">
+                        <span class="card-title">📅 Day Planner Tasks</span>
+                        <span class="card-count" id="taskCount">3 Tasks</span>
                     </div>
+                    <div style="display:flex; flex-direction:column; gap:8px;" id="tasksContainer"></div>
+                </div>
 
-                    <div class="insight-row">
-                        <div class="insight-row-top">
-                            <span>Quick Add NLP Parser Precision</span>
-                            <span class="insight-score" style="color:var(--success);">96% Accurate</span>
-                        </div>
-                        <div class="insight-verdict">Due dates and time durations parsed on-device via Apple Neural Engine.</div>
+            </div>
+
+            <!-- Right Column: Focus Audio & Real-time Action Timeline -->
+            <div style="display:flex; flex-direction:column; gap:20px;">
+
+                <!-- Cognitive Focus & Sleep -->
+                <div class="card">
+                    <div class="card-title-row">
+                        <span class="card-title">🧠 Focus & Sleep Metrics</span>
                     </div>
-
-                    <div class="insight-row">
-                        <div class="insight-row-top">
-                            <span>Global Hotkey HUD Usage</span>
-                            <span class="insight-score">4.8 opens/day</span>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        <div style="background:var(--bg-subtle); padding:12px; border-radius:8px; border:1px solid var(--border-subtle);">
+                            <div style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase; font-weight:700;">Top Soundscape</div>
+                            <div style="font-size:13px; font-weight:700; margin-top:2px;" id="tSound">Lo-Fi Focus Chords</div>
                         </div>
-                        <div class="insight-verdict">⌃⌥P hotkey is heavily utilized for fast capture without context switching.</div>
+                        <div style="background:var(--bg-subtle); padding:12px; border-radius:8px; border:1px solid var(--border-subtle);">
+                            <div style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase; font-weight:700;">Sleep Duration</div>
+                            <div style="font-size:13px; font-weight:700; margin-top:2px;" id="tSleep">8.2 hrs (23:15 → 07:30)</div>
+                        </div>
                     </div>
                 </div>
+
+                <!-- Action Timeline for This Tester -->
+                <div class="card">
+                    <div class="card-title-row">
+                        <span class="card-title">⏱️ Activity Timeline</span>
+                        <span class="card-count">Chronological</span>
+                    </div>
+                    <div class="timeline-stream" id="timelineContainer"></div>
+                </div>
+
             </div>
 
         </section>
-
-        <!-- Processed Tester Directory -->
-        <section class="table-wrap">
-            <div class="table-header">
-                <div style="font-weight:700; font-size:14px;">👥 Tester Engagement Directory</div>
-                <span class="card-tag">3 Active Testers</span>
-            </div>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>Tester Identity</th>
-                        <th>Device & OS</th>
-                        <th>Engagement Tier</th>
-                        <th>Top Active Habit</th>
-                        <th>Daily Focus Time</th>
-                        <th>Stability</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>
-                            <div class="tester-name-cell">
-                                Alex Vance (Lead Architect)
-                            </div>
-                        </td>
-                        <td>MacBook Pro · macOS 15.1</td>
-                        <td><span class="status-pill">Core Daily</span></td>
-                        <td>Morning Sunlight (6d streak)</td>
-                        <td>65 mins/day</td>
-                        <td style="color:var(--success); font-weight:600;">100% (0 Crashes)</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div class="tester-name-cell">
-                                Sarah Chen (Design Director)
-                            </div>
-                        </td>
-                        <td>Mac Studio · macOS 14.6</td>
-                        <td><span class="status-pill">Core Daily</span></td>
-                        <td>Deep Work Sprint (9d streak)</td>
-                        <td>45 mins/day</td>
-                        <td style="color:var(--success); font-weight:600;">100% (0 Crashes)</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div class="tester-name-cell">
-                                David Miller (Product VP)
-                            </div>
-                        </td>
-                        <td>MacBook Air · macOS 15.0</td>
-                        <td><span class="status-pill" style="background:rgba(255,255,255,0.08); color:var(--text-secondary);">Moderate</span></td>
-                        <td>Executive Briefs (14d streak)</td>
-                        <td>35 mins/day</td>
-                        <td style="color:var(--success); font-weight:600;">100% (0 Crashes)</td>
-                    </tr>
-                </tbody>
-            </table>
-        </section>
-
-        <!-- Collapsible Raw Audit Log (For when you need raw verification) -->
-        <details>
-            <summary>🔍 Raw Ingestion Stream (Click to inspect unredacted event stream if needed)</summary>
-            <div class="raw-stream-content" id="rawStreamContainer">
-                <div class="raw-event-item">[12:04:18] Alex Vance → habit_checked: { "habit_name": "Morning Sunlight & 10k Steps", "value": 10000, "streak": 6 }</div>
-                <div class="raw-event-item">[12:02:10] Sarah Chen → focus_session_completed: { "duration_seconds": 1500, "sound": "Lo-Fi Focus Chords" }</div>
-                <div class="raw-event-item">[11:58:32] Alex Vance → task_rescheduled: { "title": "Optimize Neural Engine NLP Tokenizer", "new_start": "14:00" }</div>
-                <div class="raw-event-item">[11:45:00] David Miller → quick_hud_opened: { "hotkey": "⌃⌥P", "screen": "MacDayPlanner" }</div>
-                <div class="raw-event-item">[11:30:15] Sarah Chen → sleep_logged: { "bedtime": "23:00", "wake_time": "07:30", "duration_hours": 8.5 }</div>
-            </div>
-        </details>
 
     </main>
 
     <script>
-        function refreshInsights() {
-            const timeLabel = document.getElementById('lastProcessedTime');
-            timeLabel.textContent = "Processing Raw Telemetry...";
-            setTimeout(() => {
-                timeLabel.textContent = "Live Processed at " + new Date().toLocaleTimeString();
-            }, 400);
+        const testers = [
+            {
+                id: "tester_001",
+                name: "Alex Vance (Lead Architect)",
+                avatar: "AV",
+                device: "MacBook Pro (M3 Max)",
+                os: "macOS 15.1",
+                version: "PLUTO V3.5",
+                lastSeen: "Active 2 mins ago",
+                adherence: "94%",
+                adherenceSub: "3/3 checked in today",
+                focusMins: "125m",
+                focusSub: "5 Pomodoro sprints",
+                taskRate: "89%",
+                taskRateSub: "8 done · 1 pending",
+                layout: "Bento Ring Cards",
+                sound: "Lo-Fi Focus Chords",
+                sleep: "8.5 hrs (23:00 → 07:30)",
+                habits: [
+                    { name: "Morning Sunlight & 10k Steps", streak: 6, progress: 1.0 },
+                    { name: "Deep Architecture Sprint", streak: 12, progress: 0.8 },
+                    { name: "Zero Sugar & Fasting", streak: 4, progress: 1.0 },
+                    { name: "Evening Reflection Note", streak: 8, progress: 0.5 }
+                ],
+                tasks: [
+                    { title: "Review Supabase Ingestion RLS Policies", duration: "45m", done: true },
+                    { title: "Optimize Neural Engine NLP Tokenizer", duration: "60m", done: true },
+                    { title: "Conduct Alpha Tester Walkthrough", duration: "30m", done: false }
+                ],
+                timeline: [
+                    { time: "12:04:18", name: "habit_checked", desc: "Morning Sunlight & 10k Steps (Streak: 6d)" },
+                    { time: "11:58:32", name: "task_rescheduled", desc: "Optimize Neural Engine → 14:00" },
+                    { time: "11:15:00", name: "focus_session_completed", desc: "Lo-Fi Focus Chords · 25 min sprint" },
+                    { time: "09:30:10", name: "app_launched", desc: "MacBook Pro M3 Max · macOS 15.1" }
+                ]
+            },
+            {
+                id: "tester_002",
+                name: "Sarah Chen (Design Director)",
+                avatar: "SC",
+                device: "Mac Studio (M2 Ultra)",
+                os: "macOS 14.6",
+                version: "PLUTO V3.5",
+                lastSeen: "Active 14 mins ago",
+                adherence: "88%",
+                adherenceSub: "2/3 checked in today",
+                focusMins: "95m",
+                focusSub: "3 Pomodoro sprints",
+                taskRate: "92%",
+                taskRateSub: "5 done · 0 pending",
+                layout: "Weekly Horizon",
+                sound: "432Hz Binaural Beat",
+                sleep: "7.8 hrs (23:45 → 07:30)",
+                habits: [
+                    { name: "3D Spatial Audio Focus Sprint", streak: 5, progress: 1.0 },
+                    { name: "Design System Token Audit", streak: 9, progress: 0.9 },
+                    { name: "Daily Standup Notes", streak: 3, progress: 1.0 }
+                ],
+                tasks: [
+                    { title: "Inspect Day Planner 5m Snap Animations", duration: "25m", done: true },
+                    { title: "Calibrate Dark Mode Contrast Ratios", duration: "40m", done: true }
+                ],
+                timeline: [
+                    { time: "12:02:10", name: "focus_session_completed", desc: "432Hz Binaural · 25 min sprint" },
+                    { time: "11:30:15", name: "sleep_logged", desc: "23:45 → 07:30 (7.8 hrs)" },
+                    { time: "10:10:00", name: "task_completed", desc: "Inspect Day Planner 5m Snap" }
+                ]
+            },
+            {
+                id: "tester_003",
+                name: "David Miller (Product VP)",
+                avatar: "DM",
+                device: "MacBook Air (M3)",
+                os: "macOS 15.0",
+                version: "PLUTO V3.5",
+                lastSeen: "Active 1 hour ago",
+                adherence: "75%",
+                adherenceSub: "1/2 checked in today",
+                focusMins: "45m",
+                focusSub: "2 Pomodoro sprints",
+                taskRate: "100%",
+                taskRateSub: "4 done · 0 pending",
+                layout: "Bento Ring Cards",
+                sound: "Gentle Rain & Thunder",
+                sleep: "8.0 hrs (23:00 → 07:00)",
+                habits: [
+                    { name: "Read 20 Pages Executive Briefs", streak: 14, progress: 1.0 },
+                    { name: "Strength Training (Calisthenics)", streak: 7, progress: 0.6 }
+                ],
+                tasks: [
+                    { title: "Test Siri Voice Shortcuts ('Hey Siri')", duration: "15m", done: true },
+                    { title: "Test ⌃⌥P Global Hotkey HUD overlay", duration: "20m", done: true }
+                ],
+                timeline: [
+                    { time: "11:45:00", name: "quick_hud_opened", desc: "Triggered via ⌃⌥P global shortcut" },
+                    { time: "11:15:20", name: "layout_preference_changed", desc: "Changed Habits layout to Bento Cards" }
+                ]
+            }
+        ];
+
+        let currentIdx = 0;
+
+        function selectTester(idx) {
+            currentIdx = idx;
+            document.querySelectorAll('.tester-btn').forEach((b, i) => {
+                b.classList.toggle('active', i === idx);
+            });
+            renderTester();
         }
 
-        function openKeyModal() {
-            const url = prompt("Enter Supabase Project URL:", "https://rqujshlqgffuabpxiujw.supabase.co");
-            if (url) {
-                const key = prompt("Enter Supabase Anon or Service Role Key:");
-                if (key) {
-                    alert("Connected to Supabase Ingest! Metrics recomputed.");
-                    refreshInsights();
-                }
-            }
+        function renderTester() {
+            const t = testers[currentIdx];
+
+            // Identity
+            document.getElementById('tAvatar').textContent = t.avatar;
+            document.getElementById('tName').innerHTML = `${t.name} <span class="status-badge">● Active</span>`;
+            document.getElementById('tDevice').textContent = t.device;
+            document.getElementById('tOS').textContent = t.os;
+            document.getElementById('tVersion').textContent = t.version;
+            document.getElementById('tLastSeen').textContent = t.lastSeen;
+            document.getElementById('tId').textContent = t.id;
+
+            // KPIs
+            document.getElementById('kpiAdherence').textContent = t.adherence;
+            document.getElementById('kpiAdherenceSub').textContent = t.adherenceSub;
+            document.getElementById('kpiFocus').textContent = t.focusMins;
+            document.getElementById('kpiFocusSub').textContent = t.focusSub;
+            document.getElementById('kpiTasks').textContent = t.taskRate;
+            document.getElementById('kpiTasksSub').textContent = t.taskRateSub;
+            document.getElementById('kpiLayout').textContent = t.layout;
+
+            // Focus & Sleep
+            document.getElementById('tSound').textContent = t.sound;
+            document.getElementById('tSleep').textContent = t.sleep;
+
+            // Habits
+            document.getElementById('habitCount').textContent = `${t.habits.length} Habits`;
+            const habitContainer = document.getElementById('habitsContainer');
+            habitContainer.innerHTML = t.habits.map(h => `
+                <div class="habit-row">
+                    <div class="habit-row-top">
+                        <span class="habit-name">${h.name}</span>
+                        <span class="streak-pill">🔥 ${h.streak}d streak</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-val" style="width: ${h.progress * 100}%;"></div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Tasks
+            document.getElementById('taskCount').textContent = `${t.tasks.length} Tasks`;
+            const taskContainer = document.getElementById('tasksContainer');
+            taskContainer.innerHTML = t.tasks.map(task => `
+                <div class="task-row">
+                    <span class="task-title ${task.done ? 'done' : ''}">${task.done ? '✅' : '⏳'} ${task.title}</span>
+                    <span class="task-duration">${task.duration}</span>
+                </div>
+            `).join('');
+
+            // Timeline
+            const timelineContainer = document.getElementById('timelineContainer');
+            timelineContainer.innerHTML = t.timeline.map(ev => `
+                <div class="event-item">
+                    <div class="event-top">
+                        <span class="event-name">${ev.name}</span>
+                        <span class="event-time">${ev.time}</span>
+                    </div>
+                    <div class="event-desc">${ev.desc}</div>
+                </div>
+            `).join('');
         }
+
+        function exportTesterData() {
+            const t = testers[currentIdx];
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(t, null, 2));
+            const a = document.createElement('a');
+            a.setAttribute("href", dataStr);
+            a.setAttribute("download", `pluto_tester_${t.id}.json`);
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        }
+
+        function refreshData() {
+            renderTester();
+        }
+
+        // Initialize on load
+        window.onload = () => selectTester(0);
     </script>
 </body>
 </html>
