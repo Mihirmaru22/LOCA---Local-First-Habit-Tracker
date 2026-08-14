@@ -12,7 +12,7 @@ final class JournalMediaManager {
         let paths = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)
         let dir = paths[0].appendingPathComponent("Pluto/JournalMedia", isDirectory: true)
         if !FileManager.default.fileExists(atPath: dir.path) {
-            try? FileManager.default.createDirectory(at, withIntermediateDirectories: true)
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         }
         return dir
     }
