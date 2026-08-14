@@ -3,29 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PLUTO V3.5 — Tester Profiles & Telemetry</title>
+    <title>PLUTO V3.5 — Comprehensive Tester Intelligence Dossier</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-page: #08090c;
-            --bg-card: #101217;
-            --bg-card-hover: #151820;
-            --bg-subtle: #161922;
-            --bg-chip: #1e2230;
+            --bg-page: #06070a;
+            --bg-card: #0e1117;
+            --bg-surface: #141822;
+            --bg-chip: #1a202e;
             
             --border-subtle: rgba(255, 255, 255, 0.08);
-            --border-active: rgba(255, 255, 255, 0.18);
+            --border-strong: rgba(255, 255, 255, 0.16);
 
             --text-primary: #ffffff;
-            --text-secondary: #9499ad;
-            --text-tertiary: #585e72;
+            --text-secondary: #949ab0;
+            --text-tertiary: #585f75;
 
-            --accent: #8b5cf6;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --info: #3b82f6;
+            --purple: #8b5cf6;
+            --blue: #3b82f6;
+            --emerald: #10b981;
+            --amber: #f59e0b;
+            --rose: #f43f5e;
 
             --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
@@ -47,14 +47,14 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        /* Top Header */
+        /* Sticky Header */
         header {
             border-bottom: 1px solid var(--border-subtle);
-            padding: 14px 32px;
+            padding: 12px 32px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: rgba(8, 9, 12, 0.95);
+            background: rgba(6, 7, 10, 0.95);
             backdrop-filter: blur(16px);
             position: sticky;
             top: 0;
@@ -67,17 +67,17 @@
             gap: 12px;
         }
 
-        .brand-logo {
-            width: 28px;
-            height: 28px;
+        .brand-badge {
             background: #ffffff;
             color: #000000;
+            width: 26px;
+            height: 26px;
             border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 800;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .brand-title {
@@ -85,18 +85,18 @@
             font-weight: 700;
         }
 
-        /* Tester Selector Pills */
-        .tester-switch-bar {
+        /* Tester Picker Switcher */
+        .tester-picker {
             display: flex;
             align-items: center;
-            gap: 8px;
-            background: var(--bg-subtle);
+            gap: 6px;
+            background: var(--bg-surface);
             padding: 4px;
             border-radius: 8px;
             border: 1px solid var(--border-subtle);
         }
 
-        .tester-btn {
+        .picker-btn {
             background: transparent;
             border: none;
             color: var(--text-secondary);
@@ -105,64 +105,36 @@
             font-size: 12px;
             font-weight: 600;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
             transition: all 0.15s ease;
             font-family: var(--font-sans);
         }
 
-        .tester-btn:hover {
+        .picker-btn:hover {
             color: var(--text-primary);
         }
 
-        .tester-btn.active {
+        .picker-btn.active {
             background: #ffffff;
             color: #000000;
             font-weight: 700;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
         }
 
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .btn {
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            color: var(--text-primary);
-            padding: 7px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            font-family: var(--font-sans);
-            transition: all 0.15s ease;
-        }
-
-        .btn:hover {
-            background: var(--bg-subtle);
-            border-color: var(--border-active);
-        }
-
-        /* Main Workspace */
+        /* Main Workspace Layout */
         main {
-            max-width: 1280px;
+            max-width: 1340px;
             width: 100%;
             margin: 0 auto;
-            padding: 32px;
+            padding: 28px 32px 60px;
             display: flex;
             flex-direction: column;
             gap: 24px;
         }
 
-        /* Profile Hero Banner */
-        .tester-hero-card {
+        /* Top Hero Profile Dossier */
+        .tester-hero {
             background: var(--bg-card);
             border: 1px solid var(--border-subtle);
-            border-radius: 12px;
+            border-radius: 14px;
             padding: 24px 28px;
             display: flex;
             align-items: center;
@@ -171,28 +143,28 @@
             overflow: hidden;
         }
 
-        .tester-hero-card::before {
+        .tester-hero::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
             height: 3px;
-            background: linear-gradient(90deg, var(--accent), var(--info));
+            background: linear-gradient(90deg, var(--purple), var(--blue), var(--emerald));
         }
 
-        .hero-identity {
+        .hero-left {
             display: flex;
             align-items: center;
             gap: 18px;
         }
 
-        .avatar {
-            width: 54px;
-            height: 54px;
+        .avatar-box {
+            width: 52px;
+            height: 52px;
             border-radius: 12px;
-            background: var(--bg-subtle);
-            border: 1px solid var(--border-active);
+            background: var(--bg-surface);
+            border: 1px solid var(--border-strong);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -201,8 +173,8 @@
             color: #ffffff;
         }
 
-        .hero-info h2 {
-            font-size: 18px;
+        .hero-details h2 {
+            font-size: 19px;
             font-weight: 800;
             letter-spacing: -0.3px;
             display: flex;
@@ -210,53 +182,53 @@
             gap: 10px;
         }
 
-        .status-badge {
+        .status-pill {
             font-size: 11px;
-            font-family: var(--font-mono);
             font-weight: 700;
+            font-family: var(--font-mono);
             background: rgba(16, 185, 129, 0.12);
-            color: var(--success);
-            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--emerald);
             padding: 2px 8px;
             border-radius: 999px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
         }
 
-        .hero-meta {
+        .hero-chips {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             margin-top: 6px;
-            font-size: 12px;
-            color: var(--text-secondary);
+            font-size: 11px;
             font-family: var(--font-mono);
+            color: var(--text-secondary);
         }
 
-        .hero-chip {
-            background: var(--bg-subtle);
+        .chip {
+            background: var(--bg-surface);
             border: 1px solid var(--border-subtle);
             padding: 2px 8px;
             border-radius: 4px;
             color: var(--text-primary);
         }
 
-        /* 4 Stat KPIs for Tester */
-        .tester-kpis {
+        /* 5-Column High-Level Metric Ribbon */
+        .metric-ribbon {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 14px;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
         }
 
-        .kpi-box {
+        .metric-cell {
             background: var(--bg-card);
             border: 1px solid var(--border-subtle);
             border-radius: 10px;
-            padding: 16px 20px;
+            padding: 16px 18px;
             display: flex;
             flex-direction: column;
             gap: 4px;
         }
 
-        .kpi-label {
+        .cell-label {
             font-size: 10px;
             font-weight: 700;
             text-transform: uppercase;
@@ -264,61 +236,66 @@
             color: var(--text-tertiary);
         }
 
-        .kpi-val {
-            font-size: 24px;
+        .cell-value {
+            font-size: 22px;
             font-weight: 800;
             font-family: var(--font-mono);
-            letter-spacing: -0.5px;
+            color: var(--text-primary);
         }
 
-        .kpi-sub {
+        .cell-sub {
             font-size: 11px;
             color: var(--text-secondary);
         }
 
-        /* 2-Column Split: Habits & Tasks on Left, Focus & Timeline on Right */
-        .content-split {
+        /* Pillar Modules Grid */
+        .pillars-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
         }
 
-        .card {
+        .pillar-card {
             background: var(--bg-card);
             border: 1px solid var(--border-subtle);
             border-radius: 12px;
-            padding: 20px 22px;
+            padding: 22px 24px;
             display: flex;
             flex-direction: column;
             gap: 16px;
         }
 
-        .card-title-row {
+        .pillar-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 12px;
         }
 
-        .card-title {
+        .pillar-title {
             font-size: 13px;
-            font-weight: 700;
+            font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.6px;
-            color: var(--text-secondary);
+            color: var(--text-primary);
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        .card-count {
-            font-size: 11px;
+        .pillar-badge {
+            font-size: 10px;
             font-family: var(--font-mono);
-            color: var(--text-tertiary);
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            padding: 2px 8px;
+            border-radius: 4px;
         }
 
-        /* Habits List */
-        .habit-row {
-            background: var(--bg-subtle);
+        /* Habit Row Item */
+        .habit-item {
+            background: var(--bg-surface);
             border: 1px solid var(--border-subtle);
             border-radius: 8px;
             padding: 12px 14px;
@@ -327,112 +304,126 @@
             gap: 8px;
         }
 
-        .habit-row-top {
+        .habit-top {
             display: flex;
             align-items: center;
             justify-content: space-between;
-        }
-
-        .habit-name {
             font-size: 13px;
             font-weight: 700;
-            color: var(--text-primary);
         }
 
-        .streak-pill {
-            font-size: 11px;
+        .flame-streak {
+            color: var(--amber);
             font-family: var(--font-mono);
+            font-size: 11px;
             font-weight: 800;
-            color: var(--warning);
         }
 
-        .progress-bar-bg {
+        .prog-bg {
             height: 4px;
             background: rgba(255, 255, 255, 0.08);
             border-radius: 2px;
             overflow: hidden;
         }
 
-        .progress-bar-val {
+        .prog-bar {
             height: 100%;
             background: #ffffff;
             border-radius: 2px;
         }
 
-        /* Tasks List */
-        .task-row {
-            background: var(--bg-subtle);
+        /* Day Planner Task Block */
+        .time-block-row {
+            background: var(--bg-surface);
             border: 1px solid var(--border-subtle);
             border-radius: 6px;
             padding: 10px 14px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-        }
-
-        .task-title {
             font-size: 13px;
-            font-weight: 600;
         }
 
-        .task-title.done {
+        .block-time {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-tertiary);
+            width: 90px;
+        }
+
+        .block-title {
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .block-done {
             color: var(--text-tertiary);
             text-decoration: line-through;
         }
 
-        .task-duration {
-            font-size: 11px;
+        .block-priority {
+            font-size: 10px;
             font-family: var(--font-mono);
-            color: var(--text-secondary);
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.08);
         }
 
-        /* Activity Timeline Stream */
-        .timeline-stream {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            max-height: 440px;
-            overflow-y: auto;
-        }
-
-        .event-item {
-            background: var(--bg-subtle);
+        /* Milestones & Life Audit */
+        .milestone-item {
+            background: var(--bg-surface);
             border: 1px solid var(--border-subtle);
-            border-radius: 6px;
-            padding: 10px 14px;
+            border-radius: 8px;
+            padding: 12px 14px;
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 6px;
         }
 
-        .event-top {
+        .milestone-top {
             display: flex;
             align-items: center;
             justify-content: space-between;
-        }
-
-        .event-name {
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 700;
-            font-family: var(--font-mono);
-            color: var(--text-primary);
         }
 
-        .event-time {
-            font-size: 11px;
+        .horizon-tag {
+            font-size: 10px;
             font-family: var(--font-mono);
-            color: var(--text-tertiary);
-        }
-
-        .event-desc {
-            font-size: 11px;
-            color: var(--text-secondary);
-            font-family: var(--font-mono);
-            background: var(--bg-page);
-            padding: 4px 8px;
+            color: var(--purple);
+            background: rgba(139, 92, 246, 0.12);
+            padding: 2px 6px;
             border-radius: 4px;
-            margin-top: 2px;
-            overflow-x: auto;
+        }
+
+        /* Action Timeline Stream */
+        .timeline-scroll {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+
+        .stream-event {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 9px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            font-size: 12px;
+        }
+
+        .event-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-family: var(--font-mono);
+            font-size: 11px;
         }
     </style>
 </head>
@@ -441,129 +432,153 @@
     <!-- Top Header -->
     <header>
         <div class="brand">
-            <div class="brand-logo">P</div>
+            <div class="brand-badge">P</div>
             <div class="brand-title">PLUTO Tester Dossier</div>
         </div>
 
-        <!-- 1-Click Tester Switcher -->
-        <div class="tester-switch-bar">
-            <button class="tester-btn active" onclick="selectTester(0)">👤 Alex Vance</button>
-            <button class="tester-btn" onclick="selectTester(1)">👤 Sarah Chen</button>
-            <button class="tester-btn" onclick="selectTester(2)">👤 David Miller</button>
+        <!-- Tester Switcher -->
+        <div class="tester-picker">
+            <button class="picker-btn active" onclick="loadTester(0)">👤 Alex Vance (Architect)</button>
+            <button class="picker-btn" onclick="loadTester(1)">👤 Sarah Chen (Design Director)</button>
+            <button class="picker-btn" onclick="loadTester(2)">👤 David Miller (Product VP)</button>
         </div>
 
-        <div class="header-actions">
-            <button class="btn" onclick="exportTesterData()">💾 Export (.json)</button>
-            <button class="btn" onclick="refreshData()">🔄 Refresh</button>
+        <div style="display:flex; align-items:center; gap:8px;">
+            <button class="picker-btn" style="background:var(--bg-surface); color:var(--text-primary); border:1px solid var(--border-subtle);" onclick="exportJSON()">💾 Export JSON</button>
         </div>
     </header>
 
-    <!-- Main Workspace for Selected Tester -->
+    <!-- Main Workspace -->
     <main>
 
-        <!-- Profile Hero Header -->
-        <section class="tester-hero-card">
-            <div class="hero-identity">
-                <div class="avatar" id="tAvatar">AV</div>
-                <div class="hero-info">
-                    <h2 id="tName">Alex Vance <span class="status-badge">● Active Now</span></h2>
-                    <div class="hero-meta">
-                        <span class="hero-chip" id="tDevice">MacBook Pro (M3 Max)</span>
-                        <span class="hero-chip" id="tOS">macOS 15.1</span>
-                        <span class="hero-chip" id="tVersion">PLUTO V3.5</span>
-                        <span id="tLastSeen" style="margin-left: 6px;">Last active: 2 mins ago</span>
+        <!-- Top Profile Banner -->
+        <section class="tester-hero">
+            <div class="hero-left">
+                <div class="avatar-box" id="dAvatar">AV</div>
+                <div class="hero-details">
+                    <h2 id="dName">Alex Vance <span class="status-pill">● Active in App</span></h2>
+                    <div class="hero-chips">
+                        <span class="chip" id="dDevice">MacBook Pro (M3 Max)</span>
+                        <span class="chip" id="dOS">macOS 15.1 Sequoia</span>
+                        <span class="chip" id="dVersion">PLUTO V3.5 (Alpha)</span>
+                        <span class="chip" id="dLayout">Layout: Bento Cards</span>
+                        <span id="dLastActive">Active 2 mins ago</span>
                     </div>
                 </div>
             </div>
 
-            <div style="text-align: right;">
-                <div style="font-size:11px; color:var(--text-tertiary); font-weight:700; text-transform:uppercase;">Tester ID</div>
-                <div style="font-family:var(--font-mono); font-size:13px; font-weight:700; color:var(--text-secondary);" id="tId">tester_001</div>
+            <div style="text-align:right;">
+                <div style="font-size:10px; text-transform:uppercase; font-weight:700; color:var(--text-tertiary);">Unique Tester ID</div>
+                <div style="font-family:var(--font-mono); font-size:13px; font-weight:700; color:var(--text-secondary);" id="dId">tester_001</div>
             </div>
         </section>
 
-        <!-- Processed KPIs for this Tester -->
-        <section class="tester-kpis">
-            <div class="kpi-box">
-                <div class="kpi-label">Habit Adherence</div>
-                <div class="kpi-val" id="kpiAdherence" style="color:var(--success);">92%</div>
-                <div class="kpi-sub" id="kpiAdherenceSub">4/4 habits checked today</div>
+        <!-- 5-Metric Quick Stats Ribbon -->
+        <section class="metric-ribbon">
+            <div class="metric-cell">
+                <span class="cell-label">Habit Consistency</span>
+                <span class="cell-value" id="kHabitScore" style="color:var(--emerald);">94%</span>
+                <span class="cell-sub" id="kHabitSub">3/3 checked today</span>
             </div>
-
-            <div class="kpi-box">
-                <div class="kpi-label">Total Focus Time</div>
-                <div class="kpi-val" id="kpiFocus">145m</div>
-                <div class="kpi-sub" id="kpiFocusSub">5 completed Pomodoros</div>
+            <div class="metric-cell">
+                <span class="cell-label">Deep Work Today</span>
+                <span class="cell-value" id="kFocusTime">125m</span>
+                <span class="cell-sub" id="kFocusSub">5 completed Pomodoros</span>
             </div>
-
-            <div class="kpi-box">
-                <div class="kpi-label">Task Completion</div>
-                <div class="kpi-val" id="kpiTasks">88%</div>
-                <div class="kpi-sub" id="kpiTasksSub">7 completed · 1 pending</div>
+            <div class="metric-cell">
+                <span class="cell-label">Day Planner Velocity</span>
+                <span class="cell-value" id="kTaskScore">89%</span>
+                <span class="cell-sub" id="kTaskSub">8 finished · 1 pending</span>
             </div>
-
-            <div class="kpi-box">
-                <div class="kpi-label">Preferred Layout</div>
-                <div class="kpi-val" style="font-size:18px; margin-top:4px;" id="kpiLayout">Bento Cards</div>
-                <div class="kpi-sub">85% of active session time</div>
+            <div class="metric-cell">
+                <span class="cell-label">Sleep Duration</span>
+                <span class="cell-value" id="kSleepHours">8.5h</span>
+                <span class="cell-sub" id="kSleepSub">23:00 bedtime → 07:30 wake</span>
+            </div>
+            <div class="metric-cell">
+                <span class="cell-label">Life Audit Progress</span>
+                <span class="cell-value" id="kAuditScore">80%</span>
+                <span class="cell-sub" id="kAuditSub">Ship PLUTO V3.5 Goal</span>
             </div>
         </section>
 
-        <!-- 2-Column Deep Dive -->
-        <section class="content-split">
+        <!-- Comprehensive 6-Pillar Ecosystem Breakdown -->
+        <section class="pillars-grid">
 
-            <!-- Left Column: Habits & Day Planner -->
-            <div style="display:flex; flex-direction:column; gap:20px;">
-
-                <!-- Active Habits -->
-                <div class="card">
-                    <div class="card-title-row">
-                        <span class="card-title">🔥 Active Habits & Streaks</span>
-                        <span class="card-count" id="habitCount">4 Habits</span>
-                    </div>
-                    <div style="display:flex; flex-direction:column; gap:10px;" id="habitsContainer"></div>
+            <!-- PILLAR 1: KEYSTONE HABITS & STREAKS -->
+            <div class="pillar-card">
+                <div class="pillar-header">
+                    <span class="pillar-title">🏆 Keystone Habits & Streak Heat</span>
+                    <span class="pillar-badge" id="p1Count">4 Active Habits</span>
                 </div>
-
-                <!-- Day Planner Tasks -->
-                <div class="card">
-                    <div class="card-title-row">
-                        <span class="card-title">📅 Day Planner Tasks</span>
-                        <span class="card-count" id="taskCount">3 Tasks</span>
-                    </div>
-                    <div style="display:flex; flex-direction:column; gap:8px;" id="tasksContainer"></div>
-                </div>
-
+                <div style="display:flex; flex-direction:column; gap:10px;" id="habitsList"></div>
             </div>
 
-            <!-- Right Column: Focus Audio & Real-time Action Timeline -->
-            <div style="display:flex; flex-direction:column; gap:20px;">
+            <!-- PILLAR 2: DAY PLANNER & TIME-BLOCK SCHEDULE -->
+            <div class="pillar-card">
+                <div class="pillar-header">
+                    <span class="pillar-title">📅 Day Planner & Time Blocking</span>
+                    <span class="pillar-badge" id="p2Count">3 Scheduled Tasks</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:8px;" id="tasksList"></div>
+            </div>
 
-                <!-- Cognitive Focus & Sleep -->
-                <div class="card">
-                    <div class="card-title-row">
-                        <span class="card-title">🧠 Focus & Sleep Metrics</span>
+            <!-- PILLAR 3: DEEP WORK STUDIO & 3D SPATIAL AUDIO -->
+            <div class="pillar-card">
+                <div class="pillar-header">
+                    <span class="pillar-title">🧠 Deep Work Studio & Audio</span>
+                    <span class="pillar-badge">Flow State Engine</span>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div style="background:var(--bg-surface); padding:14px; border-radius:8px; border:1px solid var(--border-subtle);">
+                        <div style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase; font-weight:700;">Top Soundscape</div>
+                        <div style="font-size:14px; font-weight:700; margin-top:3px;" id="p3Sound">Lo-Fi Focus Chords</div>
+                        <div style="font-size:11px; color:var(--text-secondary); margin-top:2px;">3D Spatial Audio Active</div>
                     </div>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                        <div style="background:var(--bg-subtle); padding:12px; border-radius:8px; border:1px solid var(--border-subtle);">
-                            <div style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase; font-weight:700;">Top Soundscape</div>
-                            <div style="font-size:13px; font-weight:700; margin-top:2px;" id="tSound">Lo-Fi Focus Chords</div>
-                        </div>
-                        <div style="background:var(--bg-subtle); padding:12px; border-radius:8px; border:1px solid var(--border-subtle);">
-                            <div style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase; font-weight:700;">Sleep Duration</div>
-                            <div style="font-size:13px; font-weight:700; margin-top:2px;" id="tSleep">8.2 hrs (23:15 → 07:30)</div>
-                        </div>
+                    <div style="background:var(--bg-surface); padding:14px; border-radius:8px; border:1px solid var(--border-subtle);">
+                        <div style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase; font-weight:700;">Sprint Cadence</div>
+                        <div style="font-size:14px; font-weight:700; margin-top:3px;" id="p3Sprint">25m Sprint / 5m Break</div>
+                        <div style="font-size:11px; color:var(--text-secondary); margin-top:2px;">Auto-start intervals ON</div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Action Timeline for This Tester -->
-                <div class="card">
-                    <div class="card-title-row">
-                        <span class="card-title">⏱️ Activity Timeline</span>
-                        <span class="card-count">Chronological</span>
-                    </div>
-                    <div class="timeline-stream" id="timelineContainer"></div>
+            <!-- PILLAR 4: MIND, SLEEP & JOURNAL REFLECTIONS -->
+            <div class="pillar-card">
+                <div class="pillar-header">
+                    <span class="pillar-title">📝 Sleep & Daily Reflection Note</span>
+                    <span class="pillar-badge">Cognitive State</span>
                 </div>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <div style="background:var(--bg-surface); padding:12px 14px; border-radius:8px; border:1px solid var(--border-subtle);">
+                        <div style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase; font-weight:700;">Latest Journal Reflection Note</div>
+                        <div style="font-size:12px; color:var(--text-primary); font-style:italic; margin-top:4px;" id="p4Note">
+                            "Clean progress on the SwiftData container and background telemetry queue today. Focus felt sharp during afternoon coding sprints."
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--text-secondary); padding:0 4px;">
+                        <span>Sleep Quality Index: <strong style="color:var(--emerald);">Optimal (8.5h)</strong></span>
+                        <span>Bedtime Mode: <strong>Scheduled</strong></span>
+                    </div>
+                </div>
+            </div>
 
+            <!-- PILLAR 5: LIFE STRATEGY & AUDIT HORIZONS -->
+            <div class="pillar-card">
+                <div class="pillar-header">
+                    <span class="pillar-title">🎯 Life Audit Goals & Bucket List</span>
+                    <span class="pillar-badge">Long-term Horizons</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:10px;" id="milestonesList"></div>
+            </div>
+
+            <!-- PILLAR 6: SYSTEM HARDWARE & REAL-TIME ACTIVITY -->
+            <div class="pillar-card">
+                <div class="pillar-header">
+                    <span class="pillar-title">⚡ Real-Time Action Waterfall</span>
+                    <span class="pillar-badge">Unredacted Stream</span>
+                </div>
+                <div class="timeline-scroll" id="streamList"></div>
             </div>
 
         </section>
@@ -571,40 +586,50 @@
     </main>
 
     <script>
-        const testers = [
+        const database = [
             {
                 id: "tester_001",
                 name: "Alex Vance (Lead Architect)",
                 avatar: "AV",
                 device: "MacBook Pro (M3 Max)",
-                os: "macOS 15.1",
-                version: "PLUTO V3.5",
-                lastSeen: "Active 2 mins ago",
-                adherence: "94%",
-                adherenceSub: "3/3 checked in today",
-                focusMins: "125m",
-                focusSub: "5 Pomodoro sprints",
-                taskRate: "89%",
-                taskRateSub: "8 done · 1 pending",
+                os: "macOS 15.1 Sequoia",
+                version: "PLUTO V3.5 (Alpha)",
                 layout: "Bento Ring Cards",
+                lastActive: "Active 2 mins ago",
+                habitScore: "94%",
+                habitSub: "4/4 checked in today",
+                focusTime: "125m",
+                focusSub: "5 completed Pomodoros",
+                taskScore: "89%",
+                taskSub: "8 finished · 1 pending",
+                sleepHours: "8.5h",
+                sleepSub: "23:00 bedtime → 07:30 wake",
+                auditScore: "80%",
+                auditSub: "Ship PLUTO V3.5 Goal",
                 sound: "Lo-Fi Focus Chords",
-                sleep: "8.5 hrs (23:00 → 07:30)",
+                sprint: "25m Focus / 5m Break",
+                reflection: "“Clean progress on SwiftData container and background telemetry queue today. Focus felt sharp during afternoon coding sprints.”",
                 habits: [
-                    { name: "Morning Sunlight & 10k Steps", streak: 6, progress: 1.0 },
-                    { name: "Deep Architecture Sprint", streak: 12, progress: 0.8 },
-                    { name: "Zero Sugar & Fasting", streak: 4, progress: 1.0 },
-                    { name: "Evening Reflection Note", streak: 8, progress: 0.5 }
+                    { name: "Morning Sunlight & 10k Steps", category: "Health", streak: 6, metric: "10,000 steps", progress: 1.0 },
+                    { name: "Deep Work Coding Sprint", category: "Craft", streak: 12, metric: "60 mins", progress: 0.8 },
+                    { name: "Zero Sugar & Fasting", category: "Diet", streak: 4, metric: "Binary Check", progress: 1.0 },
+                    { name: "Evening Reflection & Notes", category: "Mind", streak: 8, metric: "1 Note", progress: 0.5 }
                 ],
                 tasks: [
-                    { title: "Review Supabase Ingestion RLS Policies", duration: "45m", done: true },
-                    { title: "Optimize Neural Engine NLP Tokenizer", duration: "60m", done: true },
-                    { title: "Conduct Alpha Tester Walkthrough", duration: "30m", done: false }
+                    { time: "09:30 - 10:15", title: "Review Supabase Ingestion RLS Policies", priority: "P1 Urgent", done: true },
+                    { time: "14:00 - 15:00", title: "Optimize Neural Engine NLP Tokenizer", priority: "P2 Strategy", done: true },
+                    { time: "16:30 - 17:00", title: "Conduct Alpha Tester Walkthrough", priority: "P2 Strategy", done: false }
                 ],
-                timeline: [
-                    { time: "12:04:18", name: "habit_checked", desc: "Morning Sunlight & 10k Steps (Streak: 6d)" },
-                    { time: "11:58:32", name: "task_rescheduled", desc: "Optimize Neural Engine → 14:00" },
-                    { time: "11:15:00", name: "focus_session_completed", desc: "Lo-Fi Focus Chords · 25 min sprint" },
-                    { time: "09:30:10", name: "app_launched", desc: "MacBook Pro M3 Max · macOS 15.1" }
+                milestones: [
+                    { title: "Ship PLUTO App Version 3.5", horizon: "Q3 2026", progress: 0.80, status: "In Progress" },
+                    { title: "Complete Half-Marathon Sub-1h45m", horizon: "Q4 2026", progress: 0.65, status: "On Track" },
+                    { title: "Master Japanese to Conversational Fluency", horizon: "2028", progress: 0.30, status: "Ongoing" }
+                ],
+                stream: [
+                    { time: "12:04:18", event: "habit_checked", details: "Morning Sunlight & 10k Steps (Streak: 6d)" },
+                    { time: "11:58:32", event: "task_rescheduled", details: "Optimize Neural Engine → moved to 14:00" },
+                    { time: "11:15:00", event: "focus_session_completed", details: "Lo-Fi Focus Chords · 25m Pomodoro" },
+                    { time: "09:30:10", event: "app_launched", details: "MacBook Pro M3 Max · macOS 15.1" }
                 ]
             },
             {
@@ -612,31 +637,40 @@
                 name: "Sarah Chen (Design Director)",
                 avatar: "SC",
                 device: "Mac Studio (M2 Ultra)",
-                os: "macOS 14.6",
-                version: "PLUTO V3.5",
-                lastSeen: "Active 14 mins ago",
-                adherence: "88%",
-                adherenceSub: "2/3 checked in today",
-                focusMins: "95m",
-                focusSub: "3 Pomodoro sprints",
-                taskRate: "92%",
-                taskRateSub: "5 done · 0 pending",
-                layout: "Weekly Horizon",
+                os: "macOS 14.6 Sonoma",
+                version: "PLUTO V3.5 (Alpha)",
+                layout: "Weekly Horizon Strips",
+                lastActive: "Active 14 mins ago",
+                habitScore: "88%",
+                habitSub: "3/3 checked in today",
+                focusTime: "95m",
+                focusSub: "3 completed Pomodoros",
+                taskScore: "92%",
+                taskSub: "5 finished · 0 pending",
+                sleepHours: "7.8h",
+                sleepSub: "23:45 bedtime → 07:30 wake",
+                auditScore: "75%",
+                auditSub: "Design System Milestone",
                 sound: "432Hz Binaural Beat",
-                sleep: "7.8 hrs (23:45 → 07:30)",
+                sprint: "50m Deep Block / 10m Break",
+                reflection: "“Calibrated dark mode contrast ratios and verified 5-minute snap physics on the day planner timeline.”",
                 habits: [
-                    { name: "3D Spatial Audio Focus Sprint", streak: 5, progress: 1.0 },
-                    { name: "Design System Token Audit", streak: 9, progress: 0.9 },
-                    { name: "Daily Standup Notes", streak: 3, progress: 1.0 }
+                    { name: "3D Spatial Audio Focus Sprint", category: "Focus", streak: 5, metric: "50 mins", progress: 1.0 },
+                    { name: "Design System Token Audit", category: "Design", streak: 9, metric: "Daily Pass", progress: 0.9 },
+                    { name: "Daily Standup Notes", category: "Work", streak: 3, metric: "1 Entry", progress: 1.0 }
                 ],
                 tasks: [
-                    { title: "Inspect Day Planner 5m Snap Animations", duration: "25m", done: true },
-                    { title: "Calibrate Dark Mode Contrast Ratios", duration: "40m", done: true }
+                    { time: "10:00 - 10:45", title: "Inspect Day Planner 5m Snap Animations", priority: "P1 Urgent", done: true },
+                    { time: "11:30 - 12:15", title: "Calibrate Dark Mode Contrast Ratios", priority: "P2 Strategy", done: true }
                 ],
-                timeline: [
-                    { time: "12:02:10", name: "focus_session_completed", desc: "432Hz Binaural · 25 min sprint" },
-                    { time: "11:30:15", name: "sleep_logged", desc: "23:45 → 07:30 (7.8 hrs)" },
-                    { time: "10:10:00", name: "task_completed", desc: "Inspect Day Planner 5m Snap" }
+                milestones: [
+                    { title: "Design & Ship PLUTO V3.5 Ecosystem", horizon: "Q3 2026", progress: 0.85, status: "In Progress" },
+                    { title: "Solo Scuba Dive Great Barrier Reef", horizon: "Lifetime", progress: 0.20, status: "Planned" }
+                ],
+                stream: [
+                    { time: "12:02:10", event: "focus_session_completed", details: "432Hz Binaural Beat · 50m Sprint" },
+                    { time: "11:30:15", event: "sleep_logged", details: "23:45 → 07:30 (7.8 hrs recorded)" },
+                    { time: "10:10:00", event: "task_completed", details: "Inspect Day Planner Snap Animations" }
                 ]
             },
             {
@@ -644,123 +678,143 @@
                 name: "David Miller (Product VP)",
                 avatar: "DM",
                 device: "MacBook Air (M3)",
-                os: "macOS 15.0",
-                version: "PLUTO V3.5",
-                lastSeen: "Active 1 hour ago",
-                adherence: "75%",
-                adherenceSub: "1/2 checked in today",
-                focusMins: "45m",
-                focusSub: "2 Pomodoro sprints",
-                taskRate: "100%",
-                taskRateSub: "4 done · 0 pending",
+                os: "macOS 15.0 Sequoia",
+                version: "PLUTO V3.5 (Alpha)",
                 layout: "Bento Ring Cards",
+                lastActive: "Active 1 hour ago",
+                habitScore: "75%",
+                habitSub: "2/2 checked in today",
+                focusTime: "45m",
+                focusSub: "2 completed Pomodoros",
+                taskScore: "100%",
+                taskSub: "4 finished · 0 pending",
+                sleepHours: "8.0h",
+                sleepSub: "23:00 bedtime → 07:00 wake",
+                auditScore: "60%",
+                auditSub: "Quarterly Review",
                 sound: "Gentle Rain & Thunder",
-                sleep: "8.0 hrs (23:00 → 07:00)",
+                sprint: "20m Focus / 5m Break",
+                reflection: "“Tested Siri Shortcuts for quick logging and ⌃⌥P global HUD overlay. Very responsive on Apple Silicon.”",
                 habits: [
-                    { name: "Read 20 Pages Executive Briefs", streak: 14, progress: 1.0 },
-                    { name: "Strength Training (Calisthenics)", streak: 7, progress: 0.6 }
+                    { name: "Read 20 Pages Executive Briefs", category: "Learning", streak: 14, metric: "20 pages", progress: 1.0 },
+                    { name: "Strength Training (Calisthenics)", category: "Fitness", streak: 7, metric: "1 Session", progress: 0.6 }
                 ],
                 tasks: [
-                    { title: "Test Siri Voice Shortcuts ('Hey Siri')", duration: "15m", done: true },
-                    { title: "Test ⌃⌥P Global Hotkey HUD overlay", duration: "20m", done: true }
+                    { time: "08:30 - 08:45", title: "Test Siri Voice Shortcuts ('Hey Siri')", priority: "P3 Quick", done: true },
+                    { time: "09:00 - 09:20", title: "Test ⌃⌥P Global Hotkey HUD overlay", priority: "P2 Strategy", done: true }
                 ],
-                timeline: [
-                    { time: "11:45:00", name: "quick_hud_opened", desc: "Triggered via ⌃⌥P global shortcut" },
-                    { time: "11:15:20", name: "layout_preference_changed", desc: "Changed Habits layout to Bento Cards" }
+                milestones: [
+                    { title: "Complete Full Marathon (42.195 km)", horizon: "2026", progress: 0.70, status: "On Track" },
+                    { title: "Build Off-Grid Wooden Cabin", horizon: "Lifetime", progress: 0.15, status: "Planned" }
+                ],
+                stream: [
+                    { time: "11:45:00", event: "quick_hud_opened", details: "Triggered via ⌃⌥P global shortcut" },
+                    { time: "11:15:20", event: "layout_preference_changed", details: "Habits layout set to Bento Cards" }
                 ]
             }
         ];
 
-        let currentIdx = 0;
+        let activeIdx = 0;
 
-        function selectTester(idx) {
-            currentIdx = idx;
-            document.querySelectorAll('.tester-btn').forEach((b, i) => {
-                b.classList.toggle('active', i === idx);
+        function loadTester(idx) {
+            activeIdx = idx;
+            document.querySelectorAll('.picker-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', i === idx);
             });
-            renderTester();
+            render();
         }
 
-        function renderTester() {
-            const t = testers[currentIdx];
+        function render() {
+            const t = database[activeIdx];
 
-            // Identity
-            document.getElementById('tAvatar').textContent = t.avatar;
-            document.getElementById('tName').innerHTML = `${t.name} <span class="status-badge">● Active</span>`;
-            document.getElementById('tDevice').textContent = t.device;
-            document.getElementById('tOS').textContent = t.os;
-            document.getElementById('tVersion').textContent = t.version;
-            document.getElementById('tLastSeen').textContent = t.lastSeen;
-            document.getElementById('tId').textContent = t.id;
+            // Header Hero
+            document.getElementById('dAvatar').textContent = t.avatar;
+            document.getElementById('dName').innerHTML = `${t.name} <span class="status-pill">● Active</span>`;
+            document.getElementById('dDevice').textContent = t.device;
+            document.getElementById('dOS').textContent = t.os;
+            document.getElementById('dVersion').textContent = t.version;
+            document.getElementById('dLayout').textContent = `Layout: ${t.layout}`;
+            document.getElementById('dLastActive').textContent = t.lastActive;
+            document.getElementById('dId').textContent = t.id;
 
-            // KPIs
-            document.getElementById('kpiAdherence').textContent = t.adherence;
-            document.getElementById('kpiAdherenceSub').textContent = t.adherenceSub;
-            document.getElementById('kpiFocus').textContent = t.focusMins;
-            document.getElementById('kpiFocusSub').textContent = t.focusSub;
-            document.getElementById('kpiTasks').textContent = t.taskRate;
-            document.getElementById('kpiTasksSub').textContent = t.taskRateSub;
-            document.getElementById('kpiLayout').textContent = t.layout;
+            // Ribbon
+            document.getElementById('kHabitScore').textContent = t.habitScore;
+            document.getElementById('kHabitSub').textContent = t.habitSub;
+            document.getElementById('kFocusTime').textContent = t.focusTime;
+            document.getElementById('kFocusSub').textContent = t.focusSub;
+            document.getElementById('kTaskScore').textContent = t.taskScore;
+            document.getElementById('kTaskSub').textContent = t.taskSub;
+            document.getElementById('kSleepHours').textContent = t.sleepHours;
+            document.getElementById('kSleepSub').textContent = t.sleepSub;
+            document.getElementById('kAuditScore').textContent = t.auditScore;
+            document.getElementById('kAuditSub').textContent = t.auditSub;
 
-            // Focus & Sleep
-            document.getElementById('tSound').textContent = t.sound;
-            document.getElementById('tSleep').textContent = t.sleep;
+            // Deep Work & Reflection
+            document.getElementById('p3Sound').textContent = t.sound;
+            document.getElementById('p3Sprint').textContent = t.sprint;
+            document.getElementById('p4Note').textContent = t.reflection;
 
             // Habits
-            document.getElementById('habitCount').textContent = `${t.habits.length} Habits`;
-            const habitContainer = document.getElementById('habitsContainer');
-            habitContainer.innerHTML = t.habits.map(h => `
-                <div class="habit-row">
-                    <div class="habit-row-top">
-                        <span class="habit-name">${h.name}</span>
-                        <span class="streak-pill">🔥 ${h.streak}d streak</span>
+            document.getElementById('p1Count').textContent = `${t.habits.length} Habits`;
+            document.getElementById('habitsList').innerHTML = t.habits.map(h => `
+                <div class="habit-item">
+                    <div class="habit-top">
+                        <span>${h.name} <span style="font-size:11px; color:var(--text-tertiary);">(${h.metric})</span></span>
+                        <span class="flame-streak">🔥 ${h.streak}d streak</span>
                     </div>
-                    <div class="progress-bar-bg">
-                        <div class="progress-bar-val" style="width: ${h.progress * 100}%;"></div>
+                    <div class="prog-bg">
+                        <div class="prog-bar" style="width:${h.progress * 100}%;"></div>
                     </div>
                 </div>
             `).join('');
 
             // Tasks
-            document.getElementById('taskCount').textContent = `${t.tasks.length} Tasks`;
-            const taskContainer = document.getElementById('tasksContainer');
-            taskContainer.innerHTML = t.tasks.map(task => `
-                <div class="task-row">
-                    <span class="task-title ${task.done ? 'done' : ''}">${task.done ? '✅' : '⏳'} ${task.title}</span>
-                    <span class="task-duration">${task.duration}</span>
+            document.getElementById('p2Count').textContent = `${t.tasks.length} Tasks`;
+            document.getElementById('tasksList').innerHTML = t.tasks.map(task => `
+                <div class="time-block-row">
+                    <span class="block-time">${task.time}</span>
+                    <span class="block-title ${task.done ? 'block-done' : ''}">${task.done ? '✅' : '⏳'} ${task.title}</span>
+                    <span class="block-priority">${task.priority}</span>
                 </div>
             `).join('');
 
-            // Timeline
-            const timelineContainer = document.getElementById('timelineContainer');
-            timelineContainer.innerHTML = t.timeline.map(ev => `
-                <div class="event-item">
-                    <div class="event-top">
-                        <span class="event-name">${ev.name}</span>
-                        <span class="event-time">${ev.time}</span>
+            // Milestones & Life Audit
+            document.getElementById('milestonesList').innerHTML = t.milestones.map(m => `
+                <div class="milestone-item">
+                    <div class="milestone-top">
+                        <span>${m.title}</span>
+                        <span class="horizon-tag">${m.horizon}</span>
                     </div>
-                    <div class="event-desc">${ev.desc}</div>
+                    <div class="prog-bg">
+                        <div class="prog-bar" style="width:${m.progress * 100}%;"></div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Action Stream
+            document.getElementById('streamList').innerHTML = t.stream.map(ev => `
+                <div class="stream-event">
+                    <div class="event-header">
+                        <strong style="color:var(--text-primary);">${ev.event}</strong>
+                        <span>${ev.time}</span>
+                    </div>
+                    <div style="color:var(--text-secondary); font-family:var(--font-mono);">${ev.details}</div>
                 </div>
             `).join('');
         }
 
-        function exportTesterData() {
-            const t = testers[currentIdx];
+        function exportJSON() {
+            const t = database[activeIdx];
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(t, null, 2));
             const a = document.createElement('a');
             a.setAttribute("href", dataStr);
-            a.setAttribute("download", `pluto_tester_${t.id}.json`);
+            a.setAttribute("download", `pluto_tester_${t.id}_full_dossier.json`);
             document.body.appendChild(a);
             a.click();
             a.remove();
         }
 
-        function refreshData() {
-            renderTester();
-        }
-
-        // Initialize on load
-        window.onload = () => selectTester(0);
+        window.onload = () => loadTester(0);
     </script>
 </body>
 </html>
