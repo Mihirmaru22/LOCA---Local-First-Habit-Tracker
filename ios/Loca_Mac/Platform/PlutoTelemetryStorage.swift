@@ -257,6 +257,17 @@ final class PlutoTelemetryStorage: @unchecked Sendable {
         }
     }
 
+    func clearAllQueuedFiles() {
+        lock.lock()
+        defer { lock.unlock() }
+
+        if let fileURLs = try? fileManager.contentsOfDirectory(at: queueDirectory, includingPropertiesForKeys: nil, options: .skipsHiddenFiles) {
+            for url in fileURLs {
+                try? fileManager.removeItem(at: url)
+            }
+        }
+    }
+
     // MARK: - Backpressure & Purge
 
     private func enforceBackpressureLimitIfNeeded() {

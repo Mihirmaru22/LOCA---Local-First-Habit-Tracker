@@ -55,34 +55,14 @@ enum DebugSeeder {
             unitLabel: "mi",
             colorIndex: 0
         )
-        running.currentStreak = 4
-        running.longestStreak = 9
+        running.currentStreak = 0
+        running.longestStreak = 0
         context.insert(running)
 
-        for offset in stride(from: 0, to: 60, by: 2) {
-            guard let date = calendar.date(byAdding: .day, value: -offset, to: Date()) else { continue }
-            context.insert(LogEntry(
-                timestamp: date,
-                value: Double.random(in: 1.5...4.5),
-                boardID: running.id,
-                board: running
-            ))
-        }
-
         let meditate = HabitBoard(name: "Meditate", colorIndex: 5)
-        meditate.currentStreak = 2
-        meditate.longestStreak = 15
+        meditate.currentStreak = 0
+        meditate.longestStreak = 0
         context.insert(meditate)
-
-        for offset in stride(from: 0, to: 60, by: 3) {
-            guard let date = calendar.date(byAdding: .day, value: -offset, to: Date()) else { continue }
-            context.insert(LogEntry(
-                timestamp: date,
-                value: 1.0,
-                boardID: meditate.id,
-                board: meditate
-            ))
-        }
 
         do {
             try context.save()
