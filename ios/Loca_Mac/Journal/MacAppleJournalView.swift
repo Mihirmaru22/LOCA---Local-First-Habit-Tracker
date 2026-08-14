@@ -967,11 +967,6 @@ struct AppleJournalEditorCanvas: View {
                             choosePhotoFromDisk()
                         }
 
-                        // Camera / Media Snapshot
-                        toolbarCapsuleItem(icon: "camera", label: "Snapshot / Photo", isActive: false) {
-                            choosePhotoFromDisk()
-                        }
-
                         // Apple Maps Location Picker
                         toolbarCapsuleItem(icon: "location.north.line.fill", label: "Tag Apple Maps Location", isActive: note.location != nil) {
                             showLocationPopover.toggle()
