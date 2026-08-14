@@ -55,6 +55,17 @@ final class JournalMediaManager {
 
 final class AppleJournalRichTextController: NSObject, ObservableObject {
     @Published var changeCounter: Int = 0
+
+    // Active Format States for UI Highlighting
+    @Published var isBoldActive: Bool = false
+    @Published var isItalicActive: Bool = false
+    @Published var isUnderlineActive: Bool = false
+    @Published var isStrikethroughActive: Bool = false
+    @Published var isBulletActive: Bool = false
+    @Published var isChecklistActive: Bool = false
+    @Published var isNumberedActive: Bool = false
+    @Published var isQuoteActive: Bool = false
+
     weak var textView: NSTextView?
     var onTextChange: ((String, Data?) -> Void)?
 
@@ -81,6 +92,7 @@ final class AppleJournalRichTextController: NSObject, ObservableObject {
             attrs[.font] = fm.convert(cur, toHaveTrait: isBold ? .unboldFontMask : .boldFontMask)
             tv.typingAttributes = attrs
         }
+        updateActiveStates()
         Haptics.impact(.light)
     }
 
@@ -107,6 +119,7 @@ final class AppleJournalRichTextController: NSObject, ObservableObject {
             attrs[.font] = fm.convert(cur, toHaveTrait: isItalic ? .unitalicFontMask : .italicFontMask)
             tv.typingAttributes = attrs
         }
+        updateActiveStates()
         Haptics.impact(.light)
     }
 
@@ -128,6 +141,7 @@ final class AppleJournalRichTextController: NSObject, ObservableObject {
             attrs[.underlineStyle] = (currentVal == 0) ? NSUnderlineStyle.single.rawValue : 0
             tv.typingAttributes = attrs
         }
+        updateActiveStates()
         Haptics.impact(.light)
     }
 
@@ -149,23 +163,28 @@ final class AppleJournalRichTextController: NSObject, ObservableObject {
             attrs[.strikethroughStyle] = (currentVal == 0) ? NSUnderlineStyle.single.rawValue : 0
             tv.typingAttributes = attrs
         }
+        updateActiveStates()
         Haptics.impact(.light)
     }
 
     func insertBulletList() {
-        insertPrefixOnCurrentLine("• ")
+        resetFontToRegular()
+        toggleLinePrefix("• ")
     }
 
     func insertChecklist() {
-        insertPrefixOnCurrentLine("☐ ")
+        resetFontToRegular()
+        toggleLinePrefix("○ ")
     }
 
     func insertNumberedList() {
-        insertPrefixOnCurrentLine("1. ")
+        resetFontToRegular()
+        toggleLinePrefix("1. ")
     }
 
     func insertBlockquote() {
-        insertPrefixOnCurrentLine("“ ")
+        resetFontToRegular()
+        toggleLinePrefix("“ ")
     }
 
     func insertDivider() {
@@ -175,21 +194,91 @@ final class AppleJournalRichTextController: NSObject, ObservableObject {
         Haptics.impact(.light)
     }
 
-    func insertTextDirectly(_ string: String) {
+    private func resetFontToRegular() {
         guard let tv = textView else { return }
-        tv.insertText(string, replacementRange: tv.selectedRange())
-        notifyChange()
-        Haptics.impact(.light)
+        var attrs = tv.typingAttributes
+        attrs[.font] = NSFont.systemFont(ofSize: 15, weight: .regular)
+        attrs[.underlineStyle] = 0
+        attrs[.strikethroughStyle] = 0
+        tv.typingAttributes = attrs
     }
 
-    private func insertPrefixOnCurrentLine(_ prefix: String) {
+    private func toggleLinePrefix(_ prefix: String) {
         guard let tv = textView, let string = tv.string as NSString? else { return }
         let range = tv.selectedRange()
         let lineRange = string.lineRange(for: NSRange(location: range.location, length: 0))
-        tv.setSelectedRange(NSRange(location: lineRange.location, length: 0))
-        tv.insertText(prefix, replacementRange: NSRange(location: lineRange.location, length: 0))
+        let currentLine = string.substring(with: lineRange)
+
+        let prefixes = ["• ", "○ ", "● ", "1. ", "“ "]
+        var cleanedLine = currentLine
+        for p in prefixes {
+            if cleanedLine.hasPrefix(p) {
+                cleanedLine.removeFirst(p.count)
+                break
+            }
+        }
+
+        let newLine: String
+        if currentLine.hasPrefix(prefix) {
+            // Already has this prefix: toggle it off
+            newLine = cleanedLine
+        } else {
+            // Apply new prefix
+            newLine = prefix + cleanedLine
+        }
+
+        tv.setSelectedRange(lineRange)
+        tv.insertText(newLine, replacementRange: lineRange)
         notifyChange()
+        updateActiveStates()
         Haptics.impact(.light)
+    }
+
+    func updateActiveStates() {
+        guard let tv = textView else { return }
+        let range = tv.selectedRange()
+        var font: NSFont? = nil
+        var underline: Int = 0
+        var strikethrough: Int = 0
+
+        if range.length > 0, let ts = tv.textStorage {
+            font = ts.attribute(.font, at: range.location, effectiveRange: nil) as? NSFont
+            underline = ts.attribute(.underlineStyle, at: range.location, effectiveRange: nil) as? Int ?? 0
+            strikethrough = ts.attribute(.strikethroughStyle, at: range.location, effectiveRange: nil) as? Int ?? 0
+        } else {
+            let attrs = tv.typingAttributes
+            font = attrs[.font] as? NSFont
+            underline = attrs[.underlineStyle] as? Int ?? 0
+            strikethrough = attrs[.strikethroughStyle] as? Int ?? 0
+        }
+
+        let isBold = font?.fontDescriptor.symbolicTraits.contains(.bold) ?? false
+        let isItalic = font?.fontDescriptor.symbolicTraits.contains(.italic) ?? false
+
+        var hasBullet = false
+        var hasChecklist = false
+        var hasNumbered = false
+        var hasQuote = false
+
+        if let str = tv.string as NSString? {
+            let lineRange = str.lineRange(for: NSRange(location: range.location, length: 0))
+            let currentLine = str.substring(with: lineRange)
+            hasBullet = currentLine.hasPrefix("• ")
+            hasChecklist = currentLine.hasPrefix("○ ") || currentLine.hasPrefix("● ") || currentLine.hasPrefix("☑ ") || currentLine.hasPrefix("☐ ")
+            hasNumbered = currentLine.range(of: "^[0-9]+\\. ", options: .regularExpression) != nil
+            hasQuote = currentLine.hasPrefix("“ ") || currentLine.hasPrefix("> ")
+        }
+
+        DispatchQueue.main.async {
+            self.isBoldActive = isBold
+            self.isItalicActive = isItalic
+            self.isUnderlineActive = (underline != 0)
+            self.isStrikethroughActive = (strikethrough != 0)
+            self.isBulletActive = hasBullet
+            self.isChecklistActive = hasChecklist
+            self.isNumberedActive = hasNumbered
+            self.isQuoteActive = hasQuote
+        }
     }
 
     func notifyChange() {
@@ -201,7 +290,7 @@ final class AppleJournalRichTextController: NSObject, ObservableObject {
     }
 }
 
-// MARK: - AppleJournalRichTextView (NSViewRepresentable with Smart List Return & Checkbox Toggles)
+// MARK: - AppleJournalRichTextView (NSViewRepresentable with Smart List Return & Circular Checkbox Toggles)
 
 struct AppleJournalRichTextView: NSViewRepresentable {
     @Binding var text: String
@@ -246,6 +335,7 @@ struct AppleJournalRichTextView: NSViewRepresentable {
             textView.string = text
         }
 
+        controller.updateActiveStates()
         return scrollView
     }
 
@@ -273,10 +363,15 @@ struct AppleJournalRichTextView: NSViewRepresentable {
             self.parent = parent
         }
 
+        func textViewDidChangeSelection(_ notification: Notification) {
+            parent.controller.updateActiveStates()
+        }
+
         func textDidChange(_ notification: Notification) {
             guard let textView = notification.object as? NSTextView else { return }
             isEditingLocally = true
             parent.controller.notifyChange()
+            parent.controller.updateActiveStates()
             isEditingLocally = false
         }
 
@@ -290,22 +385,33 @@ struct AppleJournalRichTextView: NSViewRepresentable {
 
                 if currentLine.hasPrefix("• ") {
                     if currentLine.trimmingCharacters(in: .whitespacesAndNewlines) == "•" {
-                        // Empty bullet: clear it
                         textView.setSelectedRange(lineRange)
                         textView.insertText("", replacementRange: lineRange)
                     } else {
                         textView.insertText("\n• ", replacementRange: range)
                     }
                     parent.controller.notifyChange()
+                    parent.controller.updateActiveStates()
                     return true
-                } else if currentLine.hasPrefix("☐ ") || currentLine.hasPrefix("☑ ") {
-                    if currentLine.trimmingCharacters(in: .whitespacesAndNewlines) == "☐" || currentLine.trimmingCharacters(in: .whitespacesAndNewlines) == "☑" {
+                } else if currentLine.hasPrefix("○ ") || currentLine.hasPrefix("● ") {
+                    if currentLine.trimmingCharacters(in: .whitespacesAndNewlines) == "○" || currentLine.trimmingCharacters(in: .whitespacesAndNewlines) == "●" {
                         textView.setSelectedRange(lineRange)
                         textView.insertText("", replacementRange: lineRange)
                     } else {
-                        textView.insertText("\n☐ ", replacementRange: range)
+                        textView.insertText("\n○ ", replacementRange: range)
                     }
                     parent.controller.notifyChange()
+                    parent.controller.updateActiveStates()
+                    return true
+                } else if currentLine.hasPrefix("“ ") {
+                    if currentLine.trimmingCharacters(in: .whitespacesAndNewlines) == "“" {
+                        textView.setSelectedRange(lineRange)
+                        textView.insertText("", replacementRange: lineRange)
+                    } else {
+                        textView.insertText("\n“ ", replacementRange: range)
+                    }
+                    parent.controller.notifyChange()
+                    parent.controller.updateActiveStates()
                     return true
                 }
             }
@@ -316,17 +422,19 @@ struct AppleJournalRichTextView: NSViewRepresentable {
             handleCheckboxTap(textView, at: charIndex)
         }
 
-        private func handleCheckboxTap(_ textView: NSTextView, at charIndex: Int) {
+        func handleCheckboxTap(_ textView: NSTextView, at charIndex: Int) {
             if let string = textView.string as NSString? {
                 let range = NSRange(location: charIndex, length: 1)
                 let char = string.substring(with: range)
-                if char == "☐" {
-                    textView.insertText("☑", replacementRange: range)
+                if char == "○" || char == "☐" {
+                    textView.insertText("●", replacementRange: range)
                     parent.controller.notifyChange()
+                    parent.controller.updateActiveStates()
                     Haptics.impact(.rigid)
-                } else if char == "☑" {
-                    textView.insertText("☐", replacementRange: range)
+                } else if char == "●" || char == "☑" {
+                    textView.insertText("○", replacementRange: range)
                     parent.controller.notifyChange()
+                    parent.controller.updateActiveStates()
                     Haptics.impact(.light)
                 }
             }
@@ -1551,57 +1659,69 @@ struct AppleJournalLocationPopover: View {
     }
 }
 
-// MARK: - AppleJournalTypographyPopover (Screenshot 3 Matching with Real Native Formatting)
+// MARK: - AppleJournalTypographyPopover (With Live Active Highlights Matching Screenshot 3)
 
 struct AppleJournalTypographyPopover: View {
     @ObservedObject var controller: AppleJournalRichTextController
 
     var body: some View {
         VStack(spacing: 8) {
-            // Row 1: B, I, U, S (Matching Screenshot 3)
-            HStack(spacing: 2) {
-                formatBtn("B") { controller.toggleBold() }
-                formatBtn("I") { controller.toggleItalic() }
-                formatBtn("U") { controller.toggleUnderline() }
-                formatBtn("S") { controller.toggleStrikethrough() }
+            // Row 1: B, I, U, S (With live active pill highlights)
+            HStack(spacing: 3) {
+                formatBtn("B", isActive: controller.isBoldActive) { controller.toggleBold() }
+                formatBtn("I", isActive: controller.isItalicActive) { controller.toggleItalic() }
+                formatBtn("U", isActive: controller.isUnderlineActive) { controller.toggleUnderline() }
+                formatBtn("S", isActive: controller.isStrikethroughActive) { controller.toggleStrikethrough() }
             }
-            .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
+            .padding(2)
+            .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
 
             // Row 2: List Formats (Bullets, Checklist, Numbered, Blockquote, Divider)
-            HStack(spacing: 2) {
-                formatIconBtn("list.bullet") { controller.insertBulletList() }
-                formatIconBtn("checklist") { controller.insertChecklist() }
-                formatIconBtn("list.number") { controller.insertNumberedList() }
-                formatIconBtn("quote.opening") { controller.insertBlockquote() }
-                formatIconBtn("switch.2") { controller.insertDivider() }
+            HStack(spacing: 3) {
+                formatIconBtn("list.bullet", isActive: controller.isBulletActive) { controller.insertBulletList() }
+                formatIconBtn("checklist", isActive: controller.isChecklistActive) { controller.insertChecklist() }
+                formatIconBtn("list.number", isActive: controller.isNumberedActive) { controller.insertNumberedList() }
+                formatIconBtn("quote.opening", isActive: controller.isQuoteActive) { controller.insertBlockquote() }
+                formatIconBtn("switch.2", isActive: false) { controller.insertDivider() }
             }
-            .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
+            .padding(2)
+            .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
         }
         .padding(8)
         .background(Color(red: 0.16, green: 0.15, blue: 0.22))
     }
 
-    private func formatBtn(_ title: String, action: @escaping () -> Void) -> some View {
+    private func formatBtn(_ title: String, isActive: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 12, weight: title == "B" ? .bold : (title == "I" ? .medium : .regular)))
                 .italic(title == "I")
                 .underline(title == "U")
                 .strikethrough(title == "S")
-                .foregroundStyle(DS.Color.textPrimary)
+                .foregroundStyle(isActive ? Color.white : DS.Color.textSecondary)
                 .frame(width: 36, height: 26)
-                .background(Color.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 4))
+                .background(
+                    isActive
+                        ? Color(red: 0.38, green: 0.45, blue: 0.98)
+                        : Color.white.opacity(0.06),
+                    in: RoundedRectangle(cornerRadius: 4)
+                )
         }
         .buttonStyle(.plain)
     }
 
-    private func formatIconBtn(_ icon: String, action: @escaping () -> Void) -> some View {
+    private func formatIconBtn(_ icon: String, isActive: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 11))
-                .foregroundStyle(DS.Color.textPrimary)
+                .font(.system(size: 11, weight: isActive ? .bold : .regular))
+                .foregroundStyle(isActive ? Color.white : DS.Color.textSecondary)
                 .frame(width: 28, height: 26)
-                .background(Color.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 4))
+                .background(
+                    isActive
+                        ? Color(red: 0.38, green: 0.45, blue: 0.98)
+                        : Color.white.opacity(0.06),
+                    in: RoundedRectangle(cornerRadius: 4)
+                )
         }
         .buttonStyle(.plain)
     }
