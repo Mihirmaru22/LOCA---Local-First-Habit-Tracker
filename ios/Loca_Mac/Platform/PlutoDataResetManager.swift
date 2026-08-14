@@ -15,6 +15,14 @@ enum PlutoDataResetManager {
 
     private static let logger = Logger(subsystem: "com.mihirmaru.pluto.reset", category: "data")
 
+    /// Resets check-in data once on launch to clean existing history while preserving habit boards
+    static func resetCheckInDataIfNeeded(context: ModelContext) {
+        let key = "has_reset_pluto_v35_checkins_clean_run"
+        guard !UserDefaults.standard.bool(forKey: key) else { return }
+        resetCheckInData(context: context)
+        UserDefaults.standard.set(true, forKey: key)
+    }
+
     /// Resets all habit check-in records and streak counters.
     /// Preserves all HabitBoard entities, TodoItems, and life settings.
     static func resetCheckInData(context: ModelContext) {

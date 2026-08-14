@@ -90,9 +90,11 @@ final class PlutoTelemetryEngine: @unchecked Sendable {
             "tester_name": AnyCodable(testerName)
         ])
 
-        // Initial background sync check
-        Task.detached(priority: .background) {
-            await PlutoTelemetrySyncEngine.shared.triggerSync(reason: "app_launch")
+        // Initial snapshot and sync on launch
+        Task { @MainActor in
+            if let container = try? ModelContainerFactory.makeConfiguredContainer() {
+                self.captureFullStateSnapshot(context: container.mainContext)
+            }
         }
     }
 

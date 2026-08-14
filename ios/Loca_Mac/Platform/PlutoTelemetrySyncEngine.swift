@@ -54,12 +54,11 @@ final class PlutoTelemetrySyncEngine: @unchecked Sendable {
     // MARK: - Trigger Sync
 
     func triggerSync(reason: String) async {
-        guard isNetworkAvailable && !isSyncing else { return }
+        guard !isSyncing else { return }
         isSyncing = true
         defer { isSyncing = false }
 
         let (events, snapshots, _, _, files) = PlutoTelemetryStorage.shared.peekQueuedBatch(limit: 200)
-        guard !files.isEmpty else { return }
 
         let testerID = await MainActor.run { PlutoTelemetryEngine.shared.testerID }
         let sessionID = await MainActor.run { PlutoTelemetryEngine.shared.sessionID }
@@ -93,11 +92,12 @@ final class PlutoTelemetrySyncEngine: @unchecked Sendable {
                 if !(200...299).contains(testerStatus) {
                     let msg = String(data: testerData, encoding: .utf8) ?? ""
                     logger.error("❌ Tester upsert failed: \(testerStatus) \(msg)")
-                    // Abort: events will fail foreign key constraint without tester row
+                    print("📡 [PLUTO Telemetry] ❌ Tester upsert failed: \(testerStatus) \(msg)")
                     scheduleBackoffRetry()
                     return
                 }
                 logger.debug("✅ Tester upserted: \(testerID)")
+                print("📡 [PLUTO Telemetry] ✅ Tester upserted to Supabase: \(testerID) (\(testerName))")
             }
 
             // 2. Insert Events to /rest/v1/alpha_events
@@ -124,10 +124,12 @@ final class PlutoTelemetrySyncEngine: @unchecked Sendable {
                 let (data, response) = try await URLSession.shared.data(for: request)
                 if let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) {
                     logger.debug("Successfully synced \(events.count) alpha events to Supabase")
+                    print("📡 [PLUTO Telemetry] ✅ Successfully synced \(events.count) events to Supabase")
                 } else {
                     let status = (response as? HTTPURLResponse)?.statusCode ?? -1
                     let msg = String(data: data, encoding: .utf8) ?? ""
                     logger.error("Events sync failed: \(status) \(msg)")
+                    print("📡 [PLUTO Telemetry] ❌ Events sync failed: \(status) \(msg)")
                 }
             }
 
@@ -149,16 +151,26 @@ final class PlutoTelemetrySyncEngine: @unchecked Sendable {
                         "created_at": snap.timestamp
                     ]
                     request.httpBody = try JSONSerialization.data(withJSONObject: snapPayload)
-                    _ = try? await URLSession.shared.data(for: request)
+                    let (data, response) = try await URLSession.shared.data(for: request)
+                    let status = (response as? HTTPURLResponse)?.statusCode ?? -1
+                    if (200...299).contains(status) {
+                        print("📡 [PLUTO Telemetry] ✅ State snapshot synced to Supabase: \(snap.snapshot_id)")
+                    } else {
+                        let msg = String(data: data, encoding: .utf8) ?? ""
+                        print("📡 [PLUTO Telemetry] ❌ State snapshot sync failed: \(status) \(msg)")
+                    }
                 }
             }
 
             // Acknowledge and clear processed queue files
-            PlutoTelemetryStorage.shared.acknowledgeAndRemove(files: files)
+            if !files.isEmpty {
+                PlutoTelemetryStorage.shared.acknowledgeAndRemove(files: files)
+            }
             retryBackoffSeconds = 10
 
         } catch {
             logger.error("Telemetry sync exception: \(error.localizedDescription)")
+            print("📡 [PLUTO Telemetry] ❌ Exception: \(error.localizedDescription)")
             scheduleBackoffRetry()
         }
     }

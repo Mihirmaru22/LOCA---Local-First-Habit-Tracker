@@ -39,7 +39,7 @@ struct LOCAMacApp: App {
             self.container = try ModelContainerFactory.makeConfiguredContainer()
             #if DEBUG
             if let c = self.container {
-                PlutoDataResetManager.resetCheckInData(context: c.mainContext)
+                PlutoDataResetManager.resetCheckInDataIfNeeded(context: c.mainContext)
                 DebugSeeder.seedIfNeeded(context: c.mainContext)
                 LifeSeeder.seedIfNeeded(context: c.mainContext)
             }
