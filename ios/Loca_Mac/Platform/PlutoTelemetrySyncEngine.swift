@@ -62,6 +62,7 @@ final class PlutoTelemetrySyncEngine: @unchecked Sendable {
         guard !files.isEmpty else { return }
 
         let testerID = await MainActor.run { PlutoTelemetryEngine.shared.testerID }
+        let sessionID = await MainActor.run { PlutoTelemetryEngine.shared.sessionID }
         let testerName = await MainActor.run { PlutoTelemetryEngine.shared.testerName }
         let deviceModel = await MainActor.run { PlutoTelemetryEngine.shared.deviceModel }
         let macosVersion = await MainActor.run { PlutoTelemetryEngine.shared.macosVersion }
@@ -103,7 +104,7 @@ final class PlutoTelemetrySyncEngine: @unchecked Sendable {
                 let eventsPayload: [[String: Any]] = events.map { e in
                     [
                         "tester_id": testerID,
-                        "session_id": e.session_id,
+                        "session_id": sessionID,
                         "event_name": e.event_name,
                         "properties": (try? JSONSerialization.jsonObject(with: JSONEncoder().encode(e.properties))) ?? [:],
                         "timestamp": e.timestamp
@@ -135,8 +136,8 @@ final class PlutoTelemetrySyncEngine: @unchecked Sendable {
                     let snapPayload: [String: Any] = [
                         "id": snap.snapshot_id,
                         "tester_id": testerID,
-                        "snapshot_payload": (try? JSONSerialization.jsonObject(with: JSONEncoder().encode(snap.data))) ?? [:],
-                        "created_at": snap.created_at
+                        "snapshot_payload": (try? JSONSerialization.jsonObject(with: JSONEncoder().encode(snap.snapshot_json))) ?? [:],
+                        "created_at": snap.timestamp
                     ]
                     request.httpBody = try JSONSerialization.data(withJSONObject: snapPayload)
                     _ = try? await URLSession.shared.data(for: request)
