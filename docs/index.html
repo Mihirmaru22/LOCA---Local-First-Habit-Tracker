@@ -248,7 +248,7 @@
             color: var(--text-secondary);
         }
 
-        /* Pillar Modules Grid */
+        /* Pillars Grid */
         .pillars-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -370,66 +370,110 @@
             background: rgba(255, 255, 255, 0.08);
         }
 
-        /* Milestones & Life Audit */
-        .milestone-item {
+        /* Audit Strategic Goals with Checkpoints */
+        .audit-goal-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .audit-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .audit-title {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .horizon-pill {
+            font-size: 10px;
+            font-family: var(--font-mono);
+            color: var(--purple);
+            background: rgba(139, 92, 246, 0.15);
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-weight: 700;
+        }
+
+        .checkpoint-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-top: 4px;
+        }
+
+        .checkpoint-row {
+            font-size: 11px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Bucket List Items */
+        .bucket-item-row {
             background: var(--bg-surface);
             border: 1px solid var(--border-subtle);
             border-radius: 8px;
             padding: 12px 14px;
             display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .milestone-top {
-            display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 12px;
+        }
+
+        .bucket-title-group {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .bucket-title {
             font-size: 13px;
             font-weight: 700;
+            color: var(--text-primary);
         }
 
-        .horizon-tag {
+        .bucket-notes {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .achieved-badge {
             font-size: 10px;
             font-family: var(--font-mono);
-            color: var(--purple);
-            background: rgba(139, 92, 246, 0.12);
-            padding: 2px 6px;
+            font-weight: 800;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--emerald);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 3px 8px;
             border-radius: 4px;
+            white-space: nowrap;
         }
 
-        /* Action Timeline Stream */
-        .timeline-scroll {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            max-height: 280px;
-            overflow-y: auto;
-        }
-
-        .stream-event {
-            background: var(--bg-surface);
-            border: 1px solid var(--border-subtle);
-            border-radius: 6px;
-            padding: 9px 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-            font-size: 12px;
-        }
-
-        .event-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+        .target-badge {
+            font-size: 10px;
             font-family: var(--font-mono);
-            font-size: 11px;
+            font-weight: 700;
+            background: var(--bg-chip);
+            color: var(--text-secondary);
+            padding: 3px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
         }
     </style>
 </head>
 <body>
 
-    <!-- Top Header -->
+    <!-- Header -->
     <header>
         <div class="brand">
             <div class="brand-badge">P</div>
@@ -443,15 +487,15 @@
             <button class="picker-btn" onclick="loadTester(2)">👤 David Miller (Product VP)</button>
         </div>
 
-        <div style="display:flex; align-items:center; gap:8px;">
-            <button class="picker-btn" style="background:var(--bg-surface); color:var(--text-primary); border:1px solid var(--border-subtle);" onclick="exportJSON()">💾 Export JSON</button>
+        <div>
+            <button class="picker-btn" style="background:var(--bg-surface); color:var(--text-primary); border:1px solid var(--border-subtle);" onclick="exportJSON()">💾 Export Dossier (.json)</button>
         </div>
     </header>
 
     <!-- Main Workspace -->
     <main>
 
-        <!-- Top Profile Banner -->
+        <!-- Profile Hero Banner -->
         <section class="tester-hero">
             <div class="hero-left">
                 <div class="avatar-box" id="dAvatar">AV</div>
@@ -478,7 +522,7 @@
             <div class="metric-cell">
                 <span class="cell-label">Habit Consistency</span>
                 <span class="cell-value" id="kHabitScore" style="color:var(--emerald);">94%</span>
-                <span class="cell-sub" id="kHabitSub">3/3 checked today</span>
+                <span class="cell-sub" id="kHabitSub">4/4 checked today</span>
             </div>
             <div class="metric-cell">
                 <span class="cell-label">Deep Work Today</span>
@@ -502,10 +546,28 @@
             </div>
         </section>
 
-        <!-- Comprehensive 6-Pillar Ecosystem Breakdown -->
+        <!-- Full Modules Grid -->
         <section class="pillars-grid">
 
-            <!-- PILLAR 1: KEYSTONE HABITS & STREAKS -->
+            <!-- SECTION A: LIFE AUDIT STRATEGIC GOALS & CHECKPOINTS -->
+            <div class="pillar-card">
+                <div class="pillar-header">
+                    <span class="pillar-title">🎯 Strategic Life Audit & Checkpoints</span>
+                    <span class="pillar-badge" id="auditCount">3 Goals</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:12px;" id="auditGoalsList"></div>
+            </div>
+
+            <!-- SECTION B: LIFETIME BUCKET LIST BENCHMARKS -->
+            <div class="pillar-card">
+                <div class="pillar-header">
+                    <span class="pillar-title">🗺️ Life Suite Bucket List Benchmarks</span>
+                    <span class="pillar-badge" id="bucketCount">4 Benchmarks</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:10px;" id="bucketList"></div>
+            </div>
+
+            <!-- SECTION C: KEYSTONE HABITS & STREAKS -->
             <div class="pillar-card">
                 <div class="pillar-header">
                     <span class="pillar-title">🏆 Keystone Habits & Streak Heat</span>
@@ -514,7 +576,7 @@
                 <div style="display:flex; flex-direction:column; gap:10px;" id="habitsList"></div>
             </div>
 
-            <!-- PILLAR 2: DAY PLANNER & TIME-BLOCK SCHEDULE -->
+            <!-- SECTION D: DAY PLANNER TIME-BLOCK SCHEDULE -->
             <div class="pillar-card">
                 <div class="pillar-header">
                     <span class="pillar-title">📅 Day Planner & Time Blocking</span>
@@ -523,7 +585,7 @@
                 <div style="display:flex; flex-direction:column; gap:8px;" id="tasksList"></div>
             </div>
 
-            <!-- PILLAR 3: DEEP WORK STUDIO & 3D SPATIAL AUDIO -->
+            <!-- SECTION E: DEEP WORK & SPATIAL SOUNDSCAPES -->
             <div class="pillar-card">
                 <div class="pillar-header">
                     <span class="pillar-title">🧠 Deep Work Studio & Audio</span>
@@ -543,7 +605,7 @@
                 </div>
             </div>
 
-            <!-- PILLAR 4: MIND, SLEEP & JOURNAL REFLECTIONS -->
+            <!-- SECTION F: SLEEP & REFLECTION NOTES -->
             <div class="pillar-card">
                 <div class="pillar-header">
                     <span class="pillar-title">📝 Sleep & Daily Reflection Note</span>
@@ -553,32 +615,14 @@
                     <div style="background:var(--bg-surface); padding:12px 14px; border-radius:8px; border:1px solid var(--border-subtle);">
                         <div style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase; font-weight:700;">Latest Journal Reflection Note</div>
                         <div style="font-size:12px; color:var(--text-primary); font-style:italic; margin-top:4px;" id="p4Note">
-                            "Clean progress on the SwiftData container and background telemetry queue today. Focus felt sharp during afternoon coding sprints."
+                            "Clean progress on SwiftData container and background telemetry queue today. Focus felt sharp during afternoon coding sprints."
                         </div>
                     </div>
                     <div style="display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--text-secondary); padding:0 4px;">
-                        <span>Sleep Quality Index: <strong style="color:var(--emerald);">Optimal (8.5h)</strong></span>
-                        <span>Bedtime Mode: <strong>Scheduled</strong></span>
+                        <span>Sleep Quality: <strong style="color:var(--emerald);">Optimal (8.5h)</strong></span>
+                        <span>Bedtime: <strong>23:00 → 07:30</strong></span>
                     </div>
                 </div>
-            </div>
-
-            <!-- PILLAR 5: LIFE STRATEGY & AUDIT HORIZONS -->
-            <div class="pillar-card">
-                <div class="pillar-header">
-                    <span class="pillar-title">🎯 Life Audit Goals & Bucket List</span>
-                    <span class="pillar-badge">Long-term Horizons</span>
-                </div>
-                <div style="display:flex; flex-direction:column; gap:10px;" id="milestonesList"></div>
-            </div>
-
-            <!-- PILLAR 6: SYSTEM HARDWARE & REAL-TIME ACTIVITY -->
-            <div class="pillar-card">
-                <div class="pillar-header">
-                    <span class="pillar-title">⚡ Real-Time Action Waterfall</span>
-                    <span class="pillar-badge">Unredacted Stream</span>
-                </div>
-                <div class="timeline-scroll" id="streamList"></div>
             </div>
 
         </section>
@@ -609,6 +653,47 @@
                 sound: "Lo-Fi Focus Chords",
                 sprint: "25m Focus / 5m Break",
                 reflection: "“Clean progress on SwiftData container and background telemetry queue today. Focus felt sharp during afternoon coding sprints.”",
+                auditGoals: [
+                    {
+                        title: "Ship PLUTO App Version 3.5",
+                        horizon: "Q3 2026",
+                        progress: 0.80,
+                        engineHabit: "Deep Focus Coding · 60 min",
+                        checkpoints: [
+                            { text: "Local-First SwiftData schema architecture", done: true },
+                            { text: "Habit Heatmap & Streak Calculation engine", done: true },
+                            { text: "Supabase Ingestion Edge Function & Private Telemetry", done: true },
+                            { text: "Standup Onboarding with System Permissions", done: false }
+                        ]
+                    },
+                    {
+                        title: "Complete Half-Marathon Sub-1h45m",
+                        horizon: "Q4 2026",
+                        progress: 0.65,
+                        engineHabit: "Morning Sunlight & 10k Steps",
+                        checkpoints: [
+                            { text: "Build base aerobic zone 2 volume to 40km/week", done: true },
+                            { text: "Weekly 15km progressive tempo runs", done: true },
+                            { text: "Final taper and race day pacing strategy", done: false }
+                        ]
+                    },
+                    {
+                        title: "Deep Work Mastery: 1,000 Focus Hours",
+                        horizon: "2026 Annual",
+                        progress: 0.42,
+                        engineHabit: "3D Spatial Focus Sprint · 50 min",
+                        checkpoints: [
+                            { text: "Q1 baseline logged (250 hours)", done: true },
+                            { text: "Q2 sprint cadence maintained (500 hours)", done: false }
+                        ]
+                    }
+                ],
+                bucketList: [
+                    { title: "Witness Aurora Borealis in Northern Norway", notes: "Tromsø, Norway · Winter Expedition", horizon: "2027", isAchieved: false },
+                    { title: "Complete a Full Marathon (42.195 km)", notes: "Berlin or Tokyo Marathon", horizon: "2026", isAchieved: false },
+                    { title: "Design & Ship PLUTO App Version 3.5", notes: "Apple Silicon & SwiftData Ecosystem V3.5", horizon: "2026", isAchieved: true, achievedYear: "2026" },
+                    { title: "Achieve 15 Consecutive Clean Strict Pull-Ups", notes: "Calisthenics benchmark", horizon: "2026", isAchieved: true, achievedYear: "2026" }
+                ],
                 habits: [
                     { name: "Morning Sunlight & 10k Steps", category: "Health", streak: 6, metric: "10,000 steps", progress: 1.0 },
                     { name: "Deep Work Coding Sprint", category: "Craft", streak: 12, metric: "60 mins", progress: 0.8 },
@@ -619,17 +704,6 @@
                     { time: "09:30 - 10:15", title: "Review Supabase Ingestion RLS Policies", priority: "P1 Urgent", done: true },
                     { time: "14:00 - 15:00", title: "Optimize Neural Engine NLP Tokenizer", priority: "P2 Strategy", done: true },
                     { time: "16:30 - 17:00", title: "Conduct Alpha Tester Walkthrough", priority: "P2 Strategy", done: false }
-                ],
-                milestones: [
-                    { title: "Ship PLUTO App Version 3.5", horizon: "Q3 2026", progress: 0.80, status: "In Progress" },
-                    { title: "Complete Half-Marathon Sub-1h45m", horizon: "Q4 2026", progress: 0.65, status: "On Track" },
-                    { title: "Master Japanese to Conversational Fluency", horizon: "2028", progress: 0.30, status: "Ongoing" }
-                ],
-                stream: [
-                    { time: "12:04:18", event: "habit_checked", details: "Morning Sunlight & 10k Steps (Streak: 6d)" },
-                    { time: "11:58:32", event: "task_rescheduled", details: "Optimize Neural Engine → moved to 14:00" },
-                    { time: "11:15:00", event: "focus_session_completed", details: "Lo-Fi Focus Chords · 25m Pomodoro" },
-                    { time: "09:30:10", event: "app_launched", details: "MacBook Pro M3 Max · macOS 15.1" }
                 ]
             },
             {
@@ -649,11 +723,29 @@
                 taskSub: "5 finished · 0 pending",
                 sleepHours: "7.8h",
                 sleepSub: "23:45 bedtime → 07:30 wake",
-                auditScore: "75%",
+                auditScore: "85%",
                 auditSub: "Design System Milestone",
                 sound: "432Hz Binaural Beat",
                 sprint: "50m Deep Block / 10m Break",
                 reflection: "“Calibrated dark mode contrast ratios and verified 5-minute snap physics on the day planner timeline.”",
+                auditGoals: [
+                    {
+                        title: "Ship World-Class PLUTO V3.5 macOS UI",
+                        horizon: "Q3 2026",
+                        progress: 0.85,
+                        engineHabit: "Design System Token Audit",
+                        checkpoints: [
+                            { text: "12-color executive palette calibration", done: true },
+                            { text: "Day Planner 5m snap drag-and-drop physics", done: true },
+                            { text: "Touch ID Vault lock aesthetic review", done: false }
+                        ]
+                    }
+                ],
+                bucketList: [
+                    { title: "Design & Ship PLUTO App Version 3.5", notes: "PLUTO macOS & iOS Ecosystem V3.5", horizon: "2026", isAchieved: true, achievedYear: "2026" },
+                    { title: "Solo Scuba Dive Great Barrier Reef", notes: "Cairns, Australia", horizon: "Lifetime", isAchieved: false },
+                    { title: "Hike Torres del Paine Circuit in Patagonia", notes: "Chile · W-Trek Adventure", horizon: "2028", isAchieved: false }
+                ],
                 habits: [
                     { name: "3D Spatial Audio Focus Sprint", category: "Focus", streak: 5, metric: "50 mins", progress: 1.0 },
                     { name: "Design System Token Audit", category: "Design", streak: 9, metric: "Daily Pass", progress: 0.9 },
@@ -662,15 +754,6 @@
                 tasks: [
                     { time: "10:00 - 10:45", title: "Inspect Day Planner 5m Snap Animations", priority: "P1 Urgent", done: true },
                     { time: "11:30 - 12:15", title: "Calibrate Dark Mode Contrast Ratios", priority: "P2 Strategy", done: true }
-                ],
-                milestones: [
-                    { title: "Design & Ship PLUTO V3.5 Ecosystem", horizon: "Q3 2026", progress: 0.85, status: "In Progress" },
-                    { title: "Solo Scuba Dive Great Barrier Reef", horizon: "Lifetime", progress: 0.20, status: "Planned" }
-                ],
-                stream: [
-                    { time: "12:02:10", event: "focus_session_completed", details: "432Hz Binaural Beat · 50m Sprint" },
-                    { time: "11:30:15", event: "sleep_logged", details: "23:45 → 07:30 (7.8 hrs recorded)" },
-                    { time: "10:10:00", event: "task_completed", details: "Inspect Day Planner Snap Animations" }
                 ]
             },
             {
@@ -695,6 +778,23 @@
                 sound: "Gentle Rain & Thunder",
                 sprint: "20m Focus / 5m Break",
                 reflection: "“Tested Siri Shortcuts for quick logging and ⌃⌥P global HUD overlay. Very responsive on Apple Silicon.”",
+                auditGoals: [
+                    {
+                        title: "Master Japanese to Conversational Fluency",
+                        horizon: "2028",
+                        progress: 0.35,
+                        engineHabit: "Read 20 Pages Executive Briefs",
+                        checkpoints: [
+                            { text: "Complete JLPT N5 vocabulary deck", done: true },
+                            { text: "JLPT N4 grammar structures review", done: false }
+                        ]
+                    }
+                ],
+                bucketList: [
+                    { title: "Complete Full Marathon (42.195 km)", notes: "Berlin or Tokyo Marathon", horizon: "2026", isAchieved: false },
+                    { title: "Build Custom Minimalist Wooden Cabin", notes: "Solar-powered off-grid sanctuary", horizon: "Lifetime", isAchieved: false },
+                    { title: "Master Japanese to Conversational Fluency", notes: "JLPT N3+ Standard", horizon: "2028", isAchieved: false }
+                ],
                 habits: [
                     { name: "Read 20 Pages Executive Briefs", category: "Learning", streak: 14, metric: "20 pages", progress: 1.0 },
                     { name: "Strength Training (Calisthenics)", category: "Fitness", streak: 7, metric: "1 Session", progress: 0.6 }
@@ -702,14 +802,6 @@
                 tasks: [
                     { time: "08:30 - 08:45", title: "Test Siri Voice Shortcuts ('Hey Siri')", priority: "P3 Quick", done: true },
                     { time: "09:00 - 09:20", title: "Test ⌃⌥P Global Hotkey HUD overlay", priority: "P2 Strategy", done: true }
-                ],
-                milestones: [
-                    { title: "Complete Full Marathon (42.195 km)", horizon: "2026", progress: 0.70, status: "On Track" },
-                    { title: "Build Off-Grid Wooden Cabin", horizon: "Lifetime", progress: 0.15, status: "Planned" }
-                ],
-                stream: [
-                    { time: "11:45:00", event: "quick_hud_opened", details: "Triggered via ⌃⌥P global shortcut" },
-                    { time: "11:15:20", event: "layout_preference_changed", details: "Habits layout set to Bento Cards" }
                 ]
             }
         ];
@@ -754,7 +846,49 @@
             document.getElementById('p3Sprint').textContent = t.sprint;
             document.getElementById('p4Note').textContent = t.reflection;
 
-            // Habits
+            // Section A: Life Audit Goals & Checkpoints
+            document.getElementById('auditCount').textContent = `${t.auditGoals.length} Strategic Goals`;
+            document.getElementById('auditGoalsList').innerHTML = t.auditGoals.map(g => `
+                <div class="audit-goal-card">
+                    <div class="audit-top">
+                        <span class="audit-title">${g.title}</span>
+                        <span class="horizon-pill">${g.horizon}</span>
+                    </div>
+                    <div style="font-size:11px; color:var(--text-secondary); margin-top:-4px;">
+                        Engine Habit: <strong style="color:var(--text-primary);">${g.engineHabit}</strong> · ${(g.progress * 100).toFixed(0)}% Complete
+                    </div>
+                    <div class="prog-bg">
+                        <div class="prog-bar" style="width:${g.progress * 100}%;"></div>
+                    </div>
+                    <div class="checkpoint-list">
+                        ${g.checkpoints.map(cp => `
+                            <div class="checkpoint-row">
+                                <span>${cp.done ? '✅' : '⚪'}</span>
+                                <span style="color:${cp.done ? 'var(--text-primary)' : 'var(--text-tertiary)'}; text-decoration:${cp.done ? 'none' : 'none'};">${cp.text}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+
+            // Section B: Bucket List Benchmarks
+            document.getElementById('bucketCount').textContent = `${t.bucketList.length} Benchmarks`;
+            document.getElementById('bucketList').innerHTML = t.bucketList.map(b => `
+                <div class="bucket-item-row">
+                    <div class="bucket-title-group">
+                        <span class="bucket-title">${b.title}</span>
+                        <span class="bucket-notes">${b.notes}</span>
+                    </div>
+                    <div>
+                        ${b.isAchieved 
+                            ? `<span class="achieved-badge">🏆 Achieved in ${b.achievedYear || '2026'}</span>` 
+                            : `<span class="target-badge">⏳ Target ${b.horizon}</span>`
+                        }
+                    </div>
+                </div>
+            `).join('');
+
+            // Section C: Habits
             document.getElementById('p1Count').textContent = `${t.habits.length} Habits`;
             document.getElementById('habitsList').innerHTML = t.habits.map(h => `
                 <div class="habit-item">
@@ -768,37 +902,13 @@
                 </div>
             `).join('');
 
-            // Tasks
+            // Section D: Tasks
             document.getElementById('p2Count').textContent = `${t.tasks.length} Tasks`;
             document.getElementById('tasksList').innerHTML = t.tasks.map(task => `
                 <div class="time-block-row">
                     <span class="block-time">${task.time}</span>
                     <span class="block-title ${task.done ? 'block-done' : ''}">${task.done ? '✅' : '⏳'} ${task.title}</span>
                     <span class="block-priority">${task.priority}</span>
-                </div>
-            `).join('');
-
-            // Milestones & Life Audit
-            document.getElementById('milestonesList').innerHTML = t.milestones.map(m => `
-                <div class="milestone-item">
-                    <div class="milestone-top">
-                        <span>${m.title}</span>
-                        <span class="horizon-tag">${m.horizon}</span>
-                    </div>
-                    <div class="prog-bg">
-                        <div class="prog-bar" style="width:${m.progress * 100}%;"></div>
-                    </div>
-                </div>
-            `).join('');
-
-            // Action Stream
-            document.getElementById('streamList').innerHTML = t.stream.map(ev => `
-                <div class="stream-event">
-                    <div class="event-header">
-                        <strong style="color:var(--text-primary);">${ev.event}</strong>
-                        <span>${ev.time}</span>
-                    </div>
-                    <div style="color:var(--text-secondary); font-family:var(--font-mono);">${ev.details}</div>
                 </div>
             `).join('');
         }
