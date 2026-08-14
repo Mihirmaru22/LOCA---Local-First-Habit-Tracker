@@ -6,6 +6,7 @@ import SwiftData
 /// The fixed rows shown in the Journal middle column.
 enum JournalRow: String, CaseIterable, Identifiable {
     case todaysLog = "Today's log"
+    case notes     = "Notes"
     case analyse   = "Analyse"
 
     var id: String { rawValue }
@@ -13,12 +14,17 @@ enum JournalRow: String, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .todaysLog: return "book.pages"
+        case .notes:     return "square.and.pencil"
         case .analyse:   return "chart.xyaxis.line"
         }
     }
 
     var defaultDetailMode: JournalDetailMode {
-        self == .analyse ? .analyse : .collect
+        switch self {
+        case .analyse:   return .analyse
+        case .notes:     return .notes
+        case .todaysLog: return .collect
+        }
     }
 }
 
@@ -26,6 +32,7 @@ enum JournalRow: String, CaseIterable, Identifiable {
 
 enum JournalDetailMode: String, CaseIterable, Identifiable {
     case collect = "Collect"
+    case notes   = "Notes"
     case analyse = "Analyse"
     var id: String { rawValue }
 }
@@ -41,6 +48,9 @@ struct MacJournalContentColumn: View {
            sort: \HabitBoard.createdAt)
     private var habitCandidates: [HabitBoard]
 
+    @Query(sort: [SortDescriptor(\JournalNote.date, order: .reverse)])
+    private var allJournalNotes: [JournalNote]
+
     private var dailyRoutines: [HabitBoard] {
         habitCandidates.filter { $0.archivedAt == nil }
     }
@@ -51,6 +61,10 @@ struct MacJournalContentColumn: View {
             let logs = habit.activeLogs.filter { cal.isDateInToday($0.timestamp) }
             return logs.reduce(0.0) { $0 + $1.value } < habit.effectiveTarget
         }.count
+    }
+
+    private var notesCount: Int {
+        allJournalNotes.filter { !$0.isArchived }.count
     }
 
     var body: some View {
@@ -76,6 +90,7 @@ struct MacJournalContentColumn: View {
                         JournalRowButton(
                             row: row,
                             pendingDailyCount: todayPendingDailyCount,
+                            notesCount: notesCount,
                             isSelected: selectedRow == row
                         ) {
                             selectedRow = row
@@ -97,6 +112,7 @@ private struct JournalRowButton: View {
 
     let row: JournalRow
     let pendingDailyCount: Int
+    let notesCount: Int
     let isSelected: Bool
     let action: () -> Void
 
@@ -156,6 +172,7 @@ private struct JournalRowButton: View {
     private var rowIconColor: Color {
         switch row {
         case .todaysLog: return Color.purple
+        case .notes:     return Color(red: 0.38, green: 0.45, blue: 0.98)
         case .analyse:   return Color.indigo
         }
     }
@@ -164,6 +181,8 @@ private struct JournalRowButton: View {
         switch row {
         case .todaysLog:
             return pendingDailyCount > 0 ? "\(pendingDailyCount)" : Self.shortDateFormatter.string(from: Date())
+        case .notes:
+            return notesCount > 0 ? "\(notesCount)" : nil
         case .analyse:
             return "month"
         }
@@ -172,6 +191,7 @@ private struct JournalRowButton: View {
     private var rowBadgeColor: Color {
         switch row {
         case .todaysLog: return pendingDailyCount > 0 ? Color.purple : DS.Color.textTertiary
+        case .notes:     return Color(red: 0.68, green: 0.45, blue: 0.98)
         default:         return DS.Color.textTertiary
         }
     }
@@ -179,9 +199,8 @@ private struct JournalRowButton: View {
     private var rowBadgeBackground: Color {
         switch row {
         case .todaysLog: return pendingDailyCount > 0 ? Color.purple.opacity(0.18) : Color.clear
+        case .notes:     return Color(red: 0.38, green: 0.45, blue: 0.98).opacity(0.18)
         default:         return Color.clear
         }
     }
 }
-
-

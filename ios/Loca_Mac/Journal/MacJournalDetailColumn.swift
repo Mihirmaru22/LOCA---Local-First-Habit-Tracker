@@ -4,11 +4,10 @@ import SwiftUI
 
 /// Detail column for the Journal section.
 ///
-/// Header:
-/// - Left: Section title on top, selected date + navigation controls underneath.
-/// - Right: Mode toggle [ Collect | Analyse ] when viewing Today's log.
-///
-/// Body: `MacJournalCollect`, `MacJournalDailyView`, or `MacJournalAnalyse`.
+/// Supports:
+/// - `Today's log`: Daylight Flow Routines & Sleep Tracker (`MacJournalCollect`)
+/// - `Notes`: 1:1 Apple Journal Canvas with Floating Capsule, Photos, Voice Memo Studio (`MacAppleJournalView`)
+/// - `Analyse`: Monthly Consistency & Correlations (`MacJournalAnalyse`)
 struct MacJournalDetailColumn: View {
 
     @Binding var selectedRow: JournalRow?
@@ -19,16 +18,22 @@ struct MacJournalDetailColumn: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            journalHeader
-            Divider()
+            if selectedRow != .notes {
+                journalHeader
+                Divider()
+            }
 
             switch selectedRow {
+            case .notes:
+                MacAppleJournalView()
             case .analyse:
                 MacJournalAnalyse(selectedDate: selectedDate)
             default:
                 switch detailMode {
                 case .collect:
                     MacJournalCollect(selectedDate: selectedDate)
+                case .notes:
+                    MacAppleJournalView()
                 case .analyse:
                     MacJournalAnalyse(selectedDate: selectedDate)
                 }
@@ -66,7 +71,7 @@ struct MacJournalDetailColumn: View {
             // Right: Segmented Mode Toggle (Collect | Analyse) for Today's log
             if selectedRow == .todaysLog || selectedRow == nil {
                 Picker("Mode", selection: $detailMode) {
-                    ForEach(JournalDetailMode.allCases) { m in
+                    ForEach(JournalDetailMode.allCases.filter { $0 != .notes }) { m in
                         Text(m.rawValue).tag(m)
                     }
                 }
@@ -101,37 +106,29 @@ struct MacJournalDetailColumn: View {
             .buttonStyle(.plain)
             .help("Previous day")
 
-            // Date Picker Popover Button
+            // Date Picker trigger button
             Button {
-                showDatePicker.toggle()
+                showDatePicker = true
             } label: {
-                HStack(spacing: 6) {
+                HStack(spacing: 4) {
                     Image(systemName: "calendar")
-                        .font(.caption)
+                        .font(.caption2)
+                        .foregroundStyle(Color.accentColor)
                     Text(dateFormattedLabel)
                         .font(DS.Text.caption)
-                        .fontWeight(.medium)
+                        .foregroundStyle(DS.Color.textPrimary)
                 }
-                .foregroundStyle(DS.Color.textPrimary)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
-                .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: 6))
+                .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 6))
             }
             .buttonStyle(.plain)
-            .help("Choose date")
-            .popover(isPresented: $showDatePicker, arrowEdge: .bottom) {
-                JournalDatePickerPopover(
-                    selectedDate: Binding(
-                        get: { selectedDate },
-                        set: {
-                            selectedDate = Calendar.current.startOfDay(for: $0)
-                            showDatePicker = false
-                        }
-                    )
-                )
+            .popover(isPresented: $showDatePicker) {
+                JournalDatePickerPopover(selectedDate: $selectedDate)
             }
+            .help("Choose a date")
 
-            // Next day (capped at today + 365d)
+            // Next day
             Button {
                 withAnimation(DS.Motion.settle) {
                     if let next = Calendar.current.date(byAdding: .day, value: 1, to: selectedDate) {
@@ -172,6 +169,7 @@ struct MacJournalDetailColumn: View {
     private var headerTitle: String {
         switch selectedRow {
         case .analyse:   return "Analyse"
+        case .notes:     return "Notes"
         case .todaysLog: return "Today's log"
         default:         return "Journal"
         }
@@ -238,7 +236,7 @@ struct MacJournalDetailPlaceholder: View {
         ContentUnavailableView(
             "Select a Row",
             systemImage: "book.closed",
-            description: Text("Choose Today's log or Analyse.")
+            description: Text("Choose Today's log, Notes, or Analyse.")
         )
     }
 }

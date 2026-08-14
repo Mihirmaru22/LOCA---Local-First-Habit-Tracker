@@ -17,7 +17,13 @@ final class JournalNote {
 
     var id:          UUID   = UUID()
     var date:        Date   = Date()
+    var title:       String = ""
     var text:        String = ""
+    var location:    String? = nil
+    var isBookmarked: Bool  = false
+    var hasAudio:    Bool   = false
+    var audioDuration: Double = 0
+    var photoCount:  Int    = 0
     var archivedAt:  Date?  = nil
 
     /// Stores `NoteKind` as an `Int` for CloudKit compatibility.
@@ -33,8 +39,9 @@ final class JournalNote {
         set { noteKindRaw = newValue.rawValue }
     }
 
-    init(date: Date = Date(), text: String = "", kind: NoteKind = .dailyNote) {
+    init(date: Date = Date(), title: String = "", text: String = "", kind: NoteKind = .dailyNote) {
         self.date        = Calendar.current.startOfDay(for: date)
+        self.title       = title
         self.text        = text
         self.noteKindRaw = kind.rawValue
     }
