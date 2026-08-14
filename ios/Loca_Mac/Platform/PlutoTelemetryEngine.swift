@@ -16,7 +16,7 @@ import os.log
 // MARK: - PlutoTelemetryEngine
 
 @MainActor
-final class PlutoTelemetryEngine: ObservableObject {
+final class PlutoTelemetryEngine: @unchecked Sendable {
 
     static let shared = PlutoTelemetryEngine()
 
@@ -141,7 +141,7 @@ final class PlutoTelemetryEngine: ObservableObject {
         track(event: "habit_created", properties: [
             "habit_id": AnyCodable(board.id.uuidString),
             "habit_name": AnyCodable(board.name),
-            "category": AnyCodable(board.category.rawValue),
+            "unit": AnyCodable(board.unitLabel ?? "Check"),
             "metric": AnyCodable(board.metric.rawValue),
             "target": AnyCodable(board.targetValue)
         ])
@@ -251,7 +251,7 @@ final class PlutoTelemetryEngine: ObservableObject {
                 [
                     "id": board.id.uuidString,
                     "name": board.name,
-                    "category": board.category.rawValue,
+                    "unit": board.unitLabel ?? "Check",
                     "metric": board.metric.rawValue,
                     "target": board.targetValue,
                     "current_streak": board.currentStreak,
