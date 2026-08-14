@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PLUTO V3.5 — Tester Profiles & Telemetry Dossier</title>
+    <title>PLUTO V3.5 — Live Alpha Telemetry Dossier</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -47,7 +47,7 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        /* Sticky Header */
+        /* Header */
         header {
             border-bottom: 1px solid var(--border-subtle);
             padding: 12px 32px;
@@ -85,7 +85,7 @@
             font-weight: 700;
         }
 
-        /* Tester Switcher */
+        /* Dynamic Tester Picker */
         .tester-picker {
             display: flex;
             align-items: center;
@@ -94,6 +94,8 @@
             padding: 4px;
             border-radius: 8px;
             border: 1px solid var(--border-subtle);
+            max-width: 600px;
+            overflow-x: auto;
         }
 
         .picker-btn {
@@ -107,6 +109,7 @@
             cursor: pointer;
             transition: all 0.15s ease;
             font-family: var(--font-sans);
+            white-space: nowrap;
         }
 
         .picker-btn:hover {
@@ -128,6 +131,31 @@
             display: flex;
             flex-direction: column;
             gap: 24px;
+        }
+
+        /* Empty State */
+        .empty-state-box {
+            background: var(--bg-card);
+            border: 1px dashed var(--border-strong);
+            border-radius: 14px;
+            padding: 60px 24px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .empty-title {
+            font-size: 17px;
+            font-weight: 700;
+        }
+
+        .empty-sub {
+            font-size: 13px;
+            color: var(--text-secondary);
+            max-width: 480px;
+            line-height: 1.5;
         }
 
         /* Top Hero Profile Dossier */
@@ -211,7 +239,7 @@
             color: var(--text-primary);
         }
 
-        /* 6-Pillar Grid Layout Matching Exact App Order */
+        /* 6-Pillar Grid Layout */
         .pillars-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -295,6 +323,15 @@
             font-family: var(--font-mono);
             padding: 1px 5px;
             border-radius: 10px;
+        }
+
+        .pillar-badge {
+            font-size: 10px;
+            font-family: var(--font-mono);
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            padding: 2px 8px;
+            border-radius: 4px;
         }
 
         /* Habit Row Item Matching Actual App Screenshot */
@@ -560,383 +597,414 @@
     <header>
         <div class="brand">
             <div class="brand-badge">P</div>
-            <div class="brand-title">PLUTO Tester Dossier</div>
+            <div class="brand-title">PLUTO Live Alpha Telemetry</div>
         </div>
 
-        <!-- Tester Switcher -->
-        <div class="tester-picker">
-            <button class="picker-btn active" onclick="loadTester(0)">👤 Alex Vance (Architect)</button>
-            <button class="picker-btn" onclick="loadTester(1)">👤 Sarah Chen (Design Director)</button>
-            <button class="picker-btn" onclick="loadTester(2)">👤 David Miller (Product VP)</button>
+        <!-- Dynamic Tester Switcher -->
+        <div class="tester-picker" id="testerPicker">
+            <div style="font-size:12px; color:var(--text-tertiary); padding:4px 8px;" id="noTestersLabel">Waiting for testers...</div>
         </div>
 
         <div style="display:flex; align-items:center; gap:8px;">
             <input type="file" id="localFilePicker" accept=".json" style="display:none;" onchange="handleLocalFile(event)">
             <button class="picker-btn" style="background:var(--bg-surface); color:var(--text-primary); border:1px solid var(--border-subtle);" onclick="document.getElementById('localFilePicker').click()">📁 Load Local JSON</button>
-            <button class="picker-btn" style="background:var(--bg-surface); color:var(--text-primary); border:1px solid var(--border-subtle);" onclick="connectAndSyncSupabase()">🔄 Sync Supabase</button>
+            <button class="picker-btn" style="background:var(--bg-surface); color:var(--text-primary); border:1px solid var(--border-subtle);" onclick="connectAndSyncSupabase(true)">🔄 Sync Now</button>
             <button class="picker-btn" style="background:var(--bg-surface); color:var(--text-primary); border:1px solid var(--border-subtle);" onclick="exportJSON()">💾 Export (.json)</button>
         </div>
     </header>
 
     <!-- Main Workspace -->
-    <main>
+    <main id="mainWorkspace">
 
-        <!-- Profile Hero Banner -->
-        <section class="tester-hero">
-            <div class="hero-left">
-                <div class="avatar-box" id="dAvatar">AV</div>
-                <div class="hero-details">
-                    <h2 id="dName">Alex Vance <span class="status-pill">● Active in App</span></h2>
-                    <div class="hero-chips">
-                        <span class="chip" id="dDevice">MacBook Pro (M3 Max)</span>
-                        <span class="chip" id="dOS">macOS 15.1 Sequoia</span>
-                        <span class="chip" id="dVersion">PLUTO V3.5 (Alpha)</span>
-                        <span class="chip" id="dLayout">Layout: Bento Cards</span>
-                        <span id="dLastActive">Active 2 mins ago</span>
-                    </div>
-                </div>
+        <!-- Empty State (Shown when 0 testers exist) -->
+        <div class="empty-state-box" id="emptyStateBox">
+            <div style="font-size:32px;">🛰️</div>
+            <div class="empty-title">Waiting for Live Alpha Telemetry</div>
+            <div class="empty-sub">
+                No active testers found yet. Launch your macOS app from Xcode and interact with any tab (Habits, Day Planner, Focus, or Journal) to begin real-time streaming!
             </div>
-
-            <div style="text-align:right;">
-                <div style="font-size:10px; text-transform:uppercase; font-weight:700; color:var(--text-tertiary);">Tester ID</div>
-                <div style="font-family:var(--font-mono); font-size:13px; font-weight:700; color:var(--text-secondary);" id="dId">tester_001</div>
+            <div style="margin-top:8px;">
+                <button class="picker-btn" style="background:#ffffff; color:#000000; font-weight:700;" onclick="connectAndSyncSupabase(true)">🔄 Refresh Live Connection</button>
             </div>
-        </section>
+        </div>
 
-        <!-- 6 PLUTO Pillars Grid Matching macOS App 1:1 -->
-        <section class="pillars-grid">
+        <!-- Dynamic Active Tester Content (Hidden until tester exists) -->
+        <div id="testerContent" style="display:none; flex-direction:column; gap:24px;">
 
-            <!-- PILLAR 1: HABITS -->
-            <div class="pillar-card">
-                <div class="pillar-header">
-                    <div class="pillar-title-group">
-                        <span class="pillar-icon">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
-                        </span>
-                        <span class="pillar-title">Habits</span>
-                    </div>
-                    <span class="pillar-badge" id="p1Count">8 habits</span>
-                </div>
-                <div style="display:flex; flex-direction:column; gap:8px;" id="habitsList"></div>
-            </div>
-
-            <!-- PILLAR 2: TODAY -->
-            <div class="pillar-card">
-                <div class="pillar-header">
-                    <div class="pillar-title-group">
-                        <span class="pillar-icon">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
-                        </span>
-                        <span class="pillar-title">Today</span>
-                    </div>
-                    <div class="sub-nav-tabs">
-                        <button class="sub-nav-btn active">Plan</button>
-                        <button class="sub-nav-btn">List</button>
-                    </div>
-                </div>
-                <div style="display:flex; flex-direction:column; gap:8px;" id="tasksList"></div>
-            </div>
-
-            <!-- PILLAR 3: TIME -->
-            <div class="pillar-card">
-                <div class="pillar-header">
-                    <div class="pillar-title-group">
-                        <span class="pillar-icon">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="14" r="8"/><path d="M12 2v4"/><path d="M12 14l3-3"/></svg>
-                        </span>
-                        <span class="pillar-title">Time</span>
-                    </div>
-                    <div class="sub-nav-tabs">
-                        <button class="sub-nav-btn active">🔥 Pomodoro</button>
-                        <button class="sub-nav-btn">⏱️ Stopwatch</button>
-                        <button class="sub-nav-btn">⏳ Countdown</button>
-                    </div>
-                </div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                    <div style="background:var(--bg-surface); padding:14px; border-radius:8px; border:1px solid var(--border-subtle);">
-                        <div style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase; font-weight:700;">Active Soundscape</div>
-                        <div style="font-size:14px; font-weight:700; margin-top:3px;" id="p3Sound">Lo-Fi Focus Chords</div>
-                        <div style="font-size:11px; color:var(--text-secondary); margin-top:2px;">3D Spatial Audio Active</div>
-                    </div>
-                    <div style="background:var(--bg-surface); padding:14px; border-radius:8px; border:1px solid var(--border-subtle);">
-                        <div style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase; font-weight:700;">Sprint Cadence</div>
-                        <div style="font-size:14px; font-weight:700; margin-top:3px;" id="p3Sprint">25m Sprint / 5m Break</div>
-                        <div style="font-size:11px; color:var(--text-secondary); margin-top:2px;">Auto-start intervals ON</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- PILLAR 4: JOURNAL -->
-            <div class="pillar-card">
-                <div class="pillar-header">
-                    <div class="pillar-title-group">
-                        <span class="pillar-icon">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg>
-                        </span>
-                        <span class="pillar-title">Journal</span>
-                    </div>
-                    <div class="sub-nav-tabs">
-                        <button class="sub-nav-btn active">📑 Today's log <span class="sub-badge" id="jLogCount">4</span></button>
-                        <button class="sub-nav-btn">📈 Analyse <span style="font-size:9px; opacity:0.7;">month</span></button>
-                    </div>
-                </div>
-                <div style="display:flex; flex-direction:column; gap:12px;">
-
-                    <!-- Journal Micro-Habits & Daylight Flow Checklist -->
-                    <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-tertiary); letter-spacing:0.5px;">
-                        TODAY'S LOG & ROUTINES
-                    </div>
-                    <div style="display:flex; flex-direction:column; gap:6px;" id="journalHabitsList"></div>
-
-                    <!-- Daily Reflection Note -->
-                    <div style="background:var(--bg-surface); padding:12px 14px; border-radius:8px; border:1px solid var(--border-subtle); margin-top:4px;">
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
-                            <span style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase; font-weight:700;">Daily Reflection Note</span>
-                            <span style="font-size:10px; font-family:var(--font-mono); color:var(--accent-purple); background:rgba(168,85,247,0.12); padding:1px 6px; border-radius:4px;">92% Clarity</span>
-                        </div>
-                        <div style="font-size:12px; color:var(--text-primary); font-style:italic;" id="p4Note">
-                            "Clean progress on SwiftData container and background telemetry queue today. Focus felt sharp during afternoon coding sprints."
+            <!-- Profile Hero Banner -->
+            <section class="tester-hero">
+                <div class="hero-left">
+                    <div class="avatar-box" id="dAvatar">--</div>
+                    <div class="hero-details">
+                        <h2 id="dName">-- <span class="status-pill">● Active</span></h2>
+                        <div class="hero-chips">
+                            <span class="chip" id="dDevice">--</span>
+                            <span class="chip" id="dOS">--</span>
+                            <span class="chip" id="dVersion">PLUTO V3.5 (Alpha)</span>
+                            <span id="dLastActive">Active just now</span>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Sleep Metrics -->
-                    <div style="display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--text-secondary); padding:0 4px;">
-                        <span>Sleep Quality: <strong style="color:var(--accent-emerald);">Optimal (8.5h)</strong></span>
-                        <span>Bedtime: <strong>23:00 → 07:30</strong></span>
+                <div style="text-align:right;">
+                    <div style="font-size:10px; text-transform:uppercase; font-weight:700; color:var(--text-tertiary);">Tester ID</div>
+                    <div style="font-family:var(--font-mono); font-size:13px; font-weight:700; color:var(--text-secondary);" id="dId">--</div>
+                </div>
+            </section>
+
+            <!-- 6 PLUTO Pillars Grid Matching macOS App 1:1 -->
+            <section class="pillars-grid">
+
+                <!-- PILLAR 1: HABITS -->
+                <div class="pillar-card">
+                    <div class="pillar-header">
+                        <div class="pillar-title-group">
+                            <span class="pillar-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                            </span>
+                            <span class="pillar-title">Habits</span>
+                        </div>
+                        <span class="pillar-badge" id="p1Count">0 habits</span>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:8px;" id="habitsList">
+                        <div style="font-size:12px; color:var(--text-tertiary); text-align:center; padding:16px;">No habits logged yet</div>
                     </div>
                 </div>
-            </div>
 
-            <!-- PILLAR 5: LIFE -->
-            <div class="pillar-card">
-                <div class="pillar-header">
-                    <div class="pillar-title-group">
-                        <span class="pillar-icon">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m19 14-4-9-4 9"/><path d="M5 14a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M19 14a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/></svg>
-                        </span>
-                        <span class="pillar-title">Life</span>
+                <!-- PILLAR 2: TODAY -->
+                <div class="pillar-card">
+                    <div class="pillar-header">
+                        <div class="pillar-title-group">
+                            <span class="pillar-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                            </span>
+                            <span class="pillar-title">Today</span>
+                        </div>
+                        <div class="sub-nav-tabs">
+                            <button class="sub-nav-btn active">Plan</button>
+                            <button class="sub-nav-btn">List</button>
+                        </div>
                     </div>
-                    <span class="pillar-badge" id="bucketCount">4 Benchmarks</span>
-                </div>
-                <div style="display:flex; flex-direction:column; gap:10px;" id="bucketList"></div>
-            </div>
-
-            <!-- PILLAR 6: AUDIT -->
-            <div class="pillar-card">
-                <div class="pillar-header">
-                    <div class="pillar-title-group">
-                        <span class="pillar-icon">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/><circle cx="8" cy="6" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="10" cy="18" r="2"/></svg>
-                        </span>
-                        <span class="pillar-title">Audit</span>
+                    <div style="display:flex; flex-direction:column; gap:8px;" id="tasksList">
+                        <div style="font-size:12px; color:var(--text-tertiary); text-align:center; padding:16px;">No tasks logged yet</div>
                     </div>
-                    <span class="pillar-badge" id="auditCount">3 Goals</span>
                 </div>
-                <div style="display:flex; flex-direction:column; gap:12px;" id="auditGoalsList"></div>
-            </div>
 
-        </section>
+                <!-- PILLAR 3: TIME -->
+                <div class="pillar-card">
+                    <div class="pillar-header">
+                        <div class="pillar-title-group">
+                            <span class="pillar-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="14" r="8"/><path d="M12 2v4"/><path d="M12 14l3-3"/></svg>
+                            </span>
+                            <span class="pillar-title">Time</span>
+                        </div>
+                        <div class="sub-nav-tabs">
+                            <button class="sub-nav-btn active">🔥 Pomodoro</button>
+                            <button class="sub-nav-btn">⏱️ Stopwatch</button>
+                            <button class="sub-nav-btn">⏳ Countdown</button>
+                        </div>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        <div style="background:var(--bg-surface); padding:14px; border-radius:8px; border:1px solid var(--border-subtle);">
+                            <div style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase; font-weight:700;">Active Soundscape</div>
+                            <div style="font-size:14px; font-weight:700; margin-top:3px;" id="p3Sound">None Active</div>
+                            <div style="font-size:11px; color:var(--text-secondary); margin-top:2px;">3D Spatial Audio</div>
+                        </div>
+                        <div style="background:var(--bg-surface); padding:14px; border-radius:8px; border:1px solid var(--border-subtle);">
+                            <div style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase; font-weight:700;">Focus Time Today</div>
+                            <div style="font-size:14px; font-weight:700; margin-top:3px;" id="p3FocusTime">0m</div>
+                            <div style="font-size:11px; color:var(--text-secondary); margin-top:2px;" id="p3PomodoroCount">0 Pomodoros</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PILLAR 4: JOURNAL -->
+                <div class="pillar-card">
+                    <div class="pillar-header">
+                        <div class="pillar-title-group">
+                            <span class="pillar-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg>
+                            </span>
+                            <span class="pillar-title">Journal</span>
+                        </div>
+                        <div class="sub-nav-tabs">
+                            <button class="sub-nav-btn active">📑 Today's log <span class="sub-badge" id="jLogCount">0</span></button>
+                            <button class="sub-nav-btn">📈 Analyse <span style="font-size:9px; opacity:0.7;">month</span></button>
+                        </div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:12px;">
+
+                        <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-tertiary); letter-spacing:0.5px;">
+                            TODAY'S LOG & ROUTINES
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:6px;" id="journalHabitsList">
+                            <div style="font-size:12px; color:var(--text-tertiary); text-align:center; padding:10px;">No journal routines logged yet</div>
+                        </div>
+
+                        <div style="background:var(--bg-surface); padding:12px 14px; border-radius:8px; border:1px solid var(--border-subtle); margin-top:4px;">
+                            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                                <span style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase; font-weight:700;">Daily Reflection Note</span>
+                                <span style="font-size:10px; font-family:var(--font-mono); color:var(--accent-purple); background:rgba(168,85,247,0.12); padding:1px 6px; border-radius:4px;" id="p4Clarity">--</span>
+                            </div>
+                            <div style="font-size:12px; color:var(--text-primary); font-style:italic;" id="p4Note">
+                                No note logged for today yet.
+                            </div>
+                        </div>
+
+                        <div style="display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--text-secondary); padding:0 4px;">
+                            <span>Sleep Quality: <strong style="color:var(--accent-emerald);" id="p4SleepDuration">--</strong></span>
+                            <span>Bedtime: <strong id="p4Bedtime">--</strong></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PILLAR 5: LIFE -->
+                <div class="pillar-card">
+                    <div class="pillar-header">
+                        <div class="pillar-title-group">
+                            <span class="pillar-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m19 14-4-9-4 9"/><path d="M5 14a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M19 14a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/></svg>
+                            </span>
+                            <span class="pillar-title">Life</span>
+                        </div>
+                        <span class="pillar-badge" id="bucketCount">0 Benchmarks</span>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:10px;" id="bucketList">
+                        <div style="font-size:12px; color:var(--text-tertiary); text-align:center; padding:16px;">No bucket list items logged yet</div>
+                    </div>
+                </div>
+
+                <!-- PILLAR 6: AUDIT -->
+                <div class="pillar-card">
+                    <div class="pillar-header">
+                        <div class="pillar-title-group">
+                            <span class="pillar-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/><circle cx="8" cy="6" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="10" cy="18" r="2"/></svg>
+                            </span>
+                            <span class="pillar-title">Audit</span>
+                        </div>
+                        <span class="pillar-badge" id="auditCount">0 Goals</span>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:12px;" id="auditGoalsList">
+                        <div style="font-size:12px; color:var(--text-tertiary); text-align:center; padding:16px;">No strategic audit goals logged yet</div>
+                    </div>
+                </div>
+
+            </section>
+        </div>
 
     </main>
 
     <script>
-        const database = [
-            {
-                id: "tester_001",
-                name: "Alex Vance (Lead Architect)",
-                avatar: "AV",
-                device: "MacBook Pro (M3 Max)",
-                os: "macOS 15.1 Sequoia",
-                version: "PLUTO V3.5 (Alpha)",
-                layout: "Bento Ring Cards",
-                lastActive: "Active 2 mins ago",
-                sound: "Lo-Fi Focus Chords",
-                sprint: "25m Focus / 5m Break",
-                reflection: "“Clean progress on SwiftData container and background telemetry queue today. Focus felt sharp during afternoon coding sprints.”",
-                habits: [
-                    { name: "gym", status: "Pending check-in", color: "#38bdf8", streak: 1, isCompleted: false },
-                    { name: "Meditate", status: "Pending check-in", color: "#2dd4bf", streak: 1, isCompleted: false },
-                    { name: "Morning Run", status: "0 / 5 target", color: "#a855f7", streak: null, isCompleted: false },
-                    { name: "NO FastFood", status: "Pending check-in", color: "#f59e0b", streak: 1, isCompleted: false },
-                    { name: "reading", status: "0 / 5 target", color: "#10b981", streak: null, isCompleted: false },
-                    { name: "Running", status: "1 / 3 target", color: "#38bdf8", streak: 4, isCompleted: false },
-                    { name: "Running", status: "Completed today", color: "#2dd4bf", streak: 2, isCompleted: true },
-                    { name: "workout", status: "Pending check-in", color: "#f97316", streak: 1, isCompleted: false }
-                ],
-                tasks: [
-                    { time: "09:30 - 10:15", title: "Review Supabase Ingestion RLS Policies", priority: "P1 Urgent", done: true },
-                    { time: "14:00 - 15:00", title: "Optimize Neural Engine NLP Tokenizer", priority: "P2 Strategy", done: true },
-                    { time: "16:30 - 17:00", title: "Conduct Alpha Tester Walkthrough", priority: "P2 Strategy", done: false }
-                ],
-                journalHabits: [
-                    { name: "Cold Shower & 10m Breathwork", time: "Morning Routine", streak: 8, done: true },
-                    { name: "3 Daily Gratitude Highlights", time: "Daylight Flow", streak: 14, done: true },
-                    { name: "Mindful 20m Walking Session", time: "Afternoon", streak: 5, done: true },
-                    { name: "Magnesium & No Screens 1h before sleep", time: "Evening Routine", streak: 6, done: false }
-                ],
-                bucketList: [
-                    { title: "Witness Aurora Borealis in Northern Norway", notes: "Tromsø, Norway · Winter Expedition", horizon: "2027", isAchieved: false },
-                    { title: "Complete a Full Marathon (42.195 km)", notes: "Berlin or Tokyo Marathon", horizon: "2026", isAchieved: false },
-                    { title: "Design & Ship PLUTO App Version 3.5", notes: "Apple Silicon & SwiftData Ecosystem V3.5", horizon: "2026", isAchieved: true, achievedYear: "2026" },
-                    { title: "Achieve 15 Consecutive Clean Strict Pull-Ups", notes: "Calisthenics benchmark", horizon: "2026", isAchieved: true, achievedYear: "2026" }
-                ],
-                auditGoals: [
-                    {
-                        title: "Ship PLUTO App Version 3.5",
-                        horizon: "Q3 2026",
-                        progress: 0.80,
-                        engineHabit: "Deep Focus Coding · 60 min",
-                        checkpoints: [
-                            { text: "Local-First SwiftData schema architecture", done: true },
-                            { text: "Habit Heatmap & Streak Calculation engine", done: true },
-                            { text: "Supabase Ingestion Edge Function & Private Telemetry", done: true },
-                            { text: "Standup Onboarding with System Permissions", done: false }
-                        ]
-                    },
-                    {
-                        title: "Complete Half-Marathon Sub-1h45m",
-                        horizon: "Q4 2026",
-                        progress: 0.65,
-                        engineHabit: "Morning Sunlight & 10k Steps",
-                        checkpoints: [
-                            { text: "Build base aerobic zone 2 volume to 40km/week", done: true },
-                            { text: "Weekly 15km progressive tempo runs", done: true },
-                            { text: "Final taper and race day pacing strategy", done: false }
-                        ]
-                    },
-                    {
-                        title: "Deep Work Mastery: 1,000 Focus Hours",
-                        horizon: "2026 Annual",
-                        progress: 0.42,
-                        engineHabit: "3D Spatial Focus Sprint · 50 min",
-                        checkpoints: [
-                            { text: "Q1 baseline logged (250 hours)", done: true },
-                            { text: "Q2 sprint cadence maintained (500 hours)", done: false }
-                        ]
-                    }
-                ]
-            },
-            {
-                id: "tester_002",
-                name: "Sarah Chen (Design Director)",
-                avatar: "SC",
-                device: "Mac Studio (M2 Ultra)",
-                os: "macOS 14.6 Sonoma",
-                version: "PLUTO V3.5 (Alpha)",
-                layout: "Weekly Horizon Strips",
-                lastActive: "Active 14 mins ago",
-                sound: "432Hz Binaural Beat",
-                sprint: "50m Deep Block / 10m Break",
-                reflection: "“Calibrated dark mode contrast ratios and verified 5-minute snap physics on the day planner timeline.”",
-                habits: [
-                    { name: "gym", status: "Completed today", color: "#38bdf8", streak: 3, isCompleted: true },
-                    { name: "Meditate", status: "Completed today", color: "#2dd4bf", streak: 5, isCompleted: true },
-                    { name: "Design System Audit", status: "1 / 1 target", color: "#a855f7", streak: 9, isCompleted: true },
-                    { name: "reading", status: "0 / 5 target", color: "#10b981", streak: null, isCompleted: false }
-                ],
-                tasks: [
-                    { time: "10:00 - 10:45", title: "Inspect Day Planner 5m Snap Animations", priority: "P1 Urgent", done: true },
-                    { time: "11:30 - 12:15", title: "Calibrate Dark Mode Contrast Ratios", priority: "P2 Strategy", done: true }
-                ],
-                journalHabits: [
-                    { name: "Morning Matcha & Intention Setting", time: "Morning Routine", streak: 9, done: true },
-                    { name: "Design Journal Sketching", time: "Daylight Flow", streak: 5, done: true },
-                    { name: "Screen-Free Evening Wind Down", time: "Evening Routine", streak: 3, done: true }
-                ],
-                bucketList: [
-                    { title: "Design & Ship PLUTO App Version 3.5", notes: "PLUTO macOS & iOS Ecosystem V3.5", horizon: "2026", isAchieved: true, achievedYear: "2026" },
-                    { title: "Solo Scuba Dive Great Barrier Reef", notes: "Cairns, Australia", horizon: "Lifetime", isAchieved: false },
-                    { title: "Hike Torres del Paine Circuit in Patagonia", notes: "Chile · W-Trek Adventure", horizon: "2028", isAchieved: false }
-                ],
-                auditGoals: [
-                    {
-                        title: "Ship World-Class PLUTO V3.5 macOS UI",
-                        horizon: "Q3 2026",
-                        progress: 0.85,
-                        engineHabit: "Design System Token Audit",
-                        checkpoints: [
-                            { text: "12-color executive palette calibration", done: true },
-                            { text: "Day Planner 5m snap drag-and-drop physics", done: true },
-                            { text: "Touch ID Vault lock aesthetic review", done: false }
-                        ]
-                    }
-                ]
-            },
-            {
-                id: "tester_003",
-                name: "David Miller (Product VP)",
-                avatar: "DM",
-                device: "MacBook Air (M3)",
-                os: "macOS 15.0 Sequoia",
-                version: "PLUTO V3.5 (Alpha)",
-                layout: "Bento Ring Cards",
-                lastActive: "Active 1 hour ago",
-                sound: "Gentle Rain & Thunder",
-                sprint: "20m Focus / 5m Break",
-                reflection: "“Tested Siri Shortcuts for quick logging and ⌃⌥P global HUD overlay. Very responsive on Apple Silicon.”",
-                habits: [
-                    { name: "reading", status: "20 / 20 target", color: "#10b981", streak: 14, isCompleted: true },
-                    { name: "workout", status: "Pending check-in", color: "#f97316", streak: 7, isCompleted: false },
-                    { name: "NO FastFood", status: "Completed today", color: "#f59e0b", streak: 12, isCompleted: true }
-                ],
-                tasks: [
-                    { time: "08:30 - 08:45", title: "Test Siri Voice Shortcuts ('Hey Siri')", priority: "P3 Quick", done: true },
-                    { time: "09:00 - 09:20", title: "Test ⌃⌥P Global Hotkey HUD overlay", priority: "P2 Strategy", done: true }
-                ],
-                journalHabits: [
-                    { name: "Executive Daily Reflection Brief", time: "Morning Routine", streak: 12, done: true },
-                    { name: "10-Minute Japanese Vocab Flashcards", time: "Daylight Flow", streak: 7, done: true },
-                    { name: "Zero Blue Light 45m before bed", time: "Evening Routine", streak: 4, done: true }
-                ],
-                bucketList: [
-                    { title: "Complete Full Marathon (42.195 km)", notes: "Berlin or Tokyo Marathon", horizon: "2026", isAchieved: false },
-                    { title: "Build Custom Minimalist Wooden Cabin", notes: "Solar-powered off-grid sanctuary", horizon: "Lifetime", isAchieved: false },
-                    { title: "Master Japanese to Conversational Fluency", notes: "JLPT N3+ Standard", horizon: "2028", isAchieved: false }
-                ],
-                auditGoals: [
-                    {
-                        title: "Master Japanese to Conversational Fluency",
-                        horizon: "2028",
-                        progress: 0.35,
-                        engineHabit: "Read 20 Pages Executive Briefs",
-                        checkpoints: [
-                            { text: "Complete JLPT N5 vocabulary deck", done: true },
-                            { text: "JLPT N4 grammar structures review", done: false }
-                        ]
-                    }
-                ]
-            }
-        ];
+        // Supabase Live Ingestion Configuration
+        const supabaseUrl = "https://uxmgychsvouemrqzlswy.supabase.co";
+        const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4bWd5Y2hzdm91ZW1ycXpsc3d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2ODY5NDEsImV4cCI6MjEwMjI2Mjk0MX0.ZL8dPBFwJg-O9awTNJi2JeQSGNuU-CEBob0kBEHVrLM";
 
-        let activeIdx = 0;
+        // Dynamic State Container (100% Real Live Data)
+        let liveTesters = [];
+        let activeTesterIdx = 0;
+
+        function getAvatarInitials(name) {
+            if (!name) return "P";
+            const parts = name.trim().split(" ");
+            return parts.length >= 2 ? (parts[0][0] + parts[1][0]).toUpperCase() : name.substring(0, 2).toUpperCase();
+        }
 
         function loadTester(idx) {
-            activeIdx = idx;
-            document.querySelectorAll('.picker-btn').forEach((btn, i) => {
-                btn.classList.toggle('active', i === idx);
-            });
+            if (idx < 0 || idx >= liveTesters.length) return;
+            activeTesterIdx = idx;
             render();
         }
 
-        function render() {
-            const t = database[activeIdx];
+        async function connectAndSyncSupabase(showAlert = false) {
+            try {
+                const headers = { 
+                    "apikey": supabaseKey, 
+                    "Authorization": `Bearer ${supabaseKey}` 
+                };
+                
+                // 1. Fetch Real Testers
+                const testersRes = await fetch(`${supabaseUrl}/rest/v1/alpha_testers?select=*&order=last_active.desc`, { headers });
+                let rawTesters = [];
+                if (testersRes.ok) {
+                    rawTesters = await testersRes.json();
+                }
 
-            // Header Hero
-            document.getElementById('dAvatar').textContent = t.avatar;
+                // 2. Fetch Real Events
+                const eventsRes = await fetch(`${supabaseUrl}/rest/v1/alpha_events?select=*&order=timestamp.desc&limit=500`, { headers });
+                let rawEvents = [];
+                if (eventsRes.ok) {
+                    rawEvents = await eventsRes.json();
+                }
+
+                // 3. Fetch Real State Snapshots
+                const snapRes = await fetch(`${supabaseUrl}/rest/v1/alpha_state_snapshots?select=*&order=created_at.desc&limit=20`, { headers });
+                let rawSnapshots = [];
+                if (snapRes.ok) {
+                    rawSnapshots = await snapRes.json();
+                }
+
+                // Map Real Data into Dossier Profiles
+                processIncomingData(rawTesters, rawEvents, rawSnapshots);
+
+                if (showAlert) {
+                    alert(`✅ Synced with Supabase! Found ${liveTesters.length} active testers and ${rawEvents.length} telemetry events.`);
+                }
+                render();
+            } catch (err) {
+                if (showAlert) alert(`Sync error: ${err.message}`);
+            }
+        }
+
+        function processIncomingData(rawTesters, rawEvents, rawSnapshots) {
+            // Group events by tester_id
+            const testerMap = {};
+
+            // Initialize from testers table
+            rawTesters.forEach(t => {
+                testerMap[t.id] = {
+                    id: t.id,
+                    name: t.name || t.id,
+                    device: t.device_model || "Mac",
+                    os: t.macos_version || "macOS",
+                    version: t.app_version || "3.5.0 (Alpha)",
+                    lastActive: t.last_active ? new Date(t.last_active).toLocaleTimeString() : "Just now",
+                    habits: [],
+                    tasks: [],
+                    journalHabits: [],
+                    bucketList: [],
+                    auditGoals: [],
+                    sound: "None Active",
+                    focusSeconds: 0,
+                    pomodorosCompleted: 0,
+                    reflection: "",
+                    sleepHours: "--",
+                    bedtime: "--"
+                };
+            });
+
+            // If events exist for unknown tester, create stub
+            rawEvents.forEach(evt => {
+                const tId = evt.tester_id || "tester_001";
+                if (!testerMap[tId]) {
+                    testerMap[tId] = {
+                        id: tId,
+                        name: tId,
+                        device: "Mac",
+                        os: "macOS",
+                        version: "3.5.0 (Alpha)",
+                        lastActive: new Date(evt.timestamp).toLocaleTimeString(),
+                        habits: [],
+                        tasks: [],
+                        journalHabits: [],
+                        bucketList: [],
+                        auditGoals: [],
+                        sound: "None Active",
+                        focusSeconds: 0,
+                        pomodorosCompleted: 0,
+                        reflection: "",
+                        sleepHours: "--",
+                        bedtime: "--"
+                    };
+                }
+
+                const tester = testerMap[tId];
+                const p = evt.properties || {};
+
+                // Process Action Events
+                if (evt.event_name === 'habit_checked') {
+                    const hName = p.habit_name || 'Habit';
+                    let h = tester.habits.find(item => item.name.toLowerCase() === hName.toLowerCase());
+                    if (!h) {
+                        h = { name: hName, status: "Completed today", color: "#38bdf8", streak: p.current_streak || 1, isCompleted: true };
+                        tester.habits.unshift(h);
+                    } else {
+                        h.status = "Completed today";
+                        h.isCompleted = true;
+                        h.streak = p.current_streak || (h.streak + 1);
+                    }
+                } else if (evt.event_name === 'habit_created') {
+                    const hName = p.habit_name || 'New Habit';
+                    if (!tester.habits.some(item => item.name.toLowerCase() === hName.toLowerCase())) {
+                        tester.habits.unshift({ name: hName, status: "Pending check-in", color: "#a855f7", streak: null, isCompleted: false });
+                    }
+                } else if (evt.event_name === 'task_created') {
+                    const tTitle = p.title || 'Task';
+                    if (!tester.tasks.some(tk => tk.title === tTitle)) {
+                        tester.tasks.unshift({ time: "Today", title: tTitle, priority: "P2 Normal", done: false });
+                    }
+                } else if (evt.event_name === 'task_completed') {
+                    const t = tester.tasks.find(tk => tk.title === p.title);
+                    if (t) t.done = true;
+                } else if (evt.event_name === 'focus_session_completed') {
+                    tester.focusSeconds += (p.duration_seconds || 1500);
+                    tester.pomodorosCompleted += 1;
+                    if (p.sound_name) tester.sound = p.sound_name;
+                } else if (evt.event_name === 'sleep_logged') {
+                    tester.sleepHours = `${p.duration_hours || 8}h`;
+                    tester.bedtime = p.bedtime || "23:00";
+                }
+            });
+
+            // Process State Snapshots
+            rawSnapshots.forEach(snap => {
+                const tId = snap.tester_id;
+                if (testerMap[tId] && snap.snapshot_payload) {
+                    const data = snap.snapshot_payload;
+                    if (Array.isArray(data.total_habits)) {
+                        data.total_habits.forEach(bh => {
+                            if (!testerMap[tId].habits.some(h => h.name.toLowerCase() === bh.name.toLowerCase())) {
+                                testerMap[tId].habits.push({
+                                    name: bh.name,
+                                    status: bh.current_streak > 0 ? "Completed today" : "Pending check-in",
+                                    color: "#2dd4bf",
+                                    streak: bh.current_streak,
+                                    isCompleted: bh.current_streak > 0
+                                });
+                            }
+                        });
+                    }
+                }
+            });
+
+            liveTesters = Object.values(testerMap);
+        }
+
+        function render() {
+            const hasTesters = liveTesters.length > 0;
+            document.getElementById('emptyStateBox').style.display = hasTesters ? 'none' : 'flex';
+            document.getElementById('testerContent').style.display = hasTesters ? 'flex' : 'none';
+
+            // Render Dynamic Tester Switcher Buttons
+            const picker = document.getElementById('testerPicker');
+            if (!hasTesters) {
+                picker.innerHTML = '<div style="font-size:12px; color:var(--text-tertiary); padding:4px 8px;">Waiting for testers...</div>';
+                return;
+            }
+
+            picker.innerHTML = liveTesters.map((t, idx) => `
+                <button class="picker-btn ${idx === activeTesterIdx ? 'active' : ''}" onclick="loadTester(${idx})">
+                    👤 ${t.name} (${t.device})
+                </button>
+            `).join('');
+
+            // Render Active Tester Profile
+            const t = liveTesters[activeTesterIdx];
+            document.getElementById('dAvatar').textContent = getAvatarInitials(t.name);
             document.getElementById('dName').innerHTML = `${t.name} <span class="status-pill">● Active</span>`;
             document.getElementById('dDevice').textContent = t.device;
             document.getElementById('dOS').textContent = t.os;
             document.getElementById('dVersion').textContent = t.version;
-            document.getElementById('dLayout').textContent = `Layout: ${t.layout}`;
-            document.getElementById('dLastActive').textContent = t.lastActive;
+            document.getElementById('dLastActive').textContent = `Last active: ${t.lastActive}`;
             document.getElementById('dId').textContent = t.id;
 
-            // PILLAR 1: HABITS (Render exact rows from app)
+            // Pillar 1: Habits
             document.getElementById('p1Count').textContent = `${t.habits.length} habits`;
-            document.getElementById('habitsList').innerHTML = t.habits.map(h => `
+            document.getElementById('habitsList').innerHTML = t.habits.length > 0 ? t.habits.map(h => `
                 <div class="app-habit-row">
                     <div class="habit-left-group">
-                        <div class="habit-accent-line" style="background: ${h.color};"></div>
+                        <div class="habit-accent-line" style="background: ${h.color || '#38bdf8'};"></div>
                         <div class="habit-name-group">
                             <span class="habit-name-text">${h.name}</span>
                             <span class="habit-sub-text ${h.isCompleted ? 'completed' : ''}">${h.status}</span>
@@ -949,158 +1017,51 @@
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `).join('') : '<div style="font-size:12px; color:var(--text-tertiary); text-align:center; padding:16px;">No habits logged yet</div>';
 
-            // PILLAR 2: TODAY
-            document.getElementById('tasksList').innerHTML = t.tasks.map(task => `
+            // Pillar 2: Tasks
+            document.getElementById('tasksList').innerHTML = t.tasks.length > 0 ? t.tasks.map(task => `
                 <div class="time-block-row">
                     <span class="block-time">${task.time}</span>
                     <span class="block-title ${task.done ? 'block-done' : ''}">${task.done ? '✅' : '⏳'} ${task.title}</span>
                     <span class="block-priority">${task.priority}</span>
                 </div>
-            `).join('');
+            `).join('') : '<div style="font-size:12px; color:var(--text-tertiary); text-align:center; padding:16px;">No tasks logged yet</div>';
 
-            // PILLAR 3: TIME
+            // Pillar 3: Time
             document.getElementById('p3Sound').textContent = t.sound;
-            document.getElementById('p3Sprint').textContent = t.sprint;
+            document.getElementById('p3FocusTime').textContent = `${Math.round(t.focusSeconds / 60)}m`;
+            document.getElementById('p3PomodoroCount').textContent = `${t.pomodorosCompleted} Pomodoros completed`;
 
-            // PILLAR 4: JOURNAL
-            document.getElementById('p4Note').textContent = t.reflection;
+            // Pillar 4: Journal
             document.getElementById('jLogCount').textContent = t.journalHabits.length;
-            document.getElementById('journalHabitsList').innerHTML = t.journalHabits.map(jh => `
-                <div class="journal-routine-item">
-                    <div class="routine-name">
-                        <span>${jh.done ? '✅' : '⚪'}</span>
-                        <span style="color:${jh.done ? 'var(--text-primary)' : 'var(--text-tertiary)'};">${jh.name}</span>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <span style="font-size:10px; color:var(--text-tertiary); font-family:var(--font-mono);">${jh.time}</span>
-                        <span class="routine-flame">🔥 ${jh.streak}d</span>
-                    </div>
-                </div>
-            `).join('');
+            document.getElementById('p4Note').textContent = t.reflection || "No reflection note logged yet.";
+            document.getElementById('p4SleepDuration').textContent = t.sleepHours;
+            document.getElementById('p4Bedtime').textContent = t.bedtime;
 
-            // PILLAR 5: LIFE
+            // Pillar 5: Life
             document.getElementById('bucketCount').textContent = `${t.bucketList.length} Benchmarks`;
-            document.getElementById('bucketList').innerHTML = t.bucketList.map(b => `
+            document.getElementById('bucketList').innerHTML = t.bucketList.length > 0 ? t.bucketList.map(b => `
                 <div class="bucket-item-row">
                     <div class="bucket-title-group">
                         <span class="bucket-title">${b.title}</span>
                         <span class="bucket-notes">${b.notes}</span>
                     </div>
-                    <div>
-                        ${b.isAchieved 
-                            ? `<span class="achieved-badge">🏆 Achieved in ${b.achievedYear || '2026'}</span>` 
-                            : `<span class="target-badge">⏳ Target ${b.horizon}</span>`
-                        }
-                    </div>
+                    <div>${b.isAchieved ? '<span class="achieved-badge">🏆 Achieved</span>' : '<span class="target-badge">⏳ Target</span>'}</div>
                 </div>
-            `).join('');
+            `).join('') : '<div style="font-size:12px; color:var(--text-tertiary); text-align:center; padding:16px;">No bucket list items logged yet</div>';
 
-            // PILLAR 6: AUDIT
-            document.getElementById('auditCount').textContent = `${t.auditGoals.length} Strategic Goals`;
-            document.getElementById('auditGoalsList').innerHTML = t.auditGoals.map(g => `
+            // Pillar 6: Audit
+            document.getElementById('auditCount').textContent = `${t.auditGoals.length} Goals`;
+            document.getElementById('auditGoalsList').innerHTML = t.auditGoals.length > 0 ? t.auditGoals.map(g => `
                 <div class="audit-goal-card">
                     <div class="audit-top">
                         <span class="audit-title">${g.title}</span>
-                        <span class="horizon-pill">${g.horizon}</span>
+                        <span class="horizon-pill">${g.horizon || '2026'}</span>
                     </div>
-                    <div style="font-size:11px; color:var(--text-secondary); margin-top:-4px;">
-                        Engine Habit: <strong style="color:var(--text-primary);">${g.engineHabit}</strong> · ${(g.progress * 100).toFixed(0)}% Complete
-                    </div>
-                    <div class="prog-bg">
-                        <div class="prog-bar" style="width:${g.progress * 100}%;"></div>
-                    </div>
-                    <div class="checkpoint-list">
-                        ${g.checkpoints.map(cp => `
-                            <div class="checkpoint-row">
-                                <span>${cp.done ? '✅' : '⚪'}</span>
-                                <span style="color:${cp.done ? 'var(--text-primary)' : 'var(--text-tertiary)'};">${cp.text}</span>
-                            </div>
-                        `).join('')}
-                    </div>
+                    <div class="prog-bg"><div class="prog-bar" style="width:${(g.progress || 0.5) * 100}%;"></div></div>
                 </div>
-            `).join('');
-        }
-
-        function exportJSON() {
-            const t = database[activeIdx];
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(t, null, 2));
-            const a = document.createElement('a');
-            a.setAttribute("href", dataStr);
-            a.setAttribute("download", `pluto_tester_${t.id}_full_dossier.json`);
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-        }
-
-        // Supabase Ingestion & Configuration Engine
-        let supabaseUrl = localStorage.getItem('pluto_supabase_url') || "https://uxmgychsvouemrqzlswy.supabase.co";
-        let supabaseKey = localStorage.getItem('pluto_supabase_key') || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4bWd5Y2hzdm91ZW1ycXpsc3d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2ODY5NDEsImV4cCI6MjEwMjI2Mjk0MX0.ZL8dPBFwJg-O9awTNJi2JeQSGNuU-CEBob0kBEHVrLM";
-
-        function openSupabaseModal() {
-            const enteredUrl = prompt("Enter your Supabase Project URL:", supabaseUrl);
-            if (!enteredUrl) return;
-            const enteredKey = prompt("Enter your Supabase Anon Key:", supabaseKey);
-            if (!enteredKey) return;
-
-            supabaseUrl = enteredUrl.trim().replace(/\/$/, "");
-            supabaseKey = enteredKey.trim();
-
-            localStorage.setItem('pluto_supabase_url', supabaseUrl);
-            localStorage.setItem('pluto_supabase_key', supabaseKey);
-
-            connectAndSyncSupabase(true);
-        }
-
-        async function connectAndSyncSupabase(showAlert = false) {
-            if (!supabaseUrl || !supabaseKey) return;
-
-            try {
-                const headers = { 
-                    "apikey": supabaseKey, 
-                    "Authorization": `Bearer ${supabaseKey}` 
-                };
-                
-                // Fetch events
-                const res = await fetch(`${supabaseUrl}/rest/v1/alpha_events?select=*&order=timestamp.desc&limit=100`, { headers });
-                
-                if (res.ok) {
-                    const rawEvents = await res.json();
-                    if (rawEvents && rawEvents.length > 0) {
-                        rawEvents.forEach(evt => {
-                            const p = evt.properties || {};
-                            if (evt.event_name === 'habit_checked') {
-                                const hName = p.habit_name || 'gym';
-                                const existing = database[0].habits.find(h => h.name.toLowerCase() === hName.toLowerCase());
-                                if (existing) {
-                                    existing.streak = p.current_streak || (existing.streak ? existing.streak + 1 : 1);
-                                    existing.status = "Completed today";
-                                    existing.isCompleted = true;
-                                } else {
-                                    database[0].habits.unshift({ name: hName, status: "Completed today", color: "#38bdf8", streak: 1, isCompleted: true });
-                                }
-                            } else if (evt.event_name === 'task_created') {
-                                const tTitle = p.title || "New Task";
-                                if (!database[0].tasks.some(tk => tk.title === tTitle)) {
-                                    database[0].tasks.unshift({ time: "Today", title: tTitle, priority: "P2 Normal", done: false });
-                                }
-                            } else if (evt.event_name === 'task_completed') {
-                                const t = database[0].tasks.find(tk => tk.title === p.title);
-                                if (t) t.done = true;
-                            } else if (evt.event_name === 'focus_session_completed') {
-                                database[0].focusTime = `${p.duration_seconds ? Math.round(p.duration_seconds / 60) : 25}m`;
-                            }
-                        });
-                        if (showAlert) alert(`✅ Connected! Ingested ${rawEvents.length} live events.`);
-                        render();
-                    } else if (showAlert) {
-                        alert("✅ Connected to Supabase! (Table is currently empty. Check off a habit in your Mac app to send events).");
-                    }
-                }
-            } catch (err) {
-                if (showAlert) alert(`Fetch error: ${err.message}`);
-            }
+            `).join('') : '<div style="font-size:12px; color:var(--text-tertiary); text-align:center; padding:16px;">No strategic audit goals logged yet</div>';
         }
 
         function handleLocalFile(event) {
@@ -1110,40 +1071,33 @@
             reader.onload = (e) => {
                 try {
                     const parsed = JSON.parse(e.target.result);
-                    let count = 0;
-                    if (Array.isArray(parsed)) {
-                        parsed.forEach(evt => {
-                            count++;
-                            const p = evt.properties || {};
-                            if (evt.event_name === 'habit_checked') {
-                                const hName = p.habit_name || 'gym';
-                                const existing = database[0].habits.find(h => h.name.toLowerCase() === hName.toLowerCase());
-                                if (existing) {
-                                    existing.streak = p.current_streak || (existing.streak ? existing.streak + 1 : 1);
-                                    existing.status = "Completed today";
-                                    existing.isCompleted = true;
-                                } else {
-                                    database[0].habits.unshift({ name: hName, status: "Completed today", color: "#38bdf8", streak: 1, isCompleted: true });
-                                }
-                            } else if (evt.event_name === 'task_created') {
-                                database[0].tasks.unshift({ time: "Today", title: p.title || "New Task", priority: "P2 Normal", done: false });
-                            }
-                        });
-                    }
+                    let rawEvents = Array.isArray(parsed) ? parsed : (parsed.events || []);
+                    processIncomingData([], rawEvents, []);
                     render();
-                    alert(`✅ Successfully loaded ${count} events from ${file.name}!`);
+                    alert(`✅ Loaded ${rawEvents.length} events from ${file.name}!`);
                 } catch (err) {
-                    alert(`Invalid JSON format: ${err.message}`);
+                    alert(`Invalid JSON: ${err.message}`);
                 }
             };
             reader.readAsText(file);
         }
 
+        function exportJSON() {
+            if (liveTesters.length === 0) return alert("No tester data to export.");
+            const t = liveTesters[activeTesterIdx];
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(t, null, 2));
+            const a = document.createElement('a');
+            a.setAttribute("href", dataStr);
+            a.setAttribute("download", `pluto_tester_${t.id}_live_dossier.json`);
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        }
+
         window.onload = () => {
-            loadTester(0);
             connectAndSyncSupabase(false);
-            // Automatic live background polling every 8 seconds
-            setInterval(() => connectAndSyncSupabase(false), 8000);
+            // Auto-refresh from Supabase every 6 seconds
+            setInterval(() => connectAndSyncSupabase(false), 6000);
         };
     </script>
 </body>
