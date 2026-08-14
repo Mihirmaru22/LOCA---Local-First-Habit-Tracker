@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import AVFoundation
 import AppKit
+import Combine
 
 // MARK: - JournalMediaManager
 
@@ -52,7 +53,8 @@ final class JournalMediaManager {
 
 // MARK: - AppleJournalRichTextController
 
-final class AppleJournalRichTextController: ObservableObject {
+final class AppleJournalRichTextController: NSObject, ObservableObject {
+    @Published var changeCounter: Int = 0
     weak var textView: NSTextView?
     var onTextChange: ((String, Data?) -> Void)?
 
