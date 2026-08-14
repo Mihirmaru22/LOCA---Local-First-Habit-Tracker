@@ -49,6 +49,7 @@ struct MacRootView: View {
     @State private var selectedHabit:       HabitBoard?      = nil
     @State private var selectedTodo:        TodoItem?        = nil
     @State private var selectedJournalRow:  JournalRow?      = .todaysLog
+    @State private var selectedJournalNote: JournalNote?     = nil
     @State private var selectedLifeRow:     LifeRow?         = .blueprint
     @State private var columnVisibility:    NavigationSplitViewVisibility = .all
     @AppStorage("has_completed_onboarding_v3") private var hasCompletedOnboarding: Bool = false
@@ -108,10 +109,11 @@ struct MacRootView: View {
                         )
                 } content: {
                     MacContentColumn(section: selectedSection,
-                                     selectedHabit:      $selectedHabit,
-                                     selectedTodo:       $selectedTodo,
-                                     selectedJournalRow: $selectedJournalRow,
-                                     selectedLifeRow:    $selectedLifeRow)
+                                     selectedHabit:       $selectedHabit,
+                                     selectedTodo:        $selectedTodo,
+                                     selectedJournalRow:  $selectedJournalRow,
+                                     selectedJournalNote: $selectedJournalNote,
+                                     selectedLifeRow:     $selectedLifeRow)
                         .navigationSplitViewColumnWidth(
                             min:   DS.Mac.contentMinWidth,
                             ideal: DS.Mac.contentIdealWidth,
@@ -126,10 +128,11 @@ struct MacRootView: View {
                             )
                     } else {
                         MacDetailColumn(section: selectedSection,
-                                         selectedHabit:      $selectedHabit,
-                                         selectedTodo:       $selectedTodo,
-                                         selectedJournalRow: $selectedJournalRow,
-                                         selectedLifeRow:    $selectedLifeRow)
+                                         selectedHabit:       $selectedHabit,
+                                         selectedTodo:        $selectedTodo,
+                                         selectedJournalRow:  $selectedJournalRow,
+                                         selectedJournalNote: $selectedJournalNote,
+                                         selectedLifeRow:     $selectedLifeRow)
                             .navigationSplitViewColumnWidth(
                                 min:   DS.Mac.detailMinWidth,
                                 ideal: DS.Mac.detailIdealWidth
@@ -231,10 +234,11 @@ struct MacRootView: View {
 private struct MacContentColumn: View {
 
     let section: MacSection?
-    @Binding var selectedHabit:      HabitBoard?
-    @Binding var selectedTodo:       TodoItem?
-    @Binding var selectedJournalRow: JournalRow?
-    @Binding var selectedLifeRow:    LifeRow?
+    @Binding var selectedHabit:       HabitBoard?
+    @Binding var selectedTodo:        TodoItem?
+    @Binding var selectedJournalRow:  JournalRow?
+    @Binding var selectedJournalNote: JournalNote?
+    @Binding var selectedLifeRow:     LifeRow?
 
     var body: some View {
         switch section {
@@ -243,7 +247,7 @@ private struct MacContentColumn: View {
         case .today:
             MacTodoContentColumn(selection: $selectedTodo)
         case .journal:
-            MacJournalContentColumn(selectedRow: $selectedJournalRow)
+            MacJournalContentColumn(selectedRow: $selectedJournalRow, selectedNote: $selectedJournalNote)
         case .life:
             MacLifeContentColumn(selectedRow: $selectedLifeRow)
         case .audit, .settings, .time:
@@ -260,10 +264,11 @@ private struct MacContentColumn: View {
 private struct MacDetailColumn: View {
 
     let section: MacSection?
-    @Binding var selectedHabit:      HabitBoard?
-    @Binding var selectedTodo:       TodoItem?
-    @Binding var selectedJournalRow: JournalRow?
-    @Binding var selectedLifeRow:    LifeRow?
+    @Binding var selectedHabit:       HabitBoard?
+    @Binding var selectedTodo:        TodoItem?
+    @Binding var selectedJournalRow:  JournalRow?
+    @Binding var selectedJournalNote: JournalNote?
+    @Binding var selectedLifeRow:     LifeRow?
 
     var body: some View {
         switch section {
@@ -272,7 +277,7 @@ private struct MacDetailColumn: View {
         case .today:
             MacTodoDetailColumn(item: $selectedTodo)
         case .journal:
-            MacJournalDetailColumn(selectedRow: $selectedJournalRow)
+            MacJournalDetailColumn(selectedRow: $selectedJournalRow, selectedNote: $selectedJournalNote)
         case .life:
             MacLifeDetailColumn(selectedRow: selectedLifeRow)
         case .time:

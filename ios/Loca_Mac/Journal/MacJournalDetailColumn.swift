@@ -6,14 +6,14 @@ import SwiftUI
 ///
 /// Supports:
 /// - `Today's log`: Daylight Flow Routines & Sleep Tracker (`MacJournalCollect`)
-/// - `Notes`: 1:1 Apple Journal Canvas with Floating Capsule, Photos, Voice Memo Studio (`MacAppleJournalView`)
+/// - `Notes`: Full-Width 1:1 Apple Journal Canvas with Floating Capsule, Photos, Voice Memo Studio (`AppleJournalEditorCanvas`)
 /// - `Analyse`: Monthly Consistency & Correlations (`MacJournalAnalyse`)
 struct MacJournalDetailColumn: View {
 
     @Binding var selectedRow: JournalRow?
+    @Binding var selectedNote: JournalNote?
 
     @State private var selectedDate: Date = Calendar.current.startOfDay(for: .now)
-    @State private var detailMode: JournalDetailMode = .collect
     @State private var showDatePicker = false
 
     var body: some View {
@@ -23,34 +23,31 @@ struct MacJournalDetailColumn: View {
                 Divider()
             }
 
-            switch selectedRow {
+            switch selectedRow ?? .todaysLog {
             case .notes:
-                MacAppleJournalView()
+                if let note = selectedNote {
+                    AppleJournalEditorCanvas(note: note)
+                } else {
+                    ContentUnavailableView {
+                        Label("No Entry Selected", systemImage: "square.and.pencil")
+                    } description: {
+                        Text("Choose an entry from the list or click New Entry.")
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(red: 0.08, green: 0.07, blue: 0.12))
+                }
             case .analyse:
                 MacJournalAnalyse(selectedDate: selectedDate)
-            default:
-                switch detailMode {
-                case .collect:
-                    MacJournalCollect(selectedDate: selectedDate)
-                case .notes:
-                    MacAppleJournalView()
-                case .analyse:
-                    MacJournalAnalyse(selectedDate: selectedDate)
-                }
-            }
-        }
-        .onChange(of: selectedRow) { _, newRow in
-            if let newRow {
-                detailMode = newRow.defaultDetailMode
+            case .todaysLog:
+                MacJournalCollect(selectedDate: selectedDate)
             }
         }
     }
 
-    // MARK: - Header
+    // MARK: - Header (Used for Today's log and Analyse)
 
     private var journalHeader: some View {
         HStack(alignment: .center, spacing: DS.Space.lg) {
-            // Left: Title + Date Navigation underneath
             VStack(alignment: .leading, spacing: 4) {
                 Text(headerTitle)
                     .font(DS.Text.title)
@@ -67,18 +64,6 @@ struct MacJournalDetailColumn: View {
             }
 
             Spacer(minLength: DS.Space.md)
-
-            // Right: Segmented Mode Toggle (Collect | Analyse) for Today's log
-            if selectedRow == .todaysLog || selectedRow == nil {
-                Picker("Mode", selection: $detailMode) {
-                    ForEach(JournalDetailMode.allCases.filter { $0 != .notes }) { m in
-                        Text(m.rawValue).tag(m)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .fixedSize()
-            }
         }
         .padding(.horizontal, DS.Space.lg)
         .padding(.vertical, DS.Space.md)
@@ -226,17 +211,5 @@ private struct JournalDatePickerPopover: View {
         }
         .padding(DS.Space.md)
         .frame(width: 280)
-    }
-}
-
-// MARK: - Placeholder (no row selected)
-
-struct MacJournalDetailPlaceholder: View {
-    var body: some View {
-        ContentUnavailableView(
-            "Select a Row",
-            systemImage: "book.closed",
-            description: Text("Choose Today's log, Notes, or Analyse.")
-        )
     }
 }

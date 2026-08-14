@@ -2,12 +2,12 @@ import SwiftUI
 import SwiftData
 import AVFoundation
 
-// MARK: - MacAppleJournalView (Apple Journal Native Canvas Clone)
+// MARK: - AppleJournalEntriesList (Middle Column Content for Notes)
 
-/// 1:1 Apple Journal Experience for macOS with floating toolbar capsule,
-/// typography popover, rich attachments, and side Audio Recording Studio.
-struct MacAppleJournalView: View {
+/// Middle column list of Apple Journal entries with Search, Bookmarks filter, and + New Entry.
+struct AppleJournalEntriesList: View {
 
+    @Binding var selectedNote: JournalNote?
     @Environment(\.modelContext) private var modelContext
     @Query(sort: [SortDescriptor(\JournalNote.date, order: .reverse)])
     private var allNotes: [JournalNote]
@@ -16,119 +16,94 @@ struct MacAppleJournalView: View {
         allNotes.filter { !$0.isArchived }
     }
 
-    @State private var selectedNote: JournalNote? = nil
-    @State private var isCreatingNew = false
     @State private var searchText = ""
     @State private var filterBookmarkedOnly = false
 
     var body: some View {
-        HStack(spacing: 0) {
-            // Left List: Past Journal Entries Stream
-            VStack(spacing: 0) {
-                // Header & Search
-                VStack(spacing: 8) {
-                    HStack {
-                        Text("Journal Entries")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(DS.Color.textPrimary)
+        VStack(spacing: 0) {
+            // Search & Filter Header
+            VStack(spacing: 8) {
+                HStack {
+                    Text("\(activeNotes.count) entries")
+                        .font(DS.Text.caption)
+                        .foregroundStyle(DS.Color.textTertiary)
 
-                        Spacer()
+                    Spacer()
 
-                        Button {
-                            createNewEntry()
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "plus")
-                                Text("New Entry")
-                            }
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(Color(red: 0.38, green: 0.45, blue: 0.98), in: RoundedRectangle(cornerRadius: 6))
+                    Button {
+                        createNewEntry()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "plus")
+                            Text("New Entry")
                         }
-                        .buttonStyle(.plain)
-                    }
-
-                    // Search & Filter
-                    HStack(spacing: 8) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "magnifyingglass")
-                                .font(.system(size: 11))
-                                .foregroundStyle(DS.Color.textTertiary)
-                            TextField("Search entries…", text: $searchText)
-                                .font(.system(size: 11))
-                                .textFieldStyle(.plain)
-                        }
-                        .padding(.horizontal, 8)
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 9)
                         .padding(.vertical, 5)
-                        .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 6))
-
-                        Button {
-                            filterBookmarkedOnly.toggle()
-                        } label: {
-                            Image(systemName: filterBookmarkedOnly ? "bookmark.fill" : "bookmark")
-                                .font(.system(size: 12))
-                                .foregroundStyle(filterBookmarkedOnly ? Color.yellow : DS.Color.textTertiary)
-                                .padding(5)
-                                .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 6))
-                        }
-                        .buttonStyle(.plain)
-                        .help("Filter Bookmarked")
+                        .background(Color(red: 0.38, green: 0.45, blue: 0.98), in: RoundedRectangle(cornerRadius: 6))
                     }
+                    .buttonStyle(.plain)
+                    .keyboardShortcut("n", modifiers: .command)
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
 
-                Divider()
+                // Search Bar + Bookmark Filter Toggle
+                HStack(spacing: 6) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 11))
+                            .foregroundStyle(DS.Color.textTertiary)
+                        TextField("Search entries…", text: $searchText)
+                            .font(.system(size: 11))
+                            .textFieldStyle(.plain)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 6))
 
-                // Entries Stream
-                ScrollView {
-                    LazyVStack(spacing: 8) {
-                        ForEach(filteredNotes) { note in
-                            AppleJournalEntryCard(
-                                note: note,
-                                isSelected: selectedNote?.id == note.id,
-                                onSelect: { selectedNote = note }
-                            )
-                        }
+                    Button {
+                        filterBookmarkedOnly.toggle()
+                    } label: {
+                        Image(systemName: filterBookmarkedOnly ? "bookmark.fill" : "bookmark")
+                            .font(.system(size: 11))
+                            .foregroundStyle(filterBookmarkedOnly ? Color.yellow : DS.Color.textTertiary)
+                            .padding(5)
+                            .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 6))
                     }
-                    .padding(12)
-                }
-                .overlay {
-                    if filteredNotes.isEmpty {
-                        ContentUnavailableView {
-                            Label("No Entries", systemImage: "book.pages")
-                        } description: {
-                            Text("Click + New Entry to write your first Apple Journal note.")
-                        }
-                    }
+                    .buttonStyle(.plain)
+                    .help("Filter Bookmarked Only")
                 }
             }
-            .frame(width: 280)
-            .background(DS.Color.surface)
+            .padding(.horizontal, DS.Space.md)
+            .padding(.vertical, 10)
 
             Divider()
 
-            // Right Canvas: Apple Journal Editor
-            if let note = selectedNote {
-                AppleJournalEditorCanvas(
-                    note: note,
-                    onClose: {
-                        selectedNote = nil
+            // Entries List
+            ScrollView {
+                LazyVStack(spacing: 6) {
+                    ForEach(filteredNotes) { note in
+                        AppleJournalEntryCard(
+                            note: note,
+                            isSelected: selectedNote?.id == note.id,
+                            onSelect: { 
+                                selectedNote = note
+                                Haptics.selection()
+                            }
+                        )
                     }
-                )
-            } else {
-                VStack(spacing: 12) {
-                    Image(systemName: "square.and.pencil")
-                        .font(.system(size: 38))
-                        .foregroundStyle(DS.Color.textTertiary.opacity(0.6))
-                    Text("Select a journal entry or click New Entry to start writing")
-                        .font(DS.Text.caption)
-                        .foregroundStyle(DS.Color.textSecondary)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color(red: 0.08, green: 0.07, blue: 0.12))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+            }
+            .overlay {
+                if filteredNotes.isEmpty {
+                    ContentUnavailableView {
+                        Label("No Entries", systemImage: "book.pages")
+                    } description: {
+                        Text("Click + New Entry to create your first Apple Journal note.")
+                    }
+                }
             }
         }
         .onAppear {
@@ -162,7 +137,7 @@ struct MacAppleJournalView: View {
 
 // MARK: - AppleJournalEntryCard
 
-private struct AppleJournalEntryCard: View {
+struct AppleJournalEntryCard: View {
     let note: JournalNote
     let isSelected: Bool
     let onSelect: () -> Void
@@ -176,7 +151,7 @@ private struct AppleJournalEntryCard: View {
     }()
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 5) {
             HStack {
                 Text(Self.dayFormatter.string(from: note.date))
                     .font(.system(size: 10, weight: .bold))
@@ -186,19 +161,19 @@ private struct AppleJournalEntryCard: View {
 
                 if note.hasAudio {
                     Image(systemName: "waveform")
-                        .font(.system(size: 10))
+                        .font(.system(size: 9))
                         .foregroundStyle(.pink)
                 }
 
                 if note.isBookmarked {
                     Image(systemName: "bookmark.fill")
-                        .font(.system(size: 10))
+                        .font(.system(size: 9))
                         .foregroundStyle(.yellow)
                 }
             }
 
             Text(note.title.isEmpty ? (note.text.isEmpty ? "Untitled Entry" : note.text) : note.title)
-                .font(.system(size: 13, weight: .bold))
+                .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(DS.Color.textPrimary)
                 .lineLimit(1)
 
@@ -219,7 +194,7 @@ private struct AppleJournalEntryCard: View {
                 .foregroundStyle(DS.Color.textTertiary)
             }
         }
-        .padding(10)
+        .padding(9)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             isSelected
@@ -237,16 +212,14 @@ private struct AppleJournalEntryCard: View {
     }
 }
 
-// MARK: - AppleJournalEditorCanvas
+// MARK: - AppleJournalEditorCanvas (Right Detail Pane)
 
-private struct AppleJournalEditorCanvas: View {
+struct AppleJournalEditorCanvas: View {
     @Bindable var note: JournalNote
-    let onClose: () -> Void
 
     @Environment(\.modelContext) private var modelContext
     @State private var showAudioDrawer = false
     @State private var showFormattingPopover = false
-    @State private var showPhotoPicker = false
     @State private var isRecording = false
     @State private var recordTime: Double = 0
     @State private var timer: Timer? = nil
@@ -259,24 +232,11 @@ private struct AppleJournalEditorCanvas: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            // Main Journal Sheet
+            // Main Journal Canvas
             VStack(spacing: 0) {
 
-                // Top Floating Apple Journal Navigation & Tool Bar
+                // Top Floating Apple Journal Navigation & Tool Bar (Screenshot 2)
                 HStack(spacing: 12) {
-                    // Back Button
-                    Button {
-                        saveNote()
-                        onClose()
-                    } label: {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(DS.Color.textSecondary)
-                            .padding(6)
-                            .background(DS.Color.surfaceRecessed, in: Circle())
-                    }
-                    .buttonStyle(.plain)
-
                     // Header Timestamp
                     Text(Self.headerDateFormatter.string(from: note.date))
                         .font(.system(size: 13, weight: .bold))
@@ -419,7 +379,7 @@ private struct AppleJournalEditorCanvas: View {
                             .foregroundStyle(DS.Color.textPrimary)
                             .scrollContentBackground(.hidden)
                             .background(Color.clear)
-                            .frame(minHeight: 380)
+                            .frame(minHeight: 400)
                             .onChange(of: note.text) { _, _ in saveNote() }
 
                         // Photo Attachment Mockup
@@ -675,7 +635,7 @@ private struct AppleJournalEditorCanvas: View {
 
 // MARK: - AppleJournalTypographyPopover (Screenshot 3 Matching)
 
-private struct AppleJournalTypographyPopover: View {
+struct AppleJournalTypographyPopover: View {
     @State private var isBold = false
     @State private var isItalic = false
     @State private var isUnderline = false
