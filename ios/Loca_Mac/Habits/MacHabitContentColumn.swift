@@ -21,7 +21,7 @@ enum HabitDesignVariant: String, CaseIterable, Identifiable {
 
 // MARK: - MacHabitContentColumn (H1)
 
-/// Middle column for the Habits section with a polished Layout dropdown menu.
+/// Middle column for the Habits section with Layout dropdown and Quantitative/Binary logging support.
 struct MacHabitContentColumn: View {
 
     @Binding var selection: HabitBoard?
@@ -76,11 +76,11 @@ struct MacHabitContentColumn: View {
                 VStack(alignment: .leading, spacing: DS.Space.md) {
                     switch selectedVariant {
                     case .habit1:
-                        Habit1BentoRingsView(boards: boards, selection: $selection, onCheck: checkInBinary)
+                        Habit1BentoRingsView(boards: boards, selection: $selection, onCheck: handleHabitAction, onAddAmount: logAmountDirect)
                     case .habit2:
-                        Habit2HorizonStripsView(boards: boards, selection: $selection, onCheck: checkInBinary)
+                        Habit2HorizonStripsView(boards: boards, selection: $selection, onCheck: handleHabitAction)
                     case .habit3:
-                        Habit3ProgressMatrixView(boards: boards, selection: $selection, onCheck: checkInBinary)
+                        Habit3ProgressMatrixView(boards: boards, selection: $selection, onCheck: handleHabitAction, onAddAmount: logAmountDirect)
                     }
                 }
                 .padding(.horizontal, DS.Space.md)
@@ -110,11 +110,39 @@ struct MacHabitContentColumn: View {
         }
     }
 
-    private func checkInBinary(_ board: HabitBoard) {
+    private func handleHabitAction(_ board: HabitBoard) {
         do {
-            try CheckInWriter.toggleBinary(board: board, context: modelContext)
-            PlutoTelemetryEngine.shared.trackHabitCheckIn(board: board, value: board.effectiveTarget, isDone: true)
+            if board.metric == .binary {
+                try CheckInWriter.toggleBinary(board: board, context: modelContext)
+                PlutoTelemetryEngine.shared.trackHabitCheckIn(board: board, value: board.effectiveTarget, isDone: true)
+            } else {
+                let todayLogs = (board.logs ?? []).filter { $0.timestamp.isToday() && $0.archivedAt == nil }
+                let currentTotal = todayLogs.reduce(0.0) { $0 + $1.value }
+                if currentTotal >= board.effectiveTarget {
+                    // Already complete: reset/delete today's logs
+                    for entry in todayLogs {
+                        try CheckInWriter.delete(entry, board: board, context: modelContext)
+                    }
+                } else {
+                    // Incomplete: fill remaining target
+                    let remaining = max(1.0, board.effectiveTarget - currentTotal)
+                    try CheckInWriter.insert(value: remaining, board: board, context: modelContext)
+                    PlutoTelemetryEngine.shared.trackHabitCheckIn(board: board, value: remaining, isDone: true)
+                }
+            }
             Haptics.impact(.rigid)
+        } catch {
+            showCheckInError = true
+        }
+    }
+
+    private func logAmountDirect(_ amount: Double, for board: HabitBoard) {
+        do {
+            try CheckInWriter.insert(value: amount, board: board, context: modelContext)
+            let todayLogs = (board.logs ?? []).filter { $0.timestamp.isToday() && $0.archivedAt == nil }
+            let total = todayLogs.reduce(0.0) { $0 + $1.value }
+            PlutoTelemetryEngine.shared.trackHabitCheckIn(board: board, value: amount, isDone: total >= board.effectiveTarget)
+            Haptics.impact(.light)
         } catch {
             showCheckInError = true
         }
@@ -128,11 +156,17 @@ private struct Habit1BentoRingsView: View {
     let boards: [HabitBoard]
     @Binding var selection: HabitBoard?
     let onCheck: (HabitBoard) -> Void
+    let onAddAmount: (Double, HabitBoard) -> Void
 
     var body: some View {
         VStack(spacing: 6) {
             ForEach(boards, id: \.id) { board in
-                Habit1CardRow(board: board, isSelected: selection?.id == board.id, onCheck: { onCheck(board) }) {
+                Habit1CardRow(
+                    board: board, 
+                    isSelected: selection?.id == board.id, 
+                    onCheck: { onCheck(board) },
+                    onAddAmount: { amount in onAddAmount(amount, board) }
+                ) {
                     selection = board
                 }
             }
@@ -144,13 +178,16 @@ private struct Habit1CardRow: View {
     let board: HabitBoard
     let isSelected: Bool
     let onCheck: () -> Void
+    let onAddAmount: (Double) -> Void
     let onSelect: () -> Void
 
     @State private var isHovered = false
+    @State private var showAmountPopover = false
+    @State private var quickInput = ""
 
     private var todaysTotal: Double {
         (board.logs ?? [])
-            .filter { $0.timestamp.isToday() }
+            .filter { $0.timestamp.isToday() && $0.archivedAt == nil }
             .reduce(0.0) { $0 + $1.value }
     }
 
@@ -158,8 +195,15 @@ private struct Habit1CardRow: View {
         max(0, min(1, todaysTotal / board.effectiveTarget))
     }
 
-    private var isDone: Bool { progressFraction >= 1 }
+    private var isDone: Bool { 
+        if board.metric == .binary {
+            return todaysTotal >= 1.0
+        }
+        return todaysTotal >= board.effectiveTarget 
+    }
+    
     private var color: Color { ColorPalette[board.colorIndex] }
+    private var unit: String { board.unitLabel ?? (board.metric == .quantitative ? "units" : "") }
 
     var body: some View {
         HStack(spacing: 10) {
@@ -176,9 +220,9 @@ private struct Habit1CardRow: View {
                     .lineLimit(1)
 
                 if board.metric == .quantitative {
-                    Text("\(todaysTotal.formatted(.number.precision(.fractionLength(0...1)))) / \(board.effectiveTarget.formatted(.number.precision(.fractionLength(0...1)))) target")
-                        .font(.system(size: 10))
-                        .foregroundStyle(DS.Color.textTertiary)
+                    Text("\(todaysTotal.formatted(.number.precision(.fractionLength(0...1)))) / \(board.effectiveTarget.formatted(.number.precision(.fractionLength(0...1)))) \(unit)")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(isDone ? color : DS.Color.textTertiary)
                 } else {
                     Text(isDone ? "Completed today" : "Pending check-in")
                         .font(.system(size: 10))
@@ -187,6 +231,50 @@ private struct Habit1CardRow: View {
             }
 
             Spacer()
+
+            // Quantitative Quick-Add Plus Button (shows on hover for quantitative habits)
+            if board.metric == .quantitative && (isHovered || isSelected) {
+                Button {
+                    showAmountPopover = true
+                } label: {
+                    Image(systemName: "plus.circle")
+                        .font(.system(size: 14))
+                        .foregroundStyle(color)
+                        .padding(4)
+                }
+                .buttonStyle(.plain)
+                .help("Add tracking amount")
+                .popover(isPresented: $showAmountPopover) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Log \(board.name)")
+                            .font(.system(size: 12, weight: .bold))
+                        
+                        HStack(spacing: 6) {
+                            TextField("Amount (\(unit))", text: $quickInput)
+                                .textFieldStyle(.roundedBorder)
+                                .frame(width: 90)
+                                .onSubmit {
+                                    if let val = Double(quickInput), val > 0 {
+                                        onAddAmount(val)
+                                        quickInput = ""
+                                        showAmountPopover = false
+                                    }
+                                }
+
+                            Button("Add") {
+                                if let val = Double(quickInput), val > 0 {
+                                    onAddAmount(val)
+                                    quickInput = ""
+                                    showAmountPopover = false
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.small)
+                        }
+                    }
+                    .padding(12)
+                }
+            }
 
             // Streak Flame (if active)
             if board.currentStreak > 0 {
@@ -204,31 +292,32 @@ private struct Habit1CardRow: View {
                 .background(Color.orange.opacity(0.12), in: Capsule())
             }
 
-            // Interactive Check Ring / Button
-            Button(action: onCheck) {
-                ZStack {
-                    Circle()
-                        .stroke(color.opacity(0.2), lineWidth: 2)
-                        .frame(width: 22, height: 22)
+            // Interactive Check Ring / Progress Ring
+            ZStack {
+                Circle()
+                    .stroke(color.opacity(0.2), lineWidth: 2.5)
+                    .frame(width: 22, height: 22)
 
-                    Circle()
-                        .trim(from: 0, to: CGFloat(progressFraction))
-                        .stroke(color, style: StrokeStyle(lineWidth: 2, lineCap: .round))
-                        .rotationEffect(.degrees(-90))
-                        .frame(width: 22, height: 22)
+                Circle()
+                    .trim(from: 0, to: CGFloat(progressFraction))
+                    .stroke(color, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                    .frame(width: 22, height: 22)
 
-                    if isDone {
-                        Circle()
-                            .fill(color)
-                            .frame(width: 16, height: 16)
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 8, weight: .bold))
-                            .foregroundStyle(.white)
-                    }
+                if isDone {
+                    Circle()
+                        .fill(color)
+                        .frame(width: 16, height: 16)
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(.white)
                 }
             }
-            .buttonStyle(.plain)
-            .help(isDone ? "Undo check-in" : "Mark done")
+            .contentShape(Circle())
+            .highPriorityGesture(TapGesture().onEnded {
+                onCheck()
+            })
+            .help(isDone ? "Undo check-in" : (board.metric == .quantitative ? "Complete daily target" : "Mark done"))
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
@@ -365,9 +454,9 @@ private struct Habit2StripRow: View {
                                 .frame(width: 14, height: 14)
                         }
                     }
-                    .onTapGesture {
+                    .highPriorityGesture(TapGesture().onEnded {
                         if isToday { onCheck() }
-                    }
+                    })
                 }
             }
         }
@@ -389,7 +478,7 @@ private struct Habit2StripRow: View {
     private func isDayCompleted(_ date: Date) -> Bool {
         let cal = Calendar.current
         let target = board.effectiveTarget
-        let logs = (board.logs ?? []).filter { cal.isDate($0.timestamp, inSameDayAs: date) }
+        let logs = (board.logs ?? []).filter { $0.archivedAt == nil && cal.isDate($0.timestamp, inSameDayAs: date) }
         return logs.reduce(0.0) { $0 + $1.value } >= target
     }
 }
@@ -401,11 +490,17 @@ private struct Habit3ProgressMatrixView: View {
     let boards: [HabitBoard]
     @Binding var selection: HabitBoard?
     let onCheck: (HabitBoard) -> Void
+    let onAddAmount: (Double, HabitBoard) -> Void
 
     var body: some View {
         VStack(spacing: 8) {
             ForEach(boards, id: \.id) { board in
-                Habit3MatrixRow(board: board, isSelected: selection?.id == board.id, onCheck: { onCheck(board) }) {
+                Habit3MatrixRow(
+                    board: board, 
+                    isSelected: selection?.id == board.id, 
+                    onCheck: { onCheck(board) },
+                    onAddAmount: { amount in onAddAmount(amount, board) }
+                ) {
                     selection = board
                 }
             }
@@ -417,13 +512,14 @@ private struct Habit3MatrixRow: View {
     let board: HabitBoard
     let isSelected: Bool
     let onCheck: () -> Void
+    let onAddAmount: (Double) -> Void
     let onSelect: () -> Void
 
     @State private var isHovered = false
 
     private var todaysTotal: Double {
         (board.logs ?? [])
-            .filter { $0.timestamp.isToday() }
+            .filter { $0.timestamp.isToday() && $0.archivedAt == nil }
             .reduce(0.0) { $0 + $1.value }
     }
 
@@ -431,8 +527,14 @@ private struct Habit3MatrixRow: View {
         max(0, min(1, todaysTotal / board.effectiveTarget))
     }
 
-    private var isDone: Bool { progressFraction >= 1 }
+    private var isDone: Bool { 
+        if board.metric == .binary {
+            return todaysTotal >= 1.0
+        }
+        return todaysTotal >= board.effectiveTarget 
+    }
     private var color: Color { ColorPalette[board.colorIndex] }
+    private var unit: String { board.unitLabel ?? "" }
 
     var body: some View {
         VStack(spacing: 5) {
@@ -446,31 +548,33 @@ private struct Habit3MatrixRow: View {
                 Spacer()
 
                 if board.metric == .quantitative {
-                    Text("\(Int(todaysTotal)) / \(Int(board.effectiveTarget))")
+                    Text("\(todaysTotal.formatted(.number.precision(.fractionLength(0...1)))) / \(board.effectiveTarget.formatted(.number.precision(.fractionLength(0...1)))) \(unit)")
                         .font(.system(size: 11, weight: .bold))
                         .monospacedDigit()
-                        .foregroundStyle(DS.Color.textSecondary)
+                        .foregroundStyle(isDone ? color : DS.Color.textSecondary)
                 }
 
                 // Tactile Square Check
-                Button(action: onCheck) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(isDone ? color : DS.Color.surfaceRecessed)
-                            .frame(width: 18, height: 18)
+                ZStack {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(isDone ? color : DS.Color.surfaceRecessed)
+                        .frame(width: 18, height: 18)
 
-                        RoundedRectangle(cornerRadius: 4)
-                            .strokeBorder(isDone ? color : DS.Color.border, lineWidth: 1)
-                            .frame(width: 18, height: 18)
+                    RoundedRectangle(cornerRadius: 4)
+                        .strokeBorder(isDone ? color : DS.Color.border, lineWidth: 1)
+                        .frame(width: 18, height: 18)
 
-                        if isDone {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 9, weight: .bold))
-                                .foregroundStyle(.white)
-                        }
+                    if isDone {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(.white)
                     }
                 }
-                .buttonStyle(.plain)
+                .contentShape(Rectangle())
+                .highPriorityGesture(TapGesture().onEnded {
+                    onCheck()
+                })
+                .help(isDone ? "Undo check-in" : "Mark done")
             }
 
             // Slim Gradient Progress Bar
