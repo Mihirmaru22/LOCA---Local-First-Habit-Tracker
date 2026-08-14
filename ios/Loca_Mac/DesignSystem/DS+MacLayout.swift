@@ -26,23 +26,28 @@ extension DS {
 
         // MARK: Sidebar column
 
-        /// Minimum sidebar width. 160 pt — label + icon with breathing room.
-        static let sidebarMinWidth:   CGFloat = 160
-        /// Preferred sidebar width shown on first launch. 200 pt.
-        static let sidebarIdealWidth: CGFloat = 200
+        /// Minimum sidebar width. 150 pt — label + icon with breathing room.
+        static let sidebarMinWidth:   CGFloat = 150
+        /// Preferred sidebar width shown on first launch. 175 pt.
+        static let sidebarIdealWidth: CGFloat = 175
         /// Maximum sidebar width before it crowds the content column.
-        static let sidebarMaxWidth:   CGFloat = 260
+        static let sidebarMaxWidth:   CGFloat = 220
 
         // MARK: Content (middle) column
 
-        /// Minimum width for the habit/entry list. 280 pt.
-        static let contentMinWidth: CGFloat = 280
+        /// Minimum width for the habit/entry/plan middle column. 280 pt.
+        static let contentMinWidth:   CGFloat = 280
+        /// Preferred content column width. 330 pt.
+        static let contentIdealWidth: CGFloat = 330
+        /// Maximum content column width. 420 pt.
+        static let contentMaxWidth:   CGFloat = 420
 
         // MARK: Detail (right) column
 
-        /// Minimum width for the detail view. 380 pt — wide enough for
-        /// the 182-day heatmap at the default cell size.
-        static let detailMinWidth: CGFloat = 380
+        /// Minimum width for the detail view. 400 pt.
+        static let detailMinWidth:   CGFloat = 400
+        /// Preferred detail width. 600 pt.
+        static let detailIdealWidth: CGFloat = 600
 
         // MARK: Heatmap
 

@@ -65,11 +65,14 @@ extension SleepEntry {
     // MARK: - sleepHours helper
 
     /// Computes sleep duration from `bedtime` and `wakeTime`, handling past-midnight
-    /// crossings. Returns `nil` when either timestamp is absent.
+    /// crossings. Returns duration in hours based on time-of-day components.
     static func computeSleepHours(bedtime: Date, wakeTime: Date) -> Double {
-        var interval = wakeTime.timeIntervalSince(bedtime)
-        if interval < 0 { interval += 24 * 3600 }
-        return interval / 3600
+        let cal = Calendar.current
+        let bedMinutes = cal.component(.hour, from: bedtime) * 60 + cal.component(.minute, from: bedtime)
+        let wakeMinutes = cal.component(.hour, from: wakeTime) * 60 + cal.component(.minute, from: wakeTime)
+        var diff = wakeMinutes - bedMinutes
+        if diff < 0 { diff += 24 * 60 }
+        return Double(diff) / 60.0
     }
 
     // MARK: - UserDefaults persistence of last input mode

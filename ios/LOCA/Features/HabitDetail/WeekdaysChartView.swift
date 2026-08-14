@@ -82,29 +82,31 @@ struct WeekdaysChartView: View {
                     let padding: CGFloat = 12
                     let maxHeight = height - padding * 2
 
-                    let barWidth = (width - padding * 2) / 7
-                    let scale = maxHeight / maxTotal
+                    let barSlotWidth = (width - padding * 2) / 7
+                    let barWidth: CGFloat = min(28, max(14, barSlotWidth - 12))
+                    let scale = maxTotal > 0 ? (maxHeight / maxTotal) : 1.0
 
                     for (index, total) in weekdayTotals.enumerated() {
-                        let x = padding + CGFloat(index) * barWidth + barWidth / 2 - (barWidth - 4) / 2
-                        let barHeight = total * scale
+                        let centerX = padding + CGFloat(index) * barSlotWidth + barSlotWidth / 2
+                        let x = centerX - barWidth / 2
+                        let barHeight = total > 0 ? max(6, total * scale) : 3
                         let y = height - padding - barHeight
 
                         // Determine color: workday (Mon-Fri) vs weekend
                         let isWeekend = index == 0 || index == 6
-                        let barColor = isWeekend
-                            ? ColorPalette[board.colorIndex].opacity(0.3)
-                            : ColorPalette[board.colorIndex]
+                        let barColor: Color = total > 0
+                            ? (isWeekend ? ColorPalette[board.colorIndex].opacity(0.4) : ColorPalette[board.colorIndex])
+                            : DS.Color.surfaceRecessed
 
-                        var barPath = Path()
-                        barPath.addRect(CGRect(x: x, y: y, width: barWidth - 4, height: barHeight))
-                        context.fill(barPath, with: .color(barColor))
+                        let rect = CGRect(x: x, y: y, width: barWidth, height: barHeight)
+                        let path = Path(roundedRect: rect, cornerRadius: 3)
+                        context.fill(path, with: .color(barColor))
 
                         // Day label
                         let text = Text(weekdayLabels[index])
                             .font(.system(size: 10, weight: .semibold))
                             .foregroundColor(DS.Color.textSecondary)
-                        context.draw(text, at: CGPoint(x: x + (barWidth - 4) / 2, y: height - 2), anchor: .top)
+                        context.draw(text, at: CGPoint(x: centerX, y: height - 2), anchor: .top)
                     }
                 }
                 .frame(height: 100)

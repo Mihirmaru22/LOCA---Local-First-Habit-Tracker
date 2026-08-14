@@ -42,11 +42,20 @@ struct LOCACommands: Commands {
             Button("Today") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.today) }
                 .keyboardShortcut("2", modifiers: [.command])
 
-            Button("Journal") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.journal) }
+            Button("Time") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.time) }
                 .keyboardShortcut("3", modifiers: [.command])
 
-            Button("Life") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.life) }
+            Button("Journal") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.journal) }
                 .keyboardShortcut("4", modifiers: [.command])
+
+            Button("Life") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.life) }
+                .keyboardShortcut("5", modifiers: [.command])
+
+            Button("Audit") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.audit) }
+                .keyboardShortcut("6", modifiers: [.command])
+
+            Button("Settings") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.settings) }
+                .keyboardShortcut(",", modifiers: [.command])
         }
 
         // MARK: Today menu
@@ -98,6 +107,13 @@ struct LOCACommands: Commands {
             }
             .keyboardShortcut(.delete, modifiers: [.command])
         }
+
+        // MARK: Help menu
+        CommandGroup(replacing: .help) {
+            Button("Welcome & Feature Tour…") {
+                NotificationCenter.default.post(name: .locaShowOnboarding, object: nil)
+            }
+        }
     }
 }
 
@@ -146,4 +162,6 @@ extension Notification.Name {
     static let locaArchiveSelected  = Notification.Name("com.mihirmaru.loca.mac.archiveSelected")
     static let locaFocusQuickAdd   = Notification.Name("com.mihirmaru.loca.mac.focusQuickAdd")
     static let locaOpenTask        = Notification.Name("com.mihirmaru.loca.mac.openTask")
+    static let locaShowOnboarding  = Notification.Name("com.mihirmaru.loca.mac.showOnboarding")
+    static let locaDeepLink        = Notification.Name("com.mihirmaru.loca.mac.deepLink")
 }

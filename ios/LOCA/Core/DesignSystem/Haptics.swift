@@ -1,24 +1,17 @@
-//
-//  Haptics.swift
-//  LOCA
-//
-//  Phase P.0.8 / P4.5 — The haptics contract.
-//
-//  One path for all haptic feedback so call sites stop hand-writing
-//  UIImpactFeedbackGenerator inline. UIKit-gated; a no-op on platforms without it
-//  so callers never write `#if canImport(UIKit)` themselves.
-//  Gated by @AppStorage("hapticsEnabled"); defaults to true.
-//
-
 import Foundation
 
 #if canImport(UIKit)
 import UIKit
 #endif
 
-/// Centralized haptic feedback. Semantic entry points, not raw generators, so the
-/// intent (a value committed vs. a selection changed vs. an outcome) is legible at the
-/// call site and the feedback stays consistent across equivalent actions app-wide.
+#if canImport(AppKit) && !targetEnvironment(macCatalyst)
+import AppKit
+#endif
+
+// MARK: - Haptics (Cross-Platform iOS & macOS Force Touch Trackpad Engine)
+
+/// Centralized haptic feedback for iOS Taptic Engine and macOS Force Touch Trackpad (`NSHapticFeedbackManager`).
+/// Provides tactile feedback when completing habits, tasks, timeline snapping, and goal checkpoints.
 enum Haptics {
 
     /// Physical impact — a value committed, a check-in logged, a row removed.
@@ -26,10 +19,11 @@ enum Haptics {
         case light, rigid, soft
     }
 
-    /// Fire a physical impact. Gated by user setting (default on); no-op where UIKit is unavailable.
+    /// Fire a physical impact on iOS Taptic Engine or macOS Trackpad.
     static func impact(_ style: Impact) {
         guard UserDefaults.standard.object(forKey: "hapticsEnabled") == nil
               || UserDefaults.standard.bool(forKey: "hapticsEnabled") else { return }
+
         #if canImport(UIKit)
         let generator: UIImpactFeedbackGenerator
         switch style {
@@ -38,16 +32,25 @@ enum Haptics {
         case .soft:  generator = UIImpactFeedbackGenerator(style: .soft)
         }
         generator.impactOccurred()
+        #elseif canImport(AppKit)
+        switch style {
+        case .light, .soft:
+            NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
+        case .rigid:
+            NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .now)
+        }
         #endif
     }
 
     /// A discrete selection changed — a tab, a layout, a picker value.
-    /// Gated by user setting (default on); no-op where UIKit is unavailable.
     static func selection() {
         guard UserDefaults.standard.object(forKey: "hapticsEnabled") == nil
               || UserDefaults.standard.bool(forKey: "hapticsEnabled") else { return }
+
         #if canImport(UIKit)
         UISelectionFeedbackGenerator().selectionChanged()
+        #elseif canImport(AppKit)
+        NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now)
         #endif
     }
 
@@ -57,16 +60,23 @@ enum Haptics {
     }
 
     /// Fire an outcome notification — e.g. `.success` when a check-in crosses its goal.
-    /// Gated by user setting (default on); no-op where UIKit is unavailable.
     static func notify(_ type: Notify) {
         guard UserDefaults.standard.object(forKey: "hapticsEnabled") == nil
               || UserDefaults.standard.bool(forKey: "hapticsEnabled") else { return }
+
         #if canImport(UIKit)
         let generator = UINotificationFeedbackGenerator()
         switch type {
         case .success: generator.notificationOccurred(.success)
         case .warning: generator.notificationOccurred(.warning)
         case .error:   generator.notificationOccurred(.error)
+        }
+        #elseif canImport(AppKit)
+        switch type {
+        case .success, .error:
+            NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .now)
+        case .warning:
+            NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
         }
         #endif
     }

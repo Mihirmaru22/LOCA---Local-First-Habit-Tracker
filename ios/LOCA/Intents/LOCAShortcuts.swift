@@ -49,5 +49,50 @@ struct LOCAShortcuts: AppShortcutsProvider {
             shortTitle: "Log Habit",
             systemImageName: "checkmark.circle.fill"
         )
+
+        AppShortcut(
+            intent: StartFocusSprintIntent(),
+            phrases: [
+                "Start a focus sprint in \(.applicationName)",
+                "Start \(\.$durationMinutes) minute focus session in \(.applicationName)",
+                "Start Pomodoro in \(.applicationName)"
+            ],
+            shortTitle: "Start Focus Sprint",
+            systemImageName: "timer"
+        )
+
+        AppShortcut(
+            intent: GetTopTaskIntent(),
+            phrases: [
+                "What is my top task today in \(.applicationName)",
+                "What should I do next in \(.applicationName)",
+                "Top task in \(.applicationName)"
+            ],
+            shortTitle: "Get Top Task",
+            systemImageName: "list.bullet.clipboard.fill"
+        )
+
+        AppShortcut(
+            intent: CreateSmartTaskIntent(),
+            phrases: [
+                "Add a task in \(.applicationName)",
+                "Add \(\.$taskDescription) to \(.applicationName)",
+                "New task in \(.applicationName)"
+            ],
+            shortTitle: "Add Task",
+            systemImageName: "plus.circle.fill"
+        )
+
+        AppShortcut(
+            intent: QuickJournalNoteIntent(),
+            phrases: [
+                "Log a quick note in \(.applicationName)",
+                "Journal reflection in \(.applicationName)",
+                "Log a win in \(.applicationName)",
+                "Quick reflection in \(.applicationName)"
+            ],
+            shortTitle: "Log Journal Note",
+            systemImageName: "quote.bubble.fill"
+        )
     }
 }

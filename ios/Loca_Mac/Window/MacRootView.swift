@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import CoreSpotlight
 
 // MARK: - MacSection
 
@@ -7,19 +8,25 @@ import SwiftData
 /// Ordered to match the natural daily workflow: check habits first,
 /// then review today's completions, then journal.
 enum MacSection: String, CaseIterable, Identifiable {
-    case habits  = "Habits"
-    case today   = "Today"
-    case journal = "Journal"
-    case life    = "Life"
+    case habits   = "Habits"
+    case today    = "Today"
+    case time     = "Time"
+    case journal  = "Journal"
+    case life     = "Life"
+    case audit    = "Audit"
+    case settings = "Settings"
 
     var id: String { rawValue }
 
     var systemImage: String {
         switch self {
-        case .habits:  "checkmark.circle"
-        case .today:   "sun.max"
-        case .journal: "book.closed"
-        case .life:    "binoculars"
+        case .habits:   "checkmark.circle"
+        case .today:    "sun.max"
+        case .time:     "timer"
+        case .journal:  "book.closed"
+        case .life:     "binoculars"
+        case .audit:    "slider.horizontal.3"
+        case .settings: "gearshape"
         }
     }
 }
@@ -29,7 +36,7 @@ enum MacSection: String, CaseIterable, Identifiable {
 /// Three-pane root for the macOS app.
 ///
 /// Column roles:
-/// - **Sidebar** (`MacSidebarView`): section picker (Habits, Today, Journal, Life).
+/// - **Sidebar** (`MacSidebarView`): section picker (Habits, Today, Time, Journal, Life, Audit, Settings).
 /// - **Content** (`MacHabitContentColumn` etc.): list for the active section.
 /// - **Detail** (`MacHabitDetailColumn` etc.): selected-item detail.
 ///
@@ -42,72 +49,149 @@ struct MacRootView: View {
     @State private var selectedHabit:       HabitBoard?      = nil
     @State private var selectedTodo:        TodoItem?        = nil
     @State private var selectedJournalRow:  JournalRow?      = .todaysLog
-    @State private var openedTask:          TodoItem?        = nil
+    @State private var selectedLifeRow:     LifeRow?         = .blueprint
     @State private var columnVisibility:    NavigationSplitViewVisibility = .all
+    @AppStorage("has_completed_onboarding_v3") private var hasCompletedOnboarding: Bool = false
+    @State private var showOnboarding:      Bool             = false
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    var body: some View {
-        ZStack {
-            splitView
+    @ObservedObject private var vaultManager = LocaVaultAuthManager.shared
 
-            // Dedicated Task Workspace — a full-window overlay opened from the
-            // List. Backing out clears both it and the list selection so the
-            // next click re-triggers cleanly.
-            if let task = openedTask {
-                MacTaskWorkspace(item: task) {
-                    openedTask   = nil
-                    selectedTodo = nil
-                }
-                .transition(.asymmetric(
-                    insertion: .opacity.combined(with: .move(edge: .trailing)),
-                    removal:   .opacity.combined(with: .move(edge: .trailing))
-                ))
-                .zIndex(1)
-            }
-        }
-        .animation(reduceMotion ? .linear(duration: 0.1) : DS.Motion.settle, value: openedTask?.id)
-        .onReceive(NotificationCenter.default.publisher(for: .locaOpenTask)) { note in
-            if let task = note.object as? TodoItem {
-                openedTask = task
-            }
-        }
-        .onChange(of: selectedSection) { _, _ in
-            openedTask = nil
-        }
+    @Query(filter: #Predicate<HabitBoard> { $0.archivedAt == nil }, sort: \HabitBoard.createdAt)
+    private var activeHabits: [HabitBoard]
+
+    @AppStorage("mac_notifications_master_enabled") private var masterNotificationsEnabled: Bool = true
+    @AppStorage("mac_evening_reflection_enabled") private var eveningReflectionEnabled: Bool = true
+    @AppStorage("mac_evening_reflection_time") private var eveningReflectionTime: String = "21:00"
+    @AppStorage("mac_streak_alert_enabled") private var streakAlertEnabled: Bool = true
+    @AppStorage("mac_streak_alert_time") private var streakAlertTime: String = "22:00"
+    @AppStorage("mac_weekly_digest_enabled") private var weeklyDigestEnabled: Bool = true
+    @AppStorage("mac_default_habit_reminder_time") private var defaultHabitTime: String = "09:00"
+
+    var body: some View {
+        splitView
     }
 
     private var splitView: some View {
-        NavigationSplitView(columnVisibility: $columnVisibility) {
-            MacSidebarView(selection: $selectedSection)
-                .navigationSplitViewColumnWidth(
-                    min:   DS.Mac.sidebarMinWidth,
-                    ideal: DS.Mac.sidebarIdealWidth,
-                    max:   DS.Mac.sidebarMaxWidth
-                )
-        } content: {
-            MacContentColumn(section: selectedSection,
-                             selectedHabit:      $selectedHabit,
-                             selectedTodo:       $selectedTodo,
-                             selectedJournalRow: $selectedJournalRow)
-                .navigationSplitViewColumnWidth(min: DS.Mac.contentMinWidth, ideal: 320)
-        } detail: {
-            MacDetailColumn(section: selectedSection,
-                            selectedHabit:      selectedHabit,
-                            selectedTodo:       selectedTodo,
-                            selectedJournalRow: selectedJournalRow)
-                .navigationSplitViewColumnWidth(min: DS.Mac.detailMinWidth, ideal: DS.Mac.detailMinWidth)
+        Group {
+            if selectedSection == .audit || selectedSection == .life || selectedSection == .time || selectedSection == .settings {
+                NavigationSplitView {
+                    MacSidebarView(selection: $selectedSection)
+                        .navigationSplitViewColumnWidth(
+                            min:   DS.Mac.sidebarMinWidth,
+                            ideal: DS.Mac.sidebarIdealWidth,
+                            max:   DS.Mac.sidebarMaxWidth
+                        )
+                } detail: {
+                    if selectedSection == .audit {
+                        MacAuditView()
+                    } else if selectedSection == .life {
+                        if vaultManager.isVaultSecurityEnabled && !vaultManager.isLifeUnlocked {
+                            MacVaultLockView(sectionTitle: "Life Blueprint & Strategy")
+                        } else {
+                            MacLifeView()
+                        }
+                    } else if selectedSection == .time {
+                        MacTimeView()
+                    } else {
+                        MacSettingsView()
+                    }
+                }
+            } else {
+                NavigationSplitView(columnVisibility: $columnVisibility) {
+                    MacSidebarView(selection: $selectedSection)
+                        .navigationSplitViewColumnWidth(
+                            min:   DS.Mac.sidebarMinWidth,
+                            ideal: DS.Mac.sidebarIdealWidth,
+                            max:   DS.Mac.sidebarMaxWidth
+                        )
+                } content: {
+                    MacContentColumn(section: selectedSection,
+                                     selectedHabit:      $selectedHabit,
+                                     selectedTodo:       $selectedTodo,
+                                     selectedJournalRow: $selectedJournalRow,
+                                     selectedLifeRow:    $selectedLifeRow)
+                        .navigationSplitViewColumnWidth(
+                            min:   DS.Mac.contentMinWidth,
+                            ideal: DS.Mac.contentIdealWidth,
+                            max:   DS.Mac.contentMaxWidth
+                        )
+                } detail: {
+                    if selectedSection == .journal && vaultManager.isVaultSecurityEnabled && !vaultManager.isJournalUnlocked {
+                        MacVaultLockView(sectionTitle: "Private Journal")
+                            .navigationSplitViewColumnWidth(
+                                min:   DS.Mac.detailMinWidth,
+                                ideal: DS.Mac.detailIdealWidth
+                            )
+                    } else {
+                        MacDetailColumn(section: selectedSection,
+                                         selectedHabit:      $selectedHabit,
+                                         selectedTodo:       $selectedTodo,
+                                         selectedJournalRow: $selectedJournalRow,
+                                         selectedLifeRow:    $selectedLifeRow)
+                            .navigationSplitViewColumnWidth(
+                                min:   DS.Mac.detailMinWidth,
+                                ideal: DS.Mac.detailIdealWidth
+                            )
+                    }
+                }
+            }
         }
-        .navigationTitle("LOCA")
+        .navigationTitle("PLUTO")
+        .sheet(isPresented: $showOnboarding) {
+            MacOnboardingView(isPresented: $showOnboarding)
+                .frame(minWidth: 720, minHeight: 520)
+        }
+        .onAppear {
+            if !hasCompletedOnboarding {
+                showOnboarding = true
+            }
+
+            LocaSpotlightIndexer.shared.indexAll(context: modelContext)
+
+            // Auto-sync Apple Native Notifications (A1-A8)
+            PlutoNotificationManager.shared.syncAll(
+                habits: activeHabits,
+                masterEnabled: masterNotificationsEnabled,
+                eveningReflectionEnabled: eveningReflectionEnabled,
+                eveningReflectionTime: eveningReflectionTime,
+                streakAlertEnabled: streakAlertEnabled,
+                streakAlertTime: streakAlertTime,
+                weeklyDigestEnabled: weeklyDigestEnabled,
+                defaultHabitTime: defaultHabitTime
+            )
+        }
+        .onContinueUserActivity(CSSearchableItemActionType) { userActivity in
+            if let identifier = userActivity.userInfo?[CSSearchableItemActivityIdentifier] as? String,
+               let (type, _) = LocaSpotlightIndexer.ItemType.parseIdentifier(identifier) {
+                switch type {
+                case .habit:
+                    selectedSection = .habits
+                case .task:
+                    selectedSection = .today
+                case .journal:
+                    selectedSection = .journal
+                case .principle, .bucket:
+                    selectedSection = .life
+                case .goal:
+                    selectedSection = .audit
+                }
+            }
+        }
         .onChange(of: selectedSection) { _, _ in
             selectedHabit      = nil
             selectedTodo       = nil
             selectedJournalRow = .todaysLog
+            selectedLifeRow    = .blueprint
         }
         .onReceive(NotificationCenter.default.publisher(for: .locaJumpToSection)) { note in
             if let section = note.object as? MacSection {
                 selectedSection = section
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .locaShowOnboarding)) { _ in
+            showOnboarding = true
         }
         .onReceive(NotificationCenter.default.publisher(for: .locaCompleteSelected)) { _ in
             guard let todo = selectedTodo else { return }
@@ -119,6 +203,24 @@ struct MacRootView: View {
             todo.archivedAt = Date()
             selectedTodo = nil
             try? modelContext.save()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .locaDeepLink)) { note in
+            if let payload = note.object as? PlutoNotificationManager.DeepLinkPayload {
+                withAnimation(reduceMotion ? nil : DS.Motion.settle) {
+                    selectedSection = payload.section
+                    if let habitID = payload.habitID {
+                        selectedHabit = activeHabits.first(where: { $0.id == habitID })
+                    }
+                    if let taskID = payload.taskID,
+                       let tasks = try? modelContext.fetch(FetchDescriptor<TodoItem>()) {
+                        selectedTodo = tasks.first(where: { $0.id == taskID })
+                    }
+                }
+                Haptics.impact(.light)
+            }
+        }
+        .onOpenURL { url in
+            PlutoNotificationManager.shared.handleDeepLinkURL(url)
         }
     }
 }
@@ -132,6 +234,7 @@ private struct MacContentColumn: View {
     @Binding var selectedHabit:      HabitBoard?
     @Binding var selectedTodo:       TodoItem?
     @Binding var selectedJournalRow: JournalRow?
+    @Binding var selectedLifeRow:    LifeRow?
 
     var body: some View {
         switch section {
@@ -142,7 +245,9 @@ private struct MacContentColumn: View {
         case .journal:
             MacJournalContentColumn(selectedRow: $selectedJournalRow)
         case .life:
-            MacLifeContentView()
+            MacLifeContentColumn(selectedRow: $selectedLifeRow)
+        case .audit, .settings, .time:
+            EmptyView()
         case nil:
             MacEmptyContentView()
         }
@@ -155,31 +260,30 @@ private struct MacContentColumn: View {
 private struct MacDetailColumn: View {
 
     let section: MacSection?
-    let selectedHabit:      HabitBoard?
-    let selectedTodo:       TodoItem?
-    let selectedJournalRow: JournalRow?
+    @Binding var selectedHabit:      HabitBoard?
+    @Binding var selectedTodo:       TodoItem?
+    @Binding var selectedJournalRow: JournalRow?
+    @Binding var selectedLifeRow:    LifeRow?
 
     var body: some View {
         switch section {
         case .habits:
             MacHabitDetailColumn(habit: selectedHabit)
         case .today:
-            MacTodoDetailColumn(item: selectedTodo)
+            MacTodoDetailColumn(item: $selectedTodo)
         case .journal:
-            MacJournalDetailColumn(selectedRow: selectedJournalRow)
-        default:
+            MacJournalDetailColumn(selectedRow: $selectedJournalRow)
+        case .life:
+            MacLifeDetailColumn(selectedRow: selectedLifeRow)
+        case .time:
+            MacTimeView()
+        case .audit:
+            MacAuditDetailColumn()
+        case .settings:
+            MacSettingsView()
+        case nil:
             MacDetailPlaceholder()
         }
-    }
-}
-
-// MARK: - Stub content views
-// Replaced as their chapters land.
-
-struct MacLifeContentView: View {
-    var body: some View {
-        ContentUnavailableView("Life", systemImage: "binoculars",
-                               description: Text("Coming in S-chapter"))
     }
 }
 

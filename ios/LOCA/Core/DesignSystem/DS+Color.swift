@@ -106,5 +106,26 @@ extension DS {
         /// Future (not-yet-reached) heatmap cell — visually recessed to convey
         /// "not yet" without disappearing entirely.
         static let heatmapCellFuture = SwiftUI.Color.primary.opacity(0.04)
+
+        // MARK: Unified App-Wide Palette Tokens (Single source of truth)
+
+        /// Success / Complete indicator across Habits, Todos, Life, and Audit (Mint).
+        static let success = ColorPalette[1]
+
+        /// Primary active / in-progress indicator (Ocean Blue).
+        static let active = ColorPalette[0]
+
+        /// Warning / Streak Flame indicator (Amber).
+        static let warning = ColorPalette[4]
+        static let streak = ColorPalette[4]
+
+        /// Danger / High-Priority / Urgency indicator (Terracotta / Coral).
+        static let danger = ColorPalette[2]
+
+        /// Unified Priority Color scale for Tasks and Milestones.
+        static let priorityNone = textTertiary
+        static let priorityLow = ColorPalette[9]      // Slate
+        static let priorityMedium = ColorPalette[4]   // Amber
+        static let priorityHigh = ColorPalette[2]     // Terracotta
     }
 }

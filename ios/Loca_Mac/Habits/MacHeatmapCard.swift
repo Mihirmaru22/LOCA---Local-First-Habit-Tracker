@@ -77,6 +77,10 @@ struct MacHeatmapCard: View {
                 RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
                     .fill(DS.Color.surface)
             )
+            .overlay(
+                RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
+                    .stroke(DS.Color.border.opacity(0.35), lineWidth: 1)
+            )
         }
         .frame(height: heatmapCardHeight())
         .task(id: "\(board.id)-\(board.logs?.count ?? -1)-\(board.targetValue ?? -1)") {

@@ -1,7 +1,8 @@
 import SwiftUI
 import SwiftData
+import UniformTypeIdentifiers
 
-// MARK: - MacDayPlannerColumn  (T10 — real proportional timeline)
+// MARK: - MacDayPlannerColumn  (T10 — Executive Agenda Day Planner)
 
 struct MacDayPlannerColumn: View {
 
@@ -13,6 +14,7 @@ struct MacDayPlannerColumn: View {
     private var allItems: [TodoItem]
 
     @State private var selectedDate: Date = Calendar.current.startOfDay(for: .now)
+    @State private var isIcsDropTargeted: Bool = false
 
     // Drag-to-move state
     @State private var draggingID:        UUID?  = nil
@@ -26,6 +28,9 @@ struct MacDayPlannerColumn: View {
 
     // Ghost affordance
     @State private var hoverY: CGFloat? = nil
+
+    @ObservedObject private var calendarSync = PlutoCalendarSync.shared
+    @AppStorage("mac_calendar_sync_enabled") private var calendarSyncEnabled: Bool = true
 
     private let cal = Calendar.current
 
@@ -183,14 +188,12 @@ struct MacDayPlannerColumn: View {
         }
     }
 
-    // MARK: - Body
-
     var body: some View {
         VStack(spacing: 0) {
             header
             weekStrip
             Divider()
-            timeline
+            agendaStreamView
         }
         .onReceive(NotificationCenter.default.publisher(for: .locaShiftDay)) { note in
             if let delta = note.object as? Int { shiftDay(delta) }
@@ -208,6 +211,12 @@ struct MacDayPlannerColumn: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .locaAddBlock)) { _ in
             addBlock()
+        }
+        .onAppear {
+            calendarSync.fetchEvents(for: selectedDate)
+        }
+        .onChange(of: selectedDate) { _, newDate in
+            calendarSync.fetchEvents(for: newDate)
         }
     }
 
@@ -265,26 +274,36 @@ struct MacDayPlannerColumn: View {
         return VStack(spacing: 4) {
             Text(day, format: .dateTime.weekday(.abbreviated))
                 .font(DS.Text.footnote)
-                .foregroundStyle(DS.Color.textTertiary)
+                .foregroundStyle(isSelected ? DS.Color.textPrimary : DS.Color.textTertiary)
 
             Text(day, format: .dateTime.day())
-                .font(DS.Text.body)
-                .foregroundStyle(isSelected ? .white : DS.Color.textPrimary)
-                .frame(width: 30, height: 30)
-                .background { Circle().fill(isSelected ? Color.accentColor : Color.clear) }
-                .overlay {
-                    if isToday && !isSelected { Circle().stroke(Color.accentColor, lineWidth: 1.5) }
+                .font(.system(size: 13, weight: isSelected ? .bold : (isToday ? .semibold : .medium)))
+                .foregroundStyle(isSelected ? Color.black : (isToday ? Color.accentColor : DS.Color.textPrimary))
+                .frame(width: 28, height: 28)
+                .background {
+                    if isSelected {
+                        Circle().fill(Color.white)
+                    } else if isToday {
+                        Circle().stroke(Color.accentColor, lineWidth: 1.5)
+                    }
                 }
 
             Circle()
-                .fill(count > 0 ? Color.accentColor.opacity(0.7) : Color.clear)
-                .frame(width: 5, height: 5)
+                .fill(count > 0 ? (isSelected ? Color.white : Color.accentColor.opacity(0.8)) : Color.clear)
+                .frame(width: 4, height: 4)
         }
         .frame(maxWidth: .infinity)
         .contentShape(Rectangle())
         .onTapGesture {
             withAnimation(reduceMotion ? nil : DS.Motion.settle) {
                 selectedDate = cal.startOfDay(for: day)
+            }
+        }
+        .onHover { hovering in
+            if hovering {
+                NSCursor.pointingHand.push()
+            } else {
+                NSCursor.pop()
             }
         }
     }
@@ -323,12 +342,27 @@ struct MacDayPlannerColumn: View {
         let blockAreaWidth = width - TM.gutter
 
         ZStack(alignment: .topLeading) {
-            // Size anchor
-            Color.clear.frame(width: width, height: totalHeight)
+            // Size anchor & canvas click surface
+            Color.clear
+                .frame(width: width, height: totalHeight)
+                .contentShape(Rectangle())
+                .onTapGesture(count: 2) {
+                    if let y = hoverY {
+                        let snapped = snap5(timeAt(y))
+                        addBlockAt(snapped)
+                    }
+                }
 
             // Hour rail: guide lines + labels
             ForEach(railHours, id: \.self) { hour in
                 hourTick(hour, totalWidth: width)
+            }
+
+            // Synced Apple Calendar Events (EventKit)
+            if calendarSyncEnabled && calendarSync.isAuthorized {
+                ForEach(calendarSync.eventsForSelectedDate) { event in
+                    syncedCalendarBlockView(event, blockAreaWidth: blockAreaWidth)
+                }
             }
 
             // Scheduled blocks
@@ -362,6 +396,32 @@ struct MacDayPlannerColumn: View {
 
             // Ghost affordance
             ghostAffordance(totalWidth: width, blockAreaWidth: blockAreaWidth)
+
+            // Drop target indicator
+            if isIcsDropTargeted {
+                RoundedRectangle(cornerRadius: 8)
+                    .strokeBorder(Color.accentColor, style: StrokeStyle(lineWidth: 2, dash: [6]))
+                    .background(Color.accentColor.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+                    .frame(width: width - TM.gutter, height: totalHeight)
+                    .offset(x: TM.gutter)
+                    .overlay(
+                        VStack(spacing: 4) {
+                            Image(systemName: "calendar.badge.plus")
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundStyle(Color.accentColor)
+                            Text("Drop .ics Calendar Event onto Timeline")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(Color.accentColor)
+                        }
+                        .padding(12)
+                        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: 8))
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(DS.Color.border.opacity(0.6), lineWidth: 1))
+                        .shadow(radius: 10)
+                    )
+            }
+        }
+        .onDrop(of: [.fileURL, .text], isTargeted: $isIcsDropTargeted) { providers, location in
+            handleTimelineDrop(providers: providers, dropLocation: location)
         }
     }
 
@@ -455,12 +515,12 @@ struct MacDayPlannerColumn: View {
         .offset(x: xPos, y: startY)
         .animation(
             (draggingID == item.id || resizingID == item.id) ? .none :
-                (reduceMotion ? .linear(duration: 0.1) : DS.Motion.settle),
+                (reduceMotion ? .linear(duration: 0.1) : DS.Motion.fluid120Hz),
             value: startY
         )
         .animation(
             (resizingID == item.id) ? .none :
-                (reduceMotion ? .linear(duration: 0.1) : DS.Motion.settle),
+                (reduceMotion ? .linear(duration: 0.1) : DS.Motion.fluid120Hz),
             value: height
         )
         .zIndex(selection?.id == item.id || draggingID == item.id ? 10 : 1)
@@ -733,5 +793,386 @@ private struct PlannerBlock: View {
 
     private enum TM {
         static let resizeZone: CGFloat = 14
+    }
+}
+
+// MARK: - MacDayPlannerColumn (Layout 2: Bento Timeblock Matrix & Layout 3: Agenda Stream)
+
+extension MacDayPlannerColumn {
+
+    // MARK: - Layout 2: Bento Timeblock Matrix
+
+    var bentoTimeblockMatrix: some View {
+        ScrollView {
+            VStack(spacing: DS.Space.sm) {
+                ForEach(railHours, id: \.self) { hour in
+                    let hourTasks = scheduled.filter { item in
+                        guard let s = item.startTime else { return false }
+                        return cal.component(.hour, from: s) == cal.component(.hour, from: hour)
+                    }
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(hour, format: .dateTime.hour(.defaultDigits(amPM: .abbreviated)))
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(DS.Color.textTertiary)
+                                .frame(width: 50, alignment: .leading)
+
+                            Rectangle()
+                                .fill(DS.Color.border.opacity(0.3))
+                                .frame(height: 1)
+                        }
+
+                        if hourTasks.isEmpty {
+                            Button {
+                                createBlock(at: hour)
+                            } label: {
+                                HStack {
+                                    Image(systemName: "plus")
+                                        .font(.system(size: 9))
+                                    Text("Free Time · Click to schedule")
+                                        .font(.system(size: 10))
+                                }
+                                .foregroundStyle(DS.Color.textTertiary.opacity(0.6))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(DS.Color.surfaceRecessed.opacity(0.3), in: RoundedRectangle(cornerRadius: 6))
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.leading, 50)
+                        } else {
+                            VStack(spacing: 4) {
+                                ForEach(hourTasks) { task in
+                                    bentoTaskRow(task: task)
+                                }
+                            }
+                            .padding(.leading, 50)
+                        }
+                    }
+                }
+
+                if !unscheduled.isEmpty {
+                    unscheduledSection
+                        .padding(.top, DS.Space.md)
+                }
+            }
+            .padding(DS.Space.md)
+        }
+    }
+
+    private func bentoTaskRow(task: TodoItem) -> some View {
+        let isSelected = selection?.id == task.id
+
+        return Button {
+            selection = task
+            Haptics.impact(.light)
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: task.iconName ?? "checkmark")
+                    .font(.system(size: 10, weight: .semibold))
+                    .todoBubble(diameter: 24, done: task.isCompleted)
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(task.title.isEmpty ? "Untitled Task" : task.title)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(task.isCompleted ? DS.Color.textTertiary : DS.Color.textPrimary)
+                        .strikethrough(task.isCompleted, color: DS.Color.textTertiary)
+
+                    if let start = task.startTime, let end = task.endTime {
+                        Text("\(start.formatted(.dateTime.hour().minute())) - \(end.formatted(.dateTime.hour().minute())) (\(task.durationMinutes)m)")
+                            .font(.system(size: 9))
+                            .foregroundStyle(DS.Color.textSecondary)
+                    }
+                }
+
+                Spacer()
+
+                Button {
+                    if task.isCompleted {
+                        task.completedAt = nil
+                    } else {
+                        task.completedAt = Date()
+                    }
+                    try? modelContext.save()
+                    Haptics.impact(.light)
+                } label: {
+                    Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: 13))
+                        .foregroundStyle(task.isCompleted ? DS.Color.success : DS.Color.textSecondary)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(
+                isSelected ? Color.accentColor.opacity(0.15) : DS.Color.surface,
+                in: RoundedRectangle(cornerRadius: 8)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(isSelected ? Color.accentColor.opacity(0.5) : DS.Color.border.opacity(0.3), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    var agendaStreamView: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: DS.Space.xl) {
+
+                // Morning Bucket (Box 1)
+                agendaPeriodSection(
+                    title: "MORNING SPRINT",
+                    timeRange: "07:00 – 12:00",
+                    icon: "sunrise.fill",
+                    color: DS.Color.streak,
+                    tasks: scheduled.filter {
+                        guard let s = $0.startTime else { return false }
+                        let h = cal.component(.hour, from: s)
+                        return h >= 7 && h < 12
+                    }
+                )
+
+                // Afternoon Bucket (Middle Box / Box 2)
+                agendaPeriodSection(
+                    title: "AFTERNOON DEEP WORK",
+                    timeRange: "12:00 – 17:00",
+                    icon: "sun.max.fill",
+                    color: DS.Color.active,
+                    tasks: scheduled.filter {
+                        guard let s = $0.startTime else { return false }
+                        let h = cal.component(.hour, from: s)
+                        return h >= 12 && h < 17
+                    }
+                )
+
+                // Evening Bucket (Box 3)
+                agendaPeriodSection(
+                    title: "EVENING & WIND DOWN",
+                    timeRange: "17:00 – 22:00",
+                    icon: "moon.fill",
+                    color: ColorPalette[3],
+                    tasks: scheduled.filter {
+                        guard let s = $0.startTime else { return false }
+                        let h = cal.component(.hour, from: s)
+                        return h >= 17 && h < 22
+                    }
+                )
+
+                if !unscheduled.isEmpty {
+                    Divider()
+                        .padding(.vertical, DS.Space.xs)
+
+                    unscheduledSection
+                }
+            }
+            .padding(DS.Space.lg)
+        }
+    }
+
+    private func agendaPeriodSection(title: String, timeRange: String, icon: String, color: Color, tasks: [TodoItem]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 11))
+                    .foregroundStyle(color)
+
+                Text(title)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(DS.Color.textPrimary)
+                    .tracking(0.5)
+
+                Spacer()
+
+                Text(timeRange)
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(DS.Color.textTertiary)
+            }
+            .padding(.horizontal, 4)
+
+            if tasks.isEmpty {
+                Text("No tasks scheduled for this period.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(DS.Color.textTertiary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 8)
+            } else {
+                VStack(spacing: 5) {
+                    ForEach(tasks) { task in
+                        bentoTaskRow(task: task)
+                    }
+                }
+            }
+        }
+        .padding(DS.Space.md)
+        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+        .overlay(RoundedRectangle(cornerRadius: DS.Radius.card).stroke(DS.Color.border.opacity(0.4), lineWidth: 1))
+    }
+
+    private func createBlock(at hourDate: Date) {
+        let start = hourDate
+        let item = TodoItem(title: "New Block", startTime: start, durationMinutes: 30)
+        modelContext.insert(item)
+        try? modelContext.save()
+        selection = item
+    }
+
+    // MARK: - Calendar .ics Drop Handler
+
+    private func handleTimelineDrop(providers: [NSItemProvider], dropLocation: CGPoint) -> Bool {
+        let snappedTime = snap5(timeAt(dropLocation.y))
+
+        for provider in providers {
+            // 1. Check for file URL (.ics)
+            if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
+                _ = provider.loadObject(ofClass: URL.self) { url, _ in
+                    guard let fileURL = url, fileURL.pathExtension.lowercased() == "ics",
+                          let data = try? String(contentsOf: fileURL) else { return }
+
+                    let events = ICSParser.parseICS(content: data)
+                    DispatchQueue.main.async {
+                        self.insertParsedEvents(events, fallbackStart: snappedTime)
+                    }
+                }
+                return true
+            }
+
+            // 2. Check for plain text iCal (.ics string)
+            if provider.hasItemConformingToTypeIdentifier(UTType.text.identifier) {
+                _ = provider.loadObject(ofClass: String.self) { text, _ in
+                    guard let content = text else { return }
+                    if content.contains("BEGIN:VEVENT") {
+                        let events = ICSParser.parseICS(content: content)
+                        DispatchQueue.main.async {
+                            self.insertParsedEvents(events, fallbackStart: snappedTime)
+                        }
+                    } else {
+                        // Regular text drop -> create task with title
+                        DispatchQueue.main.async {
+                            let item = TodoItem(
+                                title: content.trimmingCharacters(in: .whitespacesAndNewlines),
+                                notes: nil,
+                                dueDate: self.cal.startOfDay(for: snappedTime),
+                                startTime: snappedTime,
+                                durationMinutes: 30
+                            )
+                            self.modelContext.insert(item)
+                            try? self.modelContext.save()
+                            self.selection = item
+                            Haptics.impact(.rigid)
+                        }
+                    }
+                }
+                return true
+            }
+        }
+        return false
+    }
+
+    private func insertParsedEvents(_ events: [ICSParser.ParsedCalendarEvent], fallbackStart: Date) {
+        guard !events.isEmpty else { return }
+        for (idx, evt) in events.enumerated() {
+            let start = evt.startDate ?? cal.date(byAdding: .minute, value: idx * evt.durationMinutes, to: fallbackStart) ?? fallbackStart
+            let item = TodoItem(
+                title: evt.title,
+                notes: evt.notes,
+                dueDate: cal.startOfDay(for: start),
+                startTime: start,
+                durationMinutes: evt.durationMinutes
+            )
+            modelContext.insert(item)
+            selection = item
+        }
+        try? modelContext.save()
+        Haptics.impact(.rigid)
+    }
+
+    // MARK: - Synced Apple Calendar Block View (EventKit)
+
+    @ViewBuilder
+    private func syncedCalendarBlockView(_ event: PlutoCalendarEvent, blockAreaWidth: CGFloat) -> some View {
+        let startY = yFor(event.startDate)
+        let height = max(TM.minHeight, CGFloat(event.durationMinutes) * TM.ppm)
+        let xPos = TM.gutter + TM.blockInset
+        let width = blockAreaWidth - TM.blockInset * 2
+
+        HStack(spacing: 8) {
+            RoundedRectangle(cornerRadius: 2)
+                .fill(event.calendarColor)
+                .frame(width: 3)
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 4) {
+                    Image(systemName: "calendar")
+                        .font(.system(size: 9))
+                        .foregroundStyle(event.calendarColor)
+
+                    Text(event.title)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(DS.Color.textPrimary)
+                        .lineLimit(1)
+
+                    Spacer()
+
+                    Text(event.calendarTitle)
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundStyle(DS.Color.textTertiary)
+                }
+
+                HStack(spacing: 4) {
+                    Text("\(event.startDate, format: .dateTime.hour().minute()) – \(event.endDate, format: .dateTime.hour().minute())")
+                        .font(.system(size: 9, design: .monospaced))
+                        .foregroundStyle(DS.Color.textSecondary)
+
+                    if let loc = event.location, !loc.isEmpty {
+                        Text("· \(loc)")
+                            .font(.system(size: 9))
+                            .foregroundStyle(DS.Color.textTertiary)
+                            .lineLimit(1)
+                    }
+
+                    Spacer()
+
+                    Button {
+                        convertCalendarEventToTask(event)
+                    } label: {
+                        Text("+ Convert")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(Color.accentColor)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: 3))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .frame(width: width, height: height, alignment: .topLeading)
+        .background(
+            event.calendarColor.opacity(0.12),
+            in: RoundedRectangle(cornerRadius: 6)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(event.calendarColor.opacity(0.35), lineWidth: 1)
+        )
+        .offset(x: xPos, y: startY)
+    }
+
+    private func convertCalendarEventToTask(_ event: PlutoCalendarEvent) {
+        let item = TodoItem(
+            title: event.title,
+            notes: event.notes,
+            dueDate: cal.startOfDay(for: event.startDate),
+            startTime: event.startDate,
+            durationMinutes: event.durationMinutes
+        )
+        modelContext.insert(item)
+        try? modelContext.save()
+        selection = item
+        Haptics.impact(.rigid)
     }
 }

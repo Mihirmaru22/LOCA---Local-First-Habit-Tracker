@@ -44,6 +44,10 @@ struct MacStatBar: View {
         }
         .padding(DS.Space.lg)
         .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+        .overlay(
+            RoundedRectangle(cornerRadius: DS.Radius.card)
+                .stroke(DS.Color.border.opacity(0.35), lineWidth: 1)
+        )
     }
 
     // MARK: - Derived values

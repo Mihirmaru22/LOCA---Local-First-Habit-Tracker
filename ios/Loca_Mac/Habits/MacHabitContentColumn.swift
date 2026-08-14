@@ -1,26 +1,31 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - MacHabitContentColumn   (H1)
+// MARK: - HabitDesignVariant
 
-/// Middle column of the Mac three-pane layout for the Habits section.
-///
-/// Renders a plain `List` of habits with native macOS row selection, so the
-/// selected habit propagates to `MacHabitDetailColumn` via the `selection`
-/// binding without any custom hit-testing or gesture work.
-///
-/// `@Query` here (not in the parent) keeps this column self-contained: when
-/// the user adds a habit the list updates automatically without the parent
-/// needing to thread the data through.
-///
-/// Check-in (binary tap) is handled in-list exactly as on iOS — `CheckInWriter`
-/// writes the log entry, Haptics fires, and the detail column's query reacts.
+enum HabitDesignVariant: String, CaseIterable, Identifiable {
+    case habit1 = "Bento Ring Cards"
+    case habit2 = "Weekly Horizon Strips"
+    case habit3 = "Executive Progress Matrix"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .habit1: return "circle.grid.2x2"
+        case .habit2: return "calendar.day.timeline.leading"
+        case .habit3: return "chart.bar.xaxis"
+        }
+    }
+}
+
+// MARK: - MacHabitContentColumn (H1)
+
+/// Middle column for the Habits section with a polished Layout dropdown menu.
 struct MacHabitContentColumn: View {
 
     @Binding var selection: HabitBoard?
 
-    // #Predicate with compound `&& == nil` causes type-check timeouts; split into
-    // a single-condition query + in-memory nil check.
     @Query(filter: #Predicate<HabitBoard> { $0.habitKindRaw == 0 },
            sort: [SortDescriptor(\HabitBoard.name)], animation: .default)
     private var keystoneBoards: [HabitBoard]
@@ -28,43 +33,70 @@ struct MacHabitContentColumn: View {
     private var boards: [HabitBoard] { keystoneBoards.filter { $0.archivedAt == nil } }
 
     @Environment(\.modelContext) private var modelContext
+    @AppStorage("mac_habit_layout_v2") private var selectedVariant: HabitDesignVariant = .habit1
     @State private var showingCreateSheet = false
     @State private var showCheckInError   = false
 
-    // Explicit init prevents the synthesized memberwise init (which is private
-    // because keystoneBoards is a private @Query property) from leaking to call sites.
     init(selection: Binding<HabitBoard?>) {
         self._selection = selection
     }
 
     var body: some View {
-        List(boards, id: \.id, selection: $selection) { board in
-            MacHabitRow(board: board, onCheckBinary: { checkInBinary(board) })
-                .tag(board)
-        }
-        .listStyle(.inset)    // macOS: use .inset (.insetGrouped is iOS/Catalyst only)
-        .navigationTitle("Habits")
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
+        VStack(spacing: 0) {
+
+            // Top Toolbar Row: Count + Plus Button
+            HStack(spacing: DS.Space.sm) {
+                Text("\(boards.count) habits")
+                    .font(DS.Text.caption)
+                    .foregroundStyle(DS.Color.textTertiary)
+
+                Spacer()
+
+                // Plus Button
                 Button {
                     showingCreateSheet = true
                 } label: {
                     Image(systemName: "plus")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(Color.accentColor)
+                        .padding(5)
+                        .background(Color.accentColor.opacity(0.12), in: Circle())
                 }
+                .buttonStyle(.plain)
                 .help("New Habit (⌘N)")
                 .keyboardShortcut("n", modifiers: .command)
-                .focusedValue(\.newHabitAction, { showingCreateSheet = true })
             }
-        }
-        .overlay {
-            if boards.isEmpty {
-                ContentUnavailableView {
-                    Label("No Habits", systemImage: "checkmark.circle")
-                } description: {
-                    Text("Press ⌘N or the + button to create your first habit.")
+            .padding(.horizontal, DS.Space.md)
+            .padding(.vertical, DS.Space.sm)
+
+            Divider()
+
+            // Main List Content
+            ScrollView {
+                VStack(alignment: .leading, spacing: DS.Space.md) {
+                    switch selectedVariant {
+                    case .habit1:
+                        Habit1BentoRingsView(boards: boards, selection: $selection, onCheck: checkInBinary)
+                    case .habit2:
+                        Habit2HorizonStripsView(boards: boards, selection: $selection, onCheck: checkInBinary)
+                    case .habit3:
+                        Habit3ProgressMatrixView(boards: boards, selection: $selection, onCheck: checkInBinary)
+                    }
+                }
+                .padding(.horizontal, DS.Space.md)
+                .padding(.vertical, DS.Space.md)
+            }
+            .overlay {
+                if boards.isEmpty {
+                    ContentUnavailableView {
+                        Label("No Habits", systemImage: "checkmark.circle")
+                    } description: {
+                        Text("Press ⌘N or the + button to create your first habit.")
+                    }
                 }
             }
         }
+        .navigationTitle("Habits")
         .sheet(isPresented: $showingCreateSheet) {
             MacHabitFormPanel()
         }
@@ -78,6 +110,7 @@ struct MacHabitContentColumn: View {
     private func checkInBinary(_ board: HabitBoard) {
         do {
             try CheckInWriter.toggleBinary(board: board, context: modelContext)
+            PlutoTelemetryEngine.shared.trackHabitCheckIn(board: board, value: board.effectiveTarget, isDone: true)
             Haptics.impact(.rigid)
         } catch {
             showCheckInError = true
@@ -85,17 +118,32 @@ struct MacHabitContentColumn: View {
     }
 }
 
-// MARK: - MacHabitRow
+// MARK: - Design 1: Habit1BentoRingsView (Bento Cards with Progress Rings)
 
-/// A single row in the habits content list.
-///
-/// Compact: colour dot + name + today-progress label + binary check circle.
-/// Mirrors the information density of `HabitListRow` while fitting the
-/// narrower middle column (min 280 pt).
-private struct MacHabitRow: View {
+private struct Habit1BentoRingsView: View {
 
+    let boards: [HabitBoard]
+    @Binding var selection: HabitBoard?
+    let onCheck: (HabitBoard) -> Void
+
+    var body: some View {
+        VStack(spacing: 6) {
+            ForEach(boards, id: \.id) { board in
+                Habit1CardRow(board: board, isSelected: selection?.id == board.id, onCheck: { onCheck(board) }) {
+                    selection = board
+                }
+            }
+        }
+    }
+}
+
+private struct Habit1CardRow: View {
     let board: HabitBoard
-    let onCheckBinary: () -> Void
+    let isSelected: Bool
+    let onCheck: () -> Void
+    let onSelect: () -> Void
+
+    @State private var isHovered = false
 
     private var todaysTotal: Double {
         (board.logs ?? [])
@@ -108,44 +156,358 @@ private struct MacHabitRow: View {
     }
 
     private var isDone: Bool { progressFraction >= 1 }
+    private var color: Color { ColorPalette[board.colorIndex] }
 
     var body: some View {
-        HStack(spacing: DS.Space.md) {
-            // Colour indicator
-            Circle()
-                .fill(ColorPalette[board.colorIndex])
-                .frame(width: 10, height: 10)
+        HStack(spacing: 10) {
+            // Color Indicator Bar
+            RoundedRectangle(cornerRadius: 2)
+                .fill(color)
+                .frame(width: 4, height: 28)
 
-            // Name
-            Text(board.name)
-                .lineLimit(1)
-                .foregroundStyle(isDone ? DS.Color.textSecondary : DS.Color.textPrimary)
+            // Name & Target Details
+            VStack(alignment: .leading, spacing: 2) {
+                Text(board.name)
+                    .font(.system(size: 13, weight: isSelected ? .semibold : .medium))
+                    .foregroundStyle(isDone ? DS.Color.textSecondary : DS.Color.textPrimary)
+                    .lineLimit(1)
+
+                if board.metric == .quantitative {
+                    Text("\(todaysTotal.formatted(.number.precision(.fractionLength(0...1)))) / \(board.effectiveTarget.formatted(.number.precision(.fractionLength(0...1)))) target")
+                        .font(.system(size: 10))
+                        .foregroundStyle(DS.Color.textTertiary)
+                } else {
+                    Text(isDone ? "Completed today" : "Pending check-in")
+                        .font(.system(size: 10))
+                        .foregroundStyle(isDone ? color : DS.Color.textTertiary)
+                }
+            }
 
             Spacer()
 
-            // Progress / value label
-            if board.metric == .quantitative {
-                Text(todaysTotal.formatted(.number.precision(.fractionLength(0...1))))
-                    .font(DS.Text.valueCompact)
-                    .foregroundStyle(DS.Color.textSecondary)
-                    + Text(" / \(board.effectiveTarget.formatted(.number.precision(.fractionLength(0...1))))")
-                        .font(DS.Text.valueCompact)
-                        .foregroundStyle(DS.Color.textTertiary)
+            // Streak Flame (if active)
+            if board.currentStreak > 0 {
+                HStack(spacing: 2) {
+                    Image(systemName: "flame.fill")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.orange)
+                    Text("\(board.currentStreak)d")
+                        .font(.system(size: 10, weight: .bold))
+                        .monospacedDigit()
+                        .foregroundStyle(.orange)
+                }
+                .padding(.horizontal, 5)
+                .padding(.vertical, 2)
+                .background(Color.orange.opacity(0.12), in: Capsule())
             }
 
-            // Binary check circle
-            if board.metric == .binary {
-                Button(action: onCheckBinary) {
-                    Image(systemName: isDone ? "checkmark.circle.fill" : "circle")
-                        .foregroundStyle(
-                            isDone ? ColorPalette[board.colorIndex] : DS.Color.textTertiary
-                        )
+            // Interactive Check Ring / Button
+            Button(action: onCheck) {
+                ZStack {
+                    Circle()
+                        .stroke(color.opacity(0.2), lineWidth: 2)
+                        .frame(width: 22, height: 22)
+
+                    Circle()
+                        .trim(from: 0, to: CGFloat(progressFraction))
+                        .stroke(color, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                        .frame(width: 22, height: 22)
+
+                    if isDone {
+                        Circle()
+                            .fill(color)
+                            .frame(width: 16, height: 16)
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundStyle(.white)
+                    }
                 }
-                .buttonStyle(.plain)
-                .help(isDone ? "Undo check-in" : "Mark done for today")
+            }
+            .buttonStyle(.plain)
+            .help(isDone ? "Undo check-in" : "Mark done")
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .contentShape(Rectangle())
+        .background(
+            isSelected ? color.opacity(0.12) : (isHovered ? DS.Color.surfaceRecessed.opacity(0.5) : DS.Color.surface),
+            in: RoundedRectangle(cornerRadius: 8)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(isSelected ? color.opacity(0.6) : DS.Color.border.opacity(0.3), lineWidth: 1)
+        )
+        .onTapGesture { onSelect() }
+        .onHover { hovering in
+            isHovered = hovering
+            if hovering {
+                NSCursor.pointingHand.push()
+            } else {
+                NSCursor.pop()
             }
         }
-        .padding(.vertical, DS.Space.xs)
+    }
+}
+
+// MARK: - Design 2: Habit2HorizonStripsView (7-Day Horizon Strips)
+
+private struct Habit2HorizonStripsView: View {
+
+    let boards: [HabitBoard]
+    @Binding var selection: HabitBoard?
+    let onCheck: (HabitBoard) -> Void
+
+    private var weekDays: [Date] {
+        let cal = Calendar.current
+        var comp = cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date())
+        comp.weekday = 2 // Monday start
+        guard let monday = cal.date(from: comp) else { return [] }
+        return (0..<7).compactMap { cal.date(byAdding: .day, value: $0, to: monday) }
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header Strip
+            HStack {
+                Text("HABIT")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(DS.Color.textTertiary)
+                    .tracking(0.6)
+
+                Spacer()
+
+                HStack(spacing: 6) {
+                    ForEach(weekDays, id: \.self) { day in
+                        let isToday = Calendar.current.isDateInToday(day)
+                        Text(formatDayLetter(day))
+                            .font(.system(size: 9, weight: isToday ? .bold : .medium))
+                            .foregroundStyle(isToday ? Color.accentColor : DS.Color.textTertiary)
+                            .frame(width: 14)
+                    }
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(DS.Color.surfaceRecessed)
+
+            Divider()
+
+            VStack(spacing: 0) {
+                ForEach(boards, id: \.id) { board in
+                    Habit2StripRow(board: board, isSelected: selection?.id == board.id, weekDays: weekDays, onCheck: { onCheck(board) }) {
+                        selection = board
+                    }
+                    if board.id != boards.last?.id {
+                        Divider().padding(.leading, 12)
+                    }
+                }
+            }
+        }
+        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(DS.Color.border.opacity(0.4), lineWidth: 1)
+        )
+    }
+
+    private func formatDayLetter(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "EEEEE"
+        return f.string(from: date)
+    }
+}
+
+private struct Habit2StripRow: View {
+    let board: HabitBoard
+    let isSelected: Bool
+    let weekDays: [Date]
+    let onCheck: () -> Void
+    let onSelect: () -> Void
+
+    @State private var isHovered = false
+    private var color: Color { ColorPalette[board.colorIndex] }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(color)
+                .frame(width: 6, height: 6)
+
+            Text(board.name)
+                .font(.system(size: 12))
+                .foregroundStyle(DS.Color.textPrimary)
+                .lineLimit(1)
+
+            Spacer()
+
+            // 7-Day Micro Squares
+            HStack(spacing: 6) {
+                ForEach(weekDays, id: \.self) { day in
+                    let isDone = isDayCompleted(day)
+                    let isToday = Calendar.current.isDateInToday(day)
+
+                    ZStack {
+                        if isDone {
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(color)
+                                .frame(width: 14, height: 14)
+                        } else if isToday {
+                            RoundedRectangle(cornerRadius: 2)
+                                .strokeBorder(color.opacity(0.7), lineWidth: 1)
+                                .frame(width: 14, height: 14)
+                        } else {
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(DS.Color.surfaceRecessed)
+                                .frame(width: 14, height: 14)
+                        }
+                    }
+                    .onTapGesture {
+                        if isToday { onCheck() }
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
         .contentShape(Rectangle())
+        .background(isSelected ? color.opacity(0.12) : (isHovered ? DS.Color.surfaceRecessed.opacity(0.4) : Color.clear))
+        .onTapGesture { onSelect() }
+        .onHover { hovering in
+            isHovered = hovering
+            if hovering {
+                NSCursor.pointingHand.push()
+            } else {
+                NSCursor.pop()
+            }
+        }
+    }
+
+    private func isDayCompleted(_ date: Date) -> Bool {
+        let cal = Calendar.current
+        let target = board.effectiveTarget
+        let logs = (board.logs ?? []).filter { cal.isDate($0.timestamp, inSameDayAs: date) }
+        return logs.reduce(0.0) { $0 + $1.value } >= target
+    }
+}
+
+// MARK: - Design 3: Habit3ProgressMatrixView (Executive Minimal with Progress Bars)
+
+private struct Habit3ProgressMatrixView: View {
+
+    let boards: [HabitBoard]
+    @Binding var selection: HabitBoard?
+    let onCheck: (HabitBoard) -> Void
+
+    var body: some View {
+        VStack(spacing: 8) {
+            ForEach(boards, id: \.id) { board in
+                Habit3MatrixRow(board: board, isSelected: selection?.id == board.id, onCheck: { onCheck(board) }) {
+                    selection = board
+                }
+            }
+        }
+    }
+}
+
+private struct Habit3MatrixRow: View {
+    let board: HabitBoard
+    let isSelected: Bool
+    let onCheck: () -> Void
+    let onSelect: () -> Void
+
+    @State private var isHovered = false
+
+    private var todaysTotal: Double {
+        (board.logs ?? [])
+            .filter { $0.timestamp.isToday() }
+            .reduce(0.0) { $0 + $1.value }
+    }
+
+    private var progressFraction: Double {
+        max(0, min(1, todaysTotal / board.effectiveTarget))
+    }
+
+    private var isDone: Bool { progressFraction >= 1 }
+    private var color: Color { ColorPalette[board.colorIndex] }
+
+    var body: some View {
+        VStack(spacing: 5) {
+            HStack(spacing: 8) {
+                // Color Pill Badge
+                Text(board.name)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(DS.Color.textPrimary)
+                    .lineLimit(1)
+
+                Spacer()
+
+                if board.metric == .quantitative {
+                    Text("\(Int(todaysTotal)) / \(Int(board.effectiveTarget))")
+                        .font(.system(size: 11, weight: .bold))
+                        .monospacedDigit()
+                        .foregroundStyle(DS.Color.textSecondary)
+                }
+
+                // Tactile Square Check
+                Button(action: onCheck) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(isDone ? color : DS.Color.surfaceRecessed)
+                            .frame(width: 18, height: 18)
+
+                        RoundedRectangle(cornerRadius: 4)
+                            .strokeBorder(isDone ? color : DS.Color.border, lineWidth: 1)
+                            .frame(width: 18, height: 18)
+
+                        if isDone {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundStyle(.white)
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+
+            // Slim Gradient Progress Bar
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(DS.Color.surfaceRecessed)
+                        .frame(height: 4)
+
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(
+                            LinearGradient(
+                                colors: [color, color.opacity(0.7)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: max(0, proxy.size.width * CGFloat(progressFraction)), height: 4)
+                }
+            }
+            .frame(height: 4)
+        }
+        .padding(10)
+        .contentShape(Rectangle())
+        .background(
+            isSelected ? color.opacity(0.12) : (isHovered ? DS.Color.surfaceRecessed.opacity(0.5) : DS.Color.surface),
+            in: RoundedRectangle(cornerRadius: 8)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(isSelected ? color.opacity(0.6) : DS.Color.border.opacity(0.3), lineWidth: 1)
+        )
+        .onTapGesture { onSelect() }
+        .onHover { hovering in
+            isHovered = hovering
+            if hovering {
+                NSCursor.pointingHand.push()
+            } else {
+                NSCursor.pop()
+            }
+        }
     }
 }

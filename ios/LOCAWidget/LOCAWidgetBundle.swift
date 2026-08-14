@@ -11,5 +11,8 @@ import SwiftUI
 struct LOCAWidgetBundle: WidgetBundle {
     var body: some Widget {
         LOCAHeatmapWidget()
+        DesktopHabitMatrixWidget()
+        TodayAgendaWidget()
+        MementoMoriWidget()
     }
 }

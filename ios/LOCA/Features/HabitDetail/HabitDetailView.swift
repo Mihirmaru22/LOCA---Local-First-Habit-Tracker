@@ -574,6 +574,8 @@ struct RefHeatCell: View {
         return 0.30
     }
 
+    @State private var isHovered: Bool = false
+
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: cellSize * 0.27, style: .continuous)
@@ -595,6 +597,13 @@ struct RefHeatCell: View {
                 RoundedRectangle(cornerRadius: cellSize * 0.27, style: .continuous)
                     .stroke(DS.Color.textPrimary.opacity(0.85), lineWidth: 1.5)
                     .frame(width: cellSize, height: cellSize)
+            }
+        }
+        .scaleEffect(isHovered ? 1.25 : 1.0)
+        .zIndex(isHovered ? 10 : 1)
+        .onHover { h in
+            withAnimation(reduceMotion ? nil : DS.Motion.hover120Hz) {
+                isHovered = h
             }
         }
         .transition(.opacity)

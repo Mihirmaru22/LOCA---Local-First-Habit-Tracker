@@ -20,7 +20,7 @@ struct MacTodoQuickAdd: View {
     @State private var text: String = ""
     @FocusState private var focused: Bool
 
-    private var preview: TodoNLParser.ParseResult { TodoNLParser.parse(text) }
+    private var preview: LocaNeuralEngine.SmartTaskResult { LocaNeuralEngine.parseSmartTask(text) }
 
     private var hasTokens: Bool {
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
@@ -28,6 +28,7 @@ struct MacTodoQuickAdd: View {
             || preview.startTime != nil
             || preview.durationMinutes > 0
             || preview.priority > 0
+            || !preview.detectedTags.isEmpty
     }
 
     var body: some View {
@@ -38,7 +39,7 @@ struct MacTodoQuickAdd: View {
                     .foregroundStyle(DS.Color.textTertiary)
                     .font(.body)
 
-                TextField("Add a task…", text: $text)
+                TextField("Add a task (e.g. Gym tomorrow at 7am for 1h #health !!)…", text: $text)
                     .textFieldStyle(.plain)
                     .focused($focused)
                     .onSubmit(submit)
@@ -64,6 +65,9 @@ struct MacTodoQuickAdd: View {
                     if preview.priority > 0 {
                         TokenChip(icon: "flag.fill", label: priorityLabel(preview.priority), color: priorityColor(preview.priority))
                     }
+                    ForEach(preview.detectedTags, id: \.self) { tag in
+                        TokenChip(icon: "tag.fill", label: tag, color: Color(red: 0.68, green: 0.45, blue: 0.98))
+                    }
                     Spacer()
                 }
                 .padding(.horizontal, DS.Space.lg)
@@ -81,16 +85,18 @@ struct MacTodoQuickAdd: View {
     private func submit() {
         let raw = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !raw.isEmpty else { return }
-        let r = TodoNLParser.parse(raw)
+        let r = LocaNeuralEngine.parseSmartTask(raw)
         let item = TodoItem(
-            title:           r.title,
+            title:           r.cleanTitle,
             dueDate:         r.dueDate,
             priority:        r.priority,
             startTime:       r.startTime,
-            durationMinutes: r.durationMinutes
+            durationMinutes: r.durationMinutes,
+            category:        r.detectedTags.first
         )
         modelContext.insert(item)
         try? modelContext.save()
+        PlutoTelemetryEngine.shared.trackTaskCreated(task: item)
         text = ""
     }
 

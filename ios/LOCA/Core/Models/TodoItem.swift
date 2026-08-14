@@ -33,11 +33,22 @@ final class TodoItem {
 
     var title:   String  = ""
     var notes:   String? = nil
+    
+    /// Rich text blocks for Priority 2 Editor, stored as JSON data.
+    /// Use the `contentBlocks` computed property for read/write access.
+    var contentBlocksData: Data? = nil
+    
     var dueDate: Date?   = nil
 
-    // MARK: Priority (0 = none, 1 = low, 2 = medium, 3 = high)
-
     var priority: Int = 0
+
+    // MARK: Category & Comments
+
+    /// User-defined category (e.g., "Fitness", "Work"). `nil` implies Inbox.
+    var category: String? = nil
+    
+    /// JSON-encoded array of TaskComment.
+    var commentsData: Data? = nil
 
     // MARK: Day-planner scheduling (optional — nil = not on the timeline)
 
@@ -72,6 +83,36 @@ final class TodoItem {
     var isCompleted: Bool { completedAt != nil }
     var isArchived:  Bool { archivedAt  != nil }
 
+    /// Decoded rich-text blocks. Returns `nil` when no block data is stored.
+    var contentBlocks: [TodoContentBlock]? {
+        get {
+            guard let data = contentBlocksData else { return nil }
+            return try? JSONDecoder().decode([TodoContentBlock].self, from: data)
+        }
+        set {
+            if let blocks = newValue {
+                contentBlocksData = try? JSONEncoder().encode(blocks)
+            } else {
+                contentBlocksData = nil
+            }
+        }
+    }
+    
+    /// Decoded comments array. Returns `nil` when no comments exist.
+    var comments: [TaskComment]? {
+        get {
+            guard let data = commentsData else { return nil }
+            return try? JSONDecoder().decode([TaskComment].self, from: data)
+        }
+        set {
+            if let newComments = newValue {
+                commentsData = try? JSONEncoder().encode(newComments)
+            } else {
+                commentsData = nil
+            }
+        }
+    }
+
     /// True when the task is placed on the day-planner timeline.
     var isScheduled: Bool { startTime != nil }
 
@@ -102,25 +143,84 @@ final class TodoItem {
         id:              UUID    = UUID(),
         title:           String  = "",
         notes:           String? = nil,
+        contentBlocksData: Data? = nil,
         dueDate:         Date?   = nil,
         priority:        Int     = 0,
         startTime:       Date?   = nil,
         durationMinutes: Int     = 0,
         iconName:        String? = nil,
         parentID:        UUID?   = nil,
+        category:        String? = nil,
+        commentsData:    Data?   = nil,
         completedAt:     Date?   = nil,
         archivedAt:      Date?   = nil
     ) {
         self.id              = id
         self.title           = title
         self.notes           = notes
+        self.contentBlocksData = contentBlocksData
         self.dueDate         = dueDate
         self.priority        = priority
         self.startTime       = startTime
         self.durationMinutes = durationMinutes
         self.iconName        = iconName
         self.parentID        = parentID
+        self.category        = category
+        self.commentsData    = commentsData
         self.completedAt     = completedAt
         self.archivedAt      = archivedAt
     }
+}
+
+// MARK: - Priority 2 Block Editor Models
+
+/// The type of a block in the rich task editor.
+enum TodoBlockType: String, Codable, CaseIterable {
+    case paragraph
+    case h1
+    case h2
+    case h3
+    case bullet
+    case numbered
+    case check
+    case quote
+    case divider
+    case attachment
+    case subtask
+    case tag
+    case link
+}
+
+/// A structured block of content for the rich task editor.
+struct TodoContentBlock: Codable, Identifiable, Equatable {
+    var id: UUID
+    var type: TodoBlockType
+    var text: String
+    
+    // For check items
+    var isCompleted: Bool
+    
+    // For references (attachment, subtask, tag, link)
+    var refID: UUID?
+    
+    init(
+        id: UUID = UUID(),
+        type: TodoBlockType = .paragraph,
+        text: String = "",
+        isCompleted: Bool = false,
+        refID: UUID? = nil
+    ) {
+        self.id = id
+        self.type = type
+        self.text = text
+        self.isCompleted = isCompleted
+        self.refID = refID
+    }
+}
+
+/// A persistent comment associated with a task.
+struct TaskComment: Codable, Identifiable, Equatable {
+    var id: UUID = UUID()
+    var text: String
+    var createdAt: Date = Date()
 }

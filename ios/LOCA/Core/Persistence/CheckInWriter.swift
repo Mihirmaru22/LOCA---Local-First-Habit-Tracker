@@ -135,17 +135,20 @@ enum CheckInWriter {
 
     // MARK: - Toggle Binary (idempotent)
 
-    /// For a binary habit: inserts today's entry if none exists; deletes it otherwise.
+    /// For a binary habit: inserts an entry for the given date if none exists; deletes it otherwise.
     ///
     /// - Returns: `true` if the habit is now checked in, `false` if the entry was removed.
     @discardableResult
-    static func toggleBinary(board: HabitBoard, context: ModelContext) throws -> Bool {
-        let todayLogs = (board.logs ?? []).filter { Calendar.current.isDateInToday($0.timestamp) }
-        if let existing = todayLogs.first {
+    static func toggleBinary(board: HabitBoard, date: Date = .now, context: ModelContext) throws -> Bool {
+        let cal = Calendar.current
+        let targetLogs = (board.logs ?? []).filter {
+            $0.archivedAt == nil && cal.isDate($0.timestamp, inSameDayAs: date)
+        }
+        if let existing = targetLogs.first {
             try delete(existing, board: board, context: context)
             return false
         } else {
-            try insert(value: 1.0, board: board, context: context)
+            try insert(value: 1.0, timestamp: date, board: board, context: context)
             return true
         }
     }

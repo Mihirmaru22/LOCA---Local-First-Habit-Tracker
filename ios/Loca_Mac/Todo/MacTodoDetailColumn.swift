@@ -5,23 +5,19 @@ import SwiftData
 
 struct MacTodoDetailColumn: View {
 
-    let item: TodoItem?
+    @Binding var item: TodoItem?
 
     var body: some View {
-        if let item {
-            MacTodoEditor(item: item)
-                .id(item.id)
+        if let currentItem = item {
+            MacTodoEditor(item: currentItem)
+                .id(currentItem.id)
                 .transition(.asymmetric(
                     insertion: .opacity.combined(with: .move(edge: .trailing)),
                     removal:   .opacity.combined(with: .move(edge: .leading))
                 ))
-                .animation(DS.Motion.settle, value: item.id)
+                .animation(DS.Motion.settle, value: currentItem.id)
         } else {
-            ContentUnavailableView(
-                "No Task Selected",
-                systemImage: "checkmark.circle",
-                description: Text("Choose a task from the list or add one with Return.")
-            )
+            MacDayDashboardHub(selectedItem: $item)
         }
     }
 }
@@ -81,17 +77,13 @@ private struct MacTodoEditor: View {
                 .padding(.top, DS.Space.xl)
                 .padding(.bottom, DS.Space.md)
 
-                // MARK: Chip row — date · time · flag · subtask count
+                // MARK: Chip row — date · time · flag
                 chipRow
                     .padding(.bottom, DS.Space.xl)
 
                 // MARK: Schedule card
                 scheduleCard
                     .padding(.bottom, DS.Space.md)
-
-                // MARK: Subtasks card
-                subtasksCard
-                    .padding(.bottom, DS.Space.lg)
 
                 // MARK: Note
                 noteSection
@@ -180,20 +172,6 @@ private struct MacTodoEditor: View {
                     item.priority = 0
                     autosave()
                 }
-            }
-
-            // Subtask progress chip
-            if !subtasks.isEmpty {
-                HStack(spacing: DS.Space.xs) {
-                    TodoProgressRing(progress: subtaskProgress, diameter: 14, lineWidth: 2)
-                    Text("\(completedSubtaskCount)/\(subtasks.count)")
-                        .font(DS.Text.caption)
-                        .monospacedDigit()
-                }
-                .foregroundStyle(Color.accentColor)
-                .padding(.horizontal, 9)
-                .padding(.vertical, 5)
-                .background(Color.accentColor.opacity(0.12), in: Capsule())
             }
 
             Spacer()
@@ -385,29 +363,10 @@ private struct MacTodoEditor: View {
         }
     }
 
-    // MARK: Note section
-
-    @ViewBuilder
     private var noteSection: some View {
         VStack(alignment: .leading, spacing: DS.Space.xs) {
             detLabel("NOTE")
-
-            ZStack(alignment: .topLeading) {
-                if (item.notes ?? "").isEmpty {
-                    Text("Add a note…")
-                        .font(DS.Text.body)
-                        .foregroundStyle(DS.Color.textTertiary)
-                        .padding(.top, 2)
-                        .allowsHitTesting(false)
-                }
-                TextEditor(text: Binding(
-                    get:  { item.notes ?? "" },
-                    set:  { item.notes = $0.isEmpty ? nil : $0; autosave() }
-                ))
-                .font(DS.Text.body)
-                .frame(minHeight: 96)
-                .scrollContentBackground(.hidden)
-            }
+            MacBlockEditor(item: item, activeBlockID: .constant(nil), allItems: [], onSave: autosave)
         }
     }
 

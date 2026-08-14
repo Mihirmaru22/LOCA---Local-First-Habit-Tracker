@@ -25,6 +25,12 @@ extension DS {
         /// Mirrors `Animation.rippleSettle`.
         static let settle = Animation.spring(response: 0.4, dampingFraction: 0.75)
 
+        /// Ultra-fluid 120Hz ProMotion interactive drag spring with zero latency.
+        static let fluid120Hz = Animation.interactiveSpring(response: 0.16, dampingFraction: 0.86)
+
+        /// Fast 120Hz hover physics for continuous heatmap inspection and tooltips.
+        static let hover120Hz = Animation.spring(response: 0.12, dampingFraction: 0.9)
+
         /// Near-instant fallback used when Reduce Motion is enabled.
         static let reduced = Animation.linear(duration: 0.1)
 
@@ -36,6 +42,11 @@ extension DS {
         /// Reduce-Motion-aware settle. Pass `\.accessibilityReduceMotion`.
         static func settle(reduceMotion: Bool) -> Animation {
             reduceMotion ? reduced : settle
+        }
+
+        /// Reduce-Motion-aware 120Hz fluid drag. Pass `\.accessibilityReduceMotion`.
+        static func fluid120Hz(reduceMotion: Bool) -> Animation {
+            reduceMotion ? reduced : fluid120Hz
         }
     }
 }

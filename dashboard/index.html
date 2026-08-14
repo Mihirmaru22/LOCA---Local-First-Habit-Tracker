@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PLUTO V3.5 — Creator Alpha Telemetry & Behavioral Analytics</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #0a0b0e;
+            --bg-card: #12141a;
+            --bg-elevated: #1a1d26;
+            --bg-hover: #222634;
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-active: rgba(255, 255, 255, 0.2);
+            --text-primary: #ffffff;
+            --text-secondary: #9499ad;
+            --text-tertiary: #5d637a;
+            --accent-purple: #8b5cf6;
+            --accent-indigo: #6366f1;
+            --accent-blue: #3b82f6;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+            --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Top Navigation Header */
+        header {
+            background: rgba(18, 20, 26, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 14px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-badge {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-indigo));
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 16px;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        .brand-title {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .brand-subtitle {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            border: 1px solid var(--border-subtle);
+            padding: 8px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+            font-family: var(--font-sans);
+        }
+
+        .btn:hover {
+            background: var(--bg-hover);
+            border-color: var(--border-active);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-indigo));
+            border-color: transparent;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            box-shadow: 0 4px 14px rgba(139, 92, 246, 0.4);
+        }
+
+        /* Sub-header Connection Bar */
+        .connection-bar {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 10px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            font-size: 12px;
+        }
+
+        .connection-inputs {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .input-text {
+            background: var(--bg-base);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-family: var(--font-mono);
+            outline: none;
+            flex: 1;
+            max-width: 340px;
+        }
+
+        .input-text:focus {
+            border-color: var(--accent-purple);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-dot.active {
+            background-color: var(--accent-emerald);
+            box-shadow: 0 0 8px var(--accent-emerald);
+        }
+
+        .status-dot.inactive {
+            background-color: var(--text-tertiary);
+        }
+
+        /* Navigation Tabs */
+        .tab-bar {
+            padding: 0 28px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            gap: 4px;
+        }
+
+        .tab-button {
+            padding: 12px 18px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-button:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-button.active {
+            color: var(--text-primary);
+            border-bottom-color: var(--accent-purple);
+        }
+
+        .badge-count {
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-family: var(--font-mono);
+        }
+
+        /* Main Content Layout */
+        main {
+            padding: 24px 28px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .tab-pane {
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .tab-pane.active {
+            display: flex;
+        }
+
+        /* Grid Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+        }
+
+        .kpi-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            transition: transform 0.15s ease, border-color 0.15s ease;
+        }
+
+        .kpi-card:hover {
+            border-color: var(--border-active);
+            transform: translateY(-2px);
+        }
+
+        .kpi-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-tertiary);
+        }
+
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 800;
+            font-family: var(--font-mono);
+            letter-spacing: -1px;
+        }
+
+        .kpi-subtext {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        /* Tester Cards Grid */
+        .testers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 18px;
+        }
+
+        .tester-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tester-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue));
+        }
+
+        .tester-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .tester-id {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--text-primary);
+        }
+
+        .tester-meta {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            font-size: 12px;
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .meta-label {
+            color: var(--text-tertiary);
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .meta-val {
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+            font-size: 11px;
+        }
+
+        /* Timeline & Table */
+        .table-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+
+        .table-toolbar {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            background: var(--bg-base);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            padding: 8px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-family: var(--font-sans);
+            outline: none;
+            width: 260px;
+        }
+
+        .filter-select {
+            background: var(--bg-base);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            text-align: left;
+        }
+
+        th {
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+            padding: 12px 18px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        td {
+            padding: 12px 18px;
+            border-bottom: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            vertical-align: top;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-primary);
+        }
+
+        .event-tag {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+        }
+
+        .tag-habit { background: rgba(139, 92, 246, 0.15); color: var(--accent-purple); border: 1px solid rgba(139, 92, 246, 0.3); }
+        .tag-task { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); border: 1px solid rgba(59, 130, 246, 0.3); }
+        .tag-focus { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.3); }
+        .tag-journal { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .tag-crash { background: rgba(244, 63, 94, 0.15); color: var(--accent-rose); border: 1px solid rgba(244, 63, 94, 0.3); }
+        .tag-app { background: rgba(255, 255, 255, 0.08); color: var(--text-primary); border: 1px solid var(--border-subtle); }
+
+        .json-viewer {
+            background: var(--bg-base);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            padding: 8px 12px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: #d1d5db;
+            max-height: 160px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        /* State Snapshot View */
+        .snapshot-container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 18px;
+        }
+
+        .snapshot-tree {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 18px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            overflow-y: auto;
+            max-height: 650px;
+        }
+
+        /* Empty / Loading State */
+        .empty-state {
+            padding: 60px 20px;
+            text-align: center;
+            color: var(--text-tertiary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="brand-group">
+            <div class="brand-badge">P</div>
+            <div>
+                <div class="brand-title">PLUTO V3.5 Creator Alpha Command Center</div>
+                <div class="brand-subtitle">Private Behavioral Ingestion & Diagnostic X-Ray</div>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <button class="btn" onclick="loadMockData()">⚡ Load Demo Alpha Telemetry</button>
+            <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="handleFileUpload(event)">
+            <button class="btn" onclick="document.getElementById('jsonFileInput').click()">📁 Load Diagnostic JSON</button>
+            <button class="btn btn-primary" onclick="refreshSupabaseData()">🔄 Live Refresh</button>
+        </div>
+    </header>
+
+    <!-- Sub-header Connection Bar -->
+    <div class="connection-bar">
+        <div class="connection-inputs">
+            <span class="status-dot active" id="connStatusDot"></span>
+            <span style="font-weight: 600;">Supabase Ingestion:</span>
+            <input type="text" class="input-text" id="supabaseUrlInput" placeholder="https://xyz.supabase.co" value="https://rqujshlqgffuabpxiujw.supabase.co">
+            <input type="password" class="input-text" id="supabaseKeyInput" placeholder="Anon or Service Role Key">
+            <button class="btn" onclick="saveConnectionSettings()">Connect</button>
+        </div>
+
+        <div style="font-family: var(--font-mono); color: var(--text-secondary);" id="lastSyncLabel">
+            Ready (Local In-Memory Cache)
+        </div>
+    </div>
+
+    <!-- Navigation Tab Bar -->
+    <div class="tab-bar">
+        <button class="tab-button active" onclick="switchTab('testers')">
+            👥 Testers Directory <span class="badge-count" id="badgeTestersCount">0</span>
+        </button>
+        <button class="tab-button" onclick="switchTab('timeline')">
+            ⏱️ Action Timeline <span class="badge-count" id="badgeEventsCount">0</span>
+        </button>
+        <button class="tab-button" onclick="switchTab('snapshots')">
+            💾 State Snapshot X-Ray <span class="badge-count" id="badgeSnapshotsCount">0</span>
+        </button>
+        <button class="tab-button" onclick="switchTab('analytics')">
+            📊 Product Analytics
+        </button>
+        <button class="tab-button" onclick="switchTab('crashes')">
+            🐞 Crash Forensics <span class="badge-count" id="badgeCrashesCount" style="color: var(--accent-rose);">0</span>
+        </button>
+    </div>
+
+    <!-- Main Workspace -->
+    <main>
+
+        <!-- KPI Header -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-label">Active Alpha Testers</div>
+                <div class="kpi-value" id="kpiTestersCount" style="color: var(--accent-purple);">0</div>
+                <div class="kpi-subtext">Private 1–3 Trusted Run</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Total Behavioral Actions</div>
+                <div class="kpi-value" id="kpiEventsCount" style="color: var(--accent-blue);">0</div>
+                <div class="kpi-subtext">Unredacted Event Ingests</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Habit Check-Ins Logged</div>
+                <div class="kpi-value" id="kpiHabitsLogged" style="color: var(--accent-emerald);">0</div>
+                <div class="kpi-subtext">Completion Velocity</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Focus Minutes Tracked</div>
+                <div class="kpi-value" id="kpiFocusMinutes" style="color: var(--accent-amber);">0</div>
+                <div class="kpi-subtext">Pomodoro Deep Work</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Crash Free Sessions</div>
+                <div class="kpi-value" id="kpiCrashFreeRate" style="color: var(--accent-emerald);">100%</div>
+                <div class="kpi-subtext">0 Uncaught Exceptions</div>
+            </div>
+        </div>
+
+        <!-- TAB 1: Testers Directory -->
+        <div class="tab-pane active" id="pane-testers">
+            <div class="testers-grid" id="testersGrid">
+                <!-- Dynamically Populated -->
+            </div>
+        </div>
+
+        <!-- TAB 2: Action Timeline & Waterfall -->
+        <div class="tab-pane" id="pane-timeline">
+            <div class="table-container">
+                <div class="table-toolbar">
+                    <input type="text" class="search-input" id="eventSearchInput" placeholder="Filter by event name, habit, task..." oninput="renderEventsTable()">
+                    <select class="filter-select" id="eventCategoryFilter" onchange="renderEventsTable()">
+                        <option value="all">All Categories</option>
+                        <option value="habit">Habits</option>
+                        <option value="task">Tasks & Day Planner</option>
+                        <option value="focus">Focus Sprints</option>
+                        <option value="journal">Journal & Reflections</option>
+                        <option value="sleep">Sleep & Routines</option>
+                        <option value="app">App & Navigation</option>
+                    </select>
+                    <select class="filter-select" id="eventTesterFilter" onchange="renderEventsTable()">
+                        <option value="all">All Testers</option>
+                    </select>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 140px;">Timestamp</th>
+                            <th style="width: 110px;">Tester</th>
+                            <th style="width: 160px;">Event Name</th>
+                            <th>Payload Properties (Unredacted)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="eventsTableBody">
+                        <!-- Dynamically Populated -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 3: State Snapshot X-Ray -->
+        <div class="tab-pane" id="pane-snapshots">
+            <div class="snapshot-container">
+                <div class="table-container">
+                    <div style="padding: 14px 18px; font-weight: 700; border-bottom: 1px solid var(--border-subtle);">
+                        Available Snapshots
+                    </div>
+                    <div id="snapshotList" style="max-height: 600px; overflow-y: auto;">
+                        <!-- List of Snapshots -->
+                    </div>
+                </div>
+
+                <div class="snapshot-tree" id="snapshotDetails">
+                    Select a snapshot to inspect full local database state (all habits, tasks, streaks, sleep entries).
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: Product Analytics -->
+        <div class="tab-pane" id="pane-analytics">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px;">
+                <div class="table-container" style="padding: 20px;">
+                    <h3 style="margin-bottom: 14px; font-size: 15px;">Layout Preference Breakdown</h3>
+                    <div id="layoutStats"></div>
+                </div>
+                <div class="table-container" style="padding: 20px;">
+                    <h3 style="margin-bottom: 14px; font-size: 15px;">Top Created Habit Domains</h3>
+                    <div id="habitStats"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: Crash Forensics -->
+        <div class="tab-pane" id="pane-crashes">
+            <div class="table-container">
+                <div style="padding: 14px 18px; font-weight: 700; border-bottom: 1px solid var(--border-subtle);">
+                    Captured Crash Diagnostics & Preceding Action Breadcrumbs
+                </div>
+                <div id="crashesList" style="padding: 18px;">
+                    <div class="empty-state">No crashes recorded. 100% Stability across all tester sessions.</div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- App State & Ingestion Logic -->
+    <script>
+        let telemetryState = {
+            testers: [],
+            events: [],
+            snapshots: [],
+            crashes: [],
+            performance: []
+        };
+
+        // Initialize with realistic mock dataset for instant demonstration
+        function loadMockData() {
+            telemetryState = {
+                testers: [
+                    {
+                        tester_id: "tester_184",
+                        tester_name: "Lead Alpha Tester",
+                        device_name: "MacBook Pro",
+                        device_model: "Mac15,3 (M3 Max)",
+                        macos_version: "macOS 15.1 (Sequoia)",
+                        app_version: "3.5.0 (Alpha)",
+                        first_seen_at: "2026-08-14T08:00:00Z",
+                        last_seen_at: new Date().toISOString()
+                    },
+                    {
+                        tester_id: "tester_291",
+                        tester_name: "Executive Beta Partner",
+                        device_name: "Mac Studio",
+                        device_model: "Mac14,14 (M2 Ultra)",
+                        macos_version: "macOS 14.6 (Sonoma)",
+                        app_version: "3.5.0 (Alpha)",
+                        first_seen_at: "2026-08-13T14:30:00Z",
+                        last_seen_at: new Date(Date.now() - 3600000).toISOString()
+                    }
+                ],
+                events: [
+                    {
+                        event_id: "evt_tester_184_001",
+                        tester_id: "tester_184",
+                        event_name: "app_launched",
+                        timestamp: new Date(Date.now() - 7200000).toISOString(),
+                        properties: { screen: "MacRootView", device: "M3 Max" }
+                    },
+                    {
+                        event_id: "evt_tester_184_002",
+                        tester_id: "tester_184",
+                        event_name: "habit_created",
+                        timestamp: new Date(Date.now() - 7000000).toISOString(),
+                        properties: { habit_name: "Morning Sunlight & 10k Steps", category: "Health", target: 10000, metric: "Quantitative" }
+                    },
+                    {
+                        event_id: "evt_tester_184_003",
+                        tester_id: "tester_184",
+                        event_name: "habit_checked",
+                        timestamp: new Date(Date.now() - 6500000).toISOString(),
+                        properties: { habit_name: "Morning Sunlight & 10k Steps", value_logged: 10000, is_target_met: true, current_streak: 1 }
+                    },
+                    {
+                        event_id: "evt_tester_184_004",
+                        tester_id: "tester_184",
+                        event_name: "task_created",
+                        timestamp: new Date(Date.now() - 6000000).toISOString(),
+                        properties: { title: "Complete Q3 PLUTO Architecture Review", duration_minutes: 45, is_scheduled: true, priority: 1 }
+                    },
+                    {
+                        event_id: "evt_tester_184_005",
+                        tester_id: "tester_184",
+                        event_name: "focus_session_completed",
+                        timestamp: new Date(Date.now() - 3600000).toISOString(),
+                        properties: { duration_seconds: 1500, sound_name: "Lo-Fi Focus Chords", task_title: "Complete Q3 PLUTO Architecture Review" }
+                    },
+                    {
+                        event_id: "evt_tester_184_006",
+                        tester_id: "tester_184",
+                        event_name: "journal_reflection_saved",
+                        timestamp: new Date(Date.now() - 1800000).toISOString(),
+                        properties: { word_count: 84, clarity_score: 0.82, sleep_hours: 8.5 }
+                    },
+                    {
+                        event_id: "evt_tester_184_007",
+                        tester_id: "tester_184",
+                        event_name: "layout_preference_changed",
+                        timestamp: new Date(Date.now() - 900000).toISOString(),
+                        properties: { section: "Habits", layout_variant: "Bento Ring Cards" }
+                    }
+                ],
+                snapshots: [
+                    {
+                        snapshot_id: "snap_tester_184_initial",
+                        tester_id: "tester_184",
+                        timestamp: new Date().toISOString(),
+                        snapshot_json: {
+                            active_habits_count: 5,
+                            total_habits: [
+                                { name: "Morning Sunlight & 10k Steps", category: "Health", current_streak: 1, metric: "Quantitative", target: 10000 },
+                                { name: "Read 20 Pages Deep Architecture", category: "Learning", current_streak: 4, metric: "Binary", target: 1 },
+                                { name: "Zero Sugar & Fasting", category: "Diet", current_streak: 12, metric: "Binary", target: 1 }
+                            ],
+                            total_tasks: [
+                                { title: "Complete Q3 PLUTO Architecture Review", is_completed: true, duration_minutes: 45 },
+                                { title: "Conduct Private Alpha Tester Walkthrough", is_completed: false, duration_minutes: 30 }
+                            ]
+                        }
+                    }
+                ],
+                crashes: []
+            };
+
+            updateUI();
+            document.getElementById('lastSyncLabel').textContent = "Loaded Demo Dataset (" + new Date().toLocaleTimeString() + ")";
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+            event.currentTarget.classList.add('active');
+            document.getElementById('pane-' + tabId).classList.add('active');
+        }
+
+        function updateUI() {
+            // Update Badges
+            document.getElementById('badgeTestersCount').textContent = telemetryState.testers.length;
+            document.getElementById('badgeEventsCount').textContent = telemetryState.events.length;
+            document.getElementById('badgeSnapshotsCount').textContent = telemetryState.snapshots.length;
+            document.getElementById('badgeCrashesCount').textContent = telemetryState.crashes.length;
+
+            // Update KPIs
+            document.getElementById('kpiTestersCount').textContent = telemetryState.testers.length;
+            document.getElementById('kpiEventsCount').textContent = telemetryState.events.length;
+            
+            const habitChecks = telemetryState.events.filter(e => e.event_name === 'habit_checked').length;
+            document.getElementById('kpiHabitsLogged').textContent = habitChecks;
+
+            const focusEvents = telemetryState.events.filter(e => e.event_name === 'focus_session_completed');
+            const focusMins = focusEvents.reduce((sum, e) => sum + Math.round((e.properties?.duration_seconds || 1500) / 60), 0);
+            document.getElementById('kpiFocusMinutes').textContent = focusMins;
+
+            document.getElementById('kpiCrashFreeRate').textContent = telemetryState.crashes.length === 0 ? "100%" : (100 - (telemetryState.crashes.length * 10)) + "%";
+
+            renderTesters();
+            renderEventsTable();
+            renderSnapshots();
+            renderAnalytics();
+            renderCrashes();
+        }
+
+        function renderTesters() {
+            const container = document.getElementById('testersGrid');
+            container.innerHTML = '';
+
+            telemetryState.testers.forEach(t => {
+                const card = document.createElement('div');
+                card.className = 'tester-card';
+                card.innerHTML = `
+                    <div class="tester-header">
+                        <div class="tester-id">${t.tester_name || t.tester_id} <span style="font-size:12px; color:var(--text-tertiary);">(${t.tester_id})</span></div>
+                        <span class="event-tag tag-habit">Active Alpha</span>
+                    </div>
+                    <div class="tester-meta">
+                        <div class="meta-item">
+                            <div class="meta-label">Device Model</div>
+                            <div class="meta-val">${t.device_model || 'Apple Mac'}</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-label">macOS Version</div>
+                            <div class="meta-val">${t.macos_version || 'macOS 15'}</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-label">App Build</div>
+                            <div class="meta-val">${t.app_version || '3.5.0'}</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-label">Last Active</div>
+                            <div class="meta-val">${new Date(t.last_seen_at).toLocaleTimeString()}</div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderEventsTable() {
+            const query = (document.getElementById('eventSearchInput').value || '').toLowerCase();
+            const category = document.getElementById('eventCategoryFilter').value;
+            const tbody = document.getElementById('eventsTableBody');
+            tbody.innerHTML = '';
+
+            const filtered = telemetryState.events.filter(e => {
+                const matchesQuery = e.event_name.toLowerCase().includes(query) || JSON.stringify(e.properties).toLowerCase().includes(query);
+                let matchesCategory = true;
+                if (category === 'habit') matchesCategory = e.event_name.includes('habit');
+                if (category === 'task') matchesCategory = e.event_name.includes('task');
+                if (category === 'focus') matchesCategory = e.event_name.includes('focus');
+                if (category === 'journal') matchesCategory = e.event_name.includes('journal');
+                return matchesQuery && matchesCategory;
+            });
+
+            filtered.slice().reverse().forEach(e => {
+                const tr = document.createElement('tr');
+                let tagClass = 'tag-app';
+                if (e.event_name.includes('habit')) tagClass = 'tag-habit';
+                if (e.event_name.includes('task')) tagClass = 'tag-task';
+                if (e.event_name.includes('focus')) tagClass = 'tag-focus';
+                if (e.event_name.includes('journal')) tagClass = 'tag-journal';
+                if (e.event_name.includes('crash')) tagClass = 'tag-crash';
+
+                tr.innerHTML = `
+                    <td style="font-family: var(--font-mono); font-size:11px;">${new Date(e.timestamp).toLocaleTimeString()}</td>
+                    <td style="font-family: var(--font-mono); font-weight:600;">${e.tester_id}</td>
+                    <td><span class="event-tag ${tagClass}">${e.event_name}</span></td>
+                    <td><div class="json-viewer">${JSON.stringify(e.properties, null, 2)}</div></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderSnapshots() {
+            const list = document.getElementById('snapshotList');
+            list.innerHTML = '';
+
+            telemetryState.snapshots.forEach((snap, idx) => {
+                const item = document.createElement('div');
+                item.style.padding = '12px 18px';
+                item.style.borderBottom = '1px solid var(--border-subtle)';
+                item.style.cursor = 'pointer';
+                item.innerHTML = `
+                    <div style="font-weight:700; color:var(--text-primary);">${snap.snapshot_id}</div>
+                    <div style="font-size:11px; color:var(--text-secondary);">${new Date(snap.timestamp).toLocaleString()}</div>
+                `;
+                item.onclick = () => {
+                    document.getElementById('snapshotDetails').innerHTML = `<pre>${JSON.stringify(snap.snapshot_json, null, 2)}</pre>`;
+                };
+                list.appendChild(item);
+            });
+
+            if (telemetryState.snapshots.length > 0) {
+                document.getElementById('snapshotDetails').innerHTML = `<pre>${JSON.stringify(telemetryState.snapshots[0].snapshot_json, null, 2)}</pre>`;
+            }
+        }
+
+        function renderAnalytics() {
+            document.getElementById('layoutStats').innerHTML = `
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <div>Bento Ring Cards (Design 1): <strong>70%</strong></div>
+                    <div>Weekly Horizon Strips (Design 2): <strong>20%</strong></div>
+                    <div>Executive Progress Matrix (Design 3): <strong>10%</strong></div>
+                </div>
+            `;
+            document.getElementById('habitStats').innerHTML = `
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <div>Health & Fitness: <strong>45%</strong></div>
+                    <div>Deep Architecture & Learning: <strong>35%</strong></div>
+                    <div>Mindfulness & Journaling: <strong>20%</strong></div>
+                </div>
+            `;
+        }
+
+        function renderCrashes() {
+            const container = document.getElementById('crashesList');
+            if (telemetryState.crashes.length === 0) {
+                container.innerHTML = `<div class="empty-state">No crashes recorded. 100% Stability across all tester sessions.</div>`;
+            } else {
+                container.innerHTML = JSON.stringify(telemetryState.crashes, null, 2);
+            }
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (Array.isArray(parsed)) {
+                        telemetryState.events = parsed;
+                    } else if (parsed.events) {
+                        telemetryState = parsed;
+                    }
+                    updateUI();
+                    document.getElementById('lastSyncLabel').textContent = "Loaded " + file.name;
+                } catch(err) {
+                    alert("Invalid JSON: " + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        async function refreshSupabaseData() {
+            const url = document.getElementById('supabaseUrlInput').value;
+            const key = document.getElementById('supabaseKeyInput').value;
+
+            if (!key) {
+                loadMockData();
+                return;
+            }
+
+            try {
+                document.getElementById('lastSyncLabel').textContent = "Querying Supabase REST API...";
+                const headers = { "apikey": key, "Authorization": "Bearer " + key };
+
+                const [testersRes, eventsRes, snapsRes, crashesRes] = await Promise.all([
+                    fetch(`${url}/rest/v1/alpha_testers?select=*`, { headers }),
+                    fetch(`${url}/rest/v1/alpha_events?select=*&order=timestamp.desc&limit=500`, { headers }),
+                    fetch(`${url}/rest/v1/alpha_state_snapshots?select=*&order=timestamp.desc&limit=50`, { headers }),
+                    fetch(`${url}/rest/v1/alpha_crashes?select=*&order=timestamp.desc&limit=50`, { headers })
+                ]);
+
+                if (eventsRes.ok) {
+                    telemetryState.testers = await testersRes.json();
+                    telemetryState.events = await eventsRes.json();
+                    telemetryState.snapshots = await snapsRes.json();
+                    telemetryState.crashes = await crashesRes.json();
+                    updateUI();
+                    document.getElementById('lastSyncLabel').textContent = "Live Synced (" + new Date().toLocaleTimeString() + ")";
+                }
+            } catch (err) {
+                alert("Supabase Fetch Failed: " + err.message);
+            }
+        }
+
+        // Initialize demo on load
+        loadMockData();
+    </script>
+</body>
+</html>
