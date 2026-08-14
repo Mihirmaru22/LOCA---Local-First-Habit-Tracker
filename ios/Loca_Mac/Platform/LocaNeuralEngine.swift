@@ -284,21 +284,23 @@ enum LocaNeuralEngine {
 
         // Bullet 1: Wins & Primary Momentum
         if !winNotes.isEmpty {
-            let winSentences = winNotes.compactMap { $0.text.split(separator: ".").first }.map { String($0).trimmingCharacters(in: .whitespaces) }
-            let summaryText = winSentences.prefix(2).joined(separator: "; ")
+            let winSnippets = winNotes.compactMap { sanitizeSnippet($0.text) }.filter { !$0.isEmpty }
+            let summaryText = winSnippets.prefix(2).joined(separator: "; ")
+            let detailPart = summaryText.isEmpty ? "" : " — \(summaryText)"
             bullets.append(ExecutiveBullet(
                 category: "Momentum & Key Wins",
                 icon: "sparkles",
                 color: DS.Color.streak,
-                text: "Celebrated \(winNotes.count) core win\(winNotes.count == 1 ? "" : "s"): \"\(summaryText)\"."
+                text: "Celebrated \(winNotes.count) core win\(winNotes.count == 1 ? "" : "s")\(detailPart)."
             ))
         } else {
-            let firstSentence = active.first?.text.split(separator: ".").first ?? "Consistent logging maintained"
+            let cleanSnippet = sanitizeSnippet(active.first?.text ?? "")
+            let detailPart = cleanSnippet.isEmpty ? "" : " — \(cleanSnippet)"
             bullets.append(ExecutiveBullet(
                 category: "Momentum",
                 icon: "sparkles",
                 color: DS.Color.streak,
-                text: "Steady progression across active habits: \"\(String(firstSentence).trimmingCharacters(in: .whitespaces))\"."
+                text: "Steady progression across active habits\(detailPart)."
             ))
         }
 
@@ -336,6 +338,36 @@ enum LocaNeuralEngine {
             sentimentScore: avgSentiment,
             totalEntriesCount: active.count
         )
+    }
+
+    private static func sanitizeSnippet(_ text: String, maxLength: Int = 120) -> String {
+        let lines = text.components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        guard var clean = lines.first else { return "" }
+
+        let prefixes = ["• ", "○ ", "● ", "☐ ", "☑ ", "“ ", "> ", "- ", "* "]
+        for p in prefixes {
+            if clean.hasPrefix(p) {
+                clean.removeFirst(p.count)
+                break
+            }
+        }
+
+        if let regex = try? NSRegularExpression(pattern: "^[0-9]+\\.\\s*"),
+           let match = regex.firstMatch(in: clean, range: NSRange(location: 0, length: clean.utf16.count)) {
+            clean = (clean as NSString).substring(from: match.range.length)
+        }
+
+        clean = clean.replacingOccurrences(of: "\\", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if clean.count > maxLength {
+            clean = String(clean.prefix(maxLength)).trimmingCharacters(in: .whitespaces) + "…"
+        }
+
+        return clean
     }
 }
 
