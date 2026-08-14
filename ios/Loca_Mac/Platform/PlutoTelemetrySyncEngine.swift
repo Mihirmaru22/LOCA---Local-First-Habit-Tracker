@@ -69,7 +69,7 @@ final class PlutoTelemetrySyncEngine: @unchecked Sendable {
         let appVersion = await MainActor.run { PlutoTelemetryEngine.shared.appVersion }
 
         do {
-            // 1. Upsert Tester Profile to /rest/v1/alpha_testers
+            // 1. Upsert Tester Profile to /rest/v1/alpha_testers (MUST succeed before events)
             if let testersURL = URL(string: "\(supabaseBaseURL)/rest/v1/alpha_testers") {
                 var request = URLRequest(url: testersURL)
                 request.httpMethod = "POST"
@@ -88,7 +88,16 @@ final class PlutoTelemetrySyncEngine: @unchecked Sendable {
                     "last_active": ISO8601DateFormatter().string(from: Date())
                 ]
                 request.httpBody = try JSONSerialization.data(withJSONObject: testerPayload)
-                _ = try? await URLSession.shared.data(for: request)
+                let (testerData, testerResponse) = try await URLSession.shared.data(for: request)
+                let testerStatus = (testerResponse as? HTTPURLResponse)?.statusCode ?? -1
+                if !(200...299).contains(testerStatus) {
+                    let msg = String(data: testerData, encoding: .utf8) ?? ""
+                    logger.error("❌ Tester upsert failed: \(testerStatus) \(msg)")
+                    // Abort: events will fail foreign key constraint without tester row
+                    scheduleBackoffRetry()
+                    return
+                }
+                logger.debug("✅ Tester upserted: \(testerID)")
             }
 
             // 2. Insert Events to /rest/v1/alpha_events
