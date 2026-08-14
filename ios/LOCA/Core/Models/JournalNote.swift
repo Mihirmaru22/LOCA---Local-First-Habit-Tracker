@@ -27,6 +27,7 @@ final class JournalNote {
     var photoFileNames: [String] = []
     var audioFileName:  String?  = nil
     var audioTitle:     String?  = "Voice Memo"
+    var rtfData:        Data?    = nil
     var archivedAt:     Date?    = nil
 
     /// Stores `NoteKind` as an `Int` for CloudKit compatibility.

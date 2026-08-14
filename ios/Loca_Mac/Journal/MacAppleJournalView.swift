@@ -50,6 +50,245 @@ final class JournalMediaManager {
     }
 }
 
+// MARK: - AppleJournalRichTextController
+
+final class AppleJournalRichTextController: ObservableObject {
+    weak var textView: NSTextView?
+    var onTextChange: ((String, Data?) -> Void)?
+
+    func toggleBold() {
+        guard let tv = textView else { return }
+        let fm = NSFontManager.shared
+        let range = tv.selectedRange()
+        if range.length > 0 {
+            if let ts = tv.textStorage {
+                ts.beginEditing()
+                ts.enumerateAttribute(.font, in: range, options: []) { value, subrange, _ in
+                    let cur = (value as? NSFont) ?? NSFont.systemFont(ofSize: 15)
+                    let isBold = cur.fontDescriptor.symbolicTraits.contains(.bold)
+                    let newFont = fm.convert(cur, toHaveTrait: isBold ? .unboldFontMask : .boldFontMask)
+                    ts.addAttribute(.font, value: newFont, range: subrange)
+                }
+                ts.endEditing()
+                notifyChange()
+            }
+        } else {
+            var attrs = tv.typingAttributes
+            let cur = (attrs[.font] as? NSFont) ?? NSFont.systemFont(ofSize: 15)
+            let isBold = cur.fontDescriptor.symbolicTraits.contains(.bold)
+            attrs[.font] = fm.convert(cur, toHaveTrait: isBold ? .unboldFontMask : .boldFontMask)
+            tv.typingAttributes = attrs
+        }
+        Haptics.impact(.light)
+    }
+
+    func toggleItalic() {
+        guard let tv = textView else { return }
+        let fm = NSFontManager.shared
+        let range = tv.selectedRange()
+        if range.length > 0 {
+            if let ts = tv.textStorage {
+                ts.beginEditing()
+                ts.enumerateAttribute(.font, in: range, options: []) { value, subrange, _ in
+                    let cur = (value as? NSFont) ?? NSFont.systemFont(ofSize: 15)
+                    let isItalic = cur.fontDescriptor.symbolicTraits.contains(.italic)
+                    let newFont = fm.convert(cur, toHaveTrait: isItalic ? .unitalicFontMask : .italicFontMask)
+                    ts.addAttribute(.font, value: newFont, range: subrange)
+                }
+                ts.endEditing()
+                notifyChange()
+            }
+        } else {
+            var attrs = tv.typingAttributes
+            let cur = (attrs[.font] as? NSFont) ?? NSFont.systemFont(ofSize: 15)
+            let isItalic = cur.fontDescriptor.symbolicTraits.contains(.italic)
+            attrs[.font] = fm.convert(cur, toHaveTrait: isItalic ? .unitalicFontMask : .italicFontMask)
+            tv.typingAttributes = attrs
+        }
+        Haptics.impact(.light)
+    }
+
+    func toggleUnderline() {
+        guard let tv = textView else { return }
+        let range = tv.selectedRange()
+        if range.length > 0 {
+            if let ts = tv.textStorage {
+                ts.beginEditing()
+                let currentVal = ts.attribute(.underlineStyle, at: range.location, effectiveRange: nil) as? Int ?? 0
+                let newVal = (currentVal == 0) ? NSUnderlineStyle.single.rawValue : 0
+                ts.addAttribute(.underlineStyle, value: newVal, range: range)
+                ts.endEditing()
+                notifyChange()
+            }
+        } else {
+            var attrs = tv.typingAttributes
+            let currentVal = attrs[.underlineStyle] as? Int ?? 0
+            attrs[.underlineStyle] = (currentVal == 0) ? NSUnderlineStyle.single.rawValue : 0
+            tv.typingAttributes = attrs
+        }
+        Haptics.impact(.light)
+    }
+
+    func toggleStrikethrough() {
+        guard let tv = textView else { return }
+        let range = tv.selectedRange()
+        if range.length > 0 {
+            if let ts = tv.textStorage {
+                ts.beginEditing()
+                let currentVal = ts.attribute(.strikethroughStyle, at: range.location, effectiveRange: nil) as? Int ?? 0
+                let newVal = (currentVal == 0) ? NSUnderlineStyle.single.rawValue : 0
+                ts.addAttribute(.strikethroughStyle, value: newVal, range: range)
+                ts.endEditing()
+                notifyChange()
+            }
+        } else {
+            var attrs = tv.typingAttributes
+            let currentVal = attrs[.strikethroughStyle] as? Int ?? 0
+            attrs[.strikethroughStyle] = (currentVal == 0) ? NSUnderlineStyle.single.rawValue : 0
+            tv.typingAttributes = attrs
+        }
+        Haptics.impact(.light)
+    }
+
+    func insertBulletList() {
+        insertPrefixOnCurrentLine("• ")
+    }
+
+    func insertChecklist() {
+        insertPrefixOnCurrentLine("☐ ")
+    }
+
+    func insertNumberedList() {
+        insertPrefixOnCurrentLine("1. ")
+    }
+
+    func insertBlockquote() {
+        insertPrefixOnCurrentLine("“ ")
+    }
+
+    func insertDivider() {
+        guard let tv = textView else { return }
+        tv.insertText("\n────────────────────────\n", replacementRange: tv.selectedRange())
+        notifyChange()
+        Haptics.impact(.light)
+    }
+
+    private func insertPrefixOnCurrentLine(_ prefix: String) {
+        guard let tv = textView, let string = tv.string as NSString? else { return }
+        let range = tv.selectedRange()
+        let lineRange = string.lineRange(for: NSRange(location: range.location, length: 0))
+        tv.setSelectedRange(NSRange(location: lineRange.location, length: 0))
+        tv.insertText(prefix, replacementRange: NSRange(location: lineRange.location, length: 0))
+        notifyChange()
+        Haptics.impact(.light)
+    }
+
+    func notifyChange() {
+        guard let tv = textView else { return }
+        let plain = tv.string
+        let rtf = try? tv.textStorage?.data(from: NSRange(location: 0, length: tv.textStorage?.length ?? 0), documentAttributes: [.documentType: NSAttributedString.DocumentType.rtf])
+        onTextChange?(plain, rtf)
+    }
+}
+
+// MARK: - AppleJournalRichTextView (NSViewRepresentable)
+
+struct AppleJournalRichTextView: NSViewRepresentable {
+    @Binding var text: String
+    @Binding var rtfData: Data?
+    let controller: AppleJournalRichTextController
+
+    func makeNSView(context: Context) -> NSScrollView {
+        let scrollView = NSTextView.scrollableTextView()
+        guard let textView = scrollView.documentView as? NSTextView else {
+            return scrollView
+        }
+
+        textView.delegate = context.coordinator
+        textView.isRichText = true
+        textView.allowsUndo = true
+        textView.isAutomaticQuoteSubstitutionEnabled = true
+        textView.isAutomaticDashSubstitutionEnabled = true
+        textView.font = NSFont.systemFont(ofSize: 15, weight: .regular)
+        textView.textColor = NSColor.textColor
+        textView.backgroundColor = .clear
+        textView.drawsBackground = false
+        textView.insertionPointColor = NSColor(red: 0.38, green: 0.45, blue: 0.98, alpha: 1.0)
+        textView.textContainerInset = NSSize(width: 0, height: 12)
+
+        scrollView.drawsBackground = false
+        scrollView.borderType = .noBorder
+        scrollView.hasVerticalScroller = false
+
+        controller.textView = textView
+        controller.onTextChange = { plain, rtf in
+            DispatchQueue.main.async {
+                self.text = plain
+                self.rtfData = rtf
+            }
+        }
+
+        // Load Initial Content
+        if let data = rtfData,
+           let attrStr = try? NSAttributedString(data: data, options: [.documentType: NSAttributedString.DocumentType.rtf], documentAttributes: nil) {
+            textView.textStorage?.setAttributedString(attrStr)
+        } else if !text.isEmpty {
+            textView.string = text
+        }
+
+        return scrollView
+    }
+
+    func updateNSView(_ nsView: NSScrollView, context: Context) {
+        guard let textView = nsView.documentView as? NSTextView else { return }
+        if textView.string != text && !context.coordinator.isEditingLocally {
+            if let data = rtfData,
+               let attrStr = try? NSAttributedString(data: data, options: [.documentType: NSAttributedString.DocumentType.rtf], documentAttributes: nil) {
+                textView.textStorage?.setAttributedString(attrStr)
+            } else {
+                textView.string = text
+            }
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    class Coordinator: NSObject, NSTextViewDelegate {
+        var parent: AppleJournalRichTextView
+        var isEditingLocally = false
+
+        init(_ parent: AppleJournalRichTextView) {
+            self.parent = parent
+        }
+
+        func textDidChange(_ notification: Notification) {
+            guard let textView = notification.object as? NSTextView else { return }
+            isEditingLocally = true
+            parent.controller.notifyChange()
+            isEditingLocally = false
+        }
+
+        func textView(_ textView: NSTextView, clickedOn cell: NSTextAttachmentCellProtocol, in cellFrame: NSRect, at charIndex: Int) {
+            // Checklist interaction
+            if let string = textView.string as NSString? {
+                let range = NSRange(location: charIndex, length: 1)
+                let char = string.substring(with: range)
+                if char == "☐" {
+                    textView.insertText("☑", replacementRange: range)
+                    parent.controller.notifyChange()
+                    Haptics.impact(.rigid)
+                } else if char == "☑" {
+                    textView.insertText("☐", replacementRange: range)
+                    parent.controller.notifyChange()
+                    Haptics.impact(.light)
+                }
+            }
+        }
+    }
+}
+
 // MARK: - AppleJournalEntriesList (Middle Column)
 
 struct AppleJournalEntriesList: View {
@@ -275,6 +514,8 @@ struct AppleJournalEditorCanvas: View {
     @Bindable var note: JournalNote
 
     @Environment(\.modelContext) private var modelContext
+    @StateObject private var richTextController = AppleJournalRichTextController()
+
     @State private var showAudioDrawer = false
     @State private var showFormattingPopover = false
     @State private var showLocationPopover = false
@@ -284,7 +525,6 @@ struct AppleJournalEditorCanvas: View {
     // Audio Player State
     @State private var isPlayingAudio = false
     @State private var audioPlayer: AVAudioPlayer? = nil
-    @State private var audioPlayProgress: Double = 0
     @State private var playbackTimer: Timer? = nil
 
     private static let headerDateFormatter: DateFormatter = {
@@ -336,7 +576,9 @@ struct AppleJournalEditorCanvas: View {
 
                     // Center Floating Capsule Toolbar (Matching Apple Journal Screenshots)
                     HStack(spacing: 4) {
-                        toolbarCapsuleItem(icon: "text.alignleft", label: "Text Mode", isActive: true) {}
+                        toolbarCapsuleItem(icon: "text.alignleft", label: "Text Mode", isActive: true) {
+                            richTextController.textView?.window?.makeFirstResponder(richTextController.textView)
+                        }
 
                         // Photos Picker
                         toolbarCapsuleItem(icon: "photo", label: "Attach Photos", isActive: note.photoCount > 0) {
@@ -391,7 +633,7 @@ struct AppleJournalEditorCanvas: View {
                         }
                         .buttonStyle(.plain)
                         .popover(isPresented: $showFormattingPopover) {
-                            AppleJournalTypographyPopover(text: $note.text)
+                            AppleJournalTypographyPopover(controller: richTextController)
                         }
 
                         // Bookmark Flag Toggle
@@ -475,15 +717,13 @@ struct AppleJournalEditorCanvas: View {
                             .textFieldStyle(.plain)
                             .onChange(of: note.title) { _, _ in saveNote() }
 
-                        // Body Multiline Note
-                        TextEditor(text: $note.text)
-                            .font(.system(size: 15))
-                            .lineSpacing(6)
-                            .foregroundStyle(DS.Color.textPrimary)
-                            .scrollContentBackground(.hidden)
-                            .background(Color.clear)
-                            .frame(minHeight: 280)
-                            .onChange(of: note.text) { _, _ in saveNote() }
+                        // Native Rich Text Multiline Canvas
+                        AppleJournalRichTextView(
+                            text: $note.text,
+                            rtfData: $note.rtfData,
+                            controller: richTextController
+                        )
+                        .frame(minHeight: 280)
 
                         // Attached Photos Gallery
                         if !note.photoFileNames.isEmpty {
@@ -683,7 +923,7 @@ private struct JournalPhotoThumbnail: View {
     var body: some View {
         let fileURL = JournalMediaManager.shared.fileURL(for: filename)
         ZStack(alignment: .topTrailing) {
-            if let image = NSImage(contentsOf: fileURL) {
+            if let image = NSImage(contentsOfFile: fileURL.path) {
                 Image(nsImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
@@ -917,7 +1157,6 @@ private struct AppleJournalAudioStudioDrawer: View {
             }
             Haptics.impact(.light)
         } catch {
-            // Fallback timer simulation
             isRecording = true
             timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
                 recordTime += 0.1
@@ -1032,29 +1271,29 @@ struct AppleJournalLocationPopover: View {
     }
 }
 
-// MARK: - AppleJournalTypographyPopover (Screenshot 3 Matching with Formatting Engine)
+// MARK: - AppleJournalTypographyPopover (Screenshot 3 Matching with Real Native Formatting)
 
 struct AppleJournalTypographyPopover: View {
-    @Binding var text: String
+    @ObservedObject var controller: AppleJournalRichTextController
 
     var body: some View {
         VStack(spacing: 8) {
             // Row 1: B, I, U, S (Matching Screenshot 3)
             HStack(spacing: 2) {
-                formatBtn("B") { insertWrapper("**", "**") }
-                formatBtn("I") { insertWrapper("*", "*") }
-                formatBtn("U") { insertWrapper("_", "_") }
-                formatBtn("S") { insertWrapper("~", "~") }
+                formatBtn("B") { controller.toggleBold() }
+                formatBtn("I") { controller.toggleItalic() }
+                formatBtn("U") { controller.toggleUnderline() }
+                formatBtn("S") { controller.toggleStrikethrough() }
             }
             .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
 
             // Row 2: List Formats (Bullets, Checklist, Numbered, Blockquote, Divider)
             HStack(spacing: 2) {
-                formatIconBtn("list.bullet") { insertPrefix("\n• ") }
-                formatIconBtn("checklist") { insertPrefix("\n[ ] ") }
-                formatIconBtn("list.number") { insertPrefix("\n1. ") }
-                formatIconBtn("quote.opening") { insertPrefix("\n> ") }
-                formatIconBtn("switch.2") { insertPrefix("\n---\n") }
+                formatIconBtn("list.bullet") { controller.insertBulletList() }
+                formatIconBtn("checklist") { controller.insertChecklist() }
+                formatIconBtn("list.number") { controller.insertNumberedList() }
+                formatIconBtn("quote.opening") { controller.insertBlockquote() }
+                formatIconBtn("switch.2") { controller.insertDivider() }
             }
             .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
         }
@@ -1085,15 +1324,5 @@ struct AppleJournalTypographyPopover: View {
                 .background(Color.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 4))
         }
         .buttonStyle(.plain)
-    }
-
-    private func insertWrapper(_ prefix: String, _ suffix: String) {
-        text.append("\(prefix)sample\(suffix)")
-        Haptics.impact(.light)
-    }
-
-    private func insertPrefix(_ prefix: String) {
-        text.append(prefix)
-        Haptics.impact(.light)
     }
 }
