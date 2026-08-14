@@ -558,7 +558,7 @@
 		7AE37A1D4A974FA396744088 /* ModelContainerFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelContainerFactory.swift; sourceTree = "<group>"; };
 		7CFAF3D28A75810E28A7408F /* SimpleHabitCreationView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SimpleHabitCreationView.swift; sourceTree = "<group>"; };
 		7EED539C8E562129FC1FEB9B /* YearComparisonChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YearComparisonChartView.swift; sourceTree = "<group>"; };
-		80BCBDAA30283CB600211E0F /* Loca_Mac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Loca_Mac.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		80BCBDAA30283CB600211E0F /* Loca_Mac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = Loca_Mac.app; path = Pluto.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		80BCBDB830283CBA00211E0F /* Loca_MacTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Loca_MacTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		80BCBDC230283CBA00211E0F /* Loca_MacUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Loca_MacUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		80DC4E439C544786958675F7 /* LOCAApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LOCAApp.swift; sourceTree = "<group>"; };
@@ -2075,7 +2075,7 @@
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CODE_SIGN_ENTITLEMENTS = "Loca_Mac/Loca_Mac.entitlements";
+				CODE_SIGN_ENTITLEMENTS = Loca_Mac/Loca_Mac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -2145,7 +2145,7 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CODE_SIGN_ENTITLEMENTS = "Loca_Mac/Loca_Mac.entitlements";
+				CODE_SIGN_ENTITLEMENTS = Loca_Mac/Loca_Mac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
