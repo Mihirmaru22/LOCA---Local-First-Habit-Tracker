@@ -23,8 +23,11 @@ final class JournalNote {
     var isBookmarked: Bool  = false
     var hasAudio:    Bool   = false
     var audioDuration: Double = 0
-    var photoCount:  Int    = 0
-    var archivedAt:  Date?  = nil
+    var photoCount:     Int      = 0
+    var photoFileNames: [String] = []
+    var audioFileName:  String?  = nil
+    var audioTitle:     String?  = "Voice Memo"
+    var archivedAt:     Date?    = nil
 
     /// Stores `NoteKind` as an `Int` for CloudKit compatibility.
     /// Raw values are permanent — do not renumber.
