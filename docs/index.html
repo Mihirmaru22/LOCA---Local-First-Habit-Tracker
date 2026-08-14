@@ -469,6 +469,32 @@
             border-radius: 4px;
             white-space: nowrap;
         }
+
+        /* Journal Habits / Daily Routine Row */
+        .journal-routine-item {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 9px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .routine-name {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .routine-flame {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--amber);
+            font-weight: 700;
+        }
     </style>
 </head>
 <body>
@@ -585,7 +611,40 @@
                 <div style="display:flex; flex-direction:column; gap:8px;" id="tasksList"></div>
             </div>
 
-            <!-- SECTION E: DEEP WORK & SPATIAL SOUNDSCAPES -->
+            <!-- SECTION E: JOURNAL DAILY ROUTINES, HABITS & REFLECTION NOTE -->
+            <div class="pillar-card">
+                <div class="pillar-header">
+                    <span class="pillar-title">📝 Journal Habits, Routines & Notes</span>
+                    <span class="pillar-badge" id="jHabitCount">4 Journal Habits</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:12px;">
+
+                    <!-- Journal Micro-Habits & Daylight Flow Checklist -->
+                    <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-tertiary); letter-spacing:0.5px;">
+                        DAILY JOURNAL HABITS & DAYLIGHT FLOW
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:6px;" id="journalHabitsList"></div>
+
+                    <!-- Daily Reflection Note -->
+                    <div style="background:var(--bg-surface); padding:12px 14px; border-radius:8px; border:1px solid var(--border-subtle); margin-top:4px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                            <span style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase; font-weight:700;">Latest Reflection Note</span>
+                            <span style="font-size:10px; font-family:var(--font-mono); color:var(--purple); background:rgba(139,92,246,0.12); padding:1px 6px; border-radius:4px;">92% Clarity</span>
+                        </div>
+                        <div style="font-size:12px; color:var(--text-primary); font-style:italic;" id="p4Note">
+                            "Clean progress on SwiftData container and background telemetry queue today. Focus felt sharp during afternoon coding sprints."
+                        </div>
+                    </div>
+
+                    <!-- Sleep Metrics -->
+                    <div style="display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--text-secondary); padding:0 4px;">
+                        <span>Sleep Quality: <strong style="color:var(--emerald);">Optimal (8.5h)</strong></span>
+                        <span>Bedtime Mode: <strong>23:00 → 07:30</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION F: DEEP WORK & SPATIAL SOUNDSCAPES -->
             <div class="pillar-card">
                 <div class="pillar-header">
                     <span class="pillar-title">🧠 Deep Work Studio & Audio</span>
@@ -601,26 +660,6 @@
                         <div style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase; font-weight:700;">Sprint Cadence</div>
                         <div style="font-size:14px; font-weight:700; margin-top:3px;" id="p3Sprint">25m Sprint / 5m Break</div>
                         <div style="font-size:11px; color:var(--text-secondary); margin-top:2px;">Auto-start intervals ON</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECTION F: SLEEP & REFLECTION NOTES -->
-            <div class="pillar-card">
-                <div class="pillar-header">
-                    <span class="pillar-title">📝 Sleep & Daily Reflection Note</span>
-                    <span class="pillar-badge">Cognitive State</span>
-                </div>
-                <div style="display:flex; flex-direction:column; gap:10px;">
-                    <div style="background:var(--bg-surface); padding:12px 14px; border-radius:8px; border:1px solid var(--border-subtle);">
-                        <div style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase; font-weight:700;">Latest Journal Reflection Note</div>
-                        <div style="font-size:12px; color:var(--text-primary); font-style:italic; margin-top:4px;" id="p4Note">
-                            "Clean progress on SwiftData container and background telemetry queue today. Focus felt sharp during afternoon coding sprints."
-                        </div>
-                    </div>
-                    <div style="display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--text-secondary); padding:0 4px;">
-                        <span>Sleep Quality: <strong style="color:var(--emerald);">Optimal (8.5h)</strong></span>
-                        <span>Bedtime: <strong>23:00 → 07:30</strong></span>
                     </div>
                 </div>
             </div>
@@ -653,6 +692,12 @@
                 sound: "Lo-Fi Focus Chords",
                 sprint: "25m Focus / 5m Break",
                 reflection: "“Clean progress on SwiftData container and background telemetry queue today. Focus felt sharp during afternoon coding sprints.”",
+                journalHabits: [
+                    { name: "Cold Shower & 10m Breathwork", time: "Morning Routine", streak: 8, done: true },
+                    { name: "3 Daily Gratitude Highlights", time: "Daylight Flow", streak: 14, done: true },
+                    { name: "Mindful 20m Walking Session", time: "Afternoon", streak: 5, done: true },
+                    { name: "Magnesium & No Screens 1h before sleep", time: "Evening Routine", streak: 6, done: false }
+                ],
                 auditGoals: [
                     {
                         title: "Ship PLUTO App Version 3.5",
@@ -728,6 +773,11 @@
                 sound: "432Hz Binaural Beat",
                 sprint: "50m Deep Block / 10m Break",
                 reflection: "“Calibrated dark mode contrast ratios and verified 5-minute snap physics on the day planner timeline.”",
+                journalHabits: [
+                    { name: "Morning Matcha & Intention Setting", time: "Morning Routine", streak: 9, done: true },
+                    { name: "Design Journal Sketching", time: "Daylight Flow", streak: 5, done: true },
+                    { name: "Screen-Free Evening Wind Down", time: "Evening Routine", streak: 3, done: true }
+                ],
                 auditGoals: [
                     {
                         title: "Ship World-Class PLUTO V3.5 macOS UI",
@@ -778,6 +828,11 @@
                 sound: "Gentle Rain & Thunder",
                 sprint: "20m Focus / 5m Break",
                 reflection: "“Tested Siri Shortcuts for quick logging and ⌃⌥P global HUD overlay. Very responsive on Apple Silicon.”",
+                journalHabits: [
+                    { name: "Executive Daily Reflection Brief", time: "Morning Routine", streak: 12, done: true },
+                    { name: "10-Minute Japanese Vocab Flashcards", time: "Daylight Flow", streak: 7, done: true },
+                    { name: "Zero Blue Light 45m before bed", time: "Evening Routine", streak: 4, done: true }
+                ],
                 auditGoals: [
                     {
                         title: "Master Japanese to Conversational Fluency",
@@ -841,10 +896,25 @@
             document.getElementById('kAuditScore').textContent = t.auditScore;
             document.getElementById('kAuditSub').textContent = t.auditSub;
 
-            // Deep Work & Reflection
+            // Deep Work
             document.getElementById('p3Sound').textContent = t.sound;
             document.getElementById('p3Sprint').textContent = t.sprint;
+
+            // Section E: Journal Habits, Notes & Sleep
             document.getElementById('p4Note').textContent = t.reflection;
+            document.getElementById('jHabitCount').textContent = `${t.journalHabits.length} Journal Habits`;
+            document.getElementById('journalHabitsList').innerHTML = t.journalHabits.map(jh => `
+                <div class="journal-routine-item">
+                    <div class="routine-name">
+                        <span>${jh.done ? '✅' : '⚪'}</span>
+                        <span style="color:${jh.done ? 'var(--text-primary)' : 'var(--text-tertiary)'};">${jh.name}</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:10px; color:var(--text-tertiary); font-family:var(--font-mono);">${jh.time}</span>
+                        <span class="routine-flame">🔥 ${jh.streak}d</span>
+                    </div>
+                </div>
+            `).join('');
 
             // Section A: Life Audit Goals & Checkpoints
             document.getElementById('auditCount').textContent = `${t.auditGoals.length} Strategic Goals`;
@@ -864,7 +934,7 @@
                         ${g.checkpoints.map(cp => `
                             <div class="checkpoint-row">
                                 <span>${cp.done ? '✅' : '⚪'}</span>
-                                <span style="color:${cp.done ? 'var(--text-primary)' : 'var(--text-tertiary)'}; text-decoration:${cp.done ? 'none' : 'none'};">${cp.text}</span>
+                                <span style="color:${cp.done ? 'var(--text-primary)' : 'var(--text-tertiary)'};">${cp.text}</span>
                             </div>
                         `).join('')}
                     </div>
@@ -888,8 +958,8 @@
                 </div>
             `).join('');
 
-            // Section C: Habits
-            document.getElementById('p1Count').textContent = `${t.habits.length} Habits`;
+            // Section C: Keystone Habits
+            document.getElementById('p1Count').textContent = `${t.habits.length} Keystone Habits`;
             document.getElementById('habitsList').innerHTML = t.habits.map(h => `
                 <div class="habit-item">
                     <div class="habit-top">
