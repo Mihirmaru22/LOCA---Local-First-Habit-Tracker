@@ -496,6 +496,7 @@ struct LifeRuntimeSelfCheckView: View {
         .navigationTitle("Runtime Check")
         .inlineNavigationTitleDisplay()
         .toolbar {
+            #if DEBUG
             ToolbarItem(placement: .confirmationAction) {
                 Button(isReseeding ? "Reseeding…" : "Reset & Reseed") {
                     isReseeding = true
@@ -505,6 +506,7 @@ struct LifeRuntimeSelfCheckView: View {
                 }
                 .disabled(isReseeding)
             }
+            #endif
         }
         .onAppear { runChecks() }
     }

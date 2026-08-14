@@ -1107,6 +1107,7 @@ struct MacSettingsView: View {
                 }
                 .padding(DS.Space.lg)
 
+                #if DEBUG
                 Divider().padding(.horizontal, DS.Space.lg)
 
                 HStack {
@@ -1128,6 +1129,7 @@ struct MacSettingsView: View {
                     .controlSize(.small)
                 }
                 .padding(DS.Space.lg)
+                #endif
             }
             .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
             .overlay(
