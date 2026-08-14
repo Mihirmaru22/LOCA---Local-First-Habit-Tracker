@@ -1045,40 +1045,80 @@ struct AppleJournalEditorCanvas: View {
                         )
                         .frame(minHeight: 280)
 
-                        // Attached Photos Gallery
+                        // Attached Photos Gallery (Prominent Apple Journal Hero Layout)
                         if !note.photoFileNames.isEmpty {
-                            VStack(alignment: .leading, spacing: 8) {
+                            VStack(alignment: .leading, spacing: 10) {
                                 HStack {
                                     Text("ATTACHED PHOTOS (\(note.photoFileNames.count))")
-                                        .font(.system(size: 10, weight: .bold))
+                                        .font(.system(size: 11, weight: .bold))
                                         .foregroundStyle(DS.Color.textTertiary)
+                                        .tracking(0.5)
+
                                     Spacer()
-                                    Button("+ Add More") {
+
+                                    Button {
                                         choosePhotoFromDisk()
+                                    } label: {
+                                        HStack(spacing: 4) {
+                                            Image(systemName: "plus")
+                                            Text("Add Photos")
+                                        }
+                                        .font(.system(size: 11, weight: .semibold))
+                                        .foregroundStyle(Color(red: 0.38, green: 0.45, blue: 0.98))
                                     }
-                                    .font(.system(size: 10, weight: .semibold))
                                     .buttonStyle(.plain)
-                                    .foregroundStyle(Color(red: 0.38, green: 0.45, blue: 0.98))
                                 }
 
-                                LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: 10)], spacing: 10) {
-                                    ForEach(note.photoFileNames, id: \.self) { filename in
-                                        JournalPhotoThumbnail(
-                                            filename: filename,
-                                            onTap: {
-                                                previewImageURL = JournalMediaManager.shared.fileURL(for: filename)
-                                            },
-                                            onDelete: {
-                                                note.photoFileNames.removeAll { $0 == filename }
-                                                note.photoCount = note.photoFileNames.count
-                                                JournalMediaManager.shared.deleteFile(named: filename)
-                                                saveNote()
-                                            }
-                                        )
+                                if note.photoFileNames.count == 1, let firstFile = note.photoFileNames.first {
+                                    // 1 Photo: Full-Width Cinematic Hero Card
+                                    JournalPhotoHeroCard(
+                                        filename: firstFile,
+                                        height: 340,
+                                        onTap: { previewImageURL = JournalMediaManager.shared.fileURL(for: firstFile) },
+                                        onDelete: {
+                                            note.photoFileNames.removeAll { $0 == firstFile }
+                                            note.photoCount = note.photoFileNames.count
+                                            JournalMediaManager.shared.deleteFile(named: firstFile)
+                                            saveNote()
+                                        }
+                                    )
+                                } else if note.photoFileNames.count == 2 {
+                                    // 2 Photos: Balanced 2-Column Split
+                                    HStack(spacing: 12) {
+                                        ForEach(note.photoFileNames, id: \.self) { filename in
+                                            JournalPhotoHeroCard(
+                                                filename: filename,
+                                                height: 260,
+                                                onTap: { previewImageURL = JournalMediaManager.shared.fileURL(for: filename) },
+                                                onDelete: {
+                                                    note.photoFileNames.removeAll { $0 == filename }
+                                                    note.photoCount = note.photoFileNames.count
+                                                    JournalMediaManager.shared.deleteFile(named: filename)
+                                                    saveNote()
+                                                }
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    // 3+ Photos: Rich Adaptive Grid (Min 220px per card)
+                                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 12)], spacing: 12) {
+                                        ForEach(note.photoFileNames, id: \.self) { filename in
+                                            JournalPhotoHeroCard(
+                                                filename: filename,
+                                                height: 200,
+                                                onTap: { previewImageURL = JournalMediaManager.shared.fileURL(for: filename) },
+                                                onDelete: {
+                                                    note.photoFileNames.removeAll { $0 == filename }
+                                                    note.photoCount = note.photoFileNames.count
+                                                    JournalMediaManager.shared.deleteFile(named: filename)
+                                                    saveNote()
+                                                }
+                                            )
+                                        }
                                     }
                                 }
                             }
-                            .padding(.top, 10)
+                            .padding(.top, 8)
                         }
 
                         // Playable Audio Attachment Card
@@ -1298,12 +1338,14 @@ private struct JournalPhotoPreviewModal: View {
     }
 }
 
-// MARK: - JournalPhotoThumbnail
+// MARK: - JournalPhotoHeroCard (High-Resolution Prominent Photo Card)
 
-private struct JournalPhotoThumbnail: View {
+private struct JournalPhotoHeroCard: View {
     let filename: String
+    var height: CGFloat = 260
     let onTap: () -> Void
     let onDelete: () -> Void
+
     @State private var isHovered = false
 
     var body: some View {
@@ -1313,27 +1355,58 @@ private struct JournalPhotoThumbnail: View {
                 Image(nsImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-                    .frame(width: 120, height: 100)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: height)
                     .clipped()
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                    )
                     .contentShape(Rectangle())
                     .onTapGesture { onTap() }
             } else {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.white.opacity(0.08))
-                    .frame(width: 120, height: 100)
-                    .overlay(Image(systemName: "photo").foregroundStyle(.secondary))
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.white.opacity(0.06))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: height)
+                    .overlay(
+                        VStack(spacing: 8) {
+                            Image(systemName: "photo")
+                                .font(.system(size: 32))
+                                .foregroundStyle(.secondary)
+                            Text("Loading Photo…")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    )
             }
 
-            if isHovered {
-                Button(action: onDelete) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 16))
-                        .foregroundStyle(.white, .red)
+            // Top Action Controls (Expand & Delete Buttons)
+            HStack(spacing: 6) {
+                Button(action: onTap) {
+                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.white)
+                        .padding(6)
+                        .background(Color.black.opacity(0.65), in: Circle())
                 }
                 .buttonStyle(.plain)
-                .padding(4)
+                .help("Preview High-Res")
+
+                Button(action: onDelete) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.white)
+                        .padding(6)
+                        .background(Color.red.opacity(0.85), in: Circle())
+                }
+                .buttonStyle(.plain)
+                .help("Remove Photo")
             }
+            .padding(10)
+            .opacity(isHovered ? 1.0 : 0.0)
+            .animation(.easeInOut(duration: 0.15), value: isHovered)
         }
         .onHover { isHovered = $0 }
     }
