@@ -486,8 +486,11 @@
             <button class="picker-btn" onclick="loadTester(2)">👤 David Miller (Product VP)</button>
         </div>
 
-        <div>
-            <button class="picker-btn" style="background:var(--bg-surface); color:var(--text-primary); border:1px solid var(--border-subtle);" onclick="exportJSON()">💾 Export Dossier (.json)</button>
+        <div style="display:flex; align-items:center; gap:8px;">
+            <input type="file" id="localFilePicker" accept=".json" style="display:none;" onchange="handleLocalFile(event)">
+            <button class="picker-btn" style="background:var(--bg-surface); color:var(--text-primary); border:1px solid var(--border-subtle);" onclick="document.getElementById('localFilePicker').click()">📁 Load Local JSON</button>
+            <button class="picker-btn" style="background:var(--bg-surface); color:var(--text-primary); border:1px solid var(--border-subtle);" onclick="connectAndSyncSupabase()">🔄 Sync Supabase</button>
+            <button class="picker-btn" style="background:var(--bg-surface); color:var(--text-primary); border:1px solid var(--border-subtle);" onclick="exportJSON()">💾 Export (.json)</button>
         </div>
     </header>
 
@@ -912,6 +915,79 @@
             document.body.appendChild(a);
             a.click();
             a.remove();
+        }
+
+        // Live Supabase Sync Engine
+        let supabaseUrl = "https://rqujshlqgffuabpxiujw.supabase.co";
+        let supabaseKey = "";
+
+        async function connectAndSyncSupabase() {
+            const key = prompt("Enter your Supabase Anon or Service Role Key:", supabaseKey);
+            if (!key) return;
+            supabaseKey = key;
+
+            try {
+                const headers = { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` };
+                const res = await fetch(`${supabaseUrl}/rest/v1/alpha_events?select=*&order=timestamp.desc&limit=100`, { headers });
+                
+                if (res.ok) {
+                    const rawEvents = await res.json();
+                    if (rawEvents && rawEvents.length > 0) {
+                        // Ingest live events into active tester
+                        rawEvents.forEach(evt => {
+                            const p = evt.properties || {};
+                            if (evt.event_name === 'habit_checked') {
+                                const hName = p.habit_name || 'Checked Habit';
+                                const existing = database[0].habits.find(h => h.name === hName);
+                                if (existing) {
+                                    existing.streak = p.current_streak || (existing.streak + 1);
+                                    existing.progress = 1.0;
+                                } else {
+                                    database[0].habits.unshift({ name: hName, category: "Active", streak: 1, metric: "1 Check", progress: 1.0 });
+                                }
+                            } else if (evt.event_name === 'task_created') {
+                                database[0].tasks.unshift({ time: "Today", title: p.title || "New Task", priority: "P2 Normal", done: false });
+                            } else if (evt.event_name === 'task_completed') {
+                                const t = database[0].tasks.find(tk => tk.title === p.title);
+                                if (t) t.done = true;
+                            } else if (evt.event_name === 'sleep_logged') {
+                                database[0].reflection += ` [Sleep logged: ${p.duration_hours || 8}h]`;
+                            }
+                        });
+                        alert(`Successfully synced ${rawEvents.length} live events from Supabase!`);
+                        render();
+                    } else {
+                        alert("Connected to Supabase! (No new alpha events found yet. Perform an action in the macOS app to populate).");
+                    }
+                } else {
+                    alert(`Supabase Error (${res.status}): ${res.statusText}`);
+                }
+            } catch (err) {
+                alert(`Fetch error: ${err.message}`);
+            }
+        }
+
+        function handleLocalFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (Array.isArray(parsed)) {
+                        parsed.forEach(evt => {
+                            if (evt.event_name === 'habit_checked') {
+                                database[0].habits.unshift({ name: evt.properties?.habit_name || 'Local Habit', category: 'Health', streak: 1, metric: 'Check', progress: 1.0 });
+                            }
+                        });
+                    }
+                    render();
+                    alert(`Loaded ${file.name} successfully!`);
+                } catch (err) {
+                    alert(`Invalid JSON: ${err.message}`);
+                }
+            };
+            reader.readAsText(file);
         }
 
         window.onload = () => loadTester(0);
