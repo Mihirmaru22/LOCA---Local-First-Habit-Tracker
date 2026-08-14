@@ -1193,7 +1193,7 @@ struct MacTimeView: View {
             // Track telemetry event
             PlutoTelemetryEngine.shared.trackFocusSessionCompleted(
                 durationSeconds: max(1, focusDurationMinutes) * 60,
-                soundName: selectedAmbientSound,
+                soundName: soundEngine.selectedSound,
                 taskTitle: selectedSessionTag
             )
 
