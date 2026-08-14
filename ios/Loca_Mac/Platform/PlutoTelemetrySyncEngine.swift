@@ -22,7 +22,7 @@ final class PlutoTelemetrySyncEngine: @unchecked Sendable {
     private let pathMonitor = NWPathMonitor()
     private let monitorQueue = DispatchQueue(label: "com.mihirmaru.pluto.telemetry.network")
 
-    private var isNetworkAvailable: Bool = false
+    private var isNetworkAvailable: Bool = true
     private var isSyncing: Bool = false
     private var retryBackoffSeconds: TimeInterval = 10
 

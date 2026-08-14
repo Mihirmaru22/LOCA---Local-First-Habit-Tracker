@@ -116,10 +116,8 @@ final class PlutoTelemetryEngine: @unchecked Sendable {
         eventBuffer.append(alphaEvent)
         PlutoDiagnosticEngine.shared.leaveBreadcrumb("\(event) (\(properties.keys.joined(separator: ", ")))")
 
-        // Flush immediately if buffer reaches 25 events
-        if eventBuffer.count >= 25 {
-            flushBuffer()
-        }
+        // Flush immediately for real-time live transmission
+        flushBuffer()
     }
 
     func flushBuffer() {
