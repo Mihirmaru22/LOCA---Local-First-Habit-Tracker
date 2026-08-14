@@ -130,8 +130,13 @@ struct MacTaskWorkspace: View {
     private var headerControls: some View {
         HStack(spacing: DS.Space.sm) {
             Button {
-                item.completedAt = item.isCompleted ? nil : Date()
+                withAnimation(DS.Motion.settle) {
+                    item.completedAt = item.isCompleted ? nil : Date()
+                }
                 save()
+                if item.isCompleted {
+                    PlutoTelemetryEngine.shared.trackTaskCompleted(task: item)
+                }
                 Haptics.impact(.light)
             } label: {
                 HStack(spacing: DS.Space.xs) {
@@ -723,7 +728,10 @@ struct MacBlockRow: View {
     }
     
     private var isCompletedState: Bool {
-        if block.type == .subtask, let child = childItem { return child.isCompleted }
+        if block.type == .subtask {
+            if let child = childItem { return child.isCompleted }
+            return block.isCompleted
+        }
         if block.type == .check { return block.isCompleted }
         return false
     }
@@ -758,26 +766,24 @@ struct MacBlockRow: View {
             .buttonStyle(.plain)
             .padding(.top, 2)
         case .subtask:
-            if let child = childItem {
-                Button {
-                    withAnimation(DS.Motion.settle) {
+            Button {
+                withAnimation(DS.Motion.settle) {
+                    if let child = childItem {
                         child.completedAt = child.isCompleted ? nil : Date()
+                        block.isCompleted = child.isCompleted
+                    } else {
+                        block.isCompleted.toggle()
                     }
-                    onSave()
-                    Haptics.impact(.light)
-                } label: {
-                    Image(systemName: child.isCompleted ? "checkmark.circle.fill" : "circle")
-                        .font(.system(size: 14))
-                        .foregroundStyle(child.isCompleted ? Color.accentColor : DS.Color.textTertiary)
                 }
-                .buttonStyle(.plain)
-                .padding(.top, 2)
-            } else {
-                Image(systemName: "circle")
+                onSave()
+                Haptics.impact(.light)
+            } label: {
+                Image(systemName: isCompletedState ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 14))
-                    .foregroundStyle(DS.Color.textTertiary)
-                    .padding(.top, 2)
+                    .foregroundStyle(isCompletedState ? Color.accentColor : DS.Color.textTertiary)
             }
+            .buttonStyle(.plain)
+            .padding(.top, 2)
         case .quote:
             Rectangle()
                 .fill(Color.accentColor)

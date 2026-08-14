@@ -185,32 +185,33 @@ private struct List1CardRow: View {
         HStack(spacing: 10) {
 
             // Checkbox
-            Button {
-                withAnimation(DS.Motion.settle) {
-                    item.completedAt = item.isCompleted ? nil : Date()
-                    try? modelContext.save()
-                    if item.isCompleted {
-                        PlutoTelemetryEngine.shared.trackTaskCompleted(task: item)
-                    }
-                }
-                Haptics.impact(.light)
-            } label: {
-                ZStack {
-                    Circle()
-                        .strokeBorder(item.isCompleted ? Color.accentColor : DS.Color.border, lineWidth: 1.5)
-                        .frame(width: 18, height: 18)
+            ZStack {
+                Circle()
+                    .strokeBorder(item.isCompleted ? Color.accentColor : DS.Color.border, lineWidth: 1.5)
+                    .frame(width: 18, height: 18)
 
-                    if item.isCompleted {
-                        Circle()
-                            .fill(Color.accentColor)
-                            .frame(width: 18, height: 18)
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(.white)
-                    }
+                if item.isCompleted {
+                    Circle()
+                        .fill(Color.accentColor)
+                        .frame(width: 18, height: 18)
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(.white)
                 }
             }
-            .buttonStyle(.plain)
+            .contentShape(Circle())
+            .highPriorityGesture(
+                TapGesture().onEnded {
+                    withAnimation(DS.Motion.settle) {
+                        item.completedAt = item.isCompleted ? nil : Date()
+                        try? modelContext.save()
+                        if item.isCompleted {
+                            PlutoTelemetryEngine.shared.trackTaskCompleted(task: item)
+                        }
+                    }
+                    Haptics.impact(.light)
+                }
+            )
 
             // Title & Metadata
             VStack(alignment: .leading, spacing: 3) {
@@ -406,21 +407,22 @@ private struct List2DenseRow: View {
                 .frame(width: 3)
 
             // Checkbox
-            Button {
-                withAnimation(DS.Motion.settle) {
-                    item.completedAt = item.isCompleted ? nil : Date()
-                    try? modelContext.save()
-                    if item.isCompleted {
-                        PlutoTelemetryEngine.shared.trackTaskCompleted(task: item)
+            Image(systemName: item.isCompleted ? "checkmark.square.fill" : "square")
+                .font(.system(size: 13))
+                .foregroundStyle(item.isCompleted ? Color.accentColor : DS.Color.textSecondary)
+                .contentShape(Rectangle())
+                .highPriorityGesture(
+                    TapGesture().onEnded {
+                        withAnimation(DS.Motion.settle) {
+                            item.completedAt = item.isCompleted ? nil : Date()
+                            try? modelContext.save()
+                            if item.isCompleted {
+                                PlutoTelemetryEngine.shared.trackTaskCompleted(task: item)
+                            }
+                        }
+                        Haptics.impact(.light)
                     }
-                }
-                Haptics.impact(.light)
-            } label: {
-                Image(systemName: item.isCompleted ? "checkmark.square.fill" : "square")
-                    .font(.system(size: 13))
-                    .foregroundStyle(item.isCompleted ? Color.accentColor : DS.Color.textSecondary)
-            }
-            .buttonStyle(.plain)
+                )
 
             // Title
             Text(item.title)
@@ -519,21 +521,22 @@ private struct List3FocusCard: View {
                     .frame(width: 8, height: 8)
 
                 // Checkbox
-                Button {
-                    withAnimation(DS.Motion.settle) {
-                        item.completedAt = item.isCompleted ? nil : Date()
-                        try? modelContext.save()
-                        if item.isCompleted {
-                            PlutoTelemetryEngine.shared.trackTaskCompleted(task: item)
+                Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 15))
+                    .foregroundStyle(item.isCompleted ? Color(red: 0.18, green: 0.80, blue: 0.44) : DS.Color.textSecondary)
+                    .contentShape(Circle())
+                    .highPriorityGesture(
+                        TapGesture().onEnded {
+                            withAnimation(DS.Motion.settle) {
+                                item.completedAt = item.isCompleted ? nil : Date()
+                                try? modelContext.save()
+                                if item.isCompleted {
+                                    PlutoTelemetryEngine.shared.trackTaskCompleted(task: item)
+                                }
+                            }
+                            Haptics.impact(.light)
                         }
-                    }
-                    Haptics.impact(.light)
-                } label: {
-                    Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
-                        .font(.system(size: 15))
-                        .foregroundStyle(item.isCompleted ? Color(red: 0.18, green: 0.80, blue: 0.44) : DS.Color.textSecondary)
-                }
-                .buttonStyle(.plain)
+                    )
 
                 // Title & Details
                 VStack(alignment: .leading, spacing: 2) {
@@ -587,6 +590,16 @@ private struct List3FocusCard: View {
                             Image(systemName: sub.isCompleted ? "checkmark.circle.fill" : "circle")
                                 .font(.system(size: 10))
                                 .foregroundStyle(sub.isCompleted ? Color(red: 0.18, green: 0.80, blue: 0.44) : DS.Color.textTertiary)
+                                .contentShape(Circle())
+                                .highPriorityGesture(
+                                    TapGesture().onEnded {
+                                        withAnimation(DS.Motion.settle) {
+                                            sub.completedAt = sub.isCompleted ? nil : Date()
+                                            try? modelContext.save()
+                                        }
+                                        Haptics.impact(.light)
+                                    }
+                                )
 
                             Text(sub.title)
                                 .font(.system(size: 11))
