@@ -188,7 +188,8 @@ private struct JournalRoutinesMiddleList: View {
     private func addRoutine() {
         let trimmed = newRoutineName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        let routine = HabitBoard(name: trimmed, habitKind: .routine)
+        let routine = HabitBoard(name: trimmed)
+        routine.habitKind = .daily
         modelContext.insert(routine)
         try? modelContext.save()
         newRoutineName = ""
