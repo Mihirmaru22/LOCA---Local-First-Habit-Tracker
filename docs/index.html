@@ -9,23 +9,23 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-page: #06070a;
-            --bg-card: #0e1117;
-            --bg-surface: #141822;
-            --bg-chip: #1a202e;
+            --bg-page: #08090c;
+            --bg-card: #111319;
+            --bg-surface: #171b24;
+            --bg-chip: #1e2433;
             
             --border-subtle: rgba(255, 255, 255, 0.08);
             --border-strong: rgba(255, 255, 255, 0.16);
 
             --text-primary: #ffffff;
-            --text-secondary: #949ab0;
-            --text-tertiary: #585f75;
+            --text-secondary: #9aa1b4;
+            --text-tertiary: #5a6278;
 
-            --purple: #8b5cf6;
-            --blue: #3b82f6;
-            --emerald: #10b981;
-            --amber: #f59e0b;
-            --rose: #f43f5e;
+            --accent-purple: #a855f7;
+            --accent-blue: #38bdf8;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-pink: #ec4899;
 
             --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
@@ -54,7 +54,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: rgba(6, 7, 10, 0.95);
+            background: rgba(8, 9, 12, 0.95);
             backdrop-filter: blur(16px);
             position: sticky;
             top: 0;
@@ -150,7 +150,7 @@
             left: 0;
             right: 0;
             height: 3px;
-            background: linear-gradient(90deg, var(--purple), var(--blue), var(--emerald));
+            background: linear-gradient(90deg, #a855f7, #38bdf8, #10b981);
         }
 
         .hero-left {
@@ -187,7 +187,7 @@
             font-weight: 700;
             font-family: var(--font-mono);
             background: rgba(16, 185, 129, 0.12);
-            color: var(--emerald);
+            color: var(--accent-emerald);
             padding: 2px 8px;
             border-radius: 999px;
             border: 1px solid rgba(16, 185, 129, 0.3);
@@ -238,71 +238,142 @@
 
         .pillar-title-group {
             display: flex;
-            flex-direction: column;
-            gap: 2px;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pillar-icon {
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
         }
 
         .pillar-title {
-            font-size: 14px;
+            font-size: 16px;
             font-weight: 800;
             letter-spacing: -0.2px;
             color: var(--text-primary);
+        }
+
+        .sub-nav-tabs {
             display: flex;
             align-items: center;
-            gap: 8px;
-        }
-
-        .pillar-subtitle {
-            font-size: 11px;
-            color: var(--text-secondary);
-        }
-
-        .pillar-badge {
-            font-size: 10px;
-            font-family: var(--font-mono);
+            gap: 6px;
             background: var(--bg-surface);
-            color: var(--text-secondary);
-            padding: 2px 8px;
-            border-radius: 4px;
-        }
-
-        /* Habits */
-        .habit-item {
-            background: var(--bg-surface);
+            padding: 3px;
+            border-radius: 6px;
             border: 1px solid var(--border-subtle);
-            border-radius: 8px;
-            padding: 12px 14px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
         }
 
-        .habit-top {
+        .sub-nav-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 4px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            font-size: 13px;
+            gap: 4px;
+            font-family: var(--font-sans);
+        }
+
+        .sub-nav-btn.active {
+            background: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
             font-weight: 700;
         }
 
-        .flame-streak {
-            color: var(--amber);
+        .sub-badge {
+            background: var(--accent-purple);
+            color: #ffffff;
+            font-size: 9px;
             font-family: var(--font-mono);
-            font-size: 11px;
-            font-weight: 800;
+            padding: 1px 5px;
+            border-radius: 10px;
         }
 
-        .prog-bg {
-            height: 4px;
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 2px;
+        /* Habit Row Item Matching Actual App Screenshot */
+        .app-habit-row {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
             overflow: hidden;
         }
 
-        .prog-bar {
-            height: 100%;
-            background: #ffffff;
+        .habit-left-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .habit-accent-line {
+            width: 3px;
+            height: 24px;
             border-radius: 2px;
+        }
+
+        .habit-name-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .habit-name-text {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .habit-sub-text {
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+
+        .habit-sub-text.completed {
+            color: #2dd4bf;
+        }
+
+        .habit-right-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .flame-streak-pill {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--accent-amber);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 800;
+            font-family: var(--font-mono);
+        }
+
+        .check-ring {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 2px solid var(--border-strong);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .check-ring.completed {
+            border-color: #2dd4bf;
+            background: #2dd4bf;
+            color: #000000;
         }
 
         /* Today Time Blocks */
@@ -365,7 +436,7 @@
         .routine-flame {
             font-family: var(--font-mono);
             font-size: 11px;
-            color: var(--amber);
+            color: var(--accent-amber);
             font-weight: 700;
         }
 
@@ -403,7 +474,7 @@
             font-family: var(--font-mono);
             font-weight: 800;
             background: rgba(16, 185, 129, 0.15);
-            color: var(--emerald);
+            color: var(--accent-emerald);
             border: 1px solid rgba(16, 185, 129, 0.3);
             padding: 3px 8px;
             border-radius: 4px;
@@ -447,8 +518,8 @@
         .horizon-pill {
             font-size: 10px;
             font-family: var(--font-mono);
-            color: var(--purple);
-            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent-purple);
+            background: rgba(168, 85, 247, 0.15);
             padding: 2px 7px;
             border-radius: 4px;
             font-weight: 700;
@@ -467,6 +538,19 @@
             display: flex;
             align-items: center;
             gap: 6px;
+        }
+
+        .prog-bg {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .prog-bar {
+            height: 100%;
+            background: #ffffff;
+            border-radius: 2px;
         }
     </style>
 </head>
@@ -519,29 +603,36 @@
             </div>
         </section>
 
-        <!-- Exact 6 App Pillars Grid (in natural workflow order) -->
+        <!-- 6 PLUTO Pillars Grid Matching macOS App 1:1 -->
         <section class="pillars-grid">
 
             <!-- PILLAR 1: HABITS -->
             <div class="pillar-card">
                 <div class="pillar-header">
                     <div class="pillar-title-group">
-                        <span class="pillar-title">checkmark.circle Habits</span>
-                        <span class="pillar-subtitle">Keystone Habit Boards & Consistency Streaks</span>
+                        <span class="pillar-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                        </span>
+                        <span class="pillar-title">Habits</span>
                     </div>
-                    <span class="pillar-badge" id="p1Count">4 Boards</span>
+                    <span class="pillar-badge" id="p1Count">8 habits</span>
                 </div>
-                <div style="display:flex; flex-direction:column; gap:10px;" id="habitsList"></div>
+                <div style="display:flex; flex-direction:column; gap:8px;" id="habitsList"></div>
             </div>
 
             <!-- PILLAR 2: TODAY -->
             <div class="pillar-card">
                 <div class="pillar-header">
                     <div class="pillar-title-group">
-                        <span class="pillar-title">sun.max Today</span>
-                        <span class="pillar-subtitle">Day Planner, Time-Blocking & Task Queue</span>
+                        <span class="pillar-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                        </span>
+                        <span class="pillar-title">Today</span>
                     </div>
-                    <span class="pillar-badge" id="p2Count">3 Tasks</span>
+                    <div class="sub-nav-tabs">
+                        <button class="sub-nav-btn active">Plan</button>
+                        <button class="sub-nav-btn">List</button>
+                    </div>
                 </div>
                 <div style="display:flex; flex-direction:column; gap:8px;" id="tasksList"></div>
             </div>
@@ -550,10 +641,16 @@
             <div class="pillar-card">
                 <div class="pillar-header">
                     <div class="pillar-title-group">
-                        <span class="pillar-title">timer Time</span>
-                        <span class="pillar-subtitle">Pomodoro Focus Studio & 3D Spatial Soundscapes</span>
+                        <span class="pillar-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="14" r="8"/><path d="M12 2v4"/><path d="M12 14l3-3"/></svg>
+                        </span>
+                        <span class="pillar-title">Time</span>
                     </div>
-                    <span class="pillar-badge">Flow State Engine</span>
+                    <div class="sub-nav-tabs">
+                        <button class="sub-nav-btn active">🔥 Pomodoro</button>
+                        <button class="sub-nav-btn">⏱️ Stopwatch</button>
+                        <button class="sub-nav-btn">⏳ Countdown</button>
+                    </div>
                 </div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                     <div style="background:var(--bg-surface); padding:14px; border-radius:8px; border:1px solid var(--border-subtle);">
@@ -573,16 +670,21 @@
             <div class="pillar-card">
                 <div class="pillar-header">
                     <div class="pillar-title-group">
-                        <span class="pillar-title">book.closed Journal</span>
-                        <span class="pillar-subtitle">Daylight Flow Routines, Sleep Tracking & Reflections</span>
+                        <span class="pillar-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg>
+                        </span>
+                        <span class="pillar-title">Journal</span>
                     </div>
-                    <span class="pillar-badge" id="jHabitCount">4 Routines</span>
+                    <div class="sub-nav-tabs">
+                        <button class="sub-nav-btn active">📑 Today's log <span class="sub-badge" id="jLogCount">4</span></button>
+                        <button class="sub-nav-btn">📈 Analyse <span style="font-size:9px; opacity:0.7;">month</span></button>
+                    </div>
                 </div>
                 <div style="display:flex; flex-direction:column; gap:12px;">
 
                     <!-- Journal Micro-Habits & Daylight Flow Checklist -->
                     <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-tertiary); letter-spacing:0.5px;">
-                        DAYLIGHT FLOW & ROUTINES
+                        TODAY'S LOG & ROUTINES
                     </div>
                     <div style="display:flex; flex-direction:column; gap:6px;" id="journalHabitsList"></div>
 
@@ -590,7 +692,7 @@
                     <div style="background:var(--bg-surface); padding:12px 14px; border-radius:8px; border:1px solid var(--border-subtle); margin-top:4px;">
                         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
                             <span style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase; font-weight:700;">Daily Reflection Note</span>
-                            <span style="font-size:10px; font-family:var(--font-mono); color:var(--purple); background:rgba(139,92,246,0.12); padding:1px 6px; border-radius:4px;">92% Clarity</span>
+                            <span style="font-size:10px; font-family:var(--font-mono); color:var(--accent-purple); background:rgba(168,85,247,0.12); padding:1px 6px; border-radius:4px;">92% Clarity</span>
                         </div>
                         <div style="font-size:12px; color:var(--text-primary); font-style:italic;" id="p4Note">
                             "Clean progress on SwiftData container and background telemetry queue today. Focus felt sharp during afternoon coding sprints."
@@ -599,8 +701,8 @@
 
                     <!-- Sleep Metrics -->
                     <div style="display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--text-secondary); padding:0 4px;">
-                        <span>Sleep Quality: <strong style="color:var(--emerald);">Optimal (8.5h)</strong></span>
-                        <span>Bedtime Mode: <strong>23:00 → 07:30</strong></span>
+                        <span>Sleep Quality: <strong style="color:var(--accent-emerald);">Optimal (8.5h)</strong></span>
+                        <span>Bedtime: <strong>23:00 → 07:30</strong></span>
                     </div>
                 </div>
             </div>
@@ -609,8 +711,10 @@
             <div class="pillar-card">
                 <div class="pillar-header">
                     <div class="pillar-title-group">
-                        <span class="pillar-title">binoculars Life</span>
-                        <span class="pillar-subtitle">Life Suite, Bucket List Benchmarks & Long-Term Horizons</span>
+                        <span class="pillar-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m19 14-4-9-4 9"/><path d="M5 14a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M19 14a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/></svg>
+                        </span>
+                        <span class="pillar-title">Life</span>
                     </div>
                     <span class="pillar-badge" id="bucketCount">4 Benchmarks</span>
                 </div>
@@ -621,8 +725,10 @@
             <div class="pillar-card">
                 <div class="pillar-header">
                     <div class="pillar-title-group">
-                        <span class="pillar-title">slider.horizontal.3 Audit</span>
-                        <span class="pillar-subtitle">Strategic Life Audit Horizons & Milestone Checkpoints</span>
+                        <span class="pillar-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/><circle cx="8" cy="6" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="10" cy="18" r="2"/></svg>
+                        </span>
+                        <span class="pillar-title">Audit</span>
                     </div>
                     <span class="pillar-badge" id="auditCount">3 Goals</span>
                 </div>
@@ -648,10 +754,14 @@
                 sprint: "25m Focus / 5m Break",
                 reflection: "“Clean progress on SwiftData container and background telemetry queue today. Focus felt sharp during afternoon coding sprints.”",
                 habits: [
-                    { name: "Morning Sunlight & 10k Steps", category: "Health", streak: 6, metric: "10,000 steps", progress: 1.0 },
-                    { name: "Deep Work Coding Sprint", category: "Craft", streak: 12, metric: "60 mins", progress: 0.8 },
-                    { name: "Zero Sugar & Fasting", category: "Diet", streak: 4, metric: "Binary Check", progress: 1.0 },
-                    { name: "Evening Reflection & Notes", category: "Mind", streak: 8, metric: "1 Note", progress: 0.5 }
+                    { name: "gym", status: "Pending check-in", color: "#38bdf8", streak: 1, isCompleted: false },
+                    { name: "Meditate", status: "Pending check-in", color: "#2dd4bf", streak: 1, isCompleted: false },
+                    { name: "Morning Run", status: "0 / 5 target", color: "#a855f7", streak: null, isCompleted: false },
+                    { name: "NO FastFood", status: "Pending check-in", color: "#f59e0b", streak: 1, isCompleted: false },
+                    { name: "reading", status: "0 / 5 target", color: "#10b981", streak: null, isCompleted: false },
+                    { name: "Running", status: "1 / 3 target", color: "#38bdf8", streak: 4, isCompleted: false },
+                    { name: "Running", status: "Completed today", color: "#2dd4bf", streak: 2, isCompleted: true },
+                    { name: "workout", status: "Pending check-in", color: "#f97316", streak: 1, isCompleted: false }
                 ],
                 tasks: [
                     { time: "09:30 - 10:15", title: "Review Supabase Ingestion RLS Policies", priority: "P1 Urgent", done: true },
@@ -719,9 +829,10 @@
                 sprint: "50m Deep Block / 10m Break",
                 reflection: "“Calibrated dark mode contrast ratios and verified 5-minute snap physics on the day planner timeline.”",
                 habits: [
-                    { name: "3D Spatial Audio Focus Sprint", category: "Focus", streak: 5, metric: "50 mins", progress: 1.0 },
-                    { name: "Design System Token Audit", category: "Design", streak: 9, metric: "Daily Pass", progress: 0.9 },
-                    { name: "Daily Standup Notes", category: "Work", streak: 3, metric: "1 Entry", progress: 1.0 }
+                    { name: "gym", status: "Completed today", color: "#38bdf8", streak: 3, isCompleted: true },
+                    { name: "Meditate", status: "Completed today", color: "#2dd4bf", streak: 5, isCompleted: true },
+                    { name: "Design System Audit", status: "1 / 1 target", color: "#a855f7", streak: 9, isCompleted: true },
+                    { name: "reading", status: "0 / 5 target", color: "#10b981", streak: null, isCompleted: false }
                 ],
                 tasks: [
                     { time: "10:00 - 10:45", title: "Inspect Day Planner 5m Snap Animations", priority: "P1 Urgent", done: true },
@@ -764,8 +875,9 @@
                 sprint: "20m Focus / 5m Break",
                 reflection: "“Tested Siri Shortcuts for quick logging and ⌃⌥P global HUD overlay. Very responsive on Apple Silicon.”",
                 habits: [
-                    { name: "Read 20 Pages Executive Briefs", category: "Learning", streak: 14, metric: "20 pages", progress: 1.0 },
-                    { name: "Strength Training (Calisthenics)", category: "Fitness", streak: 7, metric: "1 Session", progress: 0.6 }
+                    { name: "reading", status: "20 / 20 target", color: "#10b981", streak: 14, isCompleted: true },
+                    { name: "workout", status: "Pending check-in", color: "#f97316", streak: 7, isCompleted: false },
+                    { name: "NO FastFood", status: "Completed today", color: "#f59e0b", streak: 12, isCompleted: true }
                 ],
                 tasks: [
                     { time: "08:30 - 08:45", title: "Test Siri Voice Shortcuts ('Hey Siri')", priority: "P3 Quick", done: true },
@@ -819,22 +931,27 @@
             document.getElementById('dLastActive').textContent = t.lastActive;
             document.getElementById('dId').textContent = t.id;
 
-            // PILLAR 1: HABITS
-            document.getElementById('p1Count').textContent = `${t.habits.length} Boards`;
+            // PILLAR 1: HABITS (Render exact rows from app)
+            document.getElementById('p1Count').textContent = `${t.habits.length} habits`;
             document.getElementById('habitsList').innerHTML = t.habits.map(h => `
-                <div class="habit-item">
-                    <div class="habit-top">
-                        <span>${h.name} <span style="font-size:11px; color:var(--text-tertiary);">(${h.metric})</span></span>
-                        <span class="flame-streak">🔥 ${h.streak}d streak</span>
+                <div class="app-habit-row">
+                    <div class="habit-left-group">
+                        <div class="habit-accent-line" style="background: ${h.color};"></div>
+                        <div class="habit-name-group">
+                            <span class="habit-name-text">${h.name}</span>
+                            <span class="habit-sub-text ${h.isCompleted ? 'completed' : ''}">${h.status}</span>
+                        </div>
                     </div>
-                    <div class="prog-bg">
-                        <div class="prog-bar" style="width:${h.progress * 100}%;"></div>
+                    <div class="habit-right-group">
+                        ${h.streak ? `<span class="flame-streak-pill">🔥 ${h.streak}d</span>` : ''}
+                        <div class="check-ring ${h.isCompleted ? 'completed' : ''}">
+                            ${h.isCompleted ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="m5 12 5 5L20 7"/></svg>' : ''}
+                        </div>
                     </div>
                 </div>
             `).join('');
 
             // PILLAR 2: TODAY
-            document.getElementById('p2Count').textContent = `${t.tasks.length} Tasks`;
             document.getElementById('tasksList').innerHTML = t.tasks.map(task => `
                 <div class="time-block-row">
                     <span class="block-time">${task.time}</span>
@@ -849,7 +966,7 @@
 
             // PILLAR 4: JOURNAL
             document.getElementById('p4Note').textContent = t.reflection;
-            document.getElementById('jHabitCount').textContent = `${t.journalHabits.length} Routines`;
+            document.getElementById('jLogCount').textContent = t.journalHabits.length;
             document.getElementById('journalHabitsList').innerHTML = t.journalHabits.map(jh => `
                 <div class="journal-routine-item">
                     <div class="routine-name">
@@ -933,17 +1050,17 @@
                 if (res.ok) {
                     const rawEvents = await res.json();
                     if (rawEvents && rawEvents.length > 0) {
-                        // Ingest live events into active tester
                         rawEvents.forEach(evt => {
                             const p = evt.properties || {};
                             if (evt.event_name === 'habit_checked') {
-                                const hName = p.habit_name || 'Checked Habit';
-                                const existing = database[0].habits.find(h => h.name === hName);
+                                const hName = p.habit_name || 'gym';
+                                const existing = database[0].habits.find(h => h.name.toLowerCase() === hName.toLowerCase());
                                 if (existing) {
-                                    existing.streak = p.current_streak || (existing.streak + 1);
-                                    existing.progress = 1.0;
+                                    existing.streak = p.current_streak || (existing.streak ? existing.streak + 1 : 1);
+                                    existing.status = "Completed today";
+                                    existing.isCompleted = true;
                                 } else {
-                                    database[0].habits.unshift({ name: hName, category: "Active", streak: 1, metric: "1 Check", progress: 1.0 });
+                                    database[0].habits.unshift({ name: hName, status: "Completed today", color: "#38bdf8", streak: 1, isCompleted: true });
                                 }
                             } else if (evt.event_name === 'task_created') {
                                 database[0].tasks.unshift({ time: "Today", title: p.title || "New Task", priority: "P2 Normal", done: false });
@@ -957,7 +1074,7 @@
                         alert(`Successfully synced ${rawEvents.length} live events from Supabase!`);
                         render();
                     } else {
-                        alert("Connected to Supabase! (No new alpha events found yet. Perform an action in the macOS app to populate).");
+                        alert("Connected to Supabase! (No new events found yet).");
                     }
                 } else {
                     alert(`Supabase Error (${res.status}): ${res.statusText}`);
@@ -977,7 +1094,7 @@
                     if (Array.isArray(parsed)) {
                         parsed.forEach(evt => {
                             if (evt.event_name === 'habit_checked') {
-                                database[0].habits.unshift({ name: evt.properties?.habit_name || 'Local Habit', category: 'Health', streak: 1, metric: 'Check', progress: 1.0 });
+                                database[0].habits.unshift({ name: evt.properties?.habit_name || 'gym', status: 'Completed today', color: '#38bdf8', streak: 1, isCompleted: true });
                             }
                         });
                     }
