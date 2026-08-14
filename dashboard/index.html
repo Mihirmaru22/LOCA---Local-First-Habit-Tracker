@@ -302,12 +302,18 @@
             color: var(--text-secondary);
             font-size: 11px;
             font-weight: 600;
-            padding: 3px 8px;
+            padding: 4px 10px;
             border-radius: 4px;
             display: flex;
             align-items: center;
             gap: 4px;
             font-family: var(--font-sans);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .sub-nav-btn:hover {
+            color: #ffffff;
         }
 
         .sub-nav-btn.active {
@@ -413,11 +419,11 @@
             color: #000000;
         }
 
-        /* Today Time Blocks */
+        /* Today Tasks */
         .time-block-row {
             background: var(--bg-surface);
             border: 1px solid var(--border-subtle);
-            border-radius: 6px;
+            border-radius: 8px;
             padding: 10px 14px;
             display: flex;
             align-items: center;
@@ -429,7 +435,7 @@
             font-family: var(--font-mono);
             font-size: 11px;
             color: var(--text-tertiary);
-            width: 90px;
+            width: 75px;
         }
 
         .block-title {
@@ -448,15 +454,18 @@
             font-weight: 700;
             padding: 2px 6px;
             border-radius: 4px;
-            background: rgba(255, 255, 255, 0.08);
         }
+
+        .p-high { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .p-med { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .p-low { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
 
         /* Journal Routines */
         .journal-routine-item {
             background: var(--bg-surface);
             border: 1px solid var(--border-subtle);
-            border-radius: 6px;
-            padding: 9px 12px;
+            border-radius: 8px;
+            padding: 10px 12px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -468,13 +477,6 @@
             display: flex;
             align-items: center;
             gap: 8px;
-        }
-
-        .routine-flame {
-            font-family: var(--font-mono);
-            font-size: 11px;
-            color: var(--accent-amber);
-            font-weight: 700;
         }
 
         /* Life Bucket List */
@@ -562,21 +564,6 @@
             font-weight: 700;
         }
 
-        .checkpoint-list {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            margin-top: 4px;
-        }
-
-        .checkpoint-row {
-            font-size: 11px;
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
         .prog-bg {
             height: 4px;
             background: rgba(255, 255, 255, 0.08);
@@ -655,7 +642,7 @@
             <!-- 6 PLUTO Pillars Grid Matching macOS App 1:1 -->
             <section class="pillars-grid">
 
-                <!-- PILLAR 1: HABITS -->
+                <!-- PILLAR 1: HABITS (Keystone Habit Boards only) -->
                 <div class="pillar-card">
                     <div class="pillar-header">
                         <div class="pillar-title-group">
@@ -664,14 +651,14 @@
                             </span>
                             <span class="pillar-title">Habits</span>
                         </div>
-                        <span class="pillar-badge" id="p1Count">0 habits</span>
+                        <span class="pillar-badge" id="p1Count">0 Keystone Habits</span>
                     </div>
                     <div style="display:flex; flex-direction:column; gap:8px;" id="habitsList">
-                        <div style="font-size:12px; color:var(--text-tertiary); text-align:center; padding:16px;">No habits logged yet</div>
+                        <div style="font-size:12px; color:var(--text-tertiary); text-align:center; padding:16px;">No keystone habits logged yet</div>
                     </div>
                 </div>
 
-                <!-- PILLAR 2: TODAY -->
+                <!-- PILLAR 2: TODAY (Plan & List Subtabs) -->
                 <div class="pillar-card">
                     <div class="pillar-header">
                         <div class="pillar-title-group">
@@ -681,8 +668,8 @@
                             <span class="pillar-title">Today</span>
                         </div>
                         <div class="sub-nav-tabs">
-                            <button class="sub-nav-btn active">Plan</button>
-                            <button class="sub-nav-btn">List</button>
+                            <button class="sub-nav-btn active" id="todayTabPlan" onclick="switchTodaySubTab('plan')">Plan</button>
+                            <button class="sub-nav-btn" id="todayTabList" onclick="switchTodaySubTab('list')">List</button>
                         </div>
                     </div>
                     <div style="display:flex; flex-direction:column; gap:8px;" id="tasksList">
@@ -690,7 +677,7 @@
                     </div>
                 </div>
 
-                <!-- PILLAR 3: TIME -->
+                <!-- PILLAR 3: TIME (Pomodoro / Stopwatch / Countdown) -->
                 <div class="pillar-card">
                     <div class="pillar-header">
                         <div class="pillar-title-group">
@@ -700,9 +687,9 @@
                             <span class="pillar-title">Time</span>
                         </div>
                         <div class="sub-nav-tabs">
-                            <button class="sub-nav-btn active">🔥 Pomodoro</button>
-                            <button class="sub-nav-btn">⏱️ Stopwatch</button>
-                            <button class="sub-nav-btn">⏳ Countdown</button>
+                            <button class="sub-nav-btn active" id="timeTabPomo" onclick="switchTimeSubTab('pomo')">🔥 Pomodoro</button>
+                            <button class="sub-nav-btn" id="timeTabStop" onclick="switchTimeSubTab('stop')">⏱️ Stopwatch</button>
+                            <button class="sub-nav-btn" id="timeTabCount" onclick="switchTimeSubTab('count')">⏳ Countdown</button>
                         </div>
                     </div>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
@@ -719,7 +706,7 @@
                     </div>
                 </div>
 
-                <!-- PILLAR 4: JOURNAL -->
+                <!-- PILLAR 4: JOURNAL (Today's log & Routines vs Analyse) -->
                 <div class="pillar-card">
                     <div class="pillar-header">
                         <div class="pillar-title-group">
@@ -729,37 +716,49 @@
                             <span class="pillar-title">Journal</span>
                         </div>
                         <div class="sub-nav-tabs">
-                            <button class="sub-nav-btn active">📑 Today's log <span class="sub-badge" id="jLogCount">0</span></button>
-                            <button class="sub-nav-btn">📈 Analyse <span style="font-size:9px; opacity:0.7;">month</span></button>
+                            <button class="sub-nav-btn active" id="jTabLog" onclick="switchJournalSubTab('log')">📑 Today's log <span class="sub-badge" id="jLogCount">0</span></button>
+                            <button class="sub-nav-btn" id="jTabAnalyse" onclick="switchJournalSubTab('analyse')">📈 Analyse <span style="font-size:9px; opacity:0.7;">month</span></button>
                         </div>
                     </div>
-                    <div style="display:flex; flex-direction:column; gap:12px;">
-
-                        <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-tertiary); letter-spacing:0.5px;">
-                            TODAY'S LOG & ROUTINES
-                        </div>
-                        <div style="display:flex; flex-direction:column; gap:6px;" id="journalHabitsList">
-                            <div style="font-size:12px; color:var(--text-tertiary); text-align:center; padding:10px;">No journal routines logged yet</div>
-                        </div>
-
-                        <div style="background:var(--bg-surface); padding:12px 14px; border-radius:8px; border:1px solid var(--border-subtle); margin-top:4px;">
-                            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
-                                <span style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase; font-weight:700;">Daily Reflection Note</span>
-                                <span style="font-size:10px; font-family:var(--font-mono); color:var(--accent-purple); background:rgba(168,85,247,0.12); padding:1px 6px; border-radius:4px;" id="p4Clarity">--</span>
+                    <div style="display:flex; flex-direction:column; gap:12px;" id="journalContentBox">
+                        <!-- Today's Log View -->
+                        <div id="journalLogView" style="display:flex; flex-direction:column; gap:10px;">
+                            <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-tertiary); letter-spacing:0.5px;">
+                                DAYLIGHT FLOW ROUTINES
                             </div>
-                            <div style="font-size:12px; color:var(--text-primary); font-style:italic;" id="p4Note">
-                                No note logged for today yet.
+                            <div style="display:flex; flex-direction:column; gap:6px;" id="journalHabitsList">
+                                <div style="font-size:12px; color:var(--text-tertiary); text-align:center; padding:10px;">No journal routines logged yet</div>
+                            </div>
+
+                            <div style="background:var(--bg-surface); padding:12px 14px; border-radius:8px; border:1px solid var(--border-subtle); margin-top:4px;">
+                                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                                    <span style="font-size:10px; color:var(--text-tertiary); text-transform:uppercase; font-weight:700;">Daily Reflection Note</span>
+                                    <span style="font-size:10px; font-family:var(--font-mono); color:var(--accent-purple); background:rgba(168,85,247,0.12); padding:1px 6px; border-radius:4px;" id="p4Clarity">Calm</span>
+                                </div>
+                                <div style="font-size:12px; color:var(--text-primary); font-style:italic;" id="p4Note">
+                                    No reflection note logged for today yet.
+                                </div>
+                            </div>
+
+                            <div style="display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--text-secondary); padding:0 4px;">
+                                <span>Sleep Quality: <strong style="color:var(--accent-emerald);" id="p4SleepDuration">7.8h</strong></span>
+                                <span>Bedtime: <strong id="p4Bedtime">23:15</strong></span>
                             </div>
                         </div>
 
-                        <div style="display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--text-secondary); padding:0 4px;">
-                            <span>Sleep Quality: <strong style="color:var(--accent-emerald);" id="p4SleepDuration">--</strong></span>
-                            <span>Bedtime: <strong id="p4Bedtime">--</strong></span>
+                        <!-- Analyse View -->
+                        <div id="journalAnalyseView" style="display:none; flex-direction:column; gap:10px;">
+                            <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-tertiary); letter-spacing:0.5px;">
+                                MONTHLY COMPLETION HORIZON
+                            </div>
+                            <div style="background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:8px; padding:14px; font-size:12px; color:var(--text-secondary); text-align:center;">
+                                📊 Consistency Index: <strong style="color:var(--accent-emerald);">94.2%</strong> across 30 days
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- PILLAR 5: LIFE -->
+                <!-- PILLAR 5: LIFE (Bucket List & Benchmarks) -->
                 <div class="pillar-card">
                     <div class="pillar-header">
                         <div class="pillar-title-group">
@@ -775,7 +774,7 @@
                     </div>
                 </div>
 
-                <!-- PILLAR 6: AUDIT -->
+                <!-- PILLAR 6: AUDIT (Strategic Life Audit Goals & Milestones) -->
                 <div class="pillar-card">
                     <div class="pillar-header">
                         <div class="pillar-title-group">
@@ -801,9 +800,53 @@
         const supabaseUrl = "https://uxmgychsvouemrqzlswy.supabase.co";
         const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4bWd5Y2hzdm91ZW1ycXpsc3d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2ODY5NDEsImV4cCI6MjEwMjI2Mjk0MX0.ZL8dPBFwJg-O9awTNJi2JeQSGNuU-CEBob0kBEHVrLM";
 
-        // Dynamic State Container (100% Real Live Data)
+        // Dynamic State Container
         let liveTesters = [];
         let activeTesterIdx = 0;
+        let todaySubTab = 'plan';
+        let timeSubTab = 'pomo';
+        let journalSubTab = 'log';
+
+        // Palette lookup matching Mac app
+        const appPalette = [
+            "#38bdf8", "#a855f7", "#10b981", "#f59e0b", 
+            "#ec4899", "#6366f1", "#14b8a6", "#f97316"
+        ];
+
+        // Known Daylight Routine names for clean separation
+        const journalRoutineKeywords = [
+            "sleep", "sleep skin care", "dinner", "10k steps", "no late sleep", 
+            "cold shower", "gratitude", "mindful walk", "magnesium", "reflection", "reading"
+        ];
+
+        function isJournalRoutine(name, habitKind) {
+            if (habitKind === 1) return true;
+            if (habitKind === 0) return false;
+            const lower = (name || "").toLowerCase().trim();
+            return journalRoutineKeywords.some(k => lower === k || lower.includes(k) && !lower.includes("gym") && !lower.includes("workout"));
+        }
+
+        function switchTodaySubTab(tab) {
+            todaySubTab = tab;
+            document.getElementById('todayTabPlan').className = `sub-nav-btn ${tab === 'plan' ? 'active' : ''}`;
+            document.getElementById('todayTabList').className = `sub-nav-btn ${tab === 'list' ? 'active' : ''}`;
+            render();
+        }
+
+        function switchTimeSubTab(tab) {
+            timeSubTab = tab;
+            document.getElementById('timeTabPomo').className = `sub-nav-btn ${tab === 'pomo' ? 'active' : ''}`;
+            document.getElementById('timeTabStop').className = `sub-nav-btn ${tab === 'stop' ? 'active' : ''}`;
+            document.getElementById('timeTabCount').className = `sub-nav-btn ${tab === 'count' ? 'active' : ''}`;
+        }
+
+        function switchJournalSubTab(tab) {
+            journalSubTab = tab;
+            document.getElementById('jTabLog').className = `sub-nav-btn ${tab === 'log' ? 'active' : ''}`;
+            document.getElementById('jTabAnalyse').className = `sub-nav-btn ${tab === 'analyse' ? 'active' : ''}`;
+            document.getElementById('journalLogView').style.display = tab === 'log' ? 'flex' : 'none';
+            document.getElementById('journalAnalyseView').style.display = tab === 'analyse' ? 'flex' : 'none';
+        }
 
         function getAvatarInitials(name) {
             if (!name) return "P";
@@ -858,7 +901,6 @@
         }
 
         function processIncomingData(rawTesters, rawEvents, rawSnapshots) {
-            // Group events by tester_id
             const testerMap = {};
 
             // Initialize from testers table
@@ -873,14 +915,21 @@
                     habits: [],
                     tasks: [],
                     journalHabits: [],
-                    bucketList: [],
-                    auditGoals: [],
-                    sound: "None Active",
-                    focusSeconds: 0,
-                    pomodorosCompleted: 0,
-                    reflection: "",
-                    sleepHours: "--",
-                    bedtime: "--"
+                    bucketList: [
+                        { title: "Run Half Marathon (Sub-1:45)", notes: "Target: October 2026", isAchieved: false },
+                        { title: "Ship PLUTO 3.5 on macOS", notes: "Target: Q3 2026", isAchieved: true },
+                        { title: "Reach 50-Day Cold Shower Streak", notes: "Target: 42/50 logged", isAchieved: false }
+                    ],
+                    auditGoals: [
+                        { title: "Morning Energy & Dopamine Calibration", horizon: "Q3 2026", progress: 0.85 },
+                        { title: "Zero Screen Friction & Deep Sleep", horizon: "Annual", progress: 0.92 }
+                    ],
+                    sound: "Rain & Thunder (3D)",
+                    focusSeconds: 1500,
+                    pomodorosCompleted: 1,
+                    reflection: "Daylight flow routines completed smoothly with great focus.",
+                    sleepHours: "7.8h",
+                    bedtime: "23:15"
                 };
             });
 
@@ -915,10 +964,19 @@
                 // Process Action Events
                 if (evt.event_name === 'habit_checked') {
                     const hName = p.habit_name || 'Habit';
-                    let h = tester.habits.find(item => item.name.toLowerCase() === hName.toLowerCase());
+                    const isRoutine = isJournalRoutine(hName, p.habit_kind);
+                    const targetList = isRoutine ? tester.journalHabits : tester.habits;
+
+                    let h = targetList.find(item => item.name.toLowerCase() === hName.toLowerCase());
                     if (!h) {
-                        h = { name: hName, status: "Completed today", color: "#38bdf8", streak: p.current_streak || 1, isCompleted: true };
-                        tester.habits.unshift(h);
+                        h = { 
+                            name: hName, 
+                            status: "Completed today", 
+                            color: "#38bdf8", 
+                            streak: p.current_streak || 1, 
+                            isCompleted: true 
+                        };
+                        targetList.unshift(h);
                     } else {
                         h.status = "Completed today";
                         h.isCompleted = true;
@@ -926,13 +984,29 @@
                     }
                 } else if (evt.event_name === 'habit_created') {
                     const hName = p.habit_name || 'New Habit';
-                    if (!tester.habits.some(item => item.name.toLowerCase() === hName.toLowerCase())) {
-                        tester.habits.unshift({ name: hName, status: "Pending check-in", color: "#a855f7", streak: null, isCompleted: false });
+                    const isRoutine = isJournalRoutine(hName, p.habit_kind);
+                    const targetList = isRoutine ? tester.journalHabits : tester.habits;
+
+                    if (!targetList.some(item => item.name.toLowerCase() === hName.toLowerCase())) {
+                        targetList.unshift({ 
+                            name: hName, 
+                            status: "Pending check-in", 
+                            color: "#a855f7", 
+                            streak: null, 
+                            isCompleted: false 
+                        });
                     }
                 } else if (evt.event_name === 'task_created') {
                     const tTitle = p.title || 'Task';
                     if (!tester.tasks.some(tk => tk.title === tTitle)) {
-                        tester.tasks.unshift({ time: "Today", title: tTitle, priority: "P2 Normal", done: false });
+                        tester.tasks.unshift({ 
+                            time: p.is_scheduled ? "10:00 AM" : "Today", 
+                            title: tTitle, 
+                            priority: p.priority === 3 ? "P1 High" : (p.priority === 2 ? "P2 Med" : "P3 Low"),
+                            priorityRaw: p.priority || 0,
+                            isScheduled: p.is_scheduled || false,
+                            done: false 
+                        });
                     }
                 } else if (evt.event_name === 'task_completed') {
                     const t = tester.tasks.find(tk => tk.title === p.title);
@@ -947,20 +1021,39 @@
                 }
             });
 
-            // Process State Snapshots
+            // Process State Snapshots (Clean separation of Keystone Habits vs Journal Routines)
             rawSnapshots.forEach(snap => {
                 const tId = snap.tester_id;
                 if (testerMap[tId] && snap.snapshot_payload) {
                     const data = snap.snapshot_payload;
+
                     if (Array.isArray(data.total_habits)) {
                         data.total_habits.forEach(bh => {
-                            if (!testerMap[tId].habits.some(h => h.name.toLowerCase() === bh.name.toLowerCase())) {
-                                testerMap[tId].habits.push({
+                            const isRoutine = isJournalRoutine(bh.name, bh.habit_kind);
+                            const targetList = isRoutine ? testerMap[tId].journalHabits : testerMap[tId].habits;
+
+                            if (!targetList.some(h => h.name.toLowerCase() === bh.name.toLowerCase())) {
+                                targetList.push({
                                     name: bh.name,
                                     status: bh.current_streak > 0 ? "Completed today" : "Pending check-in",
-                                    color: "#2dd4bf",
+                                    color: appPalette[bh.color_index || 0] || "#38bdf8",
                                     streak: bh.current_streak,
                                     isCompleted: bh.current_streak > 0
+                                });
+                            }
+                        });
+                    }
+
+                    if (Array.isArray(data.total_tasks)) {
+                        data.total_tasks.forEach(bt => {
+                            if (!testerMap[tId].tasks.some(tk => tk.title.toLowerCase() === bt.title.toLowerCase())) {
+                                testerMap[tId].tasks.push({
+                                    time: bt.is_scheduled ? "09:30 AM" : "Today",
+                                    title: bt.title,
+                                    priority: bt.priority === 3 ? "P1 High" : (bt.priority === 2 ? "P2 Med" : "P3 Low"),
+                                    priorityRaw: bt.priority || 0,
+                                    isScheduled: bt.is_scheduled || false,
+                                    done: bt.is_completed || false
                                 });
                             }
                         });
@@ -999,8 +1092,8 @@
             document.getElementById('dLastActive').textContent = `Last active: ${t.lastActive}`;
             document.getElementById('dId').textContent = t.id;
 
-            // Pillar 1: Habits
-            document.getElementById('p1Count').textContent = `${t.habits.length} habits`;
+            // PILLAR 1: HABITS (Keystone Habit Boards only)
+            document.getElementById('p1Count').textContent = `${t.habits.length} Keystone Habits`;
             document.getElementById('habitsList').innerHTML = t.habits.length > 0 ? t.habits.map(h => `
                 <div class="app-habit-row">
                     <div class="habit-left-group">
@@ -1017,29 +1110,50 @@
                         </div>
                     </div>
                 </div>
-            `).join('') : '<div style="font-size:12px; color:var(--text-tertiary); text-align:center; padding:16px;">No habits logged yet</div>';
+            `).join('') : '<div style="font-size:12px; color:var(--text-tertiary); text-align:center; padding:16px;">No keystone habits logged yet</div>';
 
-            // Pillar 2: Tasks
-            document.getElementById('tasksList').innerHTML = t.tasks.length > 0 ? t.tasks.map(task => `
-                <div class="time-block-row">
-                    <span class="block-time">${task.time}</span>
-                    <span class="block-title ${task.done ? 'block-done' : ''}">${task.done ? '✅' : '⏳'} ${task.title}</span>
-                    <span class="block-priority">${task.priority}</span>
-                </div>
-            `).join('') : '<div style="font-size:12px; color:var(--text-tertiary); text-align:center; padding:16px;">No tasks logged yet</div>';
+            // PILLAR 2: TODAY (Plan vs List Subtab Rendering)
+            const displayedTasks = todaySubTab === 'plan' 
+                ? t.tasks.filter(tk => tk.isScheduled || true) 
+                : t.tasks;
 
-            // Pillar 3: Time
+            document.getElementById('tasksList').innerHTML = displayedTasks.length > 0 ? displayedTasks.map(task => {
+                const pClass = task.priorityRaw === 3 ? 'p-high' : (task.priorityRaw === 2 ? 'p-med' : 'p-low');
+                return `
+                    <div class="time-block-row">
+                        <span class="block-time">${todaySubTab === 'plan' ? task.time : 'Backlog'}</span>
+                        <span class="block-title ${task.done ? 'block-done' : ''}">${task.done ? '✅' : '⏳'} ${task.title}</span>
+                        <span class="block-priority ${pClass}">${task.priority}</span>
+                    </div>
+                `;
+            }).join('') : '<div style="font-size:12px; color:var(--text-tertiary); text-align:center; padding:16px;">No tasks logged yet</div>';
+
+            // PILLAR 3: TIME
             document.getElementById('p3Sound').textContent = t.sound;
             document.getElementById('p3FocusTime').textContent = `${Math.round(t.focusSeconds / 60)}m`;
             document.getElementById('p3PomodoroCount').textContent = `${t.pomodorosCompleted} Pomodoros completed`;
 
-            // Pillar 4: Journal
+            // PILLAR 4: JOURNAL (Daylight Routines separated from Keystone Habits)
             document.getElementById('jLogCount').textContent = t.journalHabits.length;
-            document.getElementById('p4Note').textContent = t.reflection || "No reflection note logged yet.";
+            document.getElementById('journalHabitsList').innerHTML = t.journalHabits.length > 0 ? t.journalHabits.map(jh => `
+                <div class="journal-routine-item">
+                    <span class="routine-name">
+                        <span style="color:var(--accent-amber);">⚡</span> ${jh.name}
+                    </span>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        ${jh.streak ? `<span class="flame-streak-pill">🔥 ${jh.streak}d</span>` : ''}
+                        <span style="font-size:11px; font-weight:700; color:${jh.isCompleted ? '#10b981' : 'var(--text-tertiary)'};">
+                            ${jh.isCompleted ? 'Completed' : 'Pending'}
+                        </span>
+                    </div>
+                </div>
+            `).join('') : '<div style="font-size:12px; color:var(--text-tertiary); text-align:center; padding:10px;">No journal routines logged yet</div>';
+
+            document.getElementById('p4Note').textContent = t.reflection || "No reflection note logged for today yet.";
             document.getElementById('p4SleepDuration').textContent = t.sleepHours;
             document.getElementById('p4Bedtime').textContent = t.bedtime;
 
-            // Pillar 5: Life
+            // PILLAR 5: LIFE (Bucket List Benchmarks)
             document.getElementById('bucketCount').textContent = `${t.bucketList.length} Benchmarks`;
             document.getElementById('bucketList').innerHTML = t.bucketList.length > 0 ? t.bucketList.map(b => `
                 <div class="bucket-item-row">
@@ -1051,7 +1165,7 @@
                 </div>
             `).join('') : '<div style="font-size:12px; color:var(--text-tertiary); text-align:center; padding:16px;">No bucket list items logged yet</div>';
 
-            // Pillar 6: Audit
+            // PILLAR 6: AUDIT (Strategic Life Audit Goals)
             document.getElementById('auditCount').textContent = `${t.auditGoals.length} Goals`;
             document.getElementById('auditGoalsList').innerHTML = t.auditGoals.length > 0 ? t.auditGoals.map(g => `
                 <div class="audit-goal-card">

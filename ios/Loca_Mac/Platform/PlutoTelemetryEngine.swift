@@ -247,7 +247,7 @@ final class PlutoTelemetryEngine: @unchecked Sendable {
         let snapshotData: [String: AnyCodable] = [
             "capture_timestamp": AnyCodable(Date()),
             "active_habits_count": AnyCodable(habits.filter { $0.archivedAt == nil }.count),
-            "total_habits": AnyCodable(habits.map { board in
+            "total_habits": AnyCodable(habits.filter { $0.archivedAt == nil }.map { board in
                 [
                     "id": board.id.uuidString,
                     "name": board.name,
@@ -256,16 +256,20 @@ final class PlutoTelemetryEngine: @unchecked Sendable {
                     "target": board.targetValue,
                     "current_streak": board.currentStreak,
                     "logs_count": board.logs?.count ?? 0,
-                    "is_archived": board.archivedAt != nil
+                    "is_archived": board.archivedAt != nil,
+                    "habit_kind": board.habitKindRaw,
+                    "color_index": board.colorIndex
                 ]
             }),
-            "total_tasks": AnyCodable(tasks.map { t in
+            "total_tasks": AnyCodable(tasks.filter { !$0.isArchived }.map { t in
                 [
                     "id": t.id.uuidString,
                     "title": t.title,
                     "is_completed": t.isCompleted,
                     "duration_minutes": t.durationMinutes,
-                    "is_scheduled": t.startTime != nil
+                    "is_scheduled": t.startTime != nil,
+                    "priority": t.priority,
+                    "due_date": t.dueDate != nil ? ISO8601DateFormatter().string(from: t.dueDate!) : nil
                 ]
             })
         ]
