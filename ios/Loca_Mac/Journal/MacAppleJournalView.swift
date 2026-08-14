@@ -658,7 +658,7 @@ private struct AppleJournalEditorCanvas: View {
             timer?.invalidate()
             timer = nil
         }
-        Haptics.impact(.medium)
+        Haptics.impact(.light)
     }
 
     private func formatRecordTime(_ sec: Double) -> String {
