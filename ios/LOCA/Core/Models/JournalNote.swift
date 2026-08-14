@@ -19,8 +19,11 @@ final class JournalNote {
     var date:        Date   = Date()
     var title:       String = ""
     var text:        String = ""
-    var location:    String? = nil
-    var isBookmarked: Bool  = false
+    var location:        String? = nil
+    var locationAddress: String? = nil
+    var latitude:        Double? = nil
+    var longitude:       Double? = nil
+    var isBookmarked:    Bool    = false
     var hasAudio:    Bool   = false
     var audioDuration: Double = 0
     var photoCount:     Int      = 0

@@ -3,6 +3,7 @@ import SwiftData
 import AVFoundation
 import AppKit
 import Combine
+import MapKit
 
 // MARK: - JournalMediaManager
 
@@ -48,6 +49,90 @@ final class JournalMediaManager {
     func deleteFile(named filename: String) {
         let targetURL = mediaDirectory.appendingPathComponent(filename)
         try? FileManager.default.removeItem(at: targetURL)
+    }
+}
+
+// MARK: - JournalLocationItem
+
+struct JournalLocationItem: Identifiable, Hashable {
+    let id = UUID()
+    let title: String
+    let subtitle: String
+    let latitude: Double
+    let longitude: Double
+
+    var coordinate: CLLocationCoordinate2D {
+        CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+}
+
+// MARK: - AppleJournalLocationSearchEngine
+
+final class AppleJournalLocationSearchEngine: ObservableObject {
+    @Published var query: String = ""
+    @Published var searchResults: [JournalLocationItem] = []
+    @Published var isSearching: Bool = false
+
+    private var cancellables = Set<AnyCancellable>()
+
+    let defaultPlaces: [JournalLocationItem] = [
+        JournalLocationItem(title: "Apple Park", subtitle: "1 Apple Park Way, Cupertino, CA", latitude: 37.3349, longitude: -122.0090),
+        JournalLocationItem(title: "Central Park", subtitle: "New York, NY, United States", latitude: 40.785091, longitude: -73.968285),
+        JournalLocationItem(title: "Golden Gate Bridge", subtitle: "San Francisco, CA, United States", latitude: 37.8199, longitude: -122.4783),
+        JournalLocationItem(title: "Tokyo Tower", subtitle: "Minato City, Tokyo, Japan", latitude: 35.6586, longitude: 139.7454),
+        JournalLocationItem(title: "Eiffel Tower", subtitle: "Champ de Mars, Paris, France", latitude: 48.8584, longitude: 2.2945),
+        JournalLocationItem(title: "Marina Beach", subtitle: "Chennai, Tamil Nadu, India", latitude: 13.0500, longitude: 80.2824),
+        JournalLocationItem(title: "Big Ben", subtitle: "Westminster, London, United Kingdom", latitude: 51.5007, longitude: -0.1246)
+    ]
+
+    init() {
+        searchResults = defaultPlaces
+        $query
+            .debounce(for: .milliseconds(300), scheduler: RunLoop.main)
+            .removeDuplicates()
+            .sink { [weak self] searchText in
+                self?.performSearch(query: searchText)
+            }
+            .store(in: &cancellables)
+    }
+
+    func performSearch(query: String) {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            searchResults = defaultPlaces
+            isSearching = false
+            return
+        }
+
+        isSearching = true
+        let request = MKLocalSearch.Request()
+        request.naturalLanguageQuery = trimmed
+
+        let search = MKLocalSearch(request: request)
+        search.start { [weak self] response, _ in
+            DispatchQueue.main.async {
+                self?.isSearching = false
+                guard let mapItems = response?.mapItems, !mapItems.isEmpty else {
+                    return
+                }
+                self?.searchResults = mapItems.map { item in
+                    let title = item.name ?? "Location"
+                    let subtitle = [
+                        item.placemark.thoroughfare,
+                        item.placemark.locality,
+                        item.placemark.administrativeArea,
+                        item.placemark.country
+                    ].compactMap { $0 }.joined(separator: ", ")
+
+                    return JournalLocationItem(
+                        title: title,
+                        subtitle: subtitle.isEmpty ? (item.placemark.title ?? "") : subtitle,
+                        latitude: item.placemark.coordinate.latitude,
+                        longitude: item.placemark.coordinate.longitude
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -220,10 +305,8 @@ final class AppleJournalRichTextController: NSObject, ObservableObject {
 
         let newLine: String
         if currentLine.hasPrefix(prefix) {
-            // Already has this prefix: toggle it off
             newLine = cleanedLine
         } else {
-            // Apply new prefix
             newLine = prefix + cleanedLine
         }
 
@@ -376,7 +459,6 @@ struct AppleJournalRichTextView: NSViewRepresentable {
         }
 
         func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
-            // Smart Return Key Handling for Lists & Checklists
             if commandSelector == #selector(NSResponder.insertNewline(_:)) {
                 let range = textView.selectedRange()
                 guard let str = textView.string as NSString? else { return false }
@@ -511,7 +593,7 @@ struct AppleJournalEntriesList: View {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 11))
                         .foregroundStyle(DS.Color.textTertiary)
-                    TextField("Search entries…", text: $searchText)
+                    TextField("Search entries or places…", text: $searchText)
                         .font(.system(size: 11))
                         .textFieldStyle(.plain)
 
@@ -530,7 +612,7 @@ struct AppleJournalEntriesList: View {
                 .padding(.vertical, 5)
                 .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 6))
 
-                // Quick Filter Pills (All, Bookmarks, Photos, Audio)
+                // Quick Filter Pills
                 HStack(spacing: 4) {
                     ForEach(JournalFilterType.allCases) { filter in
                         Button {
@@ -606,7 +688,8 @@ struct AppleJournalEntriesList: View {
             let matchesSearch = searchText.isEmpty ||
                 note.title.localizedCaseInsensitiveContains(searchText) ||
                 note.text.localizedCaseInsensitiveContains(searchText) ||
-                (note.location?.localizedCaseInsensitiveContains(searchText) ?? false)
+                (note.location?.localizedCaseInsensitiveContains(searchText) ?? false) ||
+                (note.locationAddress?.localizedCaseInsensitiveContains(searchText) ?? false)
 
             let matchesFilter: Bool
             switch selectedFilter {
@@ -650,6 +733,9 @@ struct AppleJournalEntriesList: View {
             kind: note.noteKind
         )
         dup.location = note.location
+        dup.locationAddress = note.locationAddress
+        dup.latitude = note.latitude
+        dup.longitude = note.longitude
         dup.photoFileNames = note.photoFileNames
         dup.photoCount = note.photoCount
         dup.rtfData = note.rtfData
@@ -702,6 +788,12 @@ struct AppleJournalEntryCard: View {
                     .foregroundStyle(Color.accentColor)
                 }
 
+                if note.location != nil {
+                    Image(systemName: "location.fill")
+                        .font(.system(size: 9))
+                        .foregroundStyle(Color(red: 0.38, green: 0.45, blue: 0.98))
+                }
+
                 if note.isBookmarked {
                     Image(systemName: "bookmark.fill")
                         .font(.system(size: 9))
@@ -723,7 +815,7 @@ struct AppleJournalEntryCard: View {
 
             if let loc = note.location {
                 HStack(spacing: 4) {
-                    Image(systemName: "location.fill")
+                    Image(systemName: "mappin.and.ellipse")
                         .font(.system(size: 8))
                     Text(loc)
                         .font(.system(size: 9, weight: .semibold))
@@ -880,13 +972,27 @@ struct AppleJournalEditorCanvas: View {
                             choosePhotoFromDisk()
                         }
 
-                        // Location Picker
-                        toolbarCapsuleItem(icon: "location.north.line.fill", label: "Tag Location", isActive: note.location != nil) {
+                        // Apple Maps Location Picker
+                        toolbarCapsuleItem(icon: "location.north.line.fill", label: "Tag Apple Maps Location", isActive: note.location != nil) {
                             showLocationPopover.toggle()
                         }
                         .popover(isPresented: $showLocationPopover) {
-                            AppleJournalLocationPopover(currentLocation: note.location) { newLoc in
-                                note.location = newLoc
+                            AppleJournalLocationPopover(
+                                currentLocation: note.location,
+                                currentAddress: note.locationAddress,
+                                currentCoordinate: (note.latitude != nil && note.longitude != nil) ? CLLocationCoordinate2D(latitude: note.latitude!, longitude: note.longitude!) : nil
+                            ) { selectedPlace in
+                                if let place = selectedPlace {
+                                    note.location = place.title
+                                    note.locationAddress = place.subtitle
+                                    note.latitude = place.latitude
+                                    note.longitude = place.longitude
+                                } else {
+                                    note.location = nil
+                                    note.locationAddress = nil
+                                    note.latitude = nil
+                                    note.longitude = nil
+                                }
                                 saveNote()
                                 showLocationPopover = false
                             }
@@ -973,31 +1079,21 @@ struct AppleJournalEditorCanvas: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
 
-                        // Attached Location Pill
+                        // Attached Apple Maps Interactive Card
                         if let loc = note.location {
-                            HStack(spacing: 6) {
-                                Image(systemName: "location.fill")
-                                    .font(.system(size: 10))
-                                    .foregroundStyle(Color(red: 0.38, green: 0.45, blue: 0.98))
-                                Text(loc)
-                                    .font(.system(size: 11, weight: .semibold))
-                                    .foregroundStyle(DS.Color.textSecondary)
-
-                                Spacer()
-
-                                Button {
+                            AppleJournalMapCard(
+                                title: loc,
+                                address: note.locationAddress,
+                                latitude: note.latitude ?? 37.3349,
+                                longitude: note.longitude ?? -122.0090,
+                                onRemove: {
                                     note.location = nil
+                                    note.locationAddress = nil
+                                    note.latitude = nil
+                                    note.longitude = nil
                                     saveNote()
-                                } label: {
-                                    Image(systemName: "xmark")
-                                        .font(.system(size: 9))
-                                        .foregroundStyle(DS.Color.textTertiary)
                                 }
-                                .buttonStyle(.plain)
-                            }
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(Color(red: 0.16, green: 0.15, blue: 0.22), in: RoundedRectangle(cornerRadius: 6))
+                            )
                         }
 
                         // Title Field
@@ -1293,6 +1389,119 @@ struct AppleJournalEditorCanvas: View {
 
     private func saveNote() {
         try? modelContext.save()
+    }
+}
+
+// MARK: - AppleJournalMapCard (Interactive Embedded Apple Maps Card)
+
+private struct AppleJournalMapCard: View {
+    let title: String
+    let address: String?
+    let latitude: Double
+    let longitude: Double
+    let onRemove: () -> Void
+
+    @State private var mapRegion: MKCoordinateRegion
+
+    init(title: String, address: String?, latitude: Double, longitude: Double, onRemove: @escaping () -> Void) {
+        self.title = title
+        self.address = address
+        self.latitude = latitude
+        self.longitude = longitude
+        self.onRemove = onRemove
+        _mapRegion = State(initialValue: MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: latitude, longitude: longitude),
+            span: MKCoordinateSpan(latitudeDelta: 0.02, longitudeDelta: 0.02)
+        ))
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Interactive Apple Map Snapshot
+            ZStack(alignment: .topTrailing) {
+                Map(coordinateRegion: $mapRegion, annotationItems: [JournalLocationItem(title: title, subtitle: address ?? "", latitude: latitude, longitude: longitude)]) { item in
+                    MapAnnotation(coordinate: item.coordinate) {
+                        ZStack {
+                            Circle()
+                                .fill(Color(red: 0.38, green: 0.45, blue: 0.98).opacity(0.35))
+                                .frame(width: 32, height: 32)
+                            Circle()
+                                .fill(Color(red: 0.38, green: 0.45, blue: 0.98))
+                                .frame(width: 18, height: 18)
+                            Image(systemName: "mappin")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(.white)
+                        }
+                    }
+                }
+                .frame(height: 140)
+                .disabled(true) // Static aesthetic card in note body
+
+                // Remove Button
+                Button(action: onRemove) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 18))
+                        .foregroundStyle(.white, Color.black.opacity(0.6))
+                }
+                .buttonStyle(.plain)
+                .padding(8)
+            }
+
+            // Map Footer with Open in Apple Maps Button
+            HStack(spacing: 12) {
+                Image(systemName: "location.circle.fill")
+                    .font(.system(size: 22))
+                    .foregroundStyle(Color(red: 0.38, green: 0.45, blue: 0.98))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(DS.Color.textPrimary)
+
+                    if let addr = address, !addr.isEmpty {
+                        Text(addr)
+                            .font(.system(size: 10))
+                            .foregroundStyle(DS.Color.textSecondary)
+                            .lineLimit(1)
+                    }
+                }
+
+                Spacer()
+
+                Button {
+                    openInAppleMaps()
+                } label: {
+                    HStack(spacing: 4) {
+                        Text("Apple Maps")
+                        Image(systemName: "arrow.up.right")
+                    }
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(Color(red: 0.38, green: 0.45, blue: 0.98), in: RoundedRectangle(cornerRadius: 6))
+                }
+                .buttonStyle(.plain)
+                .help("Open Location in Apple Maps App")
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(Color(red: 0.14, green: 0.13, blue: 0.20))
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+        )
+    }
+
+    private func openInAppleMaps() {
+        let placemark = MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: latitude, longitude: longitude))
+        let mapItem = MKMapItem(placemark: placemark)
+        mapItem.name = title
+        mapItem.openInMaps(launchOptions: [
+            MKLaunchOptionsMapTypeKey: MKMapType.standard.rawValue
+        ])
     }
 }
 
@@ -1654,66 +1863,85 @@ private struct AppleJournalAudioStudioDrawer: View {
     }
 }
 
-// MARK: - AppleJournalLocationPopover
+// MARK: - AppleJournalLocationPopover (Powered by Apple Maps MKLocalSearch)
 
 struct AppleJournalLocationPopover: View {
     let currentLocation: String?
-    let onSelect: (String?) -> Void
+    let currentAddress: String?
+    let currentCoordinate: CLLocationCoordinate2D?
+    let onSelect: (JournalLocationItem?) -> Void
 
-    @State private var customLocation = ""
-
-    private let suggestions = [
-        "🏡 Home",
-        "💼 Office / Studio",
-        "☕ Coffee Shop",
-        "🏋️ Fitness Center",
-        "🌳 Park / Outdoors",
-        "✈️ Airport / Traveling",
-        "📚 Library"
-    ]
+    @StateObject private var searchEngine = AppleJournalLocationSearchEngine()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Tag Location")
-                .font(.system(size: 12, weight: .bold))
+            // Header
+            HStack {
+                Text("Tag Apple Maps Location")
+                    .font(.system(size: 12, weight: .bold))
+                Spacer()
+                if searchEngine.isSearching {
+                    ProgressView()
+                        .scaleEffect(0.6)
+                }
+            }
 
+            // Search Bar
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
-                TextField("Enter custom location…", text: $customLocation)
+                TextField("Search places, landmarks, cities…", text: $searchEngine.query)
                     .textFieldStyle(.plain)
                     .font(.system(size: 11))
-                    .onSubmit {
-                        let trimmed = customLocation.trimmingCharacters(in: .whitespacesAndNewlines)
-                        if !trimmed.isEmpty {
-                            onSelect(trimmed)
-                        }
-                    }
             }
             .padding(6)
             .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
 
             Divider()
 
-            VStack(alignment: .leading, spacing: 4) {
-                ForEach(suggestions, id: \.self) { place in
-                    Button {
-                        onSelect(place)
-                    } label: {
-                        HStack {
-                            Text(place)
-                                .font(.system(size: 11))
-                                .foregroundStyle(.primary)
-                            Spacer()
+            // Search Results / Suggested Places List
+            ScrollView {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(searchEngine.searchResults) { place in
+                        Button {
+                            onSelect(place)
+                            Haptics.impact(.light)
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "mappin.and.ellipse")
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(Color(red: 0.38, green: 0.45, blue: 0.98))
+
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(place.title)
+                                        .font(.system(size: 11, weight: .semibold))
+                                        .foregroundStyle(.primary)
+
+                                    if !place.subtitle.isEmpty {
+                                        Text(place.subtitle)
+                                            .font(.system(size: 9))
+                                            .foregroundStyle(.secondary)
+                                            .lineLimit(1)
+                                    }
+                                }
+
+                                Spacer()
+                            }
+                            .padding(.vertical, 5)
+                            .padding(.horizontal, 6)
+                            .background(
+                                (currentLocation == place.title)
+                                    ? Color(red: 0.38, green: 0.45, blue: 0.98).opacity(0.18)
+                                    : Color.clear,
+                                in: RoundedRectangle(cornerRadius: 6)
+                            )
                         }
-                        .padding(.vertical, 4)
-                        .padding(.horizontal, 6)
-                        .background(Color.clear, in: RoundedRectangle(cornerRadius: 4))
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
             }
+            .frame(maxHeight: 220)
 
             if currentLocation != nil {
                 Divider()
@@ -1728,7 +1956,7 @@ struct AppleJournalLocationPopover: View {
             }
         }
         .padding(12)
-        .frame(width: 200)
+        .frame(width: 260)
     }
 }
 
