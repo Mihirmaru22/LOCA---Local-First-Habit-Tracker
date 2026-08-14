@@ -208,6 +208,9 @@ struct MacDayPlannerColumn: View {
                   let item = selection, let start = item.startTime else { return }
             item.startTime = snap5(cal.date(byAdding: .minute, value: delta, to: start) ?? start)
             try? modelContext.save()
+            if let newStart = item.startTime {
+                PlutoTelemetryEngine.shared.trackTaskRescheduled(task: item, newStartTime: newStart)
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .locaAddBlock)) { _ in
             addBlock()
@@ -490,6 +493,9 @@ struct MacDayPlannerColumn: View {
                         }
                     }
                     try? modelContext.save()
+                    if let newStart = item.startTime {
+                        PlutoTelemetryEngine.shared.trackTaskRescheduled(task: item, newStartTime: newStart)
+                    }
                     Haptics.impact(.light)
                 }
                 draggingID = nil; dragOriginalStart = nil; dragDeltaMinutes = 0

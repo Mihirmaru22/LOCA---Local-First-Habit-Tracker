@@ -1190,6 +1190,13 @@ struct MacTimeView: View {
             completedPomodoros += 1
             sessionLogs.insert(FocusSessionLog(tag: selectedSessionTag, durationMinutes: max(1, focusDurationMinutes), completedAt: .now, mode: "Pomodoro"), at: 0)
 
+            // Track telemetry event
+            PlutoTelemetryEngine.shared.trackFocusSessionCompleted(
+                durationSeconds: max(1, focusDurationMinutes) * 60,
+                soundName: selectedAmbientSound,
+                taskTitle: selectedSessionTag
+            )
+
             // Deliver celebratory notification with stats (A5)
             PlutoNotificationManager.shared.deliverImmediateFocusComplete(
                 tag: selectedSessionTag,

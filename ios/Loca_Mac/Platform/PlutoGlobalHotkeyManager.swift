@@ -89,6 +89,7 @@ final class PlutoGlobalHotkeyManager: ObservableObject {
     }
 
     func showHUD() {
+        PlutoTelemetryEngine.shared.trackHotkeyHUDOpened()
         guard let container = try? ModelContainerFactory.makeConfiguredContainer() else { return }
 
         if hudPanel == nil {

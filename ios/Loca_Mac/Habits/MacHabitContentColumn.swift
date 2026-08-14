@@ -97,6 +97,9 @@ struct MacHabitContentColumn: View {
             }
         }
         .navigationTitle("Habits")
+        .onChange(of: selectedVariant) { _, newVar in
+            PlutoTelemetryEngine.shared.trackLayoutChanged(section: "Habits", newLayout: newVar.rawValue)
+        }
         .sheet(isPresented: $showingCreateSheet) {
             MacHabitFormPanel()
         }

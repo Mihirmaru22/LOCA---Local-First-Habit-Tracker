@@ -109,6 +109,9 @@ struct MacTodoListColumn: View {
                 }
             }
         }
+        .onChange(of: selectedVariant) { _, newVar in
+            PlutoTelemetryEngine.shared.trackLayoutChanged(section: "TodoList", newLayout: newVar.rawValue)
+        }
     }
 }
 
