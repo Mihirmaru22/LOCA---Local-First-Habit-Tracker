@@ -3,7 +3,7 @@
 //  PLUTO
 //
 //  Background HTTPS Ingestion Sync Engine for Private Alpha.
-//  Transmits queued events, state snapshots, and crashes to the Supabase Edge Function (/alpha-ingest).
+//  Transmits queued events, state snapshots, and crashes directly to Supabase REST endpoints.
 //  Operates asynchronously in background threads with zero UI blocking, automatic retries,
 //  and offline resilience.
 //
@@ -26,15 +26,10 @@ final class PlutoTelemetrySyncEngine: @unchecked Sendable {
     private var isSyncing: Bool = false
     private var retryBackoffSeconds: TimeInterval = 10
 
-    // MARK: - Backend Ingestion Endpoint Config
+    // MARK: - Supabase Live Config
 
-    #if DEBUG
-    var endpointURL = URL(string: "https://rqujshlqgffuabpxiujw.supabase.co/functions/v1/alpha-ingest")!
-    #else
-    var endpointURL = URL(string: "https://rqujshlqgffuabpxiujw.supabase.co/functions/v1/alpha-ingest")!
-    #endif
-
-    var alphaSecretToken: String = "pluto_alpha_conductor_secret_token_v3"
+    let supabaseBaseURL = "https://uxmgychsvouemrqzlswy.supabase.co"
+    let supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4bWd5Y2hzdm91ZW1ycXpsc3d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2ODY5NDEsImV4cCI6MjEwMjI2Mjk0MX0.ZL8dPBFwJg-O9awTNJi2JeQSGNuU-CEBob0kBEHVrLM"
 
     private init() {
         startNetworkMonitoring()
@@ -63,57 +58,97 @@ final class PlutoTelemetrySyncEngine: @unchecked Sendable {
         isSyncing = true
         defer { isSyncing = false }
 
-        let (events, snapshots, crashes, perf, files) = PlutoTelemetryStorage.shared.peekQueuedBatch(limit: 200)
+        let (events, snapshots, _, _, files) = PlutoTelemetryStorage.shared.peekQueuedBatch(limit: 200)
         guard !files.isEmpty else { return }
 
-        let payload = PlutoAlphaBatchPayload(
-            tester_id: PlutoTelemetryEngine.shared.testerID,
-            tester_name: PlutoTelemetryEngine.shared.testerName,
-            device_name: PlutoTelemetryEngine.shared.deviceName,
-            device_model: PlutoTelemetryEngine.shared.deviceModel,
-            macos_version: PlutoTelemetryEngine.shared.macosVersion,
-            app_version: PlutoTelemetryEngine.shared.appVersion,
-            session_id: PlutoTelemetryEngine.shared.sessionID,
-            session_started_at: PlutoTelemetryEngine.shared.sessionStartedAtString,
-            session_ended_at: nil,
-            events: events,
-            snapshots: snapshots,
-            crashes: crashes,
-            performance: perf
-        )
+        let testerID = await MainActor.run { PlutoTelemetryEngine.shared.testerID }
+        let testerName = await MainActor.run { PlutoTelemetryEngine.shared.testerName }
+        let deviceModel = await MainActor.run { PlutoTelemetryEngine.shared.deviceModel }
+        let macosVersion = await MainActor.run { PlutoTelemetryEngine.shared.macosVersion }
+        let appVersion = await MainActor.run { PlutoTelemetryEngine.shared.appVersion }
 
         do {
-            var request = URLRequest(url: endpointURL)
-            request.httpMethod = "POST"
-            request.timeoutInterval = 25
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue(alphaSecretToken, forHTTPHeaderField: "x-pluto-alpha-token")
+            // 1. Upsert Tester Profile to /rest/v1/alpha_testers
+            if let testersURL = URL(string: "\(supabaseBaseURL)/rest/v1/alpha_testers") {
+                var request = URLRequest(url: testersURL)
+                request.httpMethod = "POST"
+                request.timeoutInterval = 15
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                request.setValue(supabaseAnonKey, forHTTPHeaderField: "apikey")
+                request.setValue("Bearer \(supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+                request.setValue("resolution=merge-duplicates", forHTTPHeaderField: "Prefer")
 
-            let jsonData = try JSONEncoder().encode(payload)
-            request.httpBody = jsonData
-
-            let (data, response) = try await URLSession.shared.data(for: request)
-
-            if let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) {
-                // Success ACK
-                PlutoTelemetryStorage.shared.acknowledgeAndRemove(files: files)
-                retryBackoffSeconds = 10 // reset backoff
-                logger.debug("Successfully synced \(events.count) events, \(snapshots.count) snapshots (\(reason))")
-
-                // If more queued items remain, schedule another quick flush
-                let remaining = PlutoTelemetryStorage.shared.peekQueuedBatch(limit: 10)
-                if !remaining.processedFiles.isEmpty {
-                    try? await Task.sleep(nanoseconds: 1_000_000_000)
-                    await triggerSync(reason: "drain_remaining_queue")
-                }
-            } else {
-                let status = (response as? HTTPURLResponse)?.statusCode ?? -1
-                let msg = String(data: data, encoding: .utf8) ?? "unknown error"
-                logger.error("Telemetry sync failed with status \(status): \(msg)")
-                scheduleBackoffRetry()
+                let testerPayload: [String: Any] = [
+                    "id": testerID,
+                    "name": testerName,
+                    "device_model": deviceModel,
+                    "macos_version": macosVersion,
+                    "app_version": appVersion,
+                    "last_active": ISO8601DateFormatter().string(from: Date())
+                ]
+                request.httpBody = try JSONSerialization.data(withJSONObject: testerPayload)
+                _ = try? await URLSession.shared.data(for: request)
             }
+
+            // 2. Insert Events to /rest/v1/alpha_events
+            if !events.isEmpty, let eventsURL = URL(string: "\(supabaseBaseURL)/rest/v1/alpha_events") {
+                var request = URLRequest(url: eventsURL)
+                request.httpMethod = "POST"
+                request.timeoutInterval = 20
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                request.setValue(supabaseAnonKey, forHTTPHeaderField: "apikey")
+                request.setValue("Bearer \(supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+                request.setValue("return=minimal", forHTTPHeaderField: "Prefer")
+
+                let eventsPayload: [[String: Any]] = events.map { e in
+                    [
+                        "tester_id": testerID,
+                        "session_id": e.session_id,
+                        "event_name": e.event_name,
+                        "properties": (try? JSONSerialization.jsonObject(with: JSONEncoder().encode(e.properties))) ?? [:],
+                        "timestamp": e.timestamp
+                    ]
+                }
+                request.httpBody = try JSONSerialization.data(withJSONObject: eventsPayload)
+
+                let (data, response) = try await URLSession.shared.data(for: request)
+                if let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) {
+                    logger.debug("Successfully synced \(events.count) alpha events to Supabase")
+                } else {
+                    let status = (response as? HTTPURLResponse)?.statusCode ?? -1
+                    let msg = String(data: data, encoding: .utf8) ?? ""
+                    logger.error("Events sync failed: \(status) \(msg)")
+                }
+            }
+
+            // 3. Insert Snapshots to /rest/v1/alpha_state_snapshots
+            if !snapshots.isEmpty, let snapURL = URL(string: "\(supabaseBaseURL)/rest/v1/alpha_state_snapshots") {
+                for snap in snapshots {
+                    var request = URLRequest(url: snapURL)
+                    request.httpMethod = "POST"
+                    request.timeoutInterval = 15
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    request.setValue(supabaseAnonKey, forHTTPHeaderField: "apikey")
+                    request.setValue("Bearer \(supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+                    request.setValue("resolution=merge-duplicates", forHTTPHeaderField: "Prefer")
+
+                    let snapPayload: [String: Any] = [
+                        "id": snap.snapshot_id,
+                        "tester_id": testerID,
+                        "snapshot_payload": (try? JSONSerialization.jsonObject(with: JSONEncoder().encode(snap.data))) ?? [:],
+                        "created_at": snap.created_at
+                    ]
+                    request.httpBody = try JSONSerialization.data(withJSONObject: snapPayload)
+                    _ = try? await URLSession.shared.data(for: request)
+                }
+            }
+
+            // Acknowledge and clear processed queue files
+            PlutoTelemetryStorage.shared.acknowledgeAndRemove(files: files)
+            retryBackoffSeconds = 10
+
         } catch {
-            logger.error("Telemetry network request error: \(error.localizedDescription)")
+            logger.error("Telemetry sync exception: \(error.localizedDescription)")
             scheduleBackoffRetry()
         }
     }

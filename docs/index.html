@@ -1034,18 +1034,14 @@
             a.remove();
         }
 
-        // Supabase Ingestion & Configuration Modal Engine
-        let supabaseUrl = localStorage.getItem('pluto_supabase_url') || "";
-        let supabaseKey = localStorage.getItem('pluto_supabase_key') || "";
+        // Supabase Ingestion & Configuration Engine
+        let supabaseUrl = localStorage.getItem('pluto_supabase_url') || "https://uxmgychsvouemrqzlswy.supabase.co";
+        let supabaseKey = localStorage.getItem('pluto_supabase_key') || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4bWd5Y2hzdm91ZW1ycXpsc3d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2ODY5NDEsImV4cCI6MjEwMjI2Mjk0MX0.ZL8dPBFwJg-O9awTNJi2JeQSGNuU-CEBob0kBEHVrLM";
 
         function openSupabaseModal() {
-            const currentUrl = localStorage.getItem('pluto_supabase_url') || "https://your-project.supabase.co";
-            const currentKey = localStorage.getItem('pluto_supabase_key') || "";
-            
-            const enteredUrl = prompt("Enter your Supabase Project URL (e.g. https://xyz.supabase.co):", currentUrl);
+            const enteredUrl = prompt("Enter your Supabase Project URL:", supabaseUrl);
             if (!enteredUrl) return;
-            
-            const enteredKey = prompt("Enter your Supabase Anon or Service Role Key:", currentKey);
+            const enteredKey = prompt("Enter your Supabase Anon Key:", supabaseKey);
             if (!enteredKey) return;
 
             supabaseUrl = enteredUrl.trim().replace(/\/$/, "");
@@ -1054,14 +1050,11 @@
             localStorage.setItem('pluto_supabase_url', supabaseUrl);
             localStorage.setItem('pluto_supabase_key', supabaseKey);
 
-            connectAndSyncSupabase();
+            connectAndSyncSupabase(true);
         }
 
-        async function connectAndSyncSupabase() {
-            if (!supabaseUrl || !supabaseKey) {
-                openSupabaseModal();
-                return;
-            }
+        async function connectAndSyncSupabase(showAlert = false) {
+            if (!supabaseUrl || !supabaseKey) return;
 
             try {
                 const headers = { 
@@ -1069,6 +1062,7 @@
                     "Authorization": `Bearer ${supabaseKey}` 
                 };
                 
+                // Fetch events
                 const res = await fetch(`${supabaseUrl}/rest/v1/alpha_events?select=*&order=timestamp.desc&limit=100`, { headers });
                 
                 if (res.ok) {
@@ -1087,24 +1081,25 @@
                                     database[0].habits.unshift({ name: hName, status: "Completed today", color: "#38bdf8", streak: 1, isCompleted: true });
                                 }
                             } else if (evt.event_name === 'task_created') {
-                                database[0].tasks.unshift({ time: "Today", title: p.title || "New Task", priority: "P2 Normal", done: false });
+                                const tTitle = p.title || "New Task";
+                                if (!database[0].tasks.some(tk => tk.title === tTitle)) {
+                                    database[0].tasks.unshift({ time: "Today", title: tTitle, priority: "P2 Normal", done: false });
+                                }
                             } else if (evt.event_name === 'task_completed') {
                                 const t = database[0].tasks.find(tk => tk.title === p.title);
                                 if (t) t.done = true;
-                            } else if (evt.event_name === 'sleep_logged') {
-                                database[0].reflection += ` [Sleep logged: ${p.duration_hours || 8}h]`;
+                            } else if (evt.event_name === 'focus_session_completed') {
+                                database[0].focusTime = `${p.duration_seconds ? Math.round(p.duration_seconds / 60) : 25}m`;
                             }
                         });
-                        alert(`✅ Connected! Successfully synced ${rawEvents.length} live events from Supabase.`);
+                        if (showAlert) alert(`✅ Connected! Ingested ${rawEvents.length} live events.`);
                         render();
-                    } else {
+                    } else if (showAlert) {
                         alert("✅ Connected to Supabase! (Table is currently empty. Check off a habit in your Mac app to send events).");
                     }
-                } else {
-                    alert(`⚠️ Supabase Error (${res.status}): ${res.statusText}\nCheck that the table 'alpha_events' exists and RLS policies allow reading.`);
                 }
             } catch (err) {
-                alert(`⚠️ Fetch error: ${err.message}\n\nTroubleshooting:\n1. Ensure your Project URL is valid (e.g. https://xyz.supabase.co).\n2. If testing locally without cloud Supabase, use '📁 Load Local JSON' to load files directly from: ~/Library/Application Support/PLUTO/AlphaTelemetry/Queue/`);
+                if (showAlert) alert(`Fetch error: ${err.message}`);
             }
         }
 
@@ -1144,7 +1139,12 @@
             reader.readAsText(file);
         }
 
-        window.onload = () => loadTester(0);
+        window.onload = () => {
+            loadTester(0);
+            connectAndSyncSupabase(false);
+            // Automatic live background polling every 8 seconds
+            setInterval(() => connectAndSyncSupabase(false), 8000);
+        };
     </script>
 </body>
 </html>
