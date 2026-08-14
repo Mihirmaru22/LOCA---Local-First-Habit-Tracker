@@ -175,6 +175,13 @@ final class AppleJournalRichTextController: NSObject, ObservableObject {
         Haptics.impact(.light)
     }
 
+    func insertTextDirectly(_ string: String) {
+        guard let tv = textView else { return }
+        tv.insertText(string, replacementRange: tv.selectedRange())
+        notifyChange()
+        Haptics.impact(.light)
+    }
+
     private func insertPrefixOnCurrentLine(_ prefix: String) {
         guard let tv = textView, let string = tv.string as NSString? else { return }
         let range = tv.selectedRange()
@@ -190,10 +197,11 @@ final class AppleJournalRichTextController: NSObject, ObservableObject {
         let plain = tv.string
         let rtf = try? tv.textStorage?.data(from: NSRange(location: 0, length: tv.textStorage?.length ?? 0), documentAttributes: [.documentType: NSAttributedString.DocumentType.rtf])
         onTextChange?(plain, rtf)
+        changeCounter += 1
     }
 }
 
-// MARK: - AppleJournalRichTextView (NSViewRepresentable)
+// MARK: - AppleJournalRichTextView (NSViewRepresentable with Smart List Return & Checkbox Toggles)
 
 struct AppleJournalRichTextView: NSViewRepresentable {
     @Binding var text: String
@@ -212,7 +220,7 @@ struct AppleJournalRichTextView: NSViewRepresentable {
         textView.isAutomaticQuoteSubstitutionEnabled = true
         textView.isAutomaticDashSubstitutionEnabled = true
         textView.font = NSFont.systemFont(ofSize: 15, weight: .regular)
-        textView.textColor = NSColor.textColor
+        textView.textColor = NSColor.labelColor
         textView.backgroundColor = .clear
         textView.drawsBackground = false
         textView.insertionPointColor = NSColor(red: 0.38, green: 0.45, blue: 0.98, alpha: 1.0)
@@ -272,8 +280,43 @@ struct AppleJournalRichTextView: NSViewRepresentable {
             isEditingLocally = false
         }
 
+        func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+            // Smart Return Key Handling for Lists & Checklists
+            if commandSelector == #selector(NSResponder.insertNewline(_:)) {
+                let range = textView.selectedRange()
+                guard let str = textView.string as NSString? else { return false }
+                let lineRange = str.lineRange(for: NSRange(location: range.location, length: 0))
+                let currentLine = str.substring(with: lineRange)
+
+                if currentLine.hasPrefix("• ") {
+                    if currentLine.trimmingCharacters(in: .whitespacesAndNewlines) == "•" {
+                        // Empty bullet: clear it
+                        textView.setSelectedRange(lineRange)
+                        textView.insertText("", replacementRange: lineRange)
+                    } else {
+                        textView.insertText("\n• ", replacementRange: range)
+                    }
+                    parent.controller.notifyChange()
+                    return true
+                } else if currentLine.hasPrefix("☐ ") || currentLine.hasPrefix("☑ ") {
+                    if currentLine.trimmingCharacters(in: .whitespacesAndNewlines) == "☐" || currentLine.trimmingCharacters(in: .whitespacesAndNewlines) == "☑" {
+                        textView.setSelectedRange(lineRange)
+                        textView.insertText("", replacementRange: lineRange)
+                    } else {
+                        textView.insertText("\n☐ ", replacementRange: range)
+                    }
+                    parent.controller.notifyChange()
+                    return true
+                }
+            }
+            return false
+        }
+
         func textView(_ textView: NSTextView, clickedOn cell: NSTextAttachmentCellProtocol, in cellFrame: NSRect, at charIndex: Int) {
-            // Checklist interaction
+            handleCheckboxTap(textView, at: charIndex)
+        }
+
+        private func handleCheckboxTap(_ textView: NSTextView, at charIndex: Int) {
             if let string = textView.string as NSString? {
                 let range = NSRange(location: charIndex, length: 1)
                 let char = string.substring(with: range)
@@ -287,6 +330,26 @@ struct AppleJournalRichTextView: NSViewRepresentable {
                     Haptics.impact(.light)
                 }
             }
+        }
+    }
+}
+
+// MARK: - JournalFilterType
+
+enum JournalFilterType: String, CaseIterable, Identifiable {
+    case all        = "All"
+    case bookmarked = "Bookmarks"
+    case photos     = "Photos"
+    case audio      = "Audio"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .all:        return "square.stack"
+        case .bookmarked: return "bookmark.fill"
+        case .photos:     return "photo"
+        case .audio:      return "waveform"
         }
     }
 }
@@ -305,14 +368,14 @@ struct AppleJournalEntriesList: View {
     }
 
     @State private var searchText = ""
-    @State private var filterBookmarkedOnly = false
+    @State private var selectedFilter: JournalFilterType = .all
 
     var body: some View {
         VStack(spacing: 0) {
-            // Search & Filter Header
+            // Header, Search & Filter Pills
             VStack(spacing: 8) {
                 HStack {
-                    Text("\(activeNotes.count) entries")
+                    Text("\(filteredNotes.count) of \(activeNotes.count) entries")
                         .font(DS.Text.caption)
                         .foregroundStyle(DS.Color.textTertiary)
 
@@ -335,31 +398,54 @@ struct AppleJournalEntriesList: View {
                     .keyboardShortcut("n", modifiers: .command)
                 }
 
-                // Search Bar + Bookmark Filter Toggle
+                // Search Bar
                 HStack(spacing: 6) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "magnifyingglass")
-                            .font(.system(size: 11))
-                            .foregroundStyle(DS.Color.textTertiary)
-                        TextField("Search entries…", text: $searchText)
-                            .font(.system(size: 11))
-                            .textFieldStyle(.plain)
-                    }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 5)
-                    .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 6))
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 11))
+                        .foregroundStyle(DS.Color.textTertiary)
+                    TextField("Search entries…", text: $searchText)
+                        .font(.system(size: 11))
+                        .textFieldStyle(.plain)
 
-                    Button {
-                        filterBookmarkedOnly.toggle()
-                    } label: {
-                        Image(systemName: filterBookmarkedOnly ? "bookmark.fill" : "bookmark")
-                            .font(.system(size: 11))
-                            .foregroundStyle(filterBookmarkedOnly ? Color.yellow : DS.Color.textTertiary)
-                            .padding(5)
-                            .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 6))
+                    if !searchText.isEmpty {
+                        Button {
+                            searchText = ""
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 11))
+                                .foregroundStyle(DS.Color.textTertiary)
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
-                    .help("Filter Bookmarked Only")
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 5)
+                .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 6))
+
+                // Quick Filter Pills (All, Bookmarks, Photos, Audio)
+                HStack(spacing: 4) {
+                    ForEach(JournalFilterType.allCases) { filter in
+                        Button {
+                            selectedFilter = filter
+                            Haptics.selection()
+                        } label: {
+                            HStack(spacing: 3) {
+                                Image(systemName: filter.icon)
+                                    .font(.system(size: 9))
+                                Text(filter.rawValue)
+                                    .font(.system(size: 10, weight: selectedFilter == filter ? .bold : .medium))
+                            }
+                            .foregroundStyle(selectedFilter == filter ? Color.white : DS.Color.textTertiary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(
+                                selectedFilter == filter ? Color(red: 0.38, green: 0.45, blue: 0.98) : Color.clear,
+                                in: Capsule()
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    Spacer()
                 }
             }
             .padding(.horizontal, DS.Space.md)
@@ -377,6 +463,12 @@ struct AppleJournalEntriesList: View {
                             onSelect: { 
                                 selectedNote = note
                                 Haptics.selection()
+                            },
+                            onDelete: {
+                                deleteNote(note)
+                            },
+                            onDuplicate: {
+                                duplicateNote(note)
                             }
                         )
                     }
@@ -387,9 +479,9 @@ struct AppleJournalEntriesList: View {
             .overlay {
                 if filteredNotes.isEmpty {
                     ContentUnavailableView {
-                        Label("No Entries", systemImage: "book.pages")
+                        Label("No Entries Found", systemImage: "book.pages")
                     } description: {
-                        Text("Click + New Entry to create your first Apple Journal note.")
+                        Text(searchText.isEmpty ? "Click + New Entry to create your first note." : "No entries matched your search.")
                     }
                 }
             }
@@ -403,9 +495,20 @@ struct AppleJournalEntriesList: View {
 
     private var filteredNotes: [JournalNote] {
         activeNotes.filter { note in
-            let matchesSearch = searchText.isEmpty || note.title.localizedCaseInsensitiveContains(searchText) || note.text.localizedCaseInsensitiveContains(searchText)
-            let matchesBookmark = !filterBookmarkedOnly || note.isBookmarked
-            return matchesSearch && matchesBookmark
+            let matchesSearch = searchText.isEmpty ||
+                note.title.localizedCaseInsensitiveContains(searchText) ||
+                note.text.localizedCaseInsensitiveContains(searchText) ||
+                (note.location?.localizedCaseInsensitiveContains(searchText) ?? false)
+
+            let matchesFilter: Bool
+            switch selectedFilter {
+            case .all: matchesFilter = true
+            case .bookmarked: matchesFilter = note.isBookmarked
+            case .photos: matchesFilter = note.photoCount > 0
+            case .audio: matchesFilter = note.hasAudio
+            }
+
+            return matchesSearch && matchesFilter
         }
     }
 
@@ -421,14 +524,42 @@ struct AppleJournalEntriesList: View {
         selectedNote = newNote
         Haptics.impact(.rigid)
     }
+
+    private func deleteNote(_ note: JournalNote) {
+        note.archivedAt = Date()
+        try? modelContext.save()
+        if selectedNote?.id == note.id {
+            selectedNote = activeNotes.first { $0.id != note.id }
+        }
+        Haptics.impact(.light)
+    }
+
+    private func duplicateNote(_ note: JournalNote) {
+        let dup = JournalNote(
+            date: Date(),
+            title: "\(note.title) (Copy)",
+            text: note.text,
+            kind: note.noteKind
+        )
+        dup.location = note.location
+        dup.photoFileNames = note.photoFileNames
+        dup.photoCount = note.photoCount
+        dup.rtfData = note.rtfData
+        modelContext.insert(dup)
+        try? modelContext.save()
+        selectedNote = dup
+        Haptics.impact(.rigid)
+    }
 }
 
-// MARK: - AppleJournalEntryCard
+// MARK: - AppleJournalEntryCard (With Context Menu)
 
 struct AppleJournalEntryCard: View {
     let note: JournalNote
     let isSelected: Bool
     let onSelect: () -> Void
+    let onDelete: () -> Void
+    let onDuplicate: () -> Void
 
     @State private var isHovered = false
 
@@ -470,7 +601,7 @@ struct AppleJournalEntryCard: View {
                 }
             }
 
-            Text(note.title.isEmpty ? (note.text.isEmpty ? "Untitled Entry" : note.text) : note.title)
+            Text(note.title.isEmpty ? (note.text.isEmpty ? "Untitled Entry" : note.text.components(separatedBy: .newlines).first ?? "Untitled Entry") : note.title)
                 .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(DS.Color.textPrimary)
                 .lineLimit(1)
@@ -507,10 +638,39 @@ struct AppleJournalEntryCard: View {
         .contentShape(Rectangle())
         .onTapGesture { onSelect() }
         .onHover { isHovered = $0 }
+        .contextMenu {
+            Button {
+                note.isBookmarked.toggle()
+                Haptics.impact(.light)
+            } label: {
+                Label(note.isBookmarked ? "Remove Bookmark" : "Bookmark Entry", systemImage: note.isBookmarked ? "bookmark.slash" : "bookmark")
+            }
+
+            Button {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString("\(note.title)\n\n\(note.text)", forType: .string)
+            } label: {
+                Label("Copy Note Text", systemImage: "doc.on.doc")
+            }
+
+            Button {
+                onDuplicate()
+            } label: {
+                Label("Duplicate Entry", systemImage: "plus.square.on.square")
+            }
+
+            Divider()
+
+            Button(role: .destructive) {
+                onDelete()
+            } label: {
+                Label("Delete Entry", systemImage: "trash")
+            }
+        }
     }
 }
 
-// MARK: - AppleJournalEditorCanvas (Right Detail Pane)
+// MARK: - AppleJournalEditorCanvas (Full Rich Editor Pane)
 
 struct AppleJournalEditorCanvas: View {
     @Bindable var note: JournalNote
@@ -523,6 +683,7 @@ struct AppleJournalEditorCanvas: View {
     @State private var showLocationPopover = false
     @State private var showDatePopover = false
     @State private var showSavedToast = false
+    @State private var previewImageURL: URL? = nil
 
     // Audio Player State
     @State private var isPlayingAudio = false
@@ -534,6 +695,13 @@ struct AppleJournalEditorCanvas: View {
         f.dateFormat = "EEE, d MMM 'at' h:mm a"
         return f
     }()
+
+    private let applePrompts = [
+        "What made you smile today?",
+        "What was the most challenging part of today, and how did you handle it?",
+        "What are you most grateful for right now?",
+        "Describe a moment from today you want to remember."
+    ]
 
     var body: some View {
         HStack(spacing: 0) {
@@ -567,9 +735,21 @@ struct AppleJournalEditorCanvas: View {
                                 .labelsHidden()
                                 .onChange(of: note.date) { _, _ in saveNote() }
 
-                            Button("Done") { showDatePopover = false }
-                                .buttonStyle(.borderedProminent)
-                                .controlSize(.small)
+                            HStack {
+                                Button("Set to Now") {
+                                    note.date = Date()
+                                    saveNote()
+                                    showDatePopover = false
+                                }
+                                .buttonStyle(.plain)
+                                .font(.caption)
+
+                                Spacer()
+
+                                Button("Done") { showDatePopover = false }
+                                    .buttonStyle(.borderedProminent)
+                                    .controlSize(.small)
+                            }
                         }
                         .padding(12)
                     }
@@ -719,6 +899,36 @@ struct AppleJournalEditorCanvas: View {
                             .textFieldStyle(.plain)
                             .onChange(of: note.title) { _, _ in saveNote() }
 
+                        // Apple Reflection Prompt Starters (Shows if entry is fresh/empty)
+                        if note.text.isEmpty && note.title.isEmpty {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("REFLECTION PROMPTS")
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundStyle(DS.Color.textTertiary)
+
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 8) {
+                                        ForEach(applePrompts, id: \.self) { prompt in
+                                            Button {
+                                                note.title = prompt
+                                                saveNote()
+                                                Haptics.impact(.light)
+                                            } label: {
+                                                Text(prompt)
+                                                    .font(.system(size: 11, weight: .medium))
+                                                    .foregroundStyle(Color(red: 0.78, green: 0.75, blue: 0.98))
+                                                    .padding(.horizontal, 10)
+                                                    .padding(.vertical, 6)
+                                                    .background(Color(red: 0.18, green: 0.17, blue: 0.26), in: Capsule())
+                                            }
+                                            .buttonStyle(.plain)
+                                        }
+                                    }
+                                }
+                            }
+                            .padding(.vertical, 4)
+                        }
+
                         // Native Rich Text Multiline Canvas
                         AppleJournalRichTextView(
                             text: $note.text,
@@ -745,12 +955,18 @@ struct AppleJournalEditorCanvas: View {
 
                                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: 10)], spacing: 10) {
                                     ForEach(note.photoFileNames, id: \.self) { filename in
-                                        JournalPhotoThumbnail(filename: filename) {
-                                            note.photoFileNames.removeAll { $0 == filename }
-                                            note.photoCount = note.photoFileNames.count
-                                            JournalMediaManager.shared.deleteFile(named: filename)
-                                            saveNote()
-                                        }
+                                        JournalPhotoThumbnail(
+                                            filename: filename,
+                                            onTap: {
+                                                previewImageURL = JournalMediaManager.shared.fileURL(for: filename)
+                                            },
+                                            onDelete: {
+                                                note.photoFileNames.removeAll { $0 == filename }
+                                                note.photoCount = note.photoFileNames.count
+                                                JournalMediaManager.shared.deleteFile(named: filename)
+                                                saveNote()
+                                            }
+                                        )
                                     }
                                 }
                             }
@@ -805,9 +1021,26 @@ struct AppleJournalEditorCanvas: View {
                     }
                     .padding(24)
                 }
+
+                // Bottom Status Bar (Word Count & Read Time)
+                HStack {
+                    let words = note.text.split { $0.isWhitespace || $0.isNewline }.count
+                    let readTime = max(1, Int(ceil(Double(words) / 200.0)))
+                    Text("\(words) words • \(readTime) min read")
+                        .font(.system(size: 10))
+                        .foregroundStyle(DS.Color.textTertiary)
+
+                    Spacer()
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 6)
+                .background(Color(red: 0.08, green: 0.07, blue: 0.12))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(red: 0.09, green: 0.08, blue: 0.13))
+            .sheet(item: $previewImageURL) { url in
+                JournalPhotoPreviewModal(url: url)
+            }
             .overlay(alignment: .bottomTrailing) {
                 if showSavedToast {
                     HStack(spacing: 6) {
@@ -915,10 +1148,53 @@ struct AppleJournalEditorCanvas: View {
     }
 }
 
+// MARK: - URL Identifiable Extension
+
+extension URL: @retroactive Identifiable {
+    public var id: String { absoluteString }
+}
+
+// MARK: - JournalPhotoPreviewModal
+
+private struct JournalPhotoPreviewModal: View {
+    let url: URL
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(spacing: 12) {
+            HStack {
+                Spacer()
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 20))
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding([.top, .trailing], 12)
+
+            if let image = NSImage(contentsOfFile: url.path) {
+                Image(nsImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(maxWidth: 600, maxHeight: 500)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+
+            Spacer()
+        }
+        .frame(width: 640, height: 560)
+        .background(Color(red: 0.10, green: 0.09, blue: 0.14))
+    }
+}
+
 // MARK: - JournalPhotoThumbnail
 
 private struct JournalPhotoThumbnail: View {
     let filename: String
+    let onTap: () -> Void
     let onDelete: () -> Void
     @State private var isHovered = false
 
@@ -932,6 +1208,8 @@ private struct JournalPhotoThumbnail: View {
                     .frame(width: 120, height: 100)
                     .clipped()
                     .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .contentShape(Rectangle())
+                    .onTapGesture { onTap() }
             } else {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Color.white.opacity(0.08))
