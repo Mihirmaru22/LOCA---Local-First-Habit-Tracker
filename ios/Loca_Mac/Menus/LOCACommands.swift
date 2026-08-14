@@ -108,6 +108,19 @@ struct LOCACommands: Commands {
             .keyboardShortcut(.delete, modifiers: [.command])
         }
 
+        // MARK: - App Info Menu
+        CommandGroup(replacing: .appInfo) {
+            Button("About Pluto") {
+                NSApplication.shared.orderFrontStandardAboutPanel(
+                    options: [
+                        NSApplication.AboutPanelOptionKey.applicationName: "Pluto",
+                        NSApplication.AboutPanelOptionKey.version: "3.5.0",
+                        NSApplication.AboutPanelOptionKey.applicationVersion: "V3.5 (Alpha)"
+                    ]
+                )
+            }
+        }
+
         // MARK: Help menu
         CommandGroup(replacing: .help) {
             Button("Welcome & Feature Tour…") {

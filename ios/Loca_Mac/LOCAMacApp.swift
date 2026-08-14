@@ -50,7 +50,7 @@ struct LOCAMacApp: App {
     }
 
     var body: some Scene {
-        WindowGroup {
+        WindowGroup("Pluto") {
             if let container {
                 MacRootView()
                     .modelContainer(container)
