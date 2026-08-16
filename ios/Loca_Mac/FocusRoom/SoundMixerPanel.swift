@@ -86,14 +86,21 @@ struct SoundMixerPanel: View {
                 .buttonStyle(.plain)
             }
 
-            Slider(
-                value: Binding(
-                    get: { Double(track.volume) },
-                    set: { soundVM.setVolume(for: track.id, volume: Float($0)) }
-                ),
-                in: 0.0...1.0
-            )
-            .tint(Color.blue)
+            HStack(spacing: 8) {
+                Slider(
+                    value: Binding(
+                        get: { Double(track.volume) },
+                        set: { soundVM.setVolume(for: track.id, volume: Float($0)) }
+                    ),
+                    in: 0.0...1.0
+                )
+                .tint(Color.blue)
+
+                Text("\(Int(track.volume * 100))%")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundStyle(Color.white.opacity(0.55))
+                    .frame(width: 32, alignment: .trailing)
+            }
         }
         .padding(8)
         .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))

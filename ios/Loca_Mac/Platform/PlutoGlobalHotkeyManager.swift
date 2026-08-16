@@ -106,6 +106,15 @@ final class PlutoGlobalHotkeyManager: ObservableObject {
             panel.hasShadow = true
             panel.isMovableByWindowBackground = true
             panel.animationBehavior = .utilityWindow
+            panel.hidesOnDeactivate = true
+
+            NotificationCenter.default.addObserver(
+                forName: NSWindow.didResignKeyNotification,
+                object: panel,
+                queue: .main
+            ) { [weak self] _ in
+                self?.hideHUD()
+            }
 
             let hudView = PlutoQuickActionHUD(onClose: { [weak self] in
                 self?.hideHUD()

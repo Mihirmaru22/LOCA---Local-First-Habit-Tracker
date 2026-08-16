@@ -40,10 +40,8 @@ struct ExpeditionPassportDocumentView: View {
                 // 4. Official Status Stamp & Elevation Profile
                 statusAndProfileSection
 
-                // 5. Summit Photo Gallery (if photos exist)
-                if !trek.photoFileNames.isEmpty {
-                    photoGallerySection
-                }
+                // 5. Summit Photo Gallery or Certified Alpine Badge
+                photoGallerySection
 
                 // 6. Field Memoirs & Weather Narrative
                 fieldMemoirsSection
@@ -293,14 +291,38 @@ struct ExpeditionPassportDocumentView: View {
     // 5. Photo Gallery Section
     private var photoGallerySection: some View {
         HStack(spacing: 8) {
-            ForEach(Array(trek.photoFileNames.prefix(3).enumerated()), id: \.offset) { _, fileName in
-                if let img = TrekMediaManager.shared.loadPhoto(fileName: fileName) {
-                    Image(nsImage: img)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(height: 72)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(0.18), lineWidth: 1))
+            if trek.photoFileNames.isEmpty {
+                HStack(spacing: 12) {
+                    Image(systemName: "mountain.2.fill")
+                        .font(.system(size: 22))
+                        .foregroundStyle(Color(red: 0.95, green: 0.80, blue: 0.30).opacity(0.7))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("ALPINE ASCENT BADGE")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(.white.opacity(0.85))
+                        Text("Certified summit conquest verified by Pluto Trek Engine")
+                            .font(.system(size: 8))
+                            .foregroundStyle(.white.opacity(0.5))
+                    }
+                    Spacer()
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.system(size: 18))
+                        .foregroundStyle(Color.green.opacity(0.8))
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color.white.opacity(0.03), in: RoundedRectangle(cornerRadius: 6))
+                .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(0.1), lineWidth: 1))
+            } else {
+                ForEach(Array(trek.photoFileNames.prefix(3).enumerated()), id: \.offset) { _, fileName in
+                    if let img = TrekMediaManager.shared.loadPhoto(fileName: fileName) {
+                        Image(nsImage: img)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(height: 72)
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(0.18), lineWidth: 1))
+                    }
                 }
             }
         }

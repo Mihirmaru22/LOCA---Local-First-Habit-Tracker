@@ -60,6 +60,8 @@ struct QuotePanel: View {
                     .italic()
                     .foregroundStyle(.white)
                     .lineSpacing(3)
+                    .minimumScaleFactor(0.85)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 HStack {
                     Spacer()
