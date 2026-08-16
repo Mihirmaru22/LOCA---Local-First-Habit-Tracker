@@ -7,7 +7,7 @@ import SwiftUI
 struct PlutoKeynoteJourneyModal: View {
 
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedJourneyViewMode: Int = 2 // 2 = Demo 2 Chrono-Tunnel, 1 = Demo 1 Keynote Stage
+    @State private var selectedJourneyViewMode: Int = 3 // 3 = Demo 3 Museum, 2 = Demo 2 Chrono-Tunnel, 1 = Demo 1 Keynote Stage
     @State private var activeIndex: Int = 4 // Start at v5.0 Sovereign OS
     @State private var isHoveringNext = false
     @State private var isHoveringPrev = false
@@ -148,6 +148,23 @@ struct PlutoKeynoteJourneyModal: View {
                     // Demo Switcher Pills
                     HStack(spacing: 4) {
                         Button {
+                            selectedJourneyViewMode = 3
+                            PlutoSoundEngine.shared.play(.tabSwitch)
+                        } label: {
+                            HStack(spacing: 5) {
+                                Image(systemName: "building.columns.fill")
+                                Text("Demo 3 · Museum")
+                            }
+                            .font(.system(size: 11, weight: selectedJourneyViewMode == 3 ? .bold : .medium))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(selectedJourneyViewMode == 3 ? currentEra.accentColor : Color.clear)
+                            .foregroundStyle(selectedJourneyViewMode == 3 ? .black : DS.Color.textSecondary)
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                        }
+                        .buttonStyle(.plain)
+
+                        Button {
                             selectedJourneyViewMode = 2
                             PlutoSoundEngine.shared.play(.tabSwitch)
                         } label: {
@@ -170,7 +187,7 @@ struct PlutoKeynoteJourneyModal: View {
                         } label: {
                             HStack(spacing: 5) {
                                 Image(systemName: "rectangle.stack.fill")
-                                Text("Demo 1 · Keynote Stage")
+                                Text("Demo 1 · Keynote")
                             }
                             .font(.system(size: 11, weight: selectedJourneyViewMode == 1 ? .bold : .medium))
                             .padding(.horizontal, 10)
@@ -201,7 +218,11 @@ struct PlutoKeynoteJourneyModal: View {
                 .padding(.top, 20)
                 .padding(.bottom, 12)
 
-                if selectedJourneyViewMode == 2 {
+                if selectedJourneyViewMode == 3 {
+                    // Demo 3: Cupertino Design Museum & Philosophy Gallery
+                    PlutoMuseumGalleryJourneyView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if selectedJourneyViewMode == 2 {
                     // Demo 2: Cosmic Chrono-Tunnel Vertical Timeline
                     PlutoChronoTunnelJourneyView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
