@@ -7,6 +7,7 @@ import SwiftUI
 struct PlutoKeynoteJourneyModal: View {
 
     @Environment(\.dismiss) private var dismiss
+    @State private var selectedJourneyViewMode: Int = 2 // 2 = Demo 2 Chrono-Tunnel, 1 = Demo 1 Keynote Stage
     @State private var activeIndex: Int = 4 // Start at v5.0 Sovereign OS
     @State private var isHoveringNext = false
     @State private var isHoveringPrev = false
@@ -131,7 +132,7 @@ struct PlutoKeynoteJourneyModal: View {
             VStack(spacing: 0) {
 
                 // Top Header Bar
-                HStack {
+                HStack(spacing: 16) {
                     HStack(spacing: 8) {
                         Image(systemName: "sparkles")
                             .font(.system(size: 14, weight: .bold))
@@ -141,6 +142,47 @@ struct PlutoKeynoteJourneyModal: View {
                             .font(.system(size: 11, weight: .heavy, design: .monospaced))
                             .foregroundStyle(DS.Color.textSecondary)
                     }
+
+                    Spacer()
+
+                    // Demo Switcher Pills
+                    HStack(spacing: 4) {
+                        Button {
+                            selectedJourneyViewMode = 2
+                            PlutoSoundEngine.shared.play(.tabSwitch)
+                        } label: {
+                            HStack(spacing: 5) {
+                                Image(systemName: "circle.circle")
+                                Text("Demo 2 · Chrono-Tunnel")
+                            }
+                            .font(.system(size: 11, weight: selectedJourneyViewMode == 2 ? .bold : .medium))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(selectedJourneyViewMode == 2 ? currentEra.accentColor : Color.clear)
+                            .foregroundStyle(selectedJourneyViewMode == 2 ? .black : DS.Color.textSecondary)
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                        }
+                        .buttonStyle(.plain)
+
+                        Button {
+                            selectedJourneyViewMode = 1
+                            PlutoSoundEngine.shared.play(.tabSwitch)
+                        } label: {
+                            HStack(spacing: 5) {
+                                Image(systemName: "rectangle.stack.fill")
+                                Text("Demo 1 · Keynote Stage")
+                            }
+                            .font(.system(size: 11, weight: selectedJourneyViewMode == 1 ? .bold : .medium))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(selectedJourneyViewMode == 1 ? currentEra.accentColor : Color.clear)
+                            .foregroundStyle(selectedJourneyViewMode == 1 ? .black : DS.Color.textSecondary)
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(3)
+                    .background(Color.black.opacity(0.4), in: RoundedRectangle(cornerRadius: 8))
 
                     Spacer()
 
@@ -156,47 +198,53 @@ struct PlutoKeynoteJourneyModal: View {
                     .buttonStyle(.plain)
                 }
                 .padding(.horizontal, 32)
-                .padding(.top, 24)
+                .padding(.top, 20)
                 .padding(.bottom, 12)
 
-                Spacer(minLength: 10)
+                if selectedJourneyViewMode == 2 {
+                    // Demo 2: Cosmic Chrono-Tunnel Vertical Timeline
+                    PlutoChronoTunnelJourneyView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    // Demo 1: Apple Keynote Holographic 3D Stage
+                    Spacer(minLength: 10)
 
-                // Central Keynote Holographic Card
-                HStack(spacing: 24) {
+                    HStack(spacing: 24) {
+                        // Prev Arrow
+                        Button {
+                            navigate(direction: -1)
+                        } label: {
+                            Image(systemName: "chevron.left.circle.fill")
+                                .font(.system(size: 32))
+                                .foregroundStyle(activeIndex > 0 ? DS.Color.textSecondary : DS.Color.textTertiary.opacity(0.3))
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(activeIndex == 0)
 
-                    // Prev Arrow
-                    Button {
-                        navigate(direction: -1)
-                    } label: {
-                        Image(systemName: "chevron.left.circle.fill")
-                            .font(.system(size: 32))
-                            .foregroundStyle(activeIndex > 0 ? DS.Color.textSecondary : DS.Color.textTertiary.opacity(0.3))
+                        // Active 3D Holographic Stage Card
+                        keynoteStageCard
+                            .frame(maxWidth: 780, maxHeight: 460)
+
+                        // Next Arrow
+                        Button {
+                            navigate(direction: 1)
+                        } label: {
+                            Image(systemName: "chevron.right.circle.fill")
+                                .font(.system(size: 32))
+                                .foregroundStyle(activeIndex < eras.count - 1 ? DS.Color.textSecondary : DS.Color.textTertiary.opacity(0.3))
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(activeIndex == eras.count - 1)
                     }
-                    .buttonStyle(.plain)
-                    .disabled(activeIndex == 0)
+                    .padding(.horizontal, 24)
 
-                    // Active 3D Holographic Stage Card
-                    keynoteStageCard
-                        .frame(maxWidth: 780, maxHeight: 460)
+                    Spacer(minLength: 10)
 
-                    // Next Arrow
-                    Button {
-                        navigate(direction: 1)
-                    } label: {
-                        Image(systemName: "chevron.right.circle.fill")
-                            .font(.system(size: 32))
-                            .foregroundStyle(activeIndex < eras.count - 1 ? DS.Color.textSecondary : DS.Color.textTertiary.opacity(0.3))
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(activeIndex == eras.count - 1)
+                    // Bottom Timeline Scrubber & Version Badges
+                    bottomTimelineControls
+                        .padding(.horizontal, 32)
+                        .padding(.bottom, 24)
                 }
-                .padding(.horizontal, 24)
-
-                Spacer(minLength: 10)
-
-                // Bottom Timeline Scrubber & Version Badges
-                bottomTimelineControls
-                    .padding(.horizontal, 32)
                     .padding(.bottom, 24)
             }
         }
