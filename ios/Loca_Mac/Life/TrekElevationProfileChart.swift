@@ -40,23 +40,57 @@ struct TrekElevationProfileChart: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
 
-            // Header with Altitude Range & Telemetry
+            // Header with Altitude Range or Active Scrub HUD
             HStack {
-                HStack(spacing: 4) {
-                    Image(systemName: "chart.xyaxis.line")
-                        .font(.system(size: 10))
-                        .foregroundStyle(Color.cyan)
-                    Text("ELEVATION PROFILE")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(DS.Color.textTertiary)
-                }
+                if let pt = currentScrubbedPoint {
+                    // Active Scrubbing HUD
+                    HStack(spacing: 8) {
+                        HStack(spacing: 3) {
+                            Text("📍")
+                                .font(.system(size: 9))
+                            Text(String(format: "%.1f km", pt.distanceKm))
+                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                .foregroundStyle(Color.white)
+                        }
 
-                Spacer()
+                        HStack(spacing: 3) {
+                            Text("⛰️")
+                                .font(.system(size: 9))
+                            Text("\(Int(pt.elevationMeters).formatted()) m")
+                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                .foregroundStyle(Color.cyan)
+                        }
 
-                if let maxPoint {
-                    Text("Peak: \(Int(maxPoint.elevationMeters).formatted()) m")
-                        .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                        .foregroundStyle(Color.cyan)
+                        HStack(spacing: 3) {
+                            Text(pt.formattedGrade)
+                                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                                .foregroundStyle(gradeColor(for: pt.gradePercentage))
+                            Text(gradeDescription(for: pt.gradePercentage))
+                                .font(.system(size: 9, weight: .medium))
+                                .foregroundStyle(DS.Color.textSecondary)
+                        }
+                    }
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.cyan.opacity(0.12), in: RoundedRectangle(cornerRadius: 4))
+                    .overlay(RoundedRectangle(cornerRadius: 4).stroke(Color.cyan.opacity(0.3), lineWidth: 0.5))
+                } else {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chart.xyaxis.line")
+                            .font(.system(size: 10))
+                            .foregroundStyle(Color.cyan)
+                        Text("ELEVATION PROFILE")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(DS.Color.textTertiary)
+                    }
+
+                    Spacer()
+
+                    if let maxPoint {
+                        Text("Peak: \(Int(maxPoint.elevationMeters).formatted()) m")
+                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(Color.cyan)
+                    }
                 }
             }
 
@@ -199,6 +233,33 @@ struct TrekElevationProfileChart: View {
             .padding(.horizontal, 4)
             .padding(.vertical, 6)
             .background(DS.Color.surfaceRecessed.opacity(0.5), in: RoundedRectangle(cornerRadius: 8))
+        }
+    }
+
+    private func gradeColor(for grade: Double) -> Color {
+        let absGrade = abs(grade)
+        if absGrade < 8.0 {
+            return Color.green
+        } else if absGrade < 18.0 {
+            return Color.cyan
+        } else if absGrade < 30.0 {
+            return Color.orange
+        } else {
+            return Color.red
+        }
+    }
+
+    private func gradeDescription(for grade: Double) -> String {
+        let absGrade = abs(grade)
+        let direction = grade >= 0 ? "Ascent" : "Descent"
+        if absGrade < 5.0 {
+            return "Gentle \(direction)"
+        } else if absGrade < 15.0 {
+            return "Moderate \(direction)"
+        } else if absGrade < 28.0 {
+            return "Steep \(direction)"
+        } else {
+            return "Alpine Expert"
         }
     }
 }
