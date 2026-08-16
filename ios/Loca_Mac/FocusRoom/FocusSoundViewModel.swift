@@ -36,6 +36,11 @@ final class FocusSoundViewModel: ObservableObject {
     private var sourceNodes: [String: AVAudioSourceNode] = [:]
     private var isEngineStarted: Bool = false
 
+    // Direct thread-safe atomic volumes for audio render thread
+    private var trackVolumes: [String: Float] = [
+        "lofi": 0.0, "nature": 0.0, "rain": 0.0, "fireplace": 0.0, "library": 0.0, "piano": 0.0
+    ]
+
     // Synthesis per-track phase trackers
     private var lofiPhase: Float = 0.0
     private var rainB0: Float = 0.0, rainB1: Float = 0.0, rainB2: Float = 0.0
@@ -65,14 +70,23 @@ final class FocusSoundViewModel: ObservableObject {
             audioEngine.connect(mixer, to: mainMixer, format: format)
             mixerNodes[track.id] = mixer
 
-            // Create dedicated procedural audio source node for each track
+            // Dedicated procedural source node per channel
             let trackID = track.id
             let source = AVAudioSourceNode { [weak self] _, _, frameCount, audioBufferList -> OSStatus in
                 guard let self = self else { return noErr }
                 let ablPointer = UnsafeMutableAudioBufferListPointer(audioBufferList)
                 
+                // If this track's volume is 0 or all paused, output absolute silence (0.0)
+                let vol = self.trackVolumes[trackID] ?? 0.0
+                if vol <= 0.001 || self.isAllPaused {
+                    for buffer in ablPointer {
+                        memset(buffer.mData, 0, Int(buffer.mDataByteSize))
+                    }
+                    return noErr
+                }
+
                 for frame in 0..<Int(frameCount) {
-                    let sample = self.generateSample(for: trackID, sampleRate: sampleRate)
+                    let sample = self.generateSample(for: trackID, sampleRate: sampleRate) * vol
                     for buffer in ablPointer {
                         let buf: UnsafeMutableBufferPointer<Float> = UnsafeMutableBufferPointer(buffer)
                         if frame < buf.count {
@@ -88,12 +102,8 @@ final class FocusSoundViewModel: ObservableObject {
             sourceNodes[trackID] = source
         }
 
-        do {
-            try audioEngine.start()
-            isEngineStarted = true
-        } catch {
-            print("FocusSoundViewModel: Error starting multi-track audio engine: \(error.localizedDescription)")
-        }
+        // Keep engine completely stopped at start until user increases volume
+        isEngineStarted = false
     }
 
     // MARK: - Procedural Audio Synthesizer per Channel
@@ -165,7 +175,7 @@ final class FocusSoundViewModel: ObservableObject {
         guard let index = tracks.firstIndex(where: { $0.id == trackID }) else { return }
         tracks[index].volume = volume
         
-        if volume > 0 {
+        if volume > 0.001 {
             tracks[index].isMuted = false
             tracks[index].previousVolume = volume
             applyVolume(trackID: trackID, volume: volume)
@@ -196,22 +206,42 @@ final class FocusSoundViewModel: ObservableObject {
         if isAllPaused {
             for track in tracks {
                 mixerNodes[track.id]?.outputVolume = 0.0
+                trackVolumes[track.id] = 0.0
             }
         } else {
             for track in tracks where !track.isMuted {
                 mixerNodes[track.id]?.outputVolume = track.volume
+                trackVolumes[track.id] = track.volume
             }
+            checkEngineRunning()
         }
     }
 
     private func applyVolume(trackID: String, volume: Float) {
-        if !isEngineStarted {
-            try? audioEngine.start()
-            isEngineStarted = true
-        }
+        trackVolumes[trackID] = volume
+        mixerNodes[trackID]?.outputVolume = volume
 
-        if !isAllPaused {
-            mixerNodes[trackID]?.outputVolume = volume
+        let hasActiveAudio = trackVolumes.values.contains(where: { $0 > 0.001 })
+        if hasActiveAudio && !isAllPaused {
+            if !isEngineStarted {
+                try? audioEngine.start()
+                isEngineStarted = true
+            }
+        } else {
+            if isEngineStarted {
+                audioEngine.pause()
+                isEngineStarted = false
+            }
+        }
+    }
+
+    private func checkEngineRunning() {
+        let hasActiveAudio = trackVolumes.values.contains(where: { $0 > 0.001 })
+        if hasActiveAudio && !isAllPaused {
+            if !isEngineStarted {
+                try? audioEngine.start()
+                isEngineStarted = true
+            }
         }
     }
 
