@@ -123,6 +123,30 @@ private func buildConfig(coordinator: WKScriptMessageHandler) -> WKWebViewConfig
                     visibility: hidden !important;
                     pointer-events: none !important;
                 }
+
+                /* Nuclear option for center overlay controls */
+                .ytp-cued-thumbnail-overlay,
+                .ytp-cued-thumbnail-overlay-image,
+                .ytp-large-play-button,
+                .ytp-large-play-button-bg,
+                .ytp-pause-overlay,
+                .ytp-pause-overlay-container,
+                .ytp-chrome-controls,
+                .ytp-prev-button,
+                .ytp-next-button,
+                .ytp-play-button,
+                .ytp-youtube-button,
+                .ytp-wordmark-text,
+                .ytp-watermark,
+                #movie_player .ytp-chrome-bottom,
+                #movie_player .ytp-chrome-top {
+                    display: none !important;
+                    opacity: 0 !important;
+                    visibility: hidden !important;
+                    pointer-events: none !important;
+                    width: 0 !important;
+                    height: 0 !important;
+                }
                 
                 /* Force video to fill frame — no iframe compositing issues now */
                 video, .html5-main-video {
@@ -147,19 +171,40 @@ private func buildConfig(coordinator: WKScriptMessageHandler) -> WKWebViewConfig
             `;
             document.head.appendChild(s);
             
-            // Continuous sweep — YouTube re-injects UI after events
+            // Continuous fast sweep — YouTube re-injects UI after events
             setInterval(function() {
-                ['.ytp-chrome-top','.ytp-chrome-bottom','.ytp-watermark',
-                 '.ytp-title','.ytp-large-play-button','.ytp-pause-overlay',
-                 '.ytp-caption-window-container','.captions-text',
-                 '.ytp-endscreen-content','.ytp-gradient-bottom',
-                 '.ytp-gradient-top','.ytp-upnext','.ytp-button'].forEach(function(sel) {
+                ['.ytp-chrome-top',
+                 '.ytp-chrome-bottom',
+                 '.ytp-watermark',
+                 '.ytp-title',
+                 '.ytp-title-text',
+                 '.ytp-large-play-button',
+                 '.ytp-large-play-button-bg',
+                 '.ytp-pause-overlay',
+                 '.ytp-pause-overlay-container',
+                 '.ytp-caption-window-container',
+                 '.captions-text',
+                 '.ytp-endscreen-content',
+                 '.ytp-gradient-bottom',
+                 '.ytp-gradient-top',
+                 '.ytp-upnext',
+                 '.ytp-button',
+                 '.ytp-prev-button',
+                 '.ytp-next-button',
+                 '.ytp-play-button',
+                 '.ytp-chrome-controls',
+                 '.ytp-youtube-button',
+                 '.ytp-wordmark-text',
+                 '.ytp-watermark',
+                 '.html5-endscreen',
+                 '.ytp-ce-element',
+                 '.ytp-endscreen-element'].forEach(function(sel) {
                     document.querySelectorAll(sel).forEach(function(el) {
                         el.style.cssText += 
-                            'display:none!important;opacity:0!important;visibility:hidden!important;';
+                            'display:none!important;opacity:0!important;visibility:hidden!important;width:0!important;height:0!important;';
                     });
                 });
-            }, 800);
+            }, 200);
         """,
         injectionTime: .atDocumentEnd,
         forMainFrameOnly: false
