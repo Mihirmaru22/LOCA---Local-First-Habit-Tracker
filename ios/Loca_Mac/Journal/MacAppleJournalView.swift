@@ -20,15 +20,54 @@ final class JournalMediaManager {
     }
 
     func saveImage(from sourceURL: URL) -> String? {
-        let ext = sourceURL.pathExtension.isEmpty ? "jpg" : sourceURL.pathExtension
-        let filename = "img_\(UUID().uuidString).\(ext)"
+        let filename = "img_\(UUID().uuidString).jpg"
         let targetURL = mediaDirectory.appendingPathComponent(filename)
+
+        if let image = NSImage(contentsOf: sourceURL) {
+            let resized = downscaleImageIfNeeded(image, maxDimension: 2048)
+            if let tiffData = resized.tiffRepresentation,
+               let bitmap = NSBitmapImageRep(data: tiffData),
+               let jpegData = bitmap.representation(using: .jpeg, properties: [.compressionFactor: 0.80]) {
+                do {
+                    try jpegData.write(to: targetURL, options: .atomic)
+                    return filename
+                } catch {
+                    return nil
+                }
+            }
+        }
+
+        // Fallback to direct copy if representation fails
         do {
             try FileManager.default.copyItem(at: sourceURL, to: targetURL)
             return filename
         } catch {
             return nil
         }
+    }
+
+    private func downscaleImageIfNeeded(_ image: NSImage, maxDimension: CGFloat) -> NSImage {
+        let size = image.size
+        guard size.width > maxDimension || size.height > maxDimension else {
+            return image
+        }
+
+        let aspectRatio = size.width / size.height
+        var newSize: NSSize
+        if aspectRatio > 1.0 {
+            newSize = NSSize(width: maxDimension, height: maxDimension / aspectRatio)
+        } else {
+            newSize = NSSize(width: maxDimension * aspectRatio, height: maxDimension)
+        }
+
+        let newImage = NSImage(size: newSize)
+        newImage.lockFocus()
+        image.draw(in: NSRect(origin: .zero, size: newSize),
+                   from: NSRect(origin: .zero, size: size),
+                   operation: .copy,
+                   fraction: 1.0)
+        newImage.unlockFocus()
+        return newImage
     }
 
     func saveAudioRecording(tempURL: URL) -> String? {
@@ -1320,6 +1359,11 @@ struct AppleJournalEditorCanvas: View {
             }
         }
         .onDisappear {
+            audioPlayer?.stop()
+            audioPlayer = nil
+            playbackTimer?.invalidate()
+            playbackTimer = nil
+            isPlayingAudio = false
             saveNote()
         }
     }
