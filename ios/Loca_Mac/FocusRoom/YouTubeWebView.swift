@@ -91,7 +91,7 @@ private func generateYouTubeHTML(videoID: String) -> String {
 
 // MARK: - YouTube Scripts & Configuration Builder
 
-private func makeConfiguredWKWebView() -> (WKWebViewConfiguration, WKUserScript, WKUserScript, WKUserScript) {
+private func makeConfiguredWKWebView() -> (WKWebViewConfiguration, WKUserScript, WKUserScript, WKUserScript, WKUserScript) {
     let config = WKWebViewConfiguration()
     config.mediaTypesRequiringUserActionForPlayback = []
 
@@ -234,6 +234,14 @@ private func makeConfiguredWKWebView() -> (WKWebViewConfiguration, WKUserScript,
                 .html5-video-container {
                     pointer-events: none !important;
                 }
+
+                /* Force hardware compositing on video and iframe */
+                iframe, video, .html5-main-video, .html5-video-container {
+                    -webkit-transform: translateZ(0) !important;
+                    transform: translateZ(0) !important;
+                    -webkit-backface-visibility: hidden !important;
+                    will-change: transform !important;
+                }
             `;
             document.head.appendChild(style);
 
@@ -256,7 +264,45 @@ private func makeConfiguredWKWebView() -> (WKWebViewConfiguration, WKUserScript,
     )
     config.userContentController.addUserScript(hideControlsScript)
 
-    // Script 3: Error detection user script polling for YouTube error state
+    // Script 3: Late UI hiding script to fight late YouTube injections
+    let lateHideScript = WKUserScript(
+        source: """
+            setTimeout(function() {
+                var style = document.createElement('style');
+                style.textContent = `
+                    .ytp-chrome-top, .ytp-chrome-bottom,
+                    .ytp-gradient-top, .ytp-gradient-bottom,
+                    .ytp-watermark, .ytp-title,
+                    .ytp-pause-overlay, .ytp-endscreen-content,
+                    .ytp-cued-thumbnail-overlay,
+                    .ytp-large-play-button,
+                    .ytp-youtube-button, .branding-img,
+                    .ytp-caption-window-container,
+                    .captions-text, .ytp-caption-segment {
+                        display: none !important;
+                        opacity: 0 !important;
+                    }
+                `;
+                document.head.appendChild(style);
+            }, 1500);
+
+            setInterval(function() {
+                ['.ytp-chrome-top','.ytp-chrome-bottom',
+                 '.ytp-watermark','.ytp-title',
+                 '.ytp-caption-window-container',
+                 '.captions-text'].forEach(function(sel) {
+                    document.querySelectorAll(sel).forEach(function(el) {
+                        el.style.cssText += 'display:none!important;opacity:0!important;';
+                    });
+                });
+            }, 1000);
+        """,
+        injectionTime: .atDocumentEnd,
+        forMainFrameOnly: false
+    )
+    config.userContentController.addUserScript(lateHideScript)
+
+    // Script 4: Error detection user script polling for YouTube error state
     let errorDetectScript = WKUserScript(
         source: """
             setInterval(function() {
@@ -273,7 +319,7 @@ private func makeConfiguredWKWebView() -> (WKWebViewConfiguration, WKUserScript,
     )
     config.userContentController.addUserScript(errorDetectScript)
 
-    return (config, spoofScript, hideControlsScript, errorDetectScript)
+    return (config, spoofScript, hideControlsScript, lateHideScript, errorDetectScript)
 }
 
 // MARK: - YouTubeWebView (Main SwiftUI Container with Fallback UI)
@@ -370,10 +416,19 @@ struct YouTubeWebViewRepresentable: NSViewRepresentable {
     }
 
     func makeNSView(context: Context) -> WKWebView {
-        let (config, _, _, _) = makeConfiguredWKWebView()
+        let (config, _, _, _, _) = makeConfiguredWKWebView()
         config.userContentController.add(context.coordinator, name: "youtubeError")
 
-        let webView = WKWebView(frame: .zero, configuration: config)
+        // Fix 1: Real non-zero initial frame
+        let webView = WKWebView(
+            frame: NSRect(x: 0, y: 0, width: 1280, height: 720),
+            configuration: config
+        )
+
+        // Fix 2: Force video compositor onto correct layer
+        webView.setValue(false, forKey: "drawsBackground")
+        webView.layer?.backgroundColor = NSColor.black.cgColor
+        webView.wantsLayer = true
 
         // Real macOS Safari User Agent
         webView.customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15"
@@ -382,6 +437,14 @@ struct YouTubeWebViewRepresentable: NSViewRepresentable {
         let html = generateYouTubeHTML(videoID: videoID)
         webView.loadHTMLString(html, baseURL: URL(string: "https://www.youtube-nocookie.com")!)
         context.coordinator.currentVideoID = videoID
+
+        // Fix 3: Reload once the view has been placed in the window and has real bounds
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            if !webView.bounds.isEmpty {
+                let html = generateYouTubeHTML(videoID: self.videoID)
+                webView.loadHTMLString(html, baseURL: URL(string: "https://www.youtube-nocookie.com")!)
+            }
+        }
 
         return webView
     }
@@ -440,10 +503,10 @@ struct YouTubeWebViewRepresentable: UIViewRepresentable {
     }
 
     func makeUIView(context: Context) -> WKWebView {
-        let (config, _, _, _) = makeConfiguredWKWebView()
+        let (config, _, _, _, _) = makeConfiguredWKWebView()
         config.userContentController.add(context.coordinator, name: "youtubeError")
 
-        let webView = WKWebView(frame: .zero, configuration: config)
+        let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 1280, height: 720), configuration: config)
 
         webView.customUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
         webView.navigationDelegate = context.coordinator
