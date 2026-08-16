@@ -44,10 +44,13 @@ struct FocusRoomView: View {
         ZStack {
 
             // ===================================================================
-            // LAYER 1: FULLSCREEN BACKGROUND
+            // LAYER 1: FULLSCREEN BACKGROUND (Always Behind, Clipped)
             // ===================================================================
             fullscreenBackgroundLayer
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipped()
                 .ignoresSafeArea(.all)
+                .zIndex(0)
 
             // ===================================================================
             // LAYER 2: FLOATING TOP BAR
@@ -59,6 +62,8 @@ struct FocusRoomView: View {
 
                 Spacer()
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .zIndex(100)
 
             // ===================================================================
             // LAYER 3: FLOATING PANELS OVERLAY
@@ -151,6 +156,8 @@ struct FocusRoomView: View {
                 .padding(.trailing, 20)
                 .padding(.top, 76)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .zIndex(50)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .animation(.spring(response: 0.35, dampingFraction: 0.8), value: activePanel)
@@ -171,6 +178,8 @@ struct FocusRoomView: View {
     private var fullscreenBackgroundLayer: some View {
         if let videoID = youtubeVideoID, !videoID.isEmpty {
             YouTubeWebView(videoID: videoID, volume: soundVM.youtubeVolume)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipped()
         } else if let preset = BackgroundPickerPanel.presets.first(where: { $0.id == selectedPresetID }) {
             ZStack {
                 // High-Resolution Photo Background
@@ -180,6 +189,8 @@ struct FocusRoomView: View {
                         image
                             .resizable()
                             .aspectRatio(contentMode: .fill)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .clipped()
                             .transition(.opacity)
                     case .failure:
                         LinearGradient(colors: preset.fallbackColors, startPoint: .topLeading, endPoint: .bottomTrailing)
@@ -192,13 +203,19 @@ struct FocusRoomView: View {
                         LinearGradient(colors: preset.fallbackColors, startPoint: .topLeading, endPoint: .bottomTrailing)
                     }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipped()
 
                 // Subtle Atmospheric Tint for Translucent Card Readability
                 Color.black.opacity(0.20)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .clipped()
         } else {
             // High fidelity artistic landscape gradients
             presetGradientBackground(presetID: selectedPresetID)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipped()
         }
     }
 
