@@ -30,6 +30,7 @@ struct MacTrekAtlasCanvas: View {
     @State private var quickLookTrek: TrekRecord? = nil
     @State private var quickLookPhotoIndex: Int = 0
     @State private var isFlyingTrail: Bool = false
+    @State private var scrubCoordinate: CLLocationCoordinate2D? = nil
 
     // MARK: - Filtered Treks
 
@@ -113,6 +114,7 @@ struct MacTrekAtlasCanvas: View {
                         MacTrekMapView(
                             treks: filteredTreks,
                             selectedTrek: selectedTrek,
+                            scrubCoordinate: scrubCoordinate,
                             isFlyingTrail: isFlyingTrail,
                             onFinishFlyTrail: {
                                 isFlyingTrail = false
@@ -139,6 +141,9 @@ struct MacTrekAtlasCanvas: View {
                                         quickLookPhotoIndex = index
                                     }
                                 },
+                                onScrubCoordinate: { coord in
+                                    self.scrubCoordinate = coord
+                                },
                                 onFlyTrail: {
                                     withAnimation {
                                         isFlyingTrail = true
@@ -148,6 +153,7 @@ struct MacTrekAtlasCanvas: View {
                                 onClose: {
                                     withAnimation(.easeOut(duration: 0.2)) {
                                         self.selectedTrek = nil
+                                        self.scrubCoordinate = nil
                                     }
                                 }
                             )
@@ -528,6 +534,7 @@ struct TrekDetailOverlay: View {
     let trek: TrekRecord
     let onToggleStatus: () -> Void
     var onOpenQuickLook: (String, Int) -> Void = { _, _ in }
+    var onScrubCoordinate: (CLLocationCoordinate2D?) -> Void = { _ in }
     var onFlyTrail: () -> Void = {}
     let onClose: () -> Void
 
@@ -625,6 +632,15 @@ struct TrekDetailOverlay: View {
                         .padding(8)
                         .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 6))
                     }
+
+                    // Alpine Elevation Profile Chart (4.3 aa2 + aa3 + aa4)
+                    TrekElevationProfileChart(
+                        trek: trek,
+                        points: TrekElevationProfileEngine.generateProfile(for: trek),
+                        onScrubPoint: { pt in
+                            onScrubCoordinate(pt?.coordinate)
+                        }
+                    )
 
                     // Notes Section
                     if !trek.personalNotes.isEmpty {

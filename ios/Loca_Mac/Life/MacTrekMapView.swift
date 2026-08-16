@@ -31,14 +31,69 @@ final class TrekTrailPolyline: MKPolyline {
     var isSelected: Bool = false
 }
 
+// MARK: - TrekScrubAnnotation
+
+final class TrekScrubAnnotation: NSObject, MKAnnotation {
+    dynamic var coordinate: CLLocationCoordinate2D
+
+    init(coordinate: CLLocationCoordinate2D) {
+        self.coordinate = coordinate
+        super.init()
+    }
+}
+
+// MARK: - TrekScrubCrosshairAnnotationView
+
+final class TrekScrubCrosshairAnnotationView: MKAnnotationView {
+    static let reuseIdentifier = "TrekScrubCrosshairAnnotationView"
+
+    override init(annotation: MKAnnotation?, reuseIdentifier: String?) {
+        super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
+        self.frame = NSRect(x: 0, y: 0, width: 24, height: 24)
+        self.canShowCallout = false
+        self.wantsLayer = true
+        self.displayPriority = .required
+        setupLayers()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setupLayers() {
+        guard let layer = self.layer else { return }
+        layer.sublayers?.forEach { $0.removeFromSuperlayer() }
+
+        // Outer Glowing Pulse Ring
+        let ringLayer = CALayer()
+        ringLayer.frame = CGRect(x: 2, y: 2, width: 20, height: 20)
+        ringLayer.cornerRadius = 10
+        ringLayer.borderWidth = 2.0
+        ringLayer.borderColor = NSColor(red: 0.0, green: 0.95, blue: 1.0, alpha: 0.9).cgColor
+        ringLayer.backgroundColor = NSColor(red: 0.0, green: 0.95, blue: 1.0, alpha: 0.2).cgColor
+        ringLayer.shadowColor = NSColor.cyan.cgColor
+        ringLayer.shadowRadius = 6.0
+        ringLayer.shadowOpacity = 0.8
+        layer.addSublayer(ringLayer)
+
+        // Center Solid Core
+        let coreLayer = CALayer()
+        coreLayer.frame = CGRect(x: 8, y: 8, width: 8, height: 8)
+        coreLayer.cornerRadius = 4
+        coreLayer.backgroundColor = NSColor.white.cgColor
+        layer.addSublayer(coreLayer)
+    }
+}
+
 // MARK: - MacTrekMapView (NSViewRepresentable)
 
 /// Native AppKit MKMapView wrapper delivering precision camera controls, custom
-/// illuminated summit badges, glowing beacon rings, GPX trail polylines, and Fog-of-War hole-punching overlays.
+/// illuminated summit badges, glowing beacon rings, GPX trail polylines, elevation scrub crosshair, and Fog-of-War hole-punching overlays.
 struct MacTrekMapView: NSViewRepresentable {
 
     let treks: [TrekRecord]
     let selectedTrek: TrekRecord?
+    var scrubCoordinate: CLLocationCoordinate2D? = nil
     var isFlyingTrail: Bool = false
     var onFinishFlyTrail: () -> Void = {}
     let onSelectTrek: (TrekRecord) -> Void
@@ -56,8 +111,9 @@ struct MacTrekMapView: NSViewRepresentable {
         config.showsTraffic = false
         mapView.preferredConfiguration = config
 
-        // Register custom summit annotation view
+        // Register custom annotations
         mapView.register(TrekAnnotationView.self, forAnnotationViewWithReuseIdentifier: TrekAnnotationView.reuseIdentifier)
+        mapView.register(TrekScrubCrosshairAnnotationView.self, forAnnotationViewWithReuseIdentifier: TrekScrubCrosshairAnnotationView.reuseIdentifier)
 
         // Set initial camera over world
         let initialCoord = CLLocationCoordinate2D(latitude: 30.0, longitude: 15.0)
@@ -87,7 +143,21 @@ struct MacTrekMapView: NSViewRepresentable {
             }
         }
 
-        // 2. Update Fog of War, Auras, and GPX Trail Overlays
+        // 2. Update Elevation Chart Scrub Crosshair (aa4)
+        if let scrubCoord = scrubCoordinate {
+            if let existing = mapView.annotations.first(where: { $0 is TrekScrubAnnotation }) as? TrekScrubAnnotation {
+                existing.coordinate = scrubCoord
+            } else {
+                mapView.addAnnotation(TrekScrubAnnotation(coordinate: scrubCoord))
+            }
+        } else {
+            let scrubAnnotations = mapView.annotations.filter { $0 is TrekScrubAnnotation }
+            if !scrubAnnotations.isEmpty {
+                mapView.removeAnnotations(scrubAnnotations)
+            }
+        }
+
+        // 3. Update Fog of War, Auras, and GPX Trail Overlays
         updateMapOverlays(mapView: mapView)
 
         // 3. Handle Active Trail Flyover
@@ -277,6 +347,15 @@ struct MacTrekMapView: NSViewRepresentable {
         }
 
         func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+            if let scrubAnnotation = annotation as? TrekScrubAnnotation {
+                let view = mapView.dequeueReusableAnnotationView(
+                    withIdentifier: TrekScrubCrosshairAnnotationView.reuseIdentifier,
+                    for: annotation
+                ) as? TrekScrubCrosshairAnnotationView ?? TrekScrubCrosshairAnnotationView(annotation: annotation, reuseIdentifier: TrekScrubCrosshairAnnotationView.reuseIdentifier)
+                view.annotation = scrubAnnotation
+                return view
+            }
+
             guard let trekAnnotation = annotation as? TrekAnnotation else { return nil }
 
             let view = mapView.dequeueReusableAnnotationView(
