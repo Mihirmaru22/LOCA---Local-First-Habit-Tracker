@@ -336,18 +336,6 @@ struct TrekEditorialCard: View {
             .buttonStyle(.plain)
         }
     }
-            .padding(DS.Space.lg)
-            .background(
-                isSelected ? Color.white.opacity(0.06) : DS.Color.surface,
-                in: RoundedRectangle(cornerRadius: DS.Radius.card)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.card)
-                    .stroke(isSelected ? Color.cyan.opacity(0.8) : Color.white.opacity(0.08), lineWidth: isSelected ? 2 : 1)
-            )
-        }
-        .buttonStyle(.plain)
-    }
 
     private func weatherIcon(for trek: TrekRecord) -> String {
         if trek.elevationMeters >= 5000 {
