@@ -50,6 +50,7 @@ struct MacTrekAtlasCanvas: View {
     @State private var selectedFilter: TrekFilter = .all
     @State private var isLogModalPresented: Bool = false
     @State private var isTrophyCabinetPresented: Bool = false
+    @State private var isWatchSyncPresented: Bool = false
     @State private var passportTrek: TrekRecord? = nil
     @State private var quickLookTrek: TrekRecord? = nil
     @State private var quickLookPhotoIndex: Int = 0
@@ -196,6 +197,11 @@ struct MacTrekAtlasCanvas: View {
                 passportTrek = nil
             }
         }
+        .sheet(isPresented: $isWatchSyncPresented) {
+            AppleWatchTrekSyncModal(allTreks: activeTreks) {
+                isWatchSyncPresented = false
+            }
+        }
         .onAppear {
             DispatchQueue.main.async {
                 TrekSeeder.seedIfNeeded(context: modelContext)
@@ -323,6 +329,28 @@ struct MacTrekAtlasCanvas: View {
                 .padding(.vertical, 4)
                 .background(currentRank.accentColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(currentRank.accentColor.opacity(0.35), lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+
+            Divider().frame(height: 24)
+
+            // Apple Watch Sync Button
+            Button {
+                isWatchSyncPresented = true
+                Haptics.impact(.medium)
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "applewatch")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(Color.orange)
+                    Text("Watch Sync")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(DS.Color.textPrimary)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 5)
+                .background(Color.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
+                .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.orange.opacity(0.3), lineWidth: 1))
             }
             .buttonStyle(.plain)
 
@@ -868,6 +896,49 @@ struct TrekDetailOverlay: View {
                         }
                         .padding(8)
                         .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 6))
+                    }
+
+                    // Apple Watch Biometrics Telemetry Capsule
+                    if let avgHR = trek.avgHeartRate {
+                        HStack(spacing: 8) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "applewatch")
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(Color.orange)
+                                Text("APPLE WATCH")
+                                    .font(.system(size: 8, weight: .bold))
+                                    .foregroundStyle(Color.orange)
+                            }
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(Color.orange.opacity(0.12), in: Capsule())
+
+                            HStack(spacing: 3) {
+                                Image(systemName: "heart.fill")
+                                    .font(.system(size: 9))
+                                    .foregroundStyle(Color.red)
+                                Text("\(Int(avgHR)) bpm avg")
+                                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                                    .foregroundStyle(DS.Color.textPrimary)
+                            }
+
+                            if let cal = trek.activeCalories {
+                                HStack(spacing: 3) {
+                                    Image(systemName: "flame.fill")
+                                        .font(.system(size: 9))
+                                        .foregroundStyle(Color.orange)
+                                    Text("\(Int(cal).formatted()) kcal")
+                                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                                        .foregroundStyle(DS.Color.textPrimary)
+                                }
+                            }
+
+                            Spacer()
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .background(Color.orange.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
+                        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.orange.opacity(0.2), lineWidth: 1))
                     }
 
                     // Alpine Elevation Profile Chart (4.3 aa2 + aa3 + aa4)
