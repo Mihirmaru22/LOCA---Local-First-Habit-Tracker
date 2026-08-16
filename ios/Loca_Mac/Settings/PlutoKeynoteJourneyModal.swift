@@ -287,7 +287,6 @@ struct PlutoKeynoteJourneyModal: View {
                         .padding(.horizontal, 32)
                         .padding(.bottom, 24)
                 }
-                    .padding(.bottom, 24)
             }
         }
         .frame(minWidth: 920, minHeight: 620)
