@@ -6,10 +6,13 @@ import UniformTypeIdentifiers
 // MARK: - TrekFilter
 
 enum TrekFilter: String, CaseIterable, Identifiable {
-    case all       = "All Summits"
-    case conquered = "Conquered 🏆"
-    case wishlist  = "Wishlist 📍"
-    case highest   = "Highest Peaks ⛰️"
+    case all          = "All Summits"
+    case india        = "All India 🇮🇳"
+    case himalayas    = "Himalayas 🏔️"
+    case westernGhats = "Western Ghats 🌿"
+    case conquered    = "Conquered 🏆"
+    case wishlist     = "Wishlist 📍"
+    case highest      = "8000ers & High Peaks ⛰️"
 
     var id: String { rawValue }
 }
@@ -74,6 +77,36 @@ struct MacTrekAtlasCanvas: View {
             switch selectedFilter {
             case .all:
                 return true
+            case .india:
+                return trek.country.localizedCaseInsensitiveContains("India")
+            case .himalayas:
+                return trek.country.localizedCaseInsensitiveContains("India") && (
+                    trek.region.localizedCaseInsensitiveContains("Himalaya") ||
+                    trek.region.localizedCaseInsensitiveContains("Uttarakhand") ||
+                    trek.region.localizedCaseInsensitiveContains("Ladakh") ||
+                    trek.region.localizedCaseInsensitiveContains("Sikkim") ||
+                    trek.region.localizedCaseInsensitiveContains("Himachal") ||
+                    trek.region.localizedCaseInsensitiveContains("Garhwal") ||
+                    trek.region.localizedCaseInsensitiveContains("Zanskar") ||
+                    trek.region.localizedCaseInsensitiveContains("Singalila") ||
+                    trek.elevationMeters >= 3000
+                )
+            case .westernGhats:
+                return trek.country.localizedCaseInsensitiveContains("India") && (
+                    trek.region.localizedCaseInsensitiveContains("Western Ghats") ||
+                    trek.region.localizedCaseInsensitiveContains("Maharashtra") ||
+                    trek.region.localizedCaseInsensitiveContains("Sahyadri") ||
+                    trek.region.localizedCaseInsensitiveContains("Karnataka") ||
+                    trek.region.localizedCaseInsensitiveContains("Kerala") ||
+                    trek.region.localizedCaseInsensitiveContains("Nilgiri") ||
+                    trek.region.localizedCaseInsensitiveContains("Pune") ||
+                    trek.region.localizedCaseInsensitiveContains("Ahmednagar") ||
+                    trek.region.localizedCaseInsensitiveContains("Nashik") ||
+                    trek.region.localizedCaseInsensitiveContains("Coorg") ||
+                    trek.region.localizedCaseInsensitiveContains("Wayanad") ||
+                    trek.region.localizedCaseInsensitiveContains("Munnar") ||
+                    trek.region.localizedCaseInsensitiveContains("Chikkamagaluru")
+                )
             case .conquered:
                 return trek.status == .conquered
             case .wishlist:
