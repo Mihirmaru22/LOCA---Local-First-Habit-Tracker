@@ -493,6 +493,7 @@ struct TrekListCard: View {
 struct TrekDetailOverlay: View {
     let trek: TrekRecord
     let onToggleStatus: () -> Void
+    var onOpenQuickLook: (String, Int) -> Void = { _, _ in }
     let onClose: () -> Void
 
     private var isConquered: Bool { trek.status == .conquered }
@@ -594,54 +595,59 @@ struct TrekDetailOverlay: View {
                     .background(DS.Color.surfaceRecessed.opacity(0.5), in: RoundedRectangle(cornerRadius: 6))
             }
 
-            // Photos / Media Section Header
-            HStack {
-                Text("SUMMIT MEMORIES")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(DS.Color.textTertiary)
-
-                Spacer()
-
-                Button {
-                    Task {
-                        let fileNames = await TrekPhotoPickerHelper.pickSummitPhotos()
-                        guard !fileNames.isEmpty else { return }
-                        trek.attachPhotos(fileNames: fileNames)
-                        Haptics.notification(.success)
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "photo.badge.plus")
-                            .font(.system(size: 10, weight: .semibold))
-                        Text("Add Photos")
-                            .font(.system(size: 10, weight: .semibold))
-                    }
-                    .foregroundStyle(Color.cyan)
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 3)
-                    .background(Color.cyan.opacity(0.1), in: RoundedRectangle(cornerRadius: 5))
+            // Summit Photo Memories (4.1)
+            if !trek.photoFileNames.isEmpty {
+                SummitPhotoStripView(trek: trek) { fileName, index in
+                    onOpenQuickLook(fileName, index)
                 }
-                .buttonStyle(.plain)
-            }
+            } else {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("SUMMIT MEMORIES")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(DS.Color.textTertiary)
 
-            // Dotted Dropzone or Photo Count Pill
-            if trek.photoFileNames.isEmpty {
-                HStack(spacing: 6) {
-                    Image(systemName: "arrow.down.doc")
-                        .font(.system(size: 11))
-                        .foregroundStyle(DS.Color.textTertiary)
-                    Text("Drag & drop summit photos here or click Add Photos")
-                        .font(.system(size: 10))
-                        .foregroundStyle(DS.Color.textSecondary)
+                        Spacer()
+
+                        Button {
+                            Task {
+                                let fileNames = await TrekPhotoPickerHelper.pickSummitPhotos()
+                                guard !fileNames.isEmpty else { return }
+                                trek.attachPhotos(fileNames: fileNames)
+                                Haptics.notification(.success)
+                            }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "photo.badge.plus")
+                                    .font(.system(size: 10, weight: .semibold))
+                                Text("Add Photos")
+                                    .font(.system(size: 10, weight: .semibold))
+                            }
+                            .foregroundStyle(Color.cyan)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3)
+                            .background(Color.cyan.opacity(0.1), in: RoundedRectangle(cornerRadius: 5))
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.down.doc")
+                            .font(.system(size: 11))
+                            .foregroundStyle(DS.Color.textTertiary)
+                        Text("Drag & drop photos here or click Add Photos")
+                            .font(.system(size: 10))
+                            .foregroundStyle(DS.Color.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(DS.Color.surfaceRecessed.opacity(0.4), in: RoundedRectangle(cornerRadius: 6))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                            .foregroundStyle(DS.Color.textTertiary.opacity(0.5))
+                    )
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background(DS.Color.surfaceRecessed.opacity(0.4), in: RoundedRectangle(cornerRadius: 6))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 6)
-                        .stroke(style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
-                        .foregroundStyle(DS.Color.textTertiary.opacity(0.5))
-                )
             }
 
             // Bottom Action Toggle
