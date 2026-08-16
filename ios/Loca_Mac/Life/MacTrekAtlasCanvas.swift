@@ -14,15 +14,37 @@ enum TrekFilter: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+// MARK: - TrekAtlasLayoutVariant
+
+enum TrekAtlasLayoutVariant: String, CaseIterable, Identifiable {
+    case splitMapInspector = "Split Canvas"
+    case panoramicHorizon  = "Panoramic Map"
+    case bentoMatrix       = "Alpine Bento"
+    case editorialList     = "Editorial Cards"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .splitMapInspector: return "square.split.2x1.fill"
+        case .panoramicHorizon:  return "rectangle.split.1x2.fill"
+        case .bentoMatrix:       return "square.grid.2x2.fill"
+        case .editorialList:     return "doc.richtext.fill"
+        }
+    }
+}
+
 // MARK: - MacTrekAtlasCanvas
 
 /// Full-screen interactive Trek & Mountain Atlas for Pluto.
-/// Integrates a responsive mountain explorer list, native MapKit canvas,
-/// expedition telemetry banner, and 1-click summit milestone toggling.
+/// Integrates 4 distinct layout design variants, 3D MapKit canvas,
+/// GPX trail ridge engine, and elevation profile studio.
 struct MacTrekAtlasCanvas: View {
 
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \TrekRecord.elevationMeters, order: .reverse) private var allTreks: [TrekRecord]
+
+    @AppStorage("mac_trek_layout_variant_v1") private var selectedLayout: TrekAtlasLayoutVariant = .splitMapInspector
 
     @State private var selectedTrek: TrekRecord? = nil
     @State private var searchText: String = ""
@@ -90,80 +112,14 @@ struct MacTrekAtlasCanvas: View {
     var body: some View {
         VStack(spacing: 0) {
 
-            // MARK: - Expedition Stats Banner
+            // MARK: - Expedition Stats Banner with Layout Switcher
             expeditionTelemetryBanner
 
             Divider()
 
-            // MARK: - Main Split Explorer View
+            // MARK: - Selected Layout View Canvas
             GeometryReader { geo in
-                HStack(spacing: 0) {
-
-                    // Left Side: Peak Directory Column (380px)
-                    VStack(spacing: 0) {
-                        searchAndFilterHeader
-                        Divider()
-                        trekListScrollView
-                    }
-                    .frame(width: min(380, geo.size.width * 0.38))
-                    .background(DS.Color.surface)
-
-                    Divider()
-
-                    // Right Side: Native Map Canvas with Detail Inspector Overlay
-                    ZStack(alignment: .bottomTrailing) {
-                        MacTrekMapView(
-                            treks: filteredTreks,
-                            selectedTrek: selectedTrek,
-                            scrubCoordinate: scrubCoordinate,
-                            isFlyingTrail: isFlyingTrail,
-                            onFinishFlyTrail: {
-                                isFlyingTrail = false
-                            },
-                            onSelectTrek: { trek in
-                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                    selectedTrek = trek
-                                }
-                                Haptics.impact(.light)
-                            }
-                        )
-                        .edgesIgnoringSafeArea(.all)
-
-                        // Floating Detail Inspector Card
-                        if let selectedTrek {
-                            TrekDetailOverlay(
-                                trek: selectedTrek,
-                                onToggleStatus: {
-                                    toggleTrekStatus(selectedTrek)
-                                },
-                                onOpenQuickLook: { fileName, index in
-                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                        quickLookTrek = selectedTrek
-                                        quickLookPhotoIndex = index
-                                    }
-                                },
-                                onScrubCoordinate: { coord in
-                                    self.scrubCoordinate = coord
-                                },
-                                onFlyTrail: {
-                                    withAnimation {
-                                        isFlyingTrail = true
-                                    }
-                                    Haptics.impact(.medium)
-                                },
-                                onClose: {
-                                    withAnimation(.easeOut(duration: 0.2)) {
-                                        self.selectedTrek = nil
-                                        self.scrubCoordinate = nil
-                                    }
-                                }
-                            )
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                            .padding(DS.Space.lg)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
+                layoutBody(geo: geo)
             }
         }
         .overlay {
@@ -199,10 +155,26 @@ struct MacTrekAtlasCanvas: View {
         }
     }
 
+    @ViewBuilder
+    private func layoutBody(geo: GeometryProxy) -> some View {
+        switch selectedLayout {
+        case .splitMapInspector:
+            splitMapLayout(geo: geo)
+        case .panoramicHorizon:
+            panoramicHorizonLayout(geo: geo)
+        case .bentoMatrix:
+            bentoMatrixLayout(geo: geo)
+        case .editorialList:
+            editorialCardsLayout(geo: geo)
+        }
+    }
+
     // MARK: - Subviews
 
+    // MARK: - Expedition Stats Banner with Layout Switcher
+
     private var expeditionTelemetryBanner: some View {
-        HStack(spacing: DS.Space.xl) {
+        HStack(spacing: DS.Space.lg) {
 
             // Stat 1: Summits Conquered
             HStack(spacing: DS.Space.sm) {
@@ -263,35 +235,51 @@ struct MacTrekAtlasCanvas: View {
                     Text(totalVerticalGain > 0 ? "+\(Int(totalVerticalGain).formatted()) m" : "—")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(DS.Color.textPrimary)
-                    Text("Total Vertical Ascended")
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(DS.Color.textSecondary)
-                }
-            }
-
-            Divider().frame(height: 24)
-
-            // Stat 4: Total Trail Distance
-            HStack(spacing: DS.Space.sm) {
-                ZStack {
-                    Circle()
-                        .fill(Color.green.opacity(0.15))
-                        .frame(width: 34, height: 34)
-                    Image(systemName: "figure.hiking")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(Color.green)
-                }
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(totalDistanceKm > 0 ? String(format: "%.1f km", totalDistanceKm) : "—")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(DS.Color.textPrimary)
-                    Text("Total Trail Distance")
+                    Text("Vertical Ascended")
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(DS.Color.textSecondary)
                 }
             }
 
             Spacer()
+
+            // MARK: - Layout Switcher Segmented Control
+            HStack(spacing: 2) {
+                ForEach(TrekAtlasLayoutVariant.allCases) { layout in
+                    let isSelected = selectedLayout == layout
+                    Button {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            selectedLayout = layout
+                        }
+                        Haptics.impact(.light)
+                    } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: layout.icon)
+                                .font(.system(size: 10, weight: isSelected ? .bold : .medium))
+                            Text(layout.rawValue)
+                                .font(.system(size: 11, weight: isSelected ? .semibold : .medium))
+                        }
+                        .foregroundStyle(isSelected ? Color.white : DS.Color.textSecondary)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 5)
+                        .background(
+                            isSelected
+                                ? LinearGradient(colors: [Color.cyan.opacity(0.35), Color.blue.opacity(0.25)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                                : LinearGradient(colors: [Color.clear], startPoint: .top, endPoint: .bottom),
+                            in: RoundedRectangle(cornerRadius: 6)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(isSelected ? Color.cyan.opacity(0.5) : Color.clear, lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(3)
+            .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 8))
+
+            Divider().frame(height: 24)
 
             // Primary Action: + Log Trek
             Button {
@@ -305,7 +293,7 @@ struct MacTrekAtlasCanvas: View {
                         .font(.system(size: 12, weight: .semibold))
                 }
                 .foregroundStyle(.white)
-                .padding(.horizontal, 14)
+                .padding(.horizontal, 13)
                 .padding(.vertical, 7)
                 .background(
                     LinearGradient(
@@ -321,6 +309,386 @@ struct MacTrekAtlasCanvas: View {
         .padding(.horizontal, DS.Space.xl)
         .padding(.vertical, DS.Space.md)
         .background(DS.Color.surface)
+    }
+
+    // MARK: - Layout 1: Split Map + Peak Directory
+    private func splitMapLayout(geo: GeometryProxy) -> some View {
+        HStack(spacing: 0) {
+            // Left Side: Peak Directory Column (380px)
+            VStack(spacing: 0) {
+                searchAndFilterHeader
+                Divider()
+                trekListScrollView
+            }
+            .frame(width: min(380, geo.size.width * 0.38))
+            .background(DS.Color.surface)
+
+            Divider()
+
+            // Right Side: Native Map Canvas with Detail Inspector Overlay
+            ZStack(alignment: .bottomTrailing) {
+                MacTrekMapView(
+                    treks: filteredTreks,
+                    selectedTrek: selectedTrek,
+                    scrubCoordinate: scrubCoordinate,
+                    isFlyingTrail: isFlyingTrail,
+                    onFinishFlyTrail: {
+                        isFlyingTrail = false
+                    },
+                    onSelectTrek: { trek in
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            selectedTrek = trek
+                        }
+                        Haptics.impact(.light)
+                    }
+                )
+                .edgesIgnoringSafeArea(.all)
+
+                // Floating Detail Inspector Card
+                if let selectedTrek {
+                    TrekDetailOverlay(
+                        trek: selectedTrek,
+                        onToggleStatus: {
+                            toggleTrekStatus(selectedTrek)
+                        },
+                        onOpenQuickLook: { fileName, index in
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                quickLookTrek = selectedTrek
+                                quickLookPhotoIndex = index
+                            }
+                        },
+                        onScrubCoordinate: { coord in
+                            self.scrubCoordinate = coord
+                        },
+                        onFlyTrail: {
+                            withAnimation {
+                                isFlyingTrail = true
+                            }
+                            Haptics.impact(.medium)
+                        },
+                        onClose: {
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                self.selectedTrek = nil
+                                self.scrubCoordinate = nil
+                            }
+                        }
+                    )
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .padding(DS.Space.lg)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+
+    // MARK: - Layout 2: Panoramic Horizon (Top Map + Bottom Carousel)
+    private func panoramicHorizonLayout(geo: GeometryProxy) -> some View {
+        VStack(spacing: 0) {
+            // Top: 58% Full-bleed Topo Map with Floating Search Pill HUD
+            ZStack(alignment: .topLeading) {
+                MacTrekMapView(
+                    treks: filteredTreks,
+                    selectedTrek: selectedTrek,
+                    scrubCoordinate: scrubCoordinate,
+                    isFlyingTrail: isFlyingTrail,
+                    onFinishFlyTrail: {
+                        isFlyingTrail = false
+                    },
+                    onSelectTrek: { trek in
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            selectedTrek = trek
+                        }
+                        Haptics.impact(.light)
+                    }
+                )
+
+                // Floating Search & Filter Pill HUD
+                HStack(spacing: DS.Space.md) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 11))
+                            .foregroundStyle(DS.Color.textTertiary)
+                        TextField("Search summits...", text: $searchText)
+                            .textFieldStyle(.plain)
+                            .font(.system(size: 11))
+                            .frame(width: 150)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 6))
+
+                    ForEach(TrekFilter.allCases) { filter in
+                        let isSelected = selectedFilter == filter
+                        Button {
+                            selectedFilter = filter
+                            Haptics.impact(.light)
+                        } label: {
+                            Text(filter.rawValue)
+                                .font(.system(size: 10, weight: isSelected ? .bold : .medium))
+                                .foregroundStyle(isSelected ? Color.white : DS.Color.textSecondary)
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 4)
+                                .background(
+                                    isSelected ? Color(red: 0.38, green: 0.45, blue: 0.98) : Color.clear,
+                                    in: RoundedRectangle(cornerRadius: 5)
+                                )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(8)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.12), lineWidth: 1))
+                .padding(DS.Space.md)
+            }
+            .frame(height: max(200, geo.size.height * 0.58))
+
+            Divider()
+
+            // Bottom: 42% Horizontal Mountain Explorer Strip
+            VStack(alignment: .leading, spacing: DS.Space.sm) {
+                HStack {
+                    Text("EXPEDITION PEAKS")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(DS.Color.textSecondary)
+                    Spacer()
+                    Text("\(filteredTreks.count) Peaks in Corridor")
+                        .font(DS.Text.caption)
+                        .foregroundStyle(DS.Color.textTertiary)
+                }
+                .padding(.horizontal, DS.Space.lg)
+                .padding(.top, DS.Space.sm)
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(spacing: DS.Space.md) {
+                        ForEach(filteredTreks) { trek in
+                            TrekPanoramicCard(
+                                trek: trek,
+                                isSelected: selectedTrek?.id == trek.id,
+                                onSelect: {
+                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                        selectedTrek = trek
+                                    }
+                                    Haptics.impact(.light)
+                                },
+                                onToggleStatus: {
+                                    toggleTrekStatus(trek)
+                                }
+                            )
+                        }
+                    }
+                    .padding(.horizontal, DS.Space.lg)
+                    .padding(.bottom, DS.Space.md)
+                }
+            }
+            .frame(height: max(180, geo.size.height * 0.42))
+            .background(DS.Color.surface)
+        }
+    }
+
+    // MARK: - Layout 3: Alpine Bento Matrix (Dual Interactive Widgets & Grid)
+    private func bentoMatrixLayout(geo: GeometryProxy) -> some View {
+        ScrollView {
+            VStack(spacing: DS.Space.lg) {
+
+                // Row 1: Dual Interactive Bento Widgets
+                HStack(spacing: DS.Space.lg) {
+                    // Left Widget: 3D Topo Map with Beacon Rings
+                    VStack(alignment: .leading, spacing: DS.Space.sm) {
+                        HStack {
+                            Image(systemName: "mountain.2.fill")
+                                .foregroundStyle(Color.cyan)
+                            Text("3D TOPOGRAPHIC RADAR")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(DS.Color.textSecondary)
+                            Spacer()
+                            Text("\(filteredTreks.count) Peaks")
+                                .font(DS.Text.caption)
+                                .foregroundStyle(DS.Color.textTertiary)
+                        }
+
+                        MacTrekMapView(
+                            treks: filteredTreks,
+                            selectedTrek: selectedTrek,
+                            scrubCoordinate: scrubCoordinate,
+                            isFlyingTrail: isFlyingTrail,
+                            onFinishFlyTrail: { isFlyingTrail = false },
+                            onSelectTrek: { trek in
+                                selectedTrek = trek
+                                Haptics.impact(.light)
+                            }
+                        )
+                        .frame(height: 280)
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card))
+                    }
+                    .padding(DS.Space.md)
+                    .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+                    .overlay(RoundedRectangle(cornerRadius: DS.Radius.card).stroke(Color.white.opacity(0.08), lineWidth: 1))
+
+                    // Right Widget: Alpine Elevation Profile Studio
+                    VStack(alignment: .leading, spacing: DS.Space.sm) {
+                        HStack {
+                            Image(systemName: "chart.xyaxis.line")
+                                .foregroundStyle(Color.purple)
+                            Text(selectedTrek != nil ? "\(selectedTrek!.name.uppercased()) ELEVATION" : "ELEVATION PROFILE")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(DS.Color.textSecondary)
+                            Spacer()
+                            if let s = selectedTrek {
+                                Text("\(Int(s.elevationMeters).formatted()) m")
+                                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                                    .foregroundStyle(Color.cyan)
+                            }
+                        }
+
+                        if let trek = selectedTrek {
+                            TrekElevationProfileChart(
+                                trek: trek,
+                                onScrubCoordinate: { coord in
+                                    self.scrubCoordinate = coord
+                                },
+                                onFlyTrail: {
+                                    isFlyingTrail = true
+                                }
+                            )
+                            .frame(height: 280)
+                        } else {
+                            VStack(spacing: DS.Space.sm) {
+                                Image(systemName: "mountain.2")
+                                    .font(.system(size: 32))
+                                    .foregroundStyle(DS.Color.textTertiary)
+                                Text("Select a peak to inspect elevation gradient")
+                                    .font(DS.Text.caption)
+                                    .foregroundStyle(DS.Color.textSecondary)
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
+                    }
+                    .padding(DS.Space.md)
+                    .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+                    .overlay(RoundedRectangle(cornerRadius: DS.Radius.card).stroke(Color.white.opacity(0.08), lineWidth: 1))
+                }
+
+                // Row 2: Conquered Summits Grid Cards
+                VStack(alignment: .leading, spacing: DS.Space.sm) {
+                    HStack {
+                        Image(systemName: "trophy.fill")
+                            .foregroundStyle(Color.yellow)
+                        Text("CONQUERED SUMMIT EXPEDITIONS")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(DS.Color.textSecondary)
+                        Spacer()
+                    }
+
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: DS.Space.md) {
+                        ForEach(filteredTreks) { trek in
+                            TrekBentoCard(
+                                trek: trek,
+                                isSelected: selectedTrek?.id == trek.id,
+                                onSelect: {
+                                    selectedTrek = trek
+                                    Haptics.impact(.light)
+                                },
+                                onToggleStatus: {
+                                    toggleTrekStatus(trek)
+                                }
+                            )
+                        }
+                    }
+                }
+                .padding(DS.Space.md)
+                .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+                .overlay(RoundedRectangle(cornerRadius: DS.Radius.card).stroke(Color.white.opacity(0.08), lineWidth: 1))
+            }
+            .padding(DS.Space.lg)
+        }
+        .background(DS.Color.background)
+    }
+
+    // MARK: - Layout 4: Editorial Expedition Cards (50/50 Split Magazine Style)
+    private func editorialCardsLayout(geo: GeometryProxy) -> some View {
+        HStack(spacing: 0) {
+            // Left 50%: Vertical Editorial Cards
+            VStack(spacing: 0) {
+                searchAndFilterHeader
+                Divider()
+                ScrollView {
+                    LazyVStack(spacing: DS.Space.md) {
+                        ForEach(filteredTreks) { trek in
+                            TrekEditorialCard(
+                                trek: trek,
+                                isSelected: selectedTrek?.id == trek.id,
+                                onSelect: {
+                                    selectedTrek = trek
+                                    Haptics.impact(.light)
+                                },
+                                onToggleStatus: {
+                                    toggleTrekStatus(trek)
+                                },
+                                onOpenQuickLook: { _, idx in
+                                    quickLookTrek = trek
+                                    quickLookPhotoIndex = idx
+                                }
+                            )
+                        }
+                    }
+                    .padding(DS.Space.md)
+                }
+            }
+            .frame(width: geo.size.width * 0.5)
+            .background(DS.Color.surface)
+
+            Divider()
+
+            // Right 50%: Focused Route & Elevation Inspection Canvas
+            VStack(spacing: 0) {
+                if let trek = selectedTrek {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: DS.Space.lg) {
+                            // Topo Map Preview
+                            MacTrekMapView(
+                                treks: [trek],
+                                selectedTrek: trek,
+                                scrubCoordinate: scrubCoordinate,
+                                isFlyingTrail: isFlyingTrail,
+                                onFinishFlyTrail: { isFlyingTrail = false },
+                                onSelectTrek: { _ in }
+                            )
+                            .frame(height: 260)
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card))
+                            .overlay(RoundedRectangle(cornerRadius: DS.Radius.card).stroke(Color.white.opacity(0.1), lineWidth: 1))
+
+                            // Elevation Profile Chart
+                            TrekElevationProfileChart(
+                                trek: trek,
+                                onScrubCoordinate: { coord in
+                                    self.scrubCoordinate = coord
+                                },
+                                onFlyTrail: {
+                                    isFlyingTrail = true
+                                }
+                            )
+
+                            // Apple Journal Linking & Notes
+                            TrekJournalLinkSection(trek: trek)
+                        }
+                        .padding(DS.Space.xl)
+                    }
+                } else {
+                    VStack(spacing: DS.Space.md) {
+                        Image(systemName: "mountain.2")
+                            .font(.system(size: 40))
+                            .foregroundStyle(DS.Color.textTertiary)
+                        Text("Select an expedition card to read field notes & inspect trail")
+                            .font(DS.Text.body)
+                            .foregroundStyle(DS.Color.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+            .frame(width: geo.size.width * 0.5)
+            .background(DS.Color.surfaceRecessed)
+        }
     }
 
     private var searchAndFilterHeader: some View {

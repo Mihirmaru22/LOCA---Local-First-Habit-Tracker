@@ -15,6 +15,7 @@ struct MacSettingsView: View {
     @AppStorage("mac_habit_layout_v2") private var habitLayout: HabitDesignVariant = .habit1
     @AppStorage("mac_life_layout_v3") private var lifeLayout: LifeDesignVariant = .life1
     @AppStorage("mac_journal_analyse_layout_v2") private var journalLayout: AnalyseDesignVariant = .bentoHorizon
+    @AppStorage("mac_trek_layout_variant_v1") private var trekLayout: TrekAtlasLayoutVariant = .splitMapInspector
 
     // General & Appearance Storage
     @AppStorage("mac_open_full_window_on_launch") private var openFullWindow: Bool = true
@@ -49,6 +50,7 @@ struct MacSettingsView: View {
     @State private var hoveredHabitLayout: HabitDesignVariant? = nil
     @State private var hoveredLifeLayout: LifeDesignVariant? = nil
     @State private var hoveredJournalLayout: AnalyseDesignVariant? = nil
+    @State private var hoveredTrekLayout: TrekAtlasLayoutVariant? = nil
 
     @State private var showingExportSuccess = false
     @State private var showingRecalculateSuccess = false
@@ -397,6 +399,48 @@ struct MacSettingsView: View {
                 // Live Glimpse Inspection Screen for Journal
                 let activeJournal = hoveredJournalLayout ?? journalLayout
                 journalLiveGlimpse(layout: activeJournal)
+            }
+
+            Divider()
+
+            // 4. Trek & Mountain Atlas Studio
+            VStack(alignment: .leading, spacing: DS.Space.md) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("TREK & MOUNTAIN ATLAS STUDIO")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(DS.Color.textTertiary)
+                            .tracking(0.6)
+                        Text("Choose your primary layout configuration for mountain expeditions")
+                            .font(DS.Text.caption)
+                            .foregroundStyle(DS.Color.textSecondary)
+                    }
+                    Spacer()
+                }
+
+                // 4 Trek Layout Cards
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: DS.Space.md) {
+                    ForEach(TrekAtlasLayoutVariant.allCases) { layout in
+                        layoutCardItem(
+                            title: layout.rawValue,
+                            subtitle: trekSubtitle(for: layout),
+                            icon: layout.icon,
+                            isSelected: trekLayout == layout,
+                            isHovered: (hoveredTrekLayout ?? trekLayout) == layout
+                        ) {
+                            trekLayout = layout
+                        }
+                        .onHover { isHovered in
+                            withAnimation(.spring(response: 0.2, dampingFraction: 0.75)) {
+                                hoveredTrekLayout = isHovered ? layout : nil
+                            }
+                        }
+                    }
+                }
+
+                // Live Glimpse Inspection Screen for Trek
+                let activeTrek = hoveredTrekLayout ?? trekLayout
+                trekLiveGlimpse(layout: activeTrek)
             }
         }
     }
@@ -866,6 +910,107 @@ struct MacSettingsView: View {
         case .splitKpi:     return "Dual-column layout comparing physical recovery stats directly against mental clarity scores."
         case .dataMatrix:   return "Compact tabular matrix designed for scanning months of daily logs at a glance."
         }
+    }
+
+    private func trekSubtitle(for l: TrekAtlasLayoutVariant) -> String {
+        switch l {
+        case .splitMapInspector: return "List + 3D Topo Map"
+        case .panoramicHorizon:  return "Full-Bleed Map + Carousel"
+        case .bentoMatrix:       return "Modular Analytics Grid"
+        case .editorialList:     return "Magazine Journal Cards"
+        }
+    }
+
+    private func trekDescription(for l: TrekAtlasLayoutVariant) -> String {
+        switch l {
+        case .splitMapInspector: return "Classic executive split view with left search list and right 3D MapKit canvas."
+        case .panoramicHorizon:  return "Cinematic top 3D topographic globe with bottom horizontal expedition cards carousel."
+        case .bentoMatrix:       return "High-density modular bento dashboard allocating zones for map radar, elevation chart, and summits."
+        case .editorialList:     return "50/50 magazine-style cards with photo headers, weather memoirs, and route inspection."
+        }
+    }
+
+    // MARK: - Trek Live Glimpse
+    private func trekLiveGlimpse(layout: TrekAtlasLayoutVariant) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.sm) {
+            HStack {
+                Image(systemName: layout.icon)
+                    .foregroundStyle(Color.cyan)
+                Text(layout.rawValue.uppercased())
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(DS.Color.textPrimary)
+                Spacer()
+                Text(trekDescription(for: layout))
+                    .font(DS.Text.caption)
+                    .foregroundStyle(DS.Color.textTertiary)
+                    .lineLimit(1)
+            }
+
+            // High-Fidelity Mock Canvas
+            ZStack {
+                RoundedRectangle(cornerRadius: DS.Radius.card)
+                    .fill(DS.Color.surfaceRecessed)
+                    .frame(height: 140)
+
+                switch layout {
+                case .splitMapInspector:
+                    HStack(spacing: 8) {
+                        VStack(spacing: 4) {
+                            ForEach(0..<3) { _ in
+                                RoundedRectangle(cornerRadius: 3).fill(DS.Color.surface).frame(height: 30)
+                            }
+                        }
+                        .frame(width: 120)
+
+                        ZStack(alignment: .bottomTrailing) {
+                            RoundedRectangle(cornerRadius: 6).fill(Color.cyan.opacity(0.15))
+                            RoundedRectangle(cornerRadius: 4).fill(DS.Color.surface).frame(width: 100, height: 50).padding(6)
+                        }
+                    }
+                    .padding(8)
+
+                case .panoramicHorizon:
+                    VStack(spacing: 6) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 6).fill(Color.cyan.opacity(0.2))
+                            Image(systemName: "map.fill").foregroundStyle(Color.cyan.opacity(0.4)).font(.system(size: 28))
+                        }
+                        HStack(spacing: 6) {
+                            ForEach(0..<3) { _ in
+                                RoundedRectangle(cornerRadius: 4).fill(DS.Color.surface).frame(height: 35)
+                            }
+                        }
+                    }
+                    .padding(8)
+
+                case .bentoMatrix:
+                    HStack(spacing: 8) {
+                        RoundedRectangle(cornerRadius: 6).fill(Color.cyan.opacity(0.18)).frame(maxWidth: .infinity)
+                        RoundedRectangle(cornerRadius: 6).fill(Color.purple.opacity(0.18)).frame(maxWidth: .infinity)
+                        RoundedRectangle(cornerRadius: 6).fill(Color.orange.opacity(0.18)).frame(maxWidth: .infinity)
+                    }
+                    .padding(8)
+
+                case .editorialList:
+                    HStack(spacing: 8) {
+                        VStack(spacing: 6) {
+                            RoundedRectangle(cornerRadius: 4).fill(DS.Color.surface).frame(height: 55)
+                            RoundedRectangle(cornerRadius: 4).fill(DS.Color.surface).frame(height: 55)
+                        }
+                        .frame(maxWidth: .infinity)
+
+                        RoundedRectangle(cornerRadius: 6).fill(Color.cyan.opacity(0.15)).frame(maxWidth: .infinity)
+                    }
+                    .padding(8)
+                }
+            }
+            .overlay(
+                RoundedRectangle(cornerRadius: DS.Radius.card)
+                    .stroke(Color.cyan.opacity(0.3), lineWidth: 1)
+            )
+        }
+        .padding(DS.Space.md)
+        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
     }
 
     // MARK: =====================================================================
