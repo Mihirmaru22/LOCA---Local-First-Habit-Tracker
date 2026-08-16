@@ -77,6 +77,7 @@ struct MacTodoContentColumn: View {
             switch mode {
             case .plan: NotificationCenter.default.post(name: .locaAddBlock, object: nil)
             case .list: NotificationCenter.default.post(name: .locaFocusQuickAdd, object: nil)
+            case .time: break
             }
         })
     }
