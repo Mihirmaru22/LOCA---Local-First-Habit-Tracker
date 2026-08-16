@@ -64,19 +64,28 @@ struct FocusRoomView: View {
             // ===================================================================
             HStack(alignment: .top) {
 
-                // Left: Session Goals Panel
-                if showGoalsPanel {
-                    VStack {
+                // Left Column: Timer Card + Session Goals Panel stacked vertically (never overlap!)
+                VStack(alignment: .leading, spacing: 12) {
+                    if showTimerModal {
+                        bigTimerModal
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .top).combined(with: .opacity),
+                                removal: .move(edge: .top).combined(with: .opacity)
+                            ))
+                    }
+
+                    if showGoalsPanel {
                         FocusGoalsPanel(isPresented: $showGoalsPanel)
                             .transition(.asymmetric(
                                 insertion: .move(edge: .leading).combined(with: .opacity),
                                 removal: .move(edge: .leading).combined(with: .opacity)
                             ))
-                        Spacer()
                     }
-                    .padding(.leading, 20)
-                    .padding(.top, 76)
+
+                    Spacer()
                 }
+                .padding(.leading, 20)
+                .padding(.top, 76)
 
                 Spacer()
 
@@ -142,14 +151,6 @@ struct FocusRoomView: View {
                 }
                 .padding(.trailing, 20)
                 .padding(.top, 76)
-            }
-
-            // Big Timer Floating Modal (if toggled)
-            if showTimerModal {
-                bigTimerModal
-                    .position(x: 140, y: 140)
-                    .zIndex(150)
-                    .transition(.scale.combined(with: .opacity))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -375,68 +376,77 @@ struct FocusRoomView: View {
         VStack(spacing: 12) {
             HStack {
                 Label("Personal timer", systemImage: "timer")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.8))
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.9))
 
                 Spacer()
 
                 Button {
                     timerVM.isMuted.toggle()
+                    Haptics.impact(.light)
                 } label: {
                     Image(systemName: timerVM.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                        .font(.system(size: 11))
+                        .font(.system(size: 12))
                         .foregroundStyle(.white.opacity(0.6))
                 }
                 .buttonStyle(.plain)
 
                 Button {
-                    showTimerModal = false
+                    withAnimation(.spring(response: 0.3)) {
+                        showTimerModal = false
+                    }
+                    Haptics.impact(.light)
                 } label: {
                     Image(systemName: "xmark")
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(.white.opacity(0.6))
+                        .frame(width: 20, height: 20)
                 }
                 .buttonStyle(.plain)
             }
 
-            Text(timerVM.formattedTime)
-                .font(.system(size: 28, weight: .heavy, design: .monospaced))
-                .monospacedDigit()
-                .foregroundStyle(.white)
+            HStack {
+                Text(timerVM.formattedTime)
+                    .font(.system(size: 32, weight: .heavy, design: .monospaced))
+                    .monospacedDigit()
+                    .foregroundStyle(.white)
 
-            HStack(spacing: 12) {
-                Button {
-                    timerVM.resetTimer()
-                } label: {
-                    Image(systemName: "stop.fill")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.white)
-                        .frame(width: 32, height: 32)
-                        .background(Color.white.opacity(0.15), in: RoundedRectangle(cornerRadius: 6))
-                }
-                .buttonStyle(.plain)
+                Spacer()
 
-                Button {
-                    timerVM.togglePlayPause()
-                } label: {
-                    Image(systemName: timerVM.isRunning ? "pause.fill" : "play.fill")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.white)
-                        .frame(width: 32, height: 32)
-                        .background(Color.blue, in: RoundedRectangle(cornerRadius: 6))
+                HStack(spacing: 8) {
+                    Button {
+                        timerVM.resetTimer()
+                    } label: {
+                        Image(systemName: "stop.fill")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.white)
+                            .frame(width: 36, height: 36)
+                            .background(Color.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+                    }
+                    .buttonStyle(.plain)
+
+                    Button {
+                        timerVM.togglePlayPause()
+                    } label: {
+                        Image(systemName: timerVM.isRunning ? "pause.fill" : "play.fill")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 36, height: 36)
+                            .background(Color.blue, in: RoundedRectangle(cornerRadius: 8))
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
         }
-        .padding(14)
-        .frame(width: 200)
+        .padding(16)
+        .frame(width: 290)
         .background(
-            Color.black.opacity(0.75)
+            Color.black.opacity(0.72)
                 .background(.ultraThinMaterial)
         )
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.15), lineWidth: 1))
-        .shadow(color: .black.opacity(0.5), radius: 16, x: 0, y: 8)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.14), lineWidth: 1))
+        .shadow(color: .black.opacity(0.4), radius: 20, x: 0, y: 10)
     }
 
     // MARK: - Session Persistence
