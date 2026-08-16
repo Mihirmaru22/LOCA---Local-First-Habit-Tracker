@@ -23,31 +23,9 @@ enum HorizonCategory: String, CaseIterable, Identifiable {
     }
 }
 
-// MARK: - GoalCategory
+// MARK: - MacAuditView (Work Strategic Roadmap & Deliverables Studio)
 
-enum GoalCategory: String, CaseIterable, Identifiable {
-    case health   = "Health & Fitness"
-    case craft    = "Craft & Career"
-    case mind     = "Mind & Growth"
-    case finance  = "Wealth & Finance"
-    case personal = "Personal Growth"
-
-    var id: String { rawValue }
-
-    var icon: String {
-        switch self {
-        case .health:   return "figure.run"
-        case .craft:    return "laptopcomputer"
-        case .mind:     return "book.closed.fill"
-        case .finance:  return "chart.line.uptrend.xyaxis"
-        case .personal: return "target"
-        }
-    }
-}
-
-// MARK: - MacAuditView (Minimalist Executive Strategic Goals & Milestones)
-
-/// Dedicated Strategic Milestone Roadmap Studio for macOS following LOCA's sleek, unified minimalist design.
+/// Dedicated Strategic Milestone Roadmap Studio for macOS following PLUTO's sleek, unified minimalist design.
 struct MacAuditView: View {
 
     @AppStorage("mac_audit_selected_horizon") var selectedHorizon: HorizonCategory = .all
@@ -62,7 +40,7 @@ struct MacAuditView: View {
     struct DetailedGoalItem: Identifiable, Equatable {
         let id: String
         var title: String
-        var category: GoalCategory
+        var customTag: String // Freeform custom project or domain tag
         var horizon: HorizonCategory
         var progress: Double // 0.0 to 1.0
         var targetDate: String
@@ -73,49 +51,48 @@ struct MacAuditView: View {
     @State private var goals: [DetailedGoalItem] = [
         DetailedGoalItem(
             id: "1",
-            title: "Run First Half-Marathon (21.1 km)",
-            category: .health,
+            title: "Ship PLUTO Sovereign OS Version 5.0",
+            customTag: "ENGINEERING",
             horizon: .quarter,
-            progress: 0.40,
-            targetDate: "October 2026",
-            engineHabit: "Morning Run · 5 km / day",
+            progress: 0.80,
+            targetDate: "September 2026",
+            engineHabit: "Deep Focus Coding · 90 min",
             checkpoints: [
-                MilestoneCheckpoint(id: "c1", title: "Build 5 km continuous aerobic base", isDone: true),
-                MilestoneCheckpoint(id: "c2", title: "Complete 10 km weekend long run", isDone: true),
-                MilestoneCheckpoint(id: "c3", title: "15 km steady-state threshold pacing", isDone: false),
-                MilestoneCheckpoint(id: "c4", title: "Race day simulation (18 km)", isDone: false),
-                MilestoneCheckpoint(id: "c5", title: "Official Half-Marathon Finish Line", isDone: false)
+                MilestoneCheckpoint(id: "l1", title: "Local-First SwiftData schema architecture", isDone: true),
+                MilestoneCheckpoint(id: "l2", title: "Habit Heatmap & Streak Calculation engine", isDone: true),
+                MilestoneCheckpoint(id: "l3", title: "4-Pillar Executive navigation consolidation", isDone: true),
+                MilestoneCheckpoint(id: "l4", title: "Native Acoustic Audio & Sound Engine integration", isDone: true),
+                MilestoneCheckpoint(id: "l5", title: "App Store production release & TestFlight", isDone: false)
             ]
         ),
         DetailedGoalItem(
             id: "2",
-            title: "Ship PLUTO App Version 3.5",
-            category: .craft,
+            title: "Close Enterprise & Creator Alpha Pipeline",
+            customTag: "REVENUE",
             horizon: .quarter,
-            progress: 0.80,
-            targetDate: "September 2026",
-            engineHabit: "Deep Focus Coding · 60 min",
+            progress: 0.40,
+            targetDate: "October 2026",
+            engineHabit: "Strategic Prospecting · 45 min",
             checkpoints: [
-                MilestoneCheckpoint(id: "l1", title: "Local-First SwiftData schema architecture", isDone: true),
-                MilestoneCheckpoint(id: "l2", title: "Habit Heatmap & Streak Calculation engine", isDone: true),
-                MilestoneCheckpoint(id: "l3", title: "Nocturnal Sleep Timeline & Matrix", isDone: true),
-                MilestoneCheckpoint(id: "l4", title: "Life & Audit Suite layouts polish", isDone: true),
-                MilestoneCheckpoint(id: "l5", title: "TestFlight beta & App Store release", isDone: false)
+                MilestoneCheckpoint(id: "c1", title: "Develop sovereign offline demo deck", isDone: true),
+                MilestoneCheckpoint(id: "c2", title: "Conduct 10 executive customer interviews", isDone: true),
+                MilestoneCheckpoint(id: "c3", title: "Deploy private beta builds to early adopters", isDone: false),
+                MilestoneCheckpoint(id: "c4", title: "Achieve $10k Monthly Recurring Target", isDone: false)
             ]
         ),
         DetailedGoalItem(
             id: "3",
-            title: "Read 24 High-Impact Strategic Books",
-            category: .mind,
+            title: "Zero-Latency Local SwiftData Storage Core",
+            customTag: "ARCHITECTURE",
             horizon: .year,
             progress: 0.75,
             targetDate: "December 2026",
-            engineHabit: "High-Density Reading · 20 pages / day",
+            engineHabit: "System Architecture Audit · Weekly",
             checkpoints: [
-                MilestoneCheckpoint(id: "b1", title: "Complete Q1 Reading Sprint (6 books)", isDone: true),
-                MilestoneCheckpoint(id: "b2", title: "Complete Q2 Deep Tech & Philosophy (6 books)", isDone: true),
-                MilestoneCheckpoint(id: "b3", title: "Q3 Strategy & Biography Sprint (6 books)", isDone: true),
-                MilestoneCheckpoint(id: "b4", title: "Q4 Final Stretch (6 books)", isDone: false)
+                MilestoneCheckpoint(id: "b1", title: "Sub-0.2ms write benchmarks verified", isDone: true),
+                MilestoneCheckpoint(id: "b2", title: "Secure Enclave hardware biometric vault lock", isDone: true),
+                MilestoneCheckpoint(id: "b3", title: "Automated database migration unit tests", isDone: true),
+                MilestoneCheckpoint(id: "b4", title: "Zero-cloud air-gapped security certification", isDone: false)
             ]
         )
     ]
@@ -123,10 +100,10 @@ struct MacAuditView: View {
     // New Goal Creator State
     @State private var showingAddGoalSheet = false
     @State private var newGoalTitle = ""
-    @State private var newGoalCategory: GoalCategory = .health
+    @State private var newGoalCustomTag = "ENGINEERING"
     @State private var newGoalHorizon: HorizonCategory = .quarter
     @State private var newGoalTargetDate = "October 2026"
-    @State private var newGoalEngineHabit = "Daily Keystone Habit"
+    @State private var newGoalEngineHabit = "Deep Work Focus · 90 min"
 
     // Inline Card Point Addition State
     @State private var addingPointGoalId: String? = nil
@@ -137,7 +114,20 @@ struct MacAuditView: View {
     @State private var editedTitleText: String = ""
 
     private var accentColor: Color {
-        ColorPalette[selectedAccentIndex]
+        let palette: [Color] = [
+            Color(red: 0.95, green: 0.77, blue: 0.25),
+            Color(red: 0.35, green: 0.65, blue: 0.95),
+            Color(red: 0.85, green: 0.40, blue: 0.40),
+            Color(red: 0.45, green: 0.85, blue: 0.55),
+            Color(red: 0.75, green: 0.55, blue: 0.95),
+            Color(red: 0.95, green: 0.55, blue: 0.35),
+            Color(red: 0.30, green: 0.85, blue: 0.80),
+            Color(red: 0.80, green: 0.80, blue: 0.85),
+        ]
+        if selectedAccentIndex >= 0 && selectedAccentIndex < palette.count {
+            return palette[selectedAccentIndex]
+        }
+        return palette[0]
     }
 
     private var filteredGoals: [DetailedGoalItem] {
@@ -156,6 +146,7 @@ struct MacAuditView: View {
                     ForEach(HorizonCategory.allCases) { horizon in
                         Button {
                             selectedHorizon = horizon
+                            PlutoSoundEngine.shared.play(.tabSwitch)
                             Haptics.impact(.light)
                         } label: {
                             HStack {
@@ -197,8 +188,10 @@ struct MacAuditView: View {
                 // + New Goal Action Button
                 Button {
                     newGoalTitle = ""
+                    newGoalCustomTag = "ENGINEERING"
                     newGoalHorizon = selectedHorizon == .all ? .quarter : selectedHorizon
                     showingAddGoalSheet = true
+                    PlutoSoundEngine.shared.play(.tabSwitch)
                     Haptics.impact(.light)
                 } label: {
                     HStack(spacing: 5) {
@@ -263,26 +256,28 @@ struct MacAuditView: View {
         .background(DS.Color.background)
     }
 
-    // MARK: - New Goal Modal
+    // MARK: - New Goal Modal (Spacious Executive Custom Creator)
 
     private var newGoalStudioModal: some View {
-        VStack(alignment: .leading, spacing: DS.Space.lg) {
+        VStack(alignment: .leading, spacing: 20) {
+
+            // Modal Header
             HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("New Goal")
-                        .font(DS.Text.title)
-                        .fontWeight(.bold)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("New Work Objective")
+                        .font(.system(size: 18, weight: .bold))
                         .foregroundStyle(DS.Color.textPrimary)
-                    Text("Define your objective and anchor it to habit execution.")
-                        .font(DS.Text.caption)
+                    Text("Define your strategic deliverable and execution habit.")
+                        .font(.system(size: 12))
                         .foregroundStyle(DS.Color.textSecondary)
                 }
                 Spacer()
                 Button {
+                    PlutoSoundEngine.shared.play(.tabSwitch)
                     showingAddGoalSheet = false
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 16))
+                        .font(.system(size: 18))
                         .foregroundStyle(DS.Color.textTertiary)
                 }
                 .buttonStyle(.plain)
@@ -290,36 +285,62 @@ struct MacAuditView: View {
 
             Divider()
 
+            // 1. Goal Title Field
             VStack(alignment: .leading, spacing: 6) {
-                Text("GOAL TITLE")
-                    .font(.system(size: 9, weight: .bold))
+                Text("STRATEGIC OBJECTIVE TITLE")
+                    .font(.system(size: 10, weight: .heavy, design: .monospaced))
                     .foregroundStyle(DS.Color.textTertiary)
-                    .tracking(0.6)
 
-                TextField("What do you want to achieve? (e.g. Build $10k MRR App)…", text: $newGoalTitle)
-                    .font(.system(size: 14, weight: .semibold))
+                TextField("e.g. Ship PLUTO Version 5.0 Release", text: $newGoalTitle)
+                    .font(.system(size: 13, weight: .semibold))
                     .textFieldStyle(.roundedBorder)
             }
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text("CATEGORY")
-                    .font(.system(size: 9, weight: .bold))
+            // 2. Custom Project / Domain Tag Field
+            VStack(alignment: .leading, spacing: 8) {
+                Text("CUSTOM WORK CATEGORY / PROJECT TAG")
+                    .font(.system(size: 10, weight: .heavy, design: .monospaced))
                     .foregroundStyle(DS.Color.textTertiary)
-                    .tracking(0.6)
 
-                Picker("Category", selection: $newGoalCategory) {
-                    ForEach(GoalCategory.allCases) { cat in
-                        Label(cat.rawValue, systemImage: cat.icon).tag(cat)
+                TextField("Type any custom tag (e.g. ENGINEERING, PRODUCT, CLIENT ALPHA)", text: $newGoalCustomTag)
+                    .font(.system(size: 13, weight: .medium))
+                    .textFieldStyle(.roundedBorder)
+
+                // Quick Suggestion Chips
+                HStack(spacing: 6) {
+                    Text("Quick tags:")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(DS.Color.textTertiary)
+
+                    let presets = ["ENGINEERING", "PRODUCT", "REVENUE", "DESIGN", "OPERATIONS", "CLIENT"]
+                    ForEach(presets, id: \.self) { preset in
+                        Button {
+                            newGoalCustomTag = preset
+                            PlutoSoundEngine.shared.play(.checkmark)
+                            Haptics.impact(.light)
+                        } label: {
+                            Text(preset)
+                                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 3)
+                                .background(newGoalCustomTag == preset ? accentColor.opacity(0.2) : DS.Color.surfaceRecessed)
+                                .foregroundStyle(newGoalCustomTag == preset ? accentColor : DS.Color.textSecondary)
+                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .stroke(newGoalCustomTag == preset ? accentColor : DS.Color.border.opacity(0.4), lineWidth: 1)
+                                )
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
-                .pickerStyle(.menu)
             }
 
+            // 3. Horizon Segmented Control
             VStack(alignment: .leading, spacing: 6) {
-                Text("HORIZON")
-                    .font(.system(size: 9, weight: .bold))
+                Text("HORIZON TIMEFRAME")
+                    .font(.system(size: 10, weight: .heavy, design: .monospaced))
                     .foregroundStyle(DS.Color.textTertiary)
-                    .tracking(0.6)
 
                 Picker("Horizon", selection: $newGoalHorizon) {
                     ForEach(HorizonCategory.allCases.filter { $0 != .all }) { h in
@@ -329,18 +350,19 @@ struct MacAuditView: View {
                 .pickerStyle(.segmented)
             }
 
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("TARGET TIMEFRAME")
-                        .font(.system(size: 9, weight: .bold))
+            // 4. Target Deadline & Execution Habit
+            HStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("TARGET DEADLINE")
+                        .font(.system(size: 10, weight: .heavy, design: .monospaced))
                         .foregroundStyle(DS.Color.textTertiary)
                     TextField("e.g. October 2026", text: $newGoalTargetDate)
                         .textFieldStyle(.roundedBorder)
                 }
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("ENGINE HABIT")
-                        .font(.system(size: 9, weight: .bold))
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("EXECUTION HABIT")
+                        .font(.system(size: 10, weight: .heavy, design: .monospaced))
                         .foregroundStyle(DS.Color.textTertiary)
                     TextField("e.g. Deep Work 90m", text: $newGoalEngineHabit)
                         .textFieldStyle(.roundedBorder)
@@ -349,6 +371,7 @@ struct MacAuditView: View {
 
             Divider()
 
+            // Footer Actions
             HStack {
                 Button("Cancel") {
                     showingAddGoalSheet = false
@@ -361,11 +384,11 @@ struct MacAuditView: View {
                 Button {
                     createGoalFromModal()
                 } label: {
-                    Text("Create Goal")
+                    Text("Create Work Goal")
                         .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(Color.white)
+                        .foregroundStyle(Color.black)
                         .padding(.horizontal, 16)
-                        .padding(.vertical, 6)
+                        .padding(.vertical, 7)
                         .background(accentColor, in: RoundedRectangle(cornerRadius: 6))
                 }
                 .buttonStyle(.plain)
@@ -373,8 +396,8 @@ struct MacAuditView: View {
                 .keyboardShortcut(.return, modifiers: [])
             }
         }
-        .padding(DS.Space.xl)
-        .frame(width: 440)
+        .padding(28)
+        .frame(width: 520)
         .background(DS.Color.surface)
     }
 
@@ -382,23 +405,26 @@ struct MacAuditView: View {
         let trimmedTitle = newGoalTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedTitle.isEmpty else { return }
 
+        let tag = newGoalCustomTag.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "WORK" : newGoalCustomTag.uppercased()
+
         let newGoal = DetailedGoalItem(
             id: UUID().uuidString,
             title: trimmedTitle,
-            category: newGoalCategory,
+            customTag: tag,
             horizon: newGoalHorizon,
             progress: 0.0,
             targetDate: newGoalTargetDate,
             engineHabit: newGoalEngineHabit,
             checkpoints: [
-                MilestoneCheckpoint(id: UUID().uuidString, title: "Initial milestone kickoff", isDone: false),
-                MilestoneCheckpoint(id: UUID().uuidString, title: "Core benchmark achieved", isDone: false),
-                MilestoneCheckpoint(id: UUID().uuidString, title: "Final target completed", isDone: false)
+                MilestoneCheckpoint(id: UUID().uuidString, title: "Kickoff & architecture design", isDone: false),
+                MilestoneCheckpoint(id: UUID().uuidString, title: "Core implementation sprint", isDone: false),
+                MilestoneCheckpoint(id: UUID().uuidString, title: "Final testing & production deploy", isDone: false)
             ]
         )
 
         goals.insert(newGoal, at: 0)
         showingAddGoalSheet = false
+        PlutoSoundEngine.shared.play(.checkmark)
         Haptics.impact(.rigid)
     }
 
@@ -407,18 +433,21 @@ struct MacAuditView: View {
     private func minimalistGoalCard(_ goal: DetailedGoalItem) -> some View {
         VStack(alignment: .leading, spacing: 12) {
 
-            // Header Row: Category / Horizon Tag + Title + Steppers + Trash
+            // Header Row: Custom Tag / Horizon + Title + Steppers + Trash
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
-                        Image(systemName: goal.category.icon)
+                        Image(systemName: "briefcase.fill")
                             .font(.system(size: 10))
-                            .foregroundStyle(DS.Color.textSecondary)
+                            .foregroundStyle(accentColor)
 
-                        Text(goal.category.rawValue.uppercased())
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(DS.Color.textSecondary)
-                            .tracking(0.6)
+                        Text(goal.customTag.uppercased())
+                            .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(accentColor.opacity(0.15))
+                            .foregroundStyle(accentColor)
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
 
                         Text("· \(goal.horizon.rawValue)")
                             .font(.system(size: 9, weight: .medium))
@@ -473,6 +502,7 @@ struct MacAuditView: View {
                     Button {
                         if let idx = goals.firstIndex(where: { $0.id == goal.id }) {
                             goals[idx].progress = max(0.0, goals[idx].progress - 0.05)
+                            PlutoSoundEngine.shared.play(.checkmark)
                             Haptics.impact(.light)
                         }
                     } label: {
@@ -493,6 +523,11 @@ struct MacAuditView: View {
                     Button {
                         if let idx = goals.firstIndex(where: { $0.id == goal.id }) {
                             goals[idx].progress = min(1.0, goals[idx].progress + 0.05)
+                            if goals[idx].progress >= 1.0 {
+                                PlutoSoundEngine.shared.play(.summitPassport)
+                            } else {
+                                PlutoSoundEngine.shared.play(.checkmark)
+                            }
                             Haptics.impact(.light)
                         }
                     } label: {
@@ -508,6 +543,7 @@ struct MacAuditView: View {
                     Button {
                         if let idx = goals.firstIndex(where: { $0.id == goal.id }) {
                             goals.remove(at: idx)
+                            PlutoSoundEngine.shared.play(.deleteTrash)
                             Haptics.impact(.light)
                         }
                     } label: {
@@ -529,7 +565,7 @@ struct MacAuditView: View {
                         .frame(height: 4)
 
                     RoundedRectangle(cornerRadius: 2)
-                        .fill(DS.Color.success)
+                        .fill(accentColor)
                         .frame(width: max(0, p.size.width * CGFloat(goal.progress)), height: 4)
                 }
             }
@@ -561,7 +597,7 @@ struct MacAuditView: View {
                             } label: {
                                 Image(systemName: cp.isDone ? "checkmark.circle.fill" : "circle")
                                     .font(.system(size: 13))
-                                    .foregroundStyle(cp.isDone ? DS.Color.success : DS.Color.textTertiary)
+                                    .foregroundStyle(cp.isDone ? accentColor : DS.Color.textTertiary)
                             }
                             .buttonStyle(.plain)
 
@@ -655,7 +691,7 @@ struct MacAuditView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "bolt.fill")
                         .font(.system(size: 10))
-                        .foregroundStyle(DS.Color.textTertiary)
+                        .foregroundStyle(accentColor)
 
                     Text("Engine Habit: \(goal.engineHabit)")
                         .font(.system(size: 11, weight: .semibold))
@@ -676,6 +712,7 @@ struct MacAuditView: View {
            let cIdx = goals[gIdx].checkpoints.firstIndex(where: { $0.id == checkpointId }) {
             goals[gIdx].checkpoints[cIdx].isDone.toggle()
             recalculateProgress(goalIdx: gIdx)
+            PlutoSoundEngine.shared.play(.checkmark)
             Haptics.impact(.rigid)
         }
     }
@@ -684,6 +721,7 @@ struct MacAuditView: View {
         if let gIdx = goals.firstIndex(where: { $0.id == goalId }) {
             goals[gIdx].checkpoints.removeAll { $0.id == checkpointId }
             recalculateProgress(goalIdx: gIdx)
+            PlutoSoundEngine.shared.play(.deleteTrash)
             Haptics.impact(.light)
         }
     }
@@ -700,6 +738,7 @@ struct MacAuditView: View {
             goals[gIdx].checkpoints.append(newCP)
             recalculateProgress(goalIdx: gIdx)
             inlinePointText = ""
+            PlutoSoundEngine.shared.play(.checkmark)
             Haptics.impact(.light)
         }
     }
