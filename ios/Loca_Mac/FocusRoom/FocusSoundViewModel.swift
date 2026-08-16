@@ -31,7 +31,7 @@ final class FocusSoundViewModel: ObservableObject {
     @Published var youtubeVolume: Double = 0.5
 
     // Multi-Track Procedural Audio Engine
-    private let audioEngine = AVAudioEngine()
+    private var audioEngine = AVAudioEngine()
     private var mixerNodes: [String: AVAudioMixerNode] = [:]
     private var sourceNodes: [String: AVAudioSourceNode] = [:]
     private var isEngineStarted: Bool = false
@@ -49,8 +49,70 @@ final class FocusSoundViewModel: ObservableObject {
     private var libraryPhase: Float = 0.0
     private var pianoPhase: Float = 0.0
 
+    private var cancellables = Set<AnyCancellable>()
+
     init() {
         setupMultiTrackEngine()
+        setupAudioObservers()
+    }
+
+    private func setupAudioObservers() {
+        NotificationCenter.default.publisher(for: .AVAudioEngineConfigurationChange, object: audioEngine)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.handleEngineConfigurationChange()
+            }
+            .store(in: &cancellables)
+
+        #if os(iOS)
+        NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let userInfo = notification.userInfo,
+                      let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
+                      let type = AVAudioSession.InterruptionType(rawValue: typeValue) else { return }
+
+                if type == .ended {
+                    if let optionsValue = userInfo[AVAudioSessionInterruptionOptionKey] as? UInt {
+                        let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
+                        if options.contains(.shouldResume) {
+                            self?.checkEngineRunning()
+                        }
+                    }
+                }
+            }
+            .store(in: &cancellables)
+        #endif
+    }
+
+    private func handleEngineConfigurationChange() {
+        let wasRunning = isEngineStarted
+        audioEngine.stop()
+        isEngineStarted = false
+
+        // Detach old nodes cleanly
+        for (_, node) in sourceNodes {
+            audioEngine.detach(node)
+        }
+        for (_, node) in mixerNodes {
+            audioEngine.detach(node)
+        }
+        sourceNodes.removeAll()
+        mixerNodes.removeAll()
+
+        // Rebuild graph with new output route hardware sample rate
+        setupMultiTrackEngine()
+
+        // Restore volumes
+        for track in tracks {
+            if !track.isMuted && !isAllPaused {
+                applyVolume(trackID: track.id, volume: track.volume)
+            }
+        }
+
+        if wasRunning && !isAllPaused {
+            checkEngineRunning()
+        }
     }
 
     private func setupMultiTrackEngine() {
@@ -106,7 +168,6 @@ final class FocusSoundViewModel: ObservableObject {
             sourceNodes[trackID] = source
         }
 
-        // Keep engine completely stopped at start until user increases volume
         isEngineStarted = false
     }
 
@@ -117,63 +178,55 @@ final class FocusSoundViewModel: ObservableObject {
 
         switch trackID {
         case "lofi":
-            // Warm lo-fi minor chord with gentle tape flutter LFO & vinyl crackle
-            lofiPhase += 2.0 * .pi * 174.61 * dt // F3 base
-            let flutter = sin(lofiPhase * 0.05) * 1.5
-            let tone1 = sin(lofiPhase + flutter) * 0.4
-            let tone2 = sin(lofiPhase * 1.2599 + flutter) * 0.3 // Ab3
-            let tone3 = sin(lofiPhase * 1.4983 + flutter) * 0.25 // C4
-            let tone4 = sin(lofiPhase * 1.8877 + flutter) * 0.2 // Eb4
-            let vinyl = (Float.random(in: -1...1) > 0.998 ? Float.random(in: -0.4...0.4) : 0.0)
-            return (tone1 + tone2 + tone3 + tone4 + vinyl) * 0.35
+            lofiPhase += 2.0 * .pi * 174.61 * dt // F3 warm root note
+            if lofiPhase > 2.0 * .pi { lofiPhase -= 2.0 * .pi }
+            let base = sin(lofiPhase) * 0.4
+            let vinyl = Float.random(in: -1.0...1.0) * (Float.random(in: 0...1) > 0.985 ? 0.25 : 0.015)
+            return (base + vinyl) * 0.35
 
         case "nature":
-            // Forest breeze wind with pink noise filtering and slow LFO
-            natureLfo += 2.0 * .pi * 0.12 * dt
-            let white = Float.random(in: -1...1)
+            natureLfo += 2.0 * .pi * 0.2 * dt
+            if natureLfo > 2.0 * .pi { natureLfo -= 2.0 * .pi }
+            let white = Float.random(in: -1.0...1.0)
             naturePink = 0.95 * naturePink + 0.05 * white
-            let wind = (sin(natureLfo) * 0.5 + 0.5) * naturePink
-            return wind * 0.5
+            let rustle = naturePink * (0.5 + 0.5 * sin(natureLfo))
+            return rustle * 0.3
 
         case "rain":
-            // Dense rain & gentle downpour
-            let white = Float.random(in: -1...1)
+            let white = Float.random(in: -1.0...1.0)
             rainB0 = 0.99765 * rainB0 + white * 0.0990460
             rainB1 = 0.96300 * rainB1 + white * 0.2965164
             rainB2 = 0.57000 * rainB2 + white * 1.0526913
-            let rainSample = (rainB0 + rainB1 + rainB2 + white * 0.1848) * 0.08
-            let droplet = (Float.random(in: -1...1) > 0.995 ? Float.random(in: -0.3...0.3) : 0.0)
-            return (rainSample + droplet) * 0.45
+            let pink = (rainB0 + rainB1 + rainB2 + white * 0.1848) * 0.05
+            let drop = Float.random(in: 0...1) > 0.998 ? Float.random(in: 0.2...0.6) : 0.0
+            return (pink + drop) * 0.35
 
         case "fireplace":
-            // Warm low-frequency hearth rumble + random wood crackle pops
-            fireHumPhase += 2.0 * .pi * 75.0 * dt
-            let hum = sin(fireHumPhase) * 0.15 + sin(fireHumPhase * 1.6) * 0.08
-            let pop = (Float.random(in: -1...1) > 0.993 ? Float.random(in: -0.6...0.6) : 0.0)
-            let hiss = Float.random(in: -0.05...0.05)
-            return (hum + pop + hiss) * 0.5
+            fireHumPhase += 2.0 * .pi * 55.0 * dt
+            if fireHumPhase > 2.0 * .pi { fireHumPhase -= 2.0 * .pi }
+            let hum = sin(fireHumPhase) * 0.15
+            let crackle = Float.random(in: 0...1) > 0.996 ? Float.random(in: 0.4...0.8) : 0.0
+            return (hum + crackle) * 0.4
 
         case "library":
-            // Resonant 432Hz alpha calm ambient room acoustic tone
-            libraryPhase += 2.0 * .pi * 432.0 * dt
-            let alphaTone = sin(libraryPhase) * 0.2 + sin(libraryPhase * 0.5) * 0.25
-            let roomAir = Float.random(in: -0.08...0.08)
-            return (alphaTone + roomAir) * 0.35
+            libraryPhase += 2.0 * .pi * 0.05 * dt
+            if libraryPhase > 2.0 * .pi { libraryPhase -= 2.0 * .pi }
+            let white = Float.random(in: -1.0...1.0) * 0.08
+            return white * (0.6 + 0.4 * sin(libraryPhase)) * 0.25
 
         case "piano":
-            // Warm rhodes electric piano harmonic tone
-            pianoPhase += 2.0 * .pi * 261.63 * dt // C4
-            let p1 = sin(pianoPhase) * 0.35
-            let p2 = sin(pianoPhase * 2.0) * 0.2
-            let p3 = sin(pianoPhase * 3.0) * 0.1
-            return (p1 + p2 + p3) * 0.4
+            pianoPhase += 2.0 * .pi * 261.63 * dt // Middle C harmonic
+            if pianoPhase > 2.0 * .pi { pianoPhase -= 2.0 * .pi }
+            let harmonic1 = sin(pianoPhase) * 0.3
+            let harmonic2 = sin(pianoPhase * 2.0) * 0.15
+            return (harmonic1 + harmonic2) * 0.3
 
         default:
             return 0.0
         }
     }
 
-    // MARK: - Public Volume & Mute Controls
+    // MARK: - Public Control API
 
     func setVolume(for trackID: String, volume: Float) {
         guard let index = tracks.firstIndex(where: { $0.id == trackID }) else { return }
