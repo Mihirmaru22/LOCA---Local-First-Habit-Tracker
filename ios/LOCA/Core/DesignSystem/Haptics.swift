@@ -8,10 +8,10 @@ import UIKit
 import AppKit
 #endif
 
-// MARK: - Haptics (Cross-Platform iOS & macOS Force Touch Trackpad Engine)
+// MARK: - Haptics (Cross-Platform iOS & macOS Force Touch Trackpad Engine — Completely Silent)
 
 /// Centralized haptic feedback for iOS Taptic Engine and macOS Force Touch Trackpad (`NSHapticFeedbackManager`).
-/// Provides tactile feedback when completing habits, tasks, timeline snapping, and goal checkpoints.
+/// 100% silent — zero audio sounds or speaker effects.
 enum Haptics {
 
     /// Physical impact — a value committed, a check-in logged, a row removed.
@@ -19,7 +19,7 @@ enum Haptics {
         case light, medium, rigid, soft
     }
 
-    /// Fire a physical impact on iOS Taptic Engine or macOS Trackpad.
+    /// Fire a physical impact on iOS Taptic Engine or macOS Trackpad (completely silent).
     static func impact(_ style: Impact) {
         guard UserDefaults.standard.object(forKey: "hapticsEnabled") == nil
               || UserDefaults.standard.bool(forKey: "hapticsEnabled") else { return }
@@ -37,18 +37,8 @@ enum Haptics {
         switch style {
         case .light, .soft, .medium:
             NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
-            if UserDefaults.standard.object(forKey: "mac_sound_effects_enabled") == nil || UserDefaults.standard.bool(forKey: "mac_sound_effects_enabled") {
-                if let snd = NSSound(named: "Tink") {
-                    snd.play()
-                }
-            }
         case .rigid:
             NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .now)
-            if UserDefaults.standard.object(forKey: "mac_sound_effects_enabled") == nil || UserDefaults.standard.bool(forKey: "mac_sound_effects_enabled") {
-                if let snd = NSSound(named: "Pop") {
-                    snd.play()
-                }
-            }
         }
         #endif
     }
@@ -62,11 +52,6 @@ enum Haptics {
         UISelectionFeedbackGenerator().selectionChanged()
         #elseif canImport(AppKit)
         NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now)
-        if UserDefaults.standard.object(forKey: "mac_sound_effects_enabled") == nil || UserDefaults.standard.bool(forKey: "mac_sound_effects_enabled") {
-            if let snd = NSSound(named: "Pop") {
-                snd.play()
-            }
-        }
         #endif
     }
 
@@ -75,7 +60,7 @@ enum Haptics {
         case success, warning, error
     }
 
-    /// Fire an outcome notification — e.g. `.success` when a check-in crosses its goal.
+    /// Fire an outcome notification — completely silent.
     static func notify(_ type: Notify) {
         guard UserDefaults.standard.object(forKey: "hapticsEnabled") == nil
               || UserDefaults.standard.bool(forKey: "hapticsEnabled") else { return }
@@ -89,27 +74,10 @@ enum Haptics {
         }
         #elseif canImport(AppKit)
         switch type {
-        case .success:
+        case .success, .error:
             NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .now)
-            if UserDefaults.standard.object(forKey: "mac_sound_effects_enabled") == nil || UserDefaults.standard.bool(forKey: "mac_sound_effects_enabled") {
-                if let snd = NSSound(named: "Hero") {
-                    snd.play()
-                }
-            }
-        case .error:
-            NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .now)
-            if UserDefaults.standard.object(forKey: "mac_sound_effects_enabled") == nil || UserDefaults.standard.bool(forKey: "mac_sound_effects_enabled") {
-                if let snd = NSSound(named: "Basso") {
-                    snd.play()
-                }
-            }
         case .warning:
             NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
-            if UserDefaults.standard.object(forKey: "mac_sound_effects_enabled") == nil || UserDefaults.standard.bool(forKey: "mac_sound_effects_enabled") {
-                if let snd = NSSound(named: "Ping") {
-                    snd.play()
-                }
-            }
         }
         #endif
     }
