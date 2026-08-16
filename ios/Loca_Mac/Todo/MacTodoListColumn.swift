@@ -140,20 +140,45 @@ private struct List1BentoCardsView: View {
 
     private var completedSection: some View {
         VStack(spacing: 6) {
-            Button {
-                withAnimation(.easeInOut(duration: 0.15)) { showCompleted.toggle() }
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: showCompleted ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 9, weight: .bold))
-                    Text(showCompleted ? "Hide completed" : "\(doneItems.count) completed tasks")
-                        .font(DS.Text.caption)
-                    Spacer()
+            HStack(spacing: 6) {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.15)) { showCompleted.toggle() }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: showCompleted ? "chevron.up" : "chevron.down")
+                            .font(.system(size: 9, weight: .bold))
+                        Text(showCompleted ? "Hide completed" : "\(doneItems.count) completed tasks")
+                            .font(DS.Text.caption)
+                    }
+                    .foregroundStyle(DS.Color.textTertiary)
                 }
-                .foregroundStyle(DS.Color.textTertiary)
-                .padding(.vertical, 4)
+                .buttonStyle(.plain)
+
+                Spacer()
+
+                Button {
+                    for item in doneItems {
+                        item.archivedAt = Date()
+                    }
+                    try? modelContext.save()
+                    PlutoSoundEngine.shared.play(.deleteTrash)
+                    Haptics.impact(.medium)
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "trash")
+                            .font(.system(size: 9))
+                        Text("Clear Completed")
+                            .font(.system(size: 10, weight: .semibold))
+                    }
+                    .foregroundStyle(Color.red.opacity(0.85))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.red.opacity(0.1), in: RoundedRectangle(cornerRadius: 4))
+                }
+                .buttonStyle(.plain)
+                .help("Delete all completed tasks")
             }
-            .buttonStyle(.plain)
+            .padding(.vertical, 4)
 
             if showCompleted {
                 ForEach(doneItems, id: \.id) { item in
@@ -251,6 +276,22 @@ private struct List1CardRow: View {
             }
 
             Spacer()
+
+            // Delete Trash Button
+            if item.isCompleted || isHovered {
+                Button {
+                    item.archivedAt = Date()
+                    try? modelContext.save()
+                    PlutoSoundEngine.shared.play(.deleteTrash)
+                    Haptics.impact(.light)
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.system(size: 11))
+                        .foregroundStyle(item.isCompleted ? Color.red.opacity(0.8) : DS.Color.textTertiary)
+                }
+                .buttonStyle(.plain)
+                .help("Delete task")
+            }
 
             // Priority Indicator Pill
             if item.priority > 0 {

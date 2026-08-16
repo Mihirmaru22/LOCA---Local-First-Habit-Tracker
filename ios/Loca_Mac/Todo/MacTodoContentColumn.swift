@@ -15,6 +15,7 @@ import SwiftData
 enum TodoMode: String, CaseIterable, Identifiable {
     case plan = "Plan"
     case list = "List"
+    case time = "Time"
     var id: String { rawValue }
 }
 
@@ -22,10 +23,10 @@ enum TodoMode: String, CaseIterable, Identifiable {
 
 /// Middle column of the Mac three-pane layout for the Today (Todo) section.
 ///
-/// A segmented `Picker` at the top switches between the two sub-pillars,
-/// mirroring the Journal section's Collect / Analyse toggle. `selection` is
-/// threaded up to `MacRootView` so the detail column shows the chosen task
-/// regardless of which sub-pillar surfaced it.
+/// A segmented `Picker` at the top switches between the three sub-pillars:
+/// - Plan: Time-blocked day planner
+/// - List: GTD-style task queues
+/// - Time: Cinematic Pomodoro, Stopwatch & Flow Studio
 struct MacTodoContentColumn: View {
 
     @Binding var selection: TodoItem?
@@ -46,7 +47,7 @@ struct MacTodoContentColumn: View {
 
             Divider()
 
-            // Plan ↔ List crossfade with directional slide
+            // Plan ↔ List ↔ Time crossfade
             ZStack {
                 if mode == .plan {
                     MacDayPlannerColumn(selection: $selection)
@@ -54,8 +55,14 @@ struct MacTodoContentColumn: View {
                             insertion: .opacity.combined(with: .move(edge: .leading)),
                             removal:   .opacity.combined(with: .move(edge: .trailing))
                         ))
-                } else {
+                } else if mode == .list {
                     MacTodoListColumn(selection: $selection)
+                        .transition(.asymmetric(
+                            insertion: .opacity.combined(with: .move(edge: .trailing)),
+                            removal:   .opacity.combined(with: .move(edge: .leading))
+                        ))
+                } else {
+                    MacTimeView()
                         .transition(.asymmetric(
                             insertion: .opacity.combined(with: .move(edge: .trailing)),
                             removal:   .opacity.combined(with: .move(edge: .leading))

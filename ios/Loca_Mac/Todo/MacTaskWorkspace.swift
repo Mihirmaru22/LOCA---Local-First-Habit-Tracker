@@ -350,6 +350,17 @@ struct MacBlockEditor: View {
     
     var body: some View {
         ZStack(alignment: .topLeading) {
+            // Dismiss slash menu on outside click
+            if activeSlashBlockID != nil {
+                Color.black.opacity(0.001)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        closeSlashMenu()
+                    }
+                    .zIndex(50)
+            }
+
             VStack(alignment: .leading, spacing: 8) {
                 ForEach(blocks) { block in
                     MacBlockRow(
@@ -499,11 +510,15 @@ struct MacBlockEditor: View {
         }
         
         if (currentBlock.type == .bullet || currentBlock.type == .numbered || currentBlock.type == .check || currentBlock.type == .subtask) && isEmpty {
-            // Also if subtask, we might want to archive the underlying TodoItem
+            // Revert empty list item to plain paragraph
             if currentBlock.type == .subtask, let child = childTodo(for: currentBlock) {
                 child.archivedAt = Date()
+                try? modelContext.save()
             }
             blocks[idx].type = .paragraph
+            blocks[idx].refID = nil
+            blocks[idx].text = ""
+            activeBlockID = blocks[idx].id
             return
         }
         
@@ -519,14 +534,18 @@ struct MacBlockEditor: View {
             let child = TodoItem(parentID: item.id)
             child.title = splitText
             modelContext.insert(child)
+            try? modelContext.save()
             localChildren[child.id] = child
             newBlock.refID = child.id
+            newBlock.text = ""
         } else {
             newBlock.text = splitText
         }
         
         blocks.insert(newBlock, at: idx + 1)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { activeBlockID = newBlock.id }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { 
+            activeBlockID = newBlock.id 
+        }
     }
     
     private func handleBackspace(from id: UUID) {
@@ -543,12 +562,15 @@ struct MacBlockEditor: View {
         
         if isEmpty {
             if block.type != .paragraph {
-                // Archive child TodoItem if this was a subtask
+                // Revert to plain paragraph and strip prefix symbol
                 if block.type == .subtask, let child = childTodo(for: block) {
                     child.archivedAt = Date()
+                    try? modelContext.save()
                 }
                 blocks[idx].type = .paragraph
                 blocks[idx].refID = nil
+                blocks[idx].text = ""
+                activeBlockID = blocks[idx].id
             } else if blocks.count > 1 {
                 blocks.remove(at: idx)
                 if idx > 0 { activeBlockID = blocks[idx - 1].id }
@@ -884,6 +906,7 @@ struct MacRichTextView: NSViewRepresentable {
                 if nsView.window?.firstResponder != nsView {
                     nsView.window?.makeFirstResponder(nsView)
                 }
+                nsView.setSelectedRange(NSRange(location: nsView.string.count, length: 0))
             }
         }
         context.coordinator.wasActive = isActive

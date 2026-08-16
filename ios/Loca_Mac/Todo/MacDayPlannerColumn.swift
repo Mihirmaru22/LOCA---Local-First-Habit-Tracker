@@ -894,6 +894,21 @@ extension MacDayPlannerColumn {
 
                 Spacer()
 
+                if task.isCompleted {
+                    Button {
+                        task.archivedAt = Date()
+                        try? modelContext.save()
+                        PlutoSoundEngine.shared.play(.deleteTrash)
+                        Haptics.impact(.light)
+                    } label: {
+                        Image(systemName: "trash")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.red.opacity(0.8))
+                    }
+                    .buttonStyle(.plain)
+                    .help("Delete completed task")
+                }
+
                 Button {
                     if task.isCompleted {
                         task.completedAt = nil
