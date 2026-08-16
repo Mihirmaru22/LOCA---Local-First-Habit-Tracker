@@ -621,20 +621,57 @@ struct MacGitHubCosmosCanvas: View {
     // MARK: - Placeholder Canvases (Sub-Phases 5.3 & 5.4)
 
     private func cosmosPreviewCanvas(geo: GeometryProxy) -> some View {
-        ZStack {
-            Color(red: 0.04, green: 0.05, blue: 0.08).edgesIgnoringSafeArea(.all)
+        ZStack(alignment: .trailing) {
+            // Main Interstellar Orbital Map Canvas
+            GitHubCosmosMapView(
+                repos: filteredRepos,
+                selectedRepo: selectedRepo,
+                onSelectRepo: { repo in
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        selectedRepo = repo
+                    }
+                }
+            )
 
-            VStack(spacing: DS.Space.md) {
-                Image(systemName: "sparkles.rectangle.stack.fill")
-                    .font(.system(size: 48))
-                    .foregroundStyle(Color.cyan)
-                Text("AI COSMOS & PLANETARY CONSTELLATION")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(DS.Color.textPrimary)
-                    .tracking(1.0)
-                Text("Sub-Phase 5.3: 3D Interstellar planetary nodes, glowing synapse beams, and dynamic terraforming.")
-                    .font(DS.Text.caption)
-                    .foregroundStyle(DS.Color.textTertiary)
+            // Floating Detail Drawer if a repo is selected
+            if let repo = selectedRepo {
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack {
+                        HStack(spacing: 6) {
+                            Image(systemName: repo.domain.icon)
+                                .foregroundStyle(repo.domain.accentColor)
+                            Text(repo.name)
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundStyle(DS.Color.textPrimary)
+                                .lineLimit(1)
+                        }
+
+                        Spacer()
+
+                        Button {
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                selectedRepo = nil
+                            }
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 15))
+                                .foregroundStyle(DS.Color.textTertiary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.bottom, DS.Space.xs)
+
+                    Divider()
+
+                    repoDetailInspector(repo: repo)
+                }
+                .padding(DS.Space.md)
+                .frame(width: 370)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.12), lineWidth: 1))
+                .shadow(color: Color.black.opacity(0.5), radius: 16)
+                .padding(DS.Space.lg)
+                .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
     }
