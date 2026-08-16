@@ -1,7 +1,7 @@
 import SwiftUI
 import WebKit
 
-// MARK: - YouTubeWebView (Cross-platform iOS & macOS with Official YouTube IFrame Player API)
+// MARK: - YouTubeWebView (Direct First-Party HTTP Navigation to eliminate Error 150/152/153)
 
 #if os(macOS)
 struct YouTubeWebView: NSViewRepresentable {
@@ -13,109 +13,68 @@ struct YouTubeWebView: NSViewRepresentable {
         config.mediaTypesRequiringUserActionForPlayback = []
         config.preferences.javaScriptCanOpenWindowsAutomatically = true
 
+        // Inject CSS & JS to hide YouTube controls and force 16:9 full cover
+        let css = """
+        * { margin: 0 !important; padding: 0 !important; overflow: hidden !important; }
+        body, html { width: 100vw !important; height: 100vh !important; background: #000 !important; }
+        .ytp-chrome-top, .ytp-chrome-bottom, .ytp-gradient-top, .ytp-gradient-bottom,
+        .ytp-pause-overlay, .ytp-youtube-button, .ytp-show-cards-title, .ytp-watermark,
+        .ytp-contextmenu, .ytp-cued-thumbnail-overlay {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+        video, .html5-main-video {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            object-fit: cover !important;
+        }
+        """
+        let userScript = WKUserScript(
+            source: """
+            var style = document.createElement('style');
+            style.innerHTML = `\(css)`;
+            document.head.appendChild(style);
+            
+            function ensurePlayback() {
+                var v = document.querySelector('video');
+                if (v) {
+                    v.loop = true;
+                    v.volume = \(volume);
+                    if (v.paused) { v.play(); }
+                }
+            }
+            setInterval(ensurePlayback, 1000);
+            """,
+            injectionTime: .atDocumentEnd,
+            forMainFrameOnly: false
+        )
+        config.userContentController.addUserScript(userScript)
+
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
-        loadVideoHTML(in: webView)
+        
+        loadDirectURL(in: webView)
         return webView
     }
 
     func updateNSView(_ nsView: WKWebView, context: Context) {
-        let js = "if (typeof setVolume === 'function') { setVolume(\(volume)); };"
+        let js = "var v = document.querySelector('video'); if (v) { v.volume = \(volume); };"
         nsView.evaluateJavaScript(js, completionHandler: nil)
     }
 
-    private func loadVideoHTML(in webView: WKWebView) {
-        let html = """
-        <!DOCTYPE html>
-        <html>
-        <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-        <style>
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
-          html, body {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #000000;
-          }
-          #player {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 100vw;
-            height: 100vh;
-            min-width: 177.77vh; /* 16:9 aspect cover */
-            min-height: 56.25vw;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-            border: none;
-          }
-        </style>
-        </head>
-        <body>
-          <div id="player"></div>
-          <script src="https://www.youtube.com/iframe_api"></script>
-          <script>
-            var player;
-            var targetVolume = \(Int(volume * 100));
-
-            function onYouTubeIframeAPIReady() {
-              player = new YT.Player('player', {
-                videoId: '\(videoID)',
-                playerVars: {
-                  'autoplay': 1,
-                  'mute': 1,
-                  'controls': 0,
-                  'showinfo': 0,
-                  'rel': 0,
-                  'loop': 1,
-                  'playlist': '\(videoID)',
-                  'playsinline': 1,
-                  'modestbranding': 1,
-                  'iv_load_policy': 3,
-                  'fs': 0,
-                  'disablekb': 1,
-                  'origin': 'https://www.youtube.com'
-                },
-                events: {
-                  'onReady': onPlayerReady,
-                  'onStateChange': onPlayerStateChange
-                }
-              });
-            }
-
-            function onPlayerReady(event) {
-              event.target.playVideo();
-              event.target.unMute();
-              event.target.setVolume(targetVolume);
-            }
-
-            function onPlayerStateChange(event) {
-              if (event.data === YT.PlayerState.ENDED) {
-                player.playVideo();
-              }
-            }
-
-            function setVolume(vol) {
-              targetVolume = Math.round(vol * 100);
-              if (player && player.setVolume) {
-                if (targetVolume > 0) {
-                  player.unMute();
-                  player.setVolume(targetVolume);
-                } else {
-                  player.mute();
-                }
-              }
-            }
-          </script>
-        </body>
-        </html>
-        """
-        webView.loadHTMLString(html, baseURL: URL(string: "https://www.youtube.com"))
+    private func loadDirectURL(in webView: WKWebView) {
+        // Direct first-party URL request with real Referer & Origin to avoid null origin Error 152/153
+        guard let url = URL(string: "https://www.youtube.com/embed/\(videoID)?autoplay=1&mute=0&controls=0&loop=1&playlist=\(videoID)&playsinline=1&modestbranding=1&rel=0&iv_load_policy=3&enablejsapi=1") else { return }
+        
+        var request = URLRequest(url: url)
+        request.setValue("https://www.youtube.com", forHTTPHeaderField: "Referer")
+        request.setValue("https://www.youtube.com", forHTTPHeaderField: "Origin")
+        webView.load(request)
     }
 }
 #else
@@ -128,108 +87,62 @@ struct YouTubeWebView: UIViewRepresentable {
         config.allowsInlineMediaPlayback = true
         config.mediaTypesRequiringUserActionForPlayback = []
 
+        let css = """
+        * { margin: 0 !important; padding: 0 !important; overflow: hidden !important; }
+        body, html { width: 100vw !important; height: 100vh !important; background: #000 !important; }
+        .ytp-chrome-top, .ytp-chrome-bottom, .ytp-gradient-top, .ytp-gradient-bottom,
+        .ytp-pause-overlay, .ytp-youtube-button, .ytp-show-cards-title, .ytp-watermark {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+        video, .html5-main-video {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            object-fit: cover !important;
+        }
+        """
+        let userScript = WKUserScript(
+            source: """
+            var style = document.createElement('style');
+            style.innerHTML = `\(css)`;
+            document.head.appendChild(style);
+            
+            function ensurePlayback() {
+                var v = document.querySelector('video');
+                if (v) {
+                    v.loop = true;
+                    v.volume = \(volume);
+                    if (v.paused) { v.play(); }
+                }
+            }
+            setInterval(ensurePlayback, 1000);
+            """,
+            injectionTime: .atDocumentEnd,
+            forMainFrameOnly: false
+        )
+        config.userContentController.addUserScript(userScript)
+
         let webView = WKWebView(frame: .zero, configuration: config)
-        loadVideoHTML(in: webView)
+        loadDirectURL(in: webView)
         return webView
     }
 
     func updateUIView(_ uiView: WKWebView, context: Context) {
-        let js = "if (typeof setVolume === 'function') { setVolume(\(volume)); };"
+        let js = "var v = document.querySelector('video'); if (v) { v.volume = \(volume); };"
         uiView.evaluateJavaScript(js, completionHandler: nil)
     }
 
-    private func loadVideoHTML(in webView: WKWebView) {
-        let html = """
-        <!DOCTYPE html>
-        <html>
-        <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-        <style>
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
-          html, body {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #000000;
-          }
-          #player {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 100vw;
-            height: 100vh;
-            min-width: 177.77vh;
-            min-height: 56.25vw;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-            border: none;
-          }
-        </style>
-        </head>
-        <body>
-          <div id="player"></div>
-          <script src="https://www.youtube.com/iframe_api"></script>
-          <script>
-            var player;
-            var targetVolume = \(Int(volume * 100));
-
-            function onYouTubeIframeAPIReady() {
-              player = new YT.Player('player', {
-                videoId: '\(videoID)',
-                playerVars: {
-                  'autoplay': 1,
-                  'mute': 1,
-                  'controls': 0,
-                  'showinfo': 0,
-                  'rel': 0,
-                  'loop': 1,
-                  'playlist': '\(videoID)',
-                  'playsinline': 1,
-                  'modestbranding': 1,
-                  'iv_load_policy': 3,
-                  'fs': 0,
-                  'disablekb': 1,
-                  'origin': 'https://www.youtube.com'
-                },
-                events: {
-                  'onReady': onPlayerReady,
-                  'onStateChange': onPlayerStateChange
-                }
-              });
-            }
-
-            function onPlayerReady(event) {
-              event.target.playVideo();
-              event.target.unMute();
-              event.target.setVolume(targetVolume);
-            }
-
-            function onPlayerStateChange(event) {
-              if (event.data === YT.PlayerState.ENDED) {
-                player.playVideo();
-              }
-            }
-
-            function setVolume(vol) {
-              targetVolume = Math.round(vol * 100);
-              if (player && player.setVolume) {
-                if (targetVolume > 0) {
-                  player.unMute();
-                  player.setVolume(targetVolume);
-                } else {
-                  player.mute();
-                }
-              }
-            }
-          </script>
-        </body>
-        </html>
-        """
-        webView.loadHTMLString(html, baseURL: URL(string: "https://www.youtube.com"))
+    private func loadDirectURL(in webView: WKWebView) {
+        guard let url = URL(string: "https://www.youtube.com/embed/\(videoID)?autoplay=1&mute=0&controls=0&loop=1&playlist=\(videoID)&playsinline=1&modestbranding=1&rel=0&iv_load_policy=3&enablejsapi=1") else { return }
+        
+        var request = URLRequest(url: url)
+        request.setValue("https://www.youtube.com", forHTTPHeaderField: "Referer")
+        request.setValue("https://www.youtube.com", forHTTPHeaderField: "Origin")
+        uiView.load(request)
     }
 }
 #endif
