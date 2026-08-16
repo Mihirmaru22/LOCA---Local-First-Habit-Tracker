@@ -40,6 +40,7 @@ struct MacSettingsView: View {
     // Local UI State
     @State private var showExportSuccess = false
     @State private var exportMessage = ""
+    @State private var showKeynoteJourneyModal = false
 
     // Accent Palette
     private var accentColor: Color {
@@ -120,6 +121,9 @@ struct MacSettingsView: View {
             .frame(maxWidth: 960)
         }
         .background(DS.Color.background)
+        .sheet(isPresented: $showKeynoteJourneyModal) {
+            PlutoKeynoteJourneyModal()
+        }
     }
 
     // MARK: - Bento Tile Container
@@ -433,20 +437,46 @@ struct MacSettingsView: View {
 
     // 7. About Pluto
     private var aboutControlBlock: some View {
-        HStack(spacing: 14) {
-            Image(systemName: "circle.circle.fill")
-                .font(.system(size: 32))
-                .foregroundStyle(accentColor)
+        Button {
+            PlutoSoundEngine.shared.play(.summitPassport)
+            Haptics.impact(.medium)
+            showKeynoteJourneyModal = true
+        } label: {
+            HStack(spacing: 14) {
+                Image(systemName: "circle.circle.fill")
+                    .font(.system(size: 32))
+                    .foregroundStyle(accentColor)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text("PLUTO OS · Version 5.0 Sovereign Edition")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(DS.Color.textPrimary)
-                Text("Local-First Executive Operating System for daily discipline, expeditions, and life strategy.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(DS.Color.textSecondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 8) {
+                        Text("PLUTO OS · Version 5.0 Sovereign Edition")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(DS.Color.textPrimary)
+
+                        Text("EXPLORE JOURNEY ➔")
+                            .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(accentColor.opacity(0.2))
+                            .foregroundStyle(accentColor)
+                            .clipShape(Capsule())
+                    }
+
+                    Text("Local-First Executive Operating System for daily discipline, expeditions, and life strategy. Click to explore v1.0 ➔ v5.0.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(DS.Color.textSecondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(DS.Color.textTertiary)
             }
-            Spacer()
+            .padding(10)
+            .background(DS.Color.background.opacity(0.4), in: RoundedRectangle(cornerRadius: 8))
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
     }
 }
