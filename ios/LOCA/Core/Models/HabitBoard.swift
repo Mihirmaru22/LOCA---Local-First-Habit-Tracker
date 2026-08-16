@@ -282,18 +282,26 @@ extension HabitBoard {
     /// Returns `targetValue` when it is positive, `1.0` when `targetValue`
     /// is `nil` (binary habit default), and `1.0` when `targetValue` is zero
     /// or negative (corrupt CloudKit record defence).
-    ///
-    /// Callers may use this directly as a divisor — it never returns a value
-    /// that would produce a zero-denominator or produce a completion ratio
-    /// that saturates to infinity.
-    ///
-    /// ## Why not `max(targetValue ?? 1.0, 1.0)`
-    /// That expression clips legitimate fractional targets (e.g., `0.5` miles/day)
-    /// to `1.0`, breaking streak and heatmap computation for those boards.
-    /// The conditional expression below preserves any positive value as-is.
     var effectiveTarget: Double {
         let raw = targetValue ?? 1.0
         return raw > 0 ? raw : 1.0
+    }
+
+    /// Today's aggregated progress ratio in [0.0, 1.0] with strict finite & NaN safety.
+    var todayProgress: Double {
+        let cal = Calendar.current
+        let todayStart = cal.startOfDay(for: Date())
+        let todayLogs = activeLogs.filter { cal.isDate($0.timestamp, inSameDayAs: todayStart) }
+        let total = todayLogs.reduce(0.0) { $0 + $1.value }
+        let target = effectiveTarget
+        guard target > 0, total > 0 else { return 0.0 }
+        let ratio = total / target
+        return ratio.isFinite ? min(max(ratio, 0.0), 1.0) : 0.0
+    }
+
+    /// Whether today's target has been met.
+    var isCompletedToday: Bool {
+        todayProgress >= 1.0 - 1e-9
     }
 }
 

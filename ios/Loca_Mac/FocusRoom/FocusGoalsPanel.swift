@@ -30,6 +30,23 @@ struct FocusGoalsPanel: View {
 
                 Spacer()
 
+                if !completedGoals.isEmpty {
+                    Button {
+                        withAnimation(.easeOut(duration: 0.25)) {
+                            for goal in completedGoals {
+                                modelContext.delete(goal)
+                            }
+                            try? modelContext.save()
+                            Haptics.impact(.light)
+                        }
+                    } label: {
+                        Text("Clear done")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Color.red.opacity(0.85))
+                    }
+                    .buttonStyle(.plain)
+                }
+
                 Button {
                     isPresented = false
                     Haptics.impact(.light)

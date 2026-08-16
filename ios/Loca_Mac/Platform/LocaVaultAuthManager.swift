@@ -32,19 +32,21 @@ final class LocaVaultAuthManager: ObservableObject {
     var isBiometricsAvailable: Bool {
         let context = LAContext()
         var error: NSError?
-        return context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error)
+        return context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error)
     }
 
     var biometryTypeString: String {
         let context = LAContext()
         var error: NSError?
-        _ = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error)
-        switch context.biometryType {
-        case .touchID: return "Touch ID"
-        case .faceID:  return "Face ID"
-        case .opticID: return "Optic ID"
-        default:       return "Touch ID / System Password"
+        if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
+            switch context.biometryType {
+            case .touchID: return "Touch ID"
+            case .faceID:  return "Face ID"
+            case .opticID: return "Optic ID"
+            default:       return "Touch ID"
+            }
         }
+        return "System Password"
     }
 
     /// Authenticates with Touch ID or system passcode fallback.

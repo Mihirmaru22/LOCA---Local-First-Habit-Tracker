@@ -283,12 +283,24 @@ struct MacTrekMapView: NSViewRepresentable {
             }
         }
 
-        // 2. GPX Trail Ridge Polylines (4.2)
+        // 2. GPX Trail Ridge Polylines with 60fps downsampling optimization
         for trek in treks where trek.hasGPXTrack {
             let coords = trek.trailCoordinates
             guard coords.count >= 2 else { continue }
 
-            let polyline = TrekTrailPolyline(coordinates: coords, count: coords.count)
+            let renderCoords: [CLLocationCoordinate2D]
+            if coords.count > 2000 {
+                let strideStep = max(1, coords.count / 1500)
+                var sampled = stride(from: 0, to: coords.count, by: strideStep).map { coords[$0] }
+                if let last = coords.last, sampled.last?.latitude != last.latitude || sampled.last?.longitude != last.longitude {
+                    sampled.append(last)
+                }
+                renderCoords = sampled
+            } else {
+                renderCoords = coords
+            }
+
+            let polyline = TrekTrailPolyline(coordinates: renderCoords, count: renderCoords.count)
             polyline.trekID = trek.id
             polyline.isConquered = trek.status == .conquered
             polyline.isSelected = trek.id == selectedTrek?.id
