@@ -369,8 +369,15 @@ struct MacHabitDetailColumn: View {
         }
     }
 
+    private func parseNumericAmount(_ input: String) -> Double? {
+        let cleaned = input.trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: ",", with: ".")
+        return Double(cleaned)
+    }
+
     private func submitCustomAmount(for habit: HabitBoard) {
-        guard let value = Double(customAmountText.trimmingCharacters(in: .whitespacesAndNewlines)), value > 0 else {
+        guard let value = parseNumericAmount(customAmountText), value > 0 else {
+            Haptics.notify(.error)
             return
         }
         logAmount(value, for: habit)
