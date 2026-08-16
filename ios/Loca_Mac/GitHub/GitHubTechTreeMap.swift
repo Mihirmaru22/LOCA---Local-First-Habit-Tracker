@@ -1,5 +1,7 @@
 import SwiftUI
 import SwiftData
+import Foundation
+import Combine
 
 // MARK: - GitHubTechTreeMap
 

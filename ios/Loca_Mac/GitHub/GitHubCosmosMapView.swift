@@ -1,5 +1,7 @@
 import SwiftUI
 import SwiftData
+import Combine
+import Foundation
 
 // MARK: - GitHubCosmosMapView
 
