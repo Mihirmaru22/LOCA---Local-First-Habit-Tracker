@@ -173,7 +173,7 @@ struct PlutoQuickActionHUD: View {
                 Button {
                     NotificationCenter.default.post(
                         name: .locaDeepLink,
-                        object: PlutoNotificationManager.DeepLinkPayload(section: .time, habitID: nil, taskID: nil, date: nil)
+                        object: PlutoNotificationManager.DeepLinkPayload(section: .today, habitID: nil, taskID: nil, date: nil)
                     )
                     NSApp.activate(ignoringOtherApps: true)
                     onClose()
