@@ -14,7 +14,6 @@ enum MacSection: String, CaseIterable, Identifiable {
     case journal  = "Journal"
     case life     = "Life"
     case treks    = "Trek Atlas"
-    case github   = "GitHub"
     case audit    = "Audit"
     case settings = "Settings"
 
@@ -28,7 +27,6 @@ enum MacSection: String, CaseIterable, Identifiable {
         case .journal:  "book.closed"
         case .life:     "binoculars"
         case .treks:    "mountain.2.fill"
-        case .github:   "cpu.fill"
         case .audit:    "slider.horizontal.3"
         case .settings: "gearshape"
         }
@@ -80,7 +78,7 @@ struct MacRootView: View {
 
     private var splitView: some View {
         Group {
-            if selectedSection == .audit || selectedSection == .life || selectedSection == .time || selectedSection == .settings || selectedSection == .treks || selectedSection == .github {
+            if selectedSection == .audit || selectedSection == .life || selectedSection == .time || selectedSection == .settings || selectedSection == .treks {
                 NavigationSplitView {
                     MacSidebarView(selection: $selectedSection)
                         .navigationSplitViewColumnWidth(
@@ -99,8 +97,6 @@ struct MacRootView: View {
                         }
                     } else if selectedSection == .treks {
                         MacTrekAtlasCanvas()
-                    } else if selectedSection == .github {
-                        MacGitHubCosmosCanvas()
                     } else if selectedSection == .time {
                         MacTimeView()
                     } else {
@@ -258,7 +254,7 @@ private struct MacContentColumn: View {
             MacJournalContentColumn(selectedRow: $selectedJournalRow, selectedNote: $selectedJournalNote)
         case .life:
             MacLifeContentColumn(selectedRow: $selectedLifeRow)
-        case .audit, .settings, .time, .treks, .github:
+        case .audit, .settings, .time, .treks:
             EmptyView()
         case nil:
             MacEmptyContentView()
@@ -290,8 +286,6 @@ private struct MacDetailColumn: View {
             MacLifeDetailColumn(selectedRow: selectedLifeRow)
         case .treks:
             MacTrekAtlasCanvas()
-        case .github:
-            MacGitHubCosmosCanvas()
         case .time:
             MacTimeView()
         case .audit:

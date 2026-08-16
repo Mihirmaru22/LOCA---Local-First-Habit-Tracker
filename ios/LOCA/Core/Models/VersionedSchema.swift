@@ -66,7 +66,6 @@ enum RippleSchemaV1: VersionedSchema {
             JournalNote.self,
             SleepEntry.self,
             TrekRecord.self,
-            GitHubRepoRecord.self,
         ]
     }
 }

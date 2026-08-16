@@ -8,7 +8,7 @@ struct MacSidebarView: View {
     @Binding var selection: MacSection?
     @State private var hoveredSection: MacSection? = nil
 
-    private let mainSections: [MacSection] = [.habits, .today, .time, .journal, .life, .treks, .github, .audit]
+    private let mainSections: [MacSection] = [.habits, .today, .time, .journal, .life, .treks, .audit]
 
     var body: some View {
         VStack(spacing: 0) {
