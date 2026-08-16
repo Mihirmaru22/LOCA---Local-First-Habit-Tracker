@@ -13,6 +13,7 @@ struct TrekElevationProfileChart: View {
     var onScrubPoint: ((ElevationPoint?) -> Void)? = nil
 
     @State private var scrubbedDistance: Double? = nil
+    @State private var isExpanded: Bool = false
 
     private var maxPoint: ElevationPoint? {
         points.max(by: { $0.elevationMeters < $1.elevationMeters })
@@ -91,6 +92,17 @@ struct TrekElevationProfileChart: View {
                             .font(.system(size: 10, weight: .semibold, design: .monospaced))
                             .foregroundStyle(Color.cyan)
                     }
+
+                    Button {
+                        isExpanded = true
+                    } label: {
+                        Image(systemName: "arrow.up.left.and.arrow.down.right")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(DS.Color.textTertiary)
+                            .padding(2)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Expand Elevation Study")
                 }
             }
 
@@ -233,6 +245,16 @@ struct TrekElevationProfileChart: View {
             .padding(.horizontal, 4)
             .padding(.vertical, 6)
             .background(DS.Color.surfaceRecessed.opacity(0.5), in: RoundedRectangle(cornerRadius: 8))
+        }
+        .sheet(isPresented: $isExpanded) {
+            TrekElevationExpandedModal(
+                trek: trek,
+                points: points,
+                onScrubPoint: onScrubPoint,
+                onDismiss: {
+                    isExpanded = false
+                }
+            )
         }
     }
 
