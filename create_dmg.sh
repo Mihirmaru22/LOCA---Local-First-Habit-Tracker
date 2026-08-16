@@ -11,18 +11,17 @@ echo "🪐 Building Pluto DMG Package..."
 APP_PATH="${1:-}"
 
 if [ -z "$APP_PATH" ]; then
-    # Look for exported Pluto.app or Loca_Mac.app in common build directories
-    if [ -d "$HOME/Desktop/Pluto.app" ]; then
+    # Look for exported Pluto.app or Loca_Mac.app in Desktop subfolders or root
+    FOUND_DESKTOP=$(find "$HOME/Desktop" -name "Pluto.app" -type d 2>/dev/null | sort -r | head -n 1 || true)
+    if [ -n "$FOUND_DESKTOP" ] && [ -d "$FOUND_DESKTOP" ]; then
+        APP_PATH="$FOUND_DESKTOP"
+    elif [ -d "$HOME/Desktop/Pluto.app" ]; then
         APP_PATH="$HOME/Desktop/Pluto.app"
-    elif [ -d "$HOME/Desktop/Loca_Mac.app" ]; then
-        APP_PATH="$HOME/Desktop/Loca_Mac.app"
     elif [ -d "$HOME/Downloads/Pluto.app" ]; then
         APP_PATH="$HOME/Downloads/Pluto.app"
-    elif [ -d "$HOME/Downloads/Loca_Mac.app" ]; then
-        APP_PATH="$HOME/Downloads/Loca_Mac.app"
     else
         # Find in Xcode DerivedData
-        FOUND_APP=$(find ~/Library/Developer/Xcode/DerivedData -name "Loca_Mac.app" -type d 2>/dev/null | head -n 1 || true)
+        FOUND_APP=$(find ~/Library/Developer/Xcode/DerivedData -name "Pluto.app" -o -name "Loca_Mac.app" -type d 2>/dev/null | sort -r | head -n 1 || true)
         if [ -n "$FOUND_APP" ] && [ -d "$FOUND_APP" ]; then
             APP_PATH="$FOUND_APP"
         fi
