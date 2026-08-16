@@ -134,8 +134,16 @@ struct MacTrekMapView: NSViewRepresentable {
 
             for trek in conqueredTreks {
                 let radius = max(20_000, trek.revealRadiusMeters ?? 45_000)
-                let hole = Self.createCirclePolygon(center: trek.coordinate, radiusMeters: radius)
-                interiorHoles.append(hole)
+
+                // 1. Summit Peak Hole
+                let summitHole = Self.createCirclePolygon(center: trek.coordinate, radiusMeters: radius, pointCount: 32)
+                interiorHoles.append(summitHole)
+
+                // 2. Trail Corridor Hole Punching (4.2)
+                if trek.hasGPXTrack {
+                    let corridorHoles = Self.createTrailCorridorHoles(coords: trek.trailCoordinates, corridorRadiusMeters: 5_000)
+                    interiorHoles.append(contentsOf: corridorHoles)
+                }
 
                 let aura = MKCircle(center: trek.coordinate, radius: radius)
                 auraCircles.append(aura)
@@ -166,20 +174,41 @@ struct MacTrekMapView: NSViewRepresentable {
         }
     }
 
-    /// Generates a 32-point circular polygon for interior hole punching.
-    static func createCirclePolygon(center: CLLocationCoordinate2D, radiusMeters: Double) -> MKPolygon {
+    /// Generates a smooth circular polygon for interior hole punching.
+    static func createCirclePolygon(center: CLLocationCoordinate2D, radiusMeters: Double, pointCount: Int = 32) -> MKPolygon {
         let latDelta = radiusMeters / 111_000.0
         let lonDelta = radiusMeters / (111_000.0 * max(0.1, cos(center.latitude * .pi / 180.0)))
         var points: [CLLocationCoordinate2D] = []
 
-        for i in 0..<32 {
-            let angle = Double(i) * (2.0 * .pi / 32.0)
+        let n = max(8, pointCount)
+        for i in 0..<n {
+            let angle = Double(i) * (2.0 * .pi / Double(n))
             let ptLat = center.latitude + latDelta * sin(angle)
             let ptLon = center.longitude + lonDelta * cos(angle)
             points.append(CLLocationCoordinate2D(latitude: ptLat, longitude: ptLon))
         }
 
         return MKPolygon(coordinates: points, count: points.count)
+    }
+
+    /// Generates illuminated corridor hole polygons along an entire hiking route.
+    static func createTrailCorridorHoles(coords: [CLLocationCoordinate2D], corridorRadiusMeters: Double = 5000.0) -> [MKPolygon] {
+        guard coords.count >= 2 else { return [] }
+
+        // Sample along trail to ensure smooth 60fps polygon rendering
+        var sampledPoints: [CLLocationCoordinate2D] = []
+        let step = max(1, coords.count / 32)
+
+        for i in stride(from: 0, to: coords.count, by: step) {
+            sampledPoints.append(coords[i])
+        }
+        if let last = coords.last, sampledPoints.last?.latitude != last.latitude {
+            sampledPoints.append(last)
+        }
+
+        return sampledPoints.map { pt in
+            createCirclePolygon(center: pt, radiusMeters: corridorRadiusMeters, pointCount: 12)
+        }
     }
 
     func makeCoordinator() -> Coordinator {
