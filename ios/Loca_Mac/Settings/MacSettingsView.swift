@@ -688,6 +688,30 @@ struct MacSettingsView: View {
                         .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: 6))
                     }
                     .padding(8)
+
+                case .life5:
+                    HStack(spacing: 8) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("MOUNTAIN SUMMIT ATLAS").font(.system(size: 8, weight: .bold)).foregroundStyle(Color.cyan)
+                            Text("Conquered Summits & 3D Radar").font(.system(size: 10, weight: .bold))
+                            HStack(spacing: 4) {
+                                Text("⛰️ Mt Fuji").font(.system(size: 8)).padding(4).background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 3))
+                                Text("⛰️ Matterhorn").font(.system(size: 8)).padding(4).background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 3))
+                            }
+                        }
+                        .padding(8)
+                        .frame(maxWidth: .infinity)
+                        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: 6))
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("ELEVATION PROFILE").font(.system(size: 8, weight: .bold)).foregroundStyle(DS.Color.textTertiary)
+                            RoundedRectangle(cornerRadius: 4).fill(LinearGradient(colors: [Color.cyan.opacity(0.4), Color.purple.opacity(0.2)], startPoint: .top, endPoint: .bottom)).frame(height: 36)
+                        }
+                        .padding(8)
+                        .frame(width: 140)
+                        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: 6))
+                    }
+                    .padding(8)
                 }
             }
             .overlay(
@@ -814,6 +838,7 @@ struct MacSettingsView: View {
         case .life2: return "Dream Vault & Milestones"
         case .life3: return "90-Year Horizon Axis"
         case .life4: return "Weekly Retrospectives"
+        case .life5: return "Trek & Mountain Atlas"
         }
     }
 
@@ -823,6 +848,7 @@ struct MacSettingsView: View {
         case .life2: return "Comprehensive lifetime dream vault with achievement tags, category filters, and target horizons."
         case .life3: return "Chronological life timeline mapping past milestones, current sprint, and future horizons."
         case .life4: return "Weekly review questions, energy allocation scoring, and personal growth journal notes."
+        case .life5: return "Expedition tracking, 3D interactive topographic maps, GPX trail corridors, and summit photo galleries."
         }
     }
 
