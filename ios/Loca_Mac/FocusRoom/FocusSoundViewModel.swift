@@ -13,7 +13,7 @@ struct AmbientSoundTrack: Identifiable {
     var previousVolume: Float = 0.5
 }
 
-// MARK: - FocusSoundViewModel
+// MARK: - FocusSoundViewModel (Multi-Channel Procedural Synthesis Engine)
 
 @MainActor
 final class FocusSoundViewModel: ObservableObject {
@@ -30,96 +30,192 @@ final class FocusSoundViewModel: ObservableObject {
     @Published var isAllPaused: Bool = false
     @Published var youtubeVolume: Double = 0.5
 
-    private var audioPlayers: [String: AVAudioPlayer] = [:]
+    // Multi-Track Procedural Audio Engine
+    private let audioEngine = AVAudioEngine()
+    private var mixerNodes: [String: AVAudioMixerNode] = [:]
+    private var sourceNodes: [String: AVAudioSourceNode] = [:]
+    private var isEngineStarted: Bool = false
+
+    // Synthesis per-track phase trackers
+    private var lofiPhase: Float = 0.0
+    private var rainB0: Float = 0.0, rainB1: Float = 0.0, rainB2: Float = 0.0
+    private var natureLfo: Float = 0.0, naturePink: Float = 0.0
+    private var fireHumPhase: Float = 0.0
+    private var libraryPhase: Float = 0.0
+    private var pianoPhase: Float = 0.0
 
     init() {
-        setupAudioSession()
+        setupMultiTrackEngine()
     }
 
-    private func setupAudioSession() {
+    private func setupMultiTrackEngine() {
         #if os(iOS)
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
         try? AVAudioSession.sharedInstance().setActive(true)
         #endif
+
+        let mainMixer = audioEngine.mainMixerNode
+        let format = mainMixer.outputFormat(forBus: 0)
+        let sampleRate = Float(format.sampleRate > 0 ? format.sampleRate : 44100.0)
+
+        for track in tracks {
+            let mixer = AVAudioMixerNode()
+            mixer.outputVolume = 0.0
+            audioEngine.attach(mixer)
+            audioEngine.connect(mixer, to: mainMixer, format: format)
+            mixerNodes[track.id] = mixer
+
+            // Create dedicated procedural audio source node for each track
+            let trackID = track.id
+            let source = AVAudioSourceNode { [weak self] _, _, frameCount, audioBufferList -> OSStatus in
+                guard let self = self else { return noErr }
+                let ablPointer = UnsafeMutableAudioBufferListPointer(audioBufferList)
+                
+                for frame in 0..<Int(frameCount) {
+                    let sample = self.generateSample(for: trackID, sampleRate: sampleRate)
+                    for buffer in ablPointer {
+                        let buf: UnsafeMutableBufferPointer<Float> = UnsafeMutableBufferPointer(buffer)
+                        if frame < buf.count {
+                            buf[frame] = sample
+                        }
+                    }
+                }
+                return noErr
+            }
+
+            audioEngine.attach(source)
+            audioEngine.connect(source, to: mixer, format: format)
+            sourceNodes[trackID] = source
+        }
+
+        do {
+            try audioEngine.start()
+            isEngineStarted = true
+        } catch {
+            print("FocusSoundViewModel: Error starting multi-track audio engine: \(error.localizedDescription)")
+        }
     }
+
+    // MARK: - Procedural Audio Synthesizer per Channel
+
+    private func generateSample(for trackID: String, sampleRate: Float) -> Float {
+        let dt = 1.0 / sampleRate
+
+        switch trackID {
+        case "lofi":
+            // Warm lo-fi minor chord with gentle tape flutter LFO & vinyl crackle
+            lofiPhase += 2.0 * .pi * 174.61 * dt // F3 base
+            let flutter = sin(lofiPhase * 0.05) * 1.5
+            let tone1 = sin(lofiPhase + flutter) * 0.4
+            let tone2 = sin(lofiPhase * 1.2599 + flutter) * 0.3 // Ab3
+            let tone3 = sin(lofiPhase * 1.4983 + flutter) * 0.25 // C4
+            let tone4 = sin(lofiPhase * 1.8877 + flutter) * 0.2 // Eb4
+            let vinyl = (Float.random(in: -1...1) > 0.998 ? Float.random(in: -0.4...0.4) : 0.0)
+            return (tone1 + tone2 + tone3 + tone4 + vinyl) * 0.35
+
+        case "nature":
+            // Forest breeze wind with pink noise filtering and slow LFO
+            natureLfo += 2.0 * .pi * 0.12 * dt
+            let white = Float.random(in: -1...1)
+            naturePink = 0.95 * naturePink + 0.05 * white
+            let wind = (sin(natureLfo) * 0.5 + 0.5) * naturePink
+            return wind * 0.5
+
+        case "rain":
+            // Dense rain & gentle downpour
+            let white = Float.random(in: -1...1)
+            rainB0 = 0.99765 * rainB0 + white * 0.0990460
+            rainB1 = 0.96300 * rainB1 + white * 0.2965164
+            rainB2 = 0.57000 * rainB2 + white * 1.0526913
+            let rainSample = (rainB0 + rainB1 + rainB2 + white * 0.1848) * 0.08
+            let droplet = (Float.random(in: -1...1) > 0.995 ? Float.random(in: -0.3...0.3) : 0.0)
+            return (rainSample + droplet) * 0.45
+
+        case "fireplace":
+            // Warm low-frequency hearth rumble + random wood crackle pops
+            fireHumPhase += 2.0 * .pi * 75.0 * dt
+            let hum = sin(fireHumPhase) * 0.15 + sin(fireHumPhase * 1.6) * 0.08
+            let pop = (Float.random(in: -1...1) > 0.993 ? Float.random(in: -0.6...0.6) : 0.0)
+            let hiss = Float.random(in: -0.05...0.05)
+            return (hum + pop + hiss) * 0.5
+
+        case "library":
+            // Resonant 432Hz alpha calm ambient room acoustic tone
+            libraryPhase += 2.0 * .pi * 432.0 * dt
+            let alphaTone = sin(libraryPhase) * 0.2 + sin(libraryPhase * 0.5) * 0.25
+            let roomAir = Float.random(in: -0.08...0.08)
+            return (alphaTone + roomAir) * 0.35
+
+        case "piano":
+            // Warm rhodes electric piano harmonic tone
+            pianoPhase += 2.0 * .pi * 261.63 * dt // C4
+            let p1 = sin(pianoPhase) * 0.35
+            let p2 = sin(pianoPhase * 2.0) * 0.2
+            let p3 = sin(pianoPhase * 3.0) * 0.1
+            return (p1 + p2 + p3) * 0.4
+
+        default:
+            return 0.0
+        }
+    }
+
+    // MARK: - Public Volume & Mute Controls
 
     func setVolume(for trackID: String, volume: Float) {
         guard let index = tracks.firstIndex(where: { $0.id == trackID }) else { return }
         tracks[index].volume = volume
+        
         if volume > 0 {
             tracks[index].isMuted = false
             tracks[index].previousVolume = volume
-            playTrack(id: trackID, volume: volume)
+            applyVolume(trackID: trackID, volume: volume)
         } else {
-            stopTrack(id: trackID)
+            applyVolume(trackID: trackID, volume: 0.0)
         }
     }
 
     func toggleMute(for trackID: String) {
         guard let index = tracks.firstIndex(where: { $0.id == trackID }) else { return }
+        
         if tracks[index].isMuted {
             tracks[index].isMuted = false
-            tracks[index].volume = tracks[index].previousVolume > 0 ? tracks[index].previousVolume : 0.5
-            playTrack(id: trackID, volume: tracks[index].volume)
+            let restored = tracks[index].previousVolume > 0 ? tracks[index].previousVolume : 0.5
+            tracks[index].volume = restored
+            applyVolume(trackID: trackID, volume: restored)
         } else {
             tracks[index].isMuted = true
-            tracks[index].previousVolume = tracks[index].volume
+            tracks[index].previousVolume = tracks[index].volume > 0 ? tracks[index].volume : 0.5
             tracks[index].volume = 0.0
-            stopTrack(id: trackID)
+            applyVolume(trackID: trackID, volume: 0.0)
         }
     }
 
     func togglePauseAll() {
         isAllPaused.toggle()
+        
         if isAllPaused {
             for track in tracks {
-                stopTrack(id: track.id)
+                mixerNodes[track.id]?.outputVolume = 0.0
             }
         } else {
-            for track in tracks where track.volume > 0 && !track.isMuted {
-                playTrack(id: track.id, volume: track.volume)
+            for track in tracks where !track.isMuted {
+                mixerNodes[track.id]?.outputVolume = track.volume
             }
         }
     }
 
-    private func playTrack(id: String, volume: Float) {
-        if isAllPaused { return }
-        
-        // If player exists, update volume and play
-        if let player = audioPlayers[id] {
-            player.volume = volume
-            if !player.isPlaying {
-                player.play()
-            }
-            return
+    private func applyVolume(trackID: String, volume: Float) {
+        if !isEngineStarted {
+            try? audioEngine.start()
+            isEngineStarted = true
         }
 
-        // Initialize bundled audio file or fallback generator
-        if let url = Bundle.main.url(forResource: id, withExtension: "mp3") ??
-                     Bundle.main.url(forResource: id, withExtension: "wav") {
-            if let player = try? AVAudioPlayer(contentsOf: url) {
-                player.numberOfLoops = -1 // Infinite loop
-                player.volume = volume
-                player.prepareToPlay()
-                player.play()
-                audioPlayers[id] = player
-            }
-        } else {
-            // Placeholder: When audio assets are provided, they loop seamlessly.
-            // AmbientSoundEngine.shared handles synthesized sounds as fallback.
-            AmbientSoundEngine.shared.start()
-        }
-    }
-
-    private func stopTrack(id: String) {
-        if let player = audioPlayers[id] {
-            player.pause()
+        if !isAllPaused {
+            mixerNodes[trackID]?.outputVolume = volume
         }
     }
 
     deinit {
-        for (_, player) in audioPlayers {
-            player.stop()
-        }
+        audioEngine.stop()
     }
 }
