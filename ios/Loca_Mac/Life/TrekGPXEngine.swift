@@ -50,18 +50,32 @@ struct GPXParseResult: Sendable {
 
 // MARK: - TrekGPXEngine
 
-/// High-performance XML parser and mathematical elevation engine for GPX tracks in Pluto's Trek Atlas.
+/// High-performance XML parser and mathematical elevation engine with comprehensive error protection and corrupt-data validation.
 final class TrekGPXEngine: NSObject, XMLParserDelegate, @unchecked Sendable {
 
     // MARK: - Static Parser API
 
     static func parse(url: URL) async throws -> GPXParseResult {
-        let data = try Data(contentsOf: url)
+        guard let data = try? Data(contentsOf: url), !data.isEmpty else {
+            throw NSError(
+                domain: "TrekGPXEngine",
+                code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "The selected GPX file could not be read or is empty."]
+            )
+        }
         return try await parse(data: data)
     }
 
     static func parse(data: Data) async throws -> GPXParseResult {
-        try await withCheckedThrowingContinuation { continuation in
+        guard !data.isEmpty else {
+            throw NSError(
+                domain: "TrekGPXEngine",
+                code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "GPX data is empty."]
+            )
+        }
+
+        return try await withCheckedThrowingContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
                 let engine = TrekGPXEngine(data: data)
                 do {
@@ -100,6 +114,13 @@ final class TrekGPXEngine: NSObject, XMLParserDelegate, @unchecked Sendable {
         return formatter
     }()
 
+    private static let standardDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
+        return formatter
+    }()
+
     private init(data: Data) {
         self.rawData = data
         super.init()
@@ -112,14 +133,22 @@ final class TrekGPXEngine: NSObject, XMLParserDelegate, @unchecked Sendable {
         parser.shouldReportNamespacePrefixes = false
 
         guard parser.parse() else {
-            throw parser.parserError ?? NSError(domain: "TrekGPXEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to parse GPX XML"])
+            throw parser.parserError ?? NSError(
+                domain: "TrekGPXEngine",
+                code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Malformed or unreadable GPX XML format."]
+            )
         }
 
         guard !parsedPoints.isEmpty else {
-            throw NSError(domain: "TrekGPXEngine", code: 2, userInfo: [NSLocalizedDescriptionKey: "GPX file contains no valid track points (<trkpt>)"])
+            throw NSError(
+                domain: "TrekGPXEngine",
+                code: 2,
+                userInfo: [NSLocalizedDescriptionKey: "The GPX file contains no valid geographic track points (<trkpt>)."]
+            )
         }
 
-        // Compute Geodesics & Vertical Telemetry
+        // Compute Geodesics & Vertical Telemetry safely
         var totalDistanceKm = 0.0
         var totalGainMeters = 0.0
         var maxAlt = -Double.greatestFiniteMagnitude
@@ -129,8 +158,8 @@ final class TrekGPXEngine: NSObject, XMLParserDelegate, @unchecked Sendable {
         for i in 0..<parsedPoints.count {
             let pt = parsedPoints[i]
 
-            // Track Max & Min Altitude
-            if let ele = pt.elevation {
+            // Track Max & Min Altitude with validity check
+            if let ele = pt.elevation, ele.isFinite {
                 if ele > maxAlt {
                     maxAlt = ele
                     highestPointCoord = pt.coordinate
@@ -149,19 +178,23 @@ final class TrekGPXEngine: NSObject, XMLParserDelegate, @unchecked Sendable {
                     lat2: pt.latitude,
                     lon2: pt.longitude
                 )
-                totalDistanceKm += dist
 
-                if let prevEle = prev.elevation, let curEle = pt.elevation {
+                if dist.isFinite && !dist.isNaN {
+                    totalDistanceKm += dist
+                }
+
+                if let prevEle = prev.elevation, let curEle = pt.elevation,
+                   prevEle.isFinite, curEle.isFinite {
                     let delta = curEle - prevEle
-                    if delta > 1.5 { // Noise threshold to discard minor GPS altitude fluctuations
+                    if delta > 1.5 && delta < 500.0 { // Noise filter: discard jitter and impossible vertical leaps
                         totalGainMeters += delta
                     }
                 }
             }
         }
 
-        if maxAlt == -Double.greatestFiniteMagnitude { maxAlt = 0 }
-        if minAlt == Double.greatestFiniteMagnitude { minAlt = 0 }
+        if maxAlt == -Double.greatestFiniteMagnitude || !maxAlt.isFinite { maxAlt = 0 }
+        if minAlt == Double.greatestFiniteMagnitude || !minAlt.isFinite { minAlt = 0 }
 
         // Encode to JSON String for SwiftData persistence
         let jsonString: String
@@ -196,10 +229,20 @@ final class TrekGPXEngine: NSObject, XMLParserDelegate, @unchecked Sendable {
         } else if currentElement == "trkpt" || currentElement == "wpt" {
             currentElevationText = ""
             currentTimeText = ""
-            if let latStr = attributeDict["lat"], let lat = Double(latStr),
-               let lonStr = attributeDict["lon"], let lon = Double(lonStr) {
+
+            // Strict geographic coordinate parsing & range check
+            if let latStr = attributeDict["lat"] ?? attributeDict["LAT"],
+               let lonStr = attributeDict["lon"] ?? attributeDict["LON"],
+               let lat = Double(latStr.trimmingCharacters(in: .whitespaces)),
+               let lon = Double(lonStr.trimmingCharacters(in: .whitespaces)),
+               lat.isFinite, lon.isFinite,
+               lat >= -90.0, lat <= 90.0,
+               lon >= -180.0, lon <= 180.0 {
                 currentLatitude = lat
                 currentLongitude = lon
+            } else {
+                currentLatitude = nil
+                currentLongitude = nil
             }
         } else if currentElement == "name" && isInsideTrack && trackName == nil {
             currentNameText = ""
@@ -221,7 +264,12 @@ final class TrekGPXEngine: NSObject, XMLParserDelegate, @unchecked Sendable {
 
         if tag == "trkpt" || tag == "wpt" {
             if let lat = currentLatitude, let lon = currentLongitude {
-                let ele = Double(currentElevationText.trimmingCharacters(in: .whitespacesAndNewlines))
+                var ele: Double? = nil
+                let trimmedEle = currentElevationText.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !trimmedEle.isEmpty, let parsedEle = Double(trimmedEle), parsedEle.isFinite, parsedEle >= -500.0, parsedEle <= 9000.0 {
+                    ele = parsedEle
+                }
+
                 let date = parseDate(from: currentTimeText.trimmingCharacters(in: .whitespacesAndNewlines))
                 let pt = GPXTrackPoint(latitude: lat, longitude: lon, elevation: ele, timestamp: date)
                 parsedPoints.append(pt)
@@ -239,7 +287,9 @@ final class TrekGPXEngine: NSObject, XMLParserDelegate, @unchecked Sendable {
 
     private func parseDate(from text: String) -> Date? {
         guard !text.isEmpty else { return nil }
-        return Self.isoFormatterWithMillis.date(from: text) ?? Self.isoFormatterBasic.date(from: text)
+        return Self.isoFormatterWithMillis.date(from: text) ??
+               Self.isoFormatterBasic.date(from: text) ??
+               Self.standardDateFormatter.date(from: text)
     }
 
     // MARK: - Mathematical Geodesics
