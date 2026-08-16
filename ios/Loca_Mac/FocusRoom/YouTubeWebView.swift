@@ -66,7 +66,7 @@ private func generateYouTubeHTML(videoID: String) -> String {
     <body>
     <iframe
       id="yt-player"
-      src="https://www.youtube-nocookie.com/embed/\(videoID)?autoplay=1&playsinline=1&loop=1&playlist=\(videoID)&controls=1&rel=0&modestbranding=1&enablejsapi=1"
+      src="https://www.youtube-nocookie.com/embed/\(videoID)?autoplay=1&loop=1&playlist=\(videoID)&controls=0&disablekb=1&fs=0&iv_load_policy=3&rel=0&modestbranding=1&showinfo=0&autohide=1&playsinline=1&enablejsapi=1"
       allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
       allowfullscreen>
     </iframe>
@@ -91,7 +91,7 @@ private func generateYouTubeHTML(videoID: String) -> String {
 
 // MARK: - YouTube Scripts & Configuration Builder
 
-private func makeConfiguredWKWebView() -> (WKWebViewConfiguration, WKUserScript, WKUserScript) {
+private func makeConfiguredWKWebView() -> (WKWebViewConfiguration, WKUserScript, WKUserScript, WKUserScript) {
     let config = WKWebViewConfiguration()
     config.mediaTypesRequiringUserActionForPlayback = []
 
@@ -106,7 +106,7 @@ private func makeConfiguredWKWebView() -> (WKWebViewConfiguration, WKUserScript,
     config.allowsInlineMediaPlayback = true
     #endif
 
-    // Change 2: Inject browser API spoof script at document start
+    // Script 1: Inject browser API spoof script at document start
     let spoofScript = WKUserScript(
         source: """
             // Spoof Chrome browser environment
@@ -143,7 +143,74 @@ private func makeConfiguredWKWebView() -> (WKWebViewConfiguration, WKUserScript,
     )
     config.userContentController.addUserScript(spoofScript)
 
-    // Change 3: Error detection user script polling for YouTube error state
+    // Script 2: Force-hide all YouTube chrome, controls, titles, watermarks & gradients
+    let hideControlsScript = WKUserScript(
+        source: """
+            var style = document.createElement('style');
+            style.textContent = `
+                /* Hide ALL YouTube player UI chrome */
+                .ytp-chrome-top,
+                .ytp-chrome-bottom,
+                .ytp-gradient-top,
+                .ytp-gradient-bottom,
+                .ytp-watermark,
+                .ytp-show-cards-title,
+                .ytp-pause-overlay,
+                .ytp-endscreen-content,
+                .ytp-cards-teaser,
+                .ytp-ce-element,
+                .ytp-title,
+                .ytp-title-channel,
+                .ytp-share-button,
+                .ytp-watch-later-button,
+                .iv-branding,
+                .ytp-spinner,
+                .annotation,
+                .video-annotations,
+                .ytp-contextmenu,
+                .ytp-overflow-panel,
+                .branding-img,
+                .ytp-youtube-button,
+                .ytp-cued-thumbnail-overlay {
+                    display: none !important;
+                    opacity: 0 !important;
+                    visibility: hidden !important;
+                    pointer-events: none !important;
+                }
+                
+                /* Ensure video fills frame with no gaps */
+                video, .html5-main-video {
+                    width: 100% !important;
+                    height: 100% !important;
+                    object-fit: cover !important;
+                }
+                
+                /* Remove click-to-pause overlay that reveals controls */
+                .html5-video-container {
+                    pointer-events: none !important;
+                }
+            `;
+            document.head.appendChild(style);
+
+            // Re-run periodically because YouTube re-injects UI after interactions
+            setInterval(function() {
+                var elements = document.querySelectorAll(
+                    '.ytp-chrome-top, .ytp-chrome-bottom, .ytp-watermark, ' +
+                    '.ytp-pause-overlay, .ytp-endscreen-content, .ytp-title, .ytp-gradient-top, .ytp-gradient-bottom'
+                );
+                elements.forEach(function(el) {
+                    el.style.setProperty('display', 'none', 'important');
+                    el.style.setProperty('opacity', '0', 'important');
+                    el.style.setProperty('visibility', 'hidden', 'important');
+                });
+            }, 2500);
+        """,
+        injectionTime: .atDocumentEnd,
+        forMainFrameOnly: false
+    )
+    config.userContentController.addUserScript(hideControlsScript)
+
+    // Script 3: Error detection user script polling for YouTube error state
     let errorDetectScript = WKUserScript(
         source: """
             setInterval(function() {
@@ -160,7 +227,7 @@ private func makeConfiguredWKWebView() -> (WKWebViewConfiguration, WKUserScript,
     )
     config.userContentController.addUserScript(errorDetectScript)
 
-    return (config, spoofScript, errorDetectScript)
+    return (config, spoofScript, hideControlsScript, errorDetectScript)
 }
 
 // MARK: - YouTubeWebView (Main SwiftUI Container with Fallback UI)
@@ -257,16 +324,15 @@ struct YouTubeWebViewRepresentable: NSViewRepresentable {
     }
 
     func makeNSView(context: Context) -> WKWebView {
-        let (config, _, _) = makeConfiguredWKWebView()
+        let (config, _, _, _) = makeConfiguredWKWebView()
         config.userContentController.add(context.coordinator, name: "youtubeError")
 
         let webView = WKWebView(frame: .zero, configuration: config)
 
-        // Change 2: Real macOS Safari User Agent
+        // Real macOS Safari User Agent
         webView.customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15"
         webView.navigationDelegate = context.coordinator
 
-        // Change 1: Load via youtube-nocookie.com
         let html = generateYouTubeHTML(videoID: videoID)
         webView.loadHTMLString(html, baseURL: URL(string: "https://www.youtube-nocookie.com")!)
         context.coordinator.currentVideoID = videoID
@@ -328,7 +394,7 @@ struct YouTubeWebViewRepresentable: UIViewRepresentable {
     }
 
     func makeUIView(context: Context) -> WKWebView {
-        let (config, _, _) = makeConfiguredWKWebView()
+        let (config, _, _, _) = makeConfiguredWKWebView()
         config.userContentController.add(context.coordinator, name: "youtubeError")
 
         let webView = WKWebView(frame: .zero, configuration: config)
