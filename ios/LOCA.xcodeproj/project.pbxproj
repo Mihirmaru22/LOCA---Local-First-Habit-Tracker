@@ -262,6 +262,9 @@
 		AA1100000000000000005DAB /* JournalNote.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000005BAB /* JournalNote.swift */; };
 		AA1100000000000000006CAB /* SleepEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000006BAB /* SleepEntry.swift */; };
 		AA1100000000000000006DAB /* SleepEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000006BAB /* SleepEntry.swift */; };
+		TR1100000000000000000002 /* TrekRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = TR1100000000000000000001 /* TrekRecord.swift */; };
+		TR1100000000000000000003 /* TrekRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = TR1100000000000000000001 /* TrekRecord.swift */; };
+		TR1100000000000000000004 /* TrekRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = TR1100000000000000000001 /* TrekRecord.swift */; };
 		AA1100000000000000007CAB /* DesktopHabitMatrixWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000007BAB /* DesktopHabitMatrixWidget.swift */; };
 		AA1100000000000000008CAB /* TodayAgendaWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000008BAB /* TodayAgendaWidget.swift */; };
 		AA1100000000000000009CAB /* MementoMoriWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000009BAB /* MementoMoriWidget.swift */; };
@@ -599,6 +602,7 @@
 		AA1100000000000000004BAB /* TodoItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoItem.swift; sourceTree = "<group>"; };
 		AA1100000000000000005BAB /* JournalNote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalNote.swift; sourceTree = "<group>"; };
 		AA1100000000000000006BAB /* SleepEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepEntry.swift; sourceTree = "<group>"; };
+		TR1100000000000000000001 /* TrekRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrekRecord.swift; sourceTree = "<group>"; };
 		AA1100000000000000007BAB /* DesktopHabitMatrixWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopHabitMatrixWidget.swift; sourceTree = "<group>"; };
 		AA1100000000000000008BAB /* TodayAgendaWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayAgendaWidget.swift; sourceTree = "<group>"; };
 		AA1100000000000000009BAB /* MementoMoriWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MementoMoriWidget.swift; sourceTree = "<group>"; };
@@ -912,6 +916,7 @@
 				AA1100000000000000004BAB /* TodoItem.swift */,
 				AA1100000000000000005BAB /* JournalNote.swift */,
 				AA1100000000000000006BAB /* SleepEntry.swift */,
+				TR1100000000000000000001 /* TrekRecord.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -1602,6 +1607,7 @@
 				43CF8045B3B0F6A5C281FD1C /* TodoItem.swift in Sources */,
 				52582857A68BB8B58875B9B9 /* JournalNote.swift in Sources */,
 				DDCCA595485AB9B2C4DCCD07 /* SleepEntry.swift in Sources */,
+				TR1100000000000000000002 /* TrekRecord.swift in Sources */,
 				B3034613D4BFF54609FAC7F0 /* UserProfileView.swift in Sources */,
 				196D531151455D8CE3D3D758 /* HealthKitManager+Body.swift in Sources */,
 				2E23CFB5D205F9B4D5E1842B /* EventsView.swift in Sources */,
@@ -1751,6 +1757,7 @@
 				AA1100000000000000004DAB /* TodoItem.swift in Sources */,
 				AA1100000000000000005DAB /* JournalNote.swift in Sources */,
 				AA1100000000000000006DAB /* SleepEntry.swift in Sources */,
+				TR1100000000000000000004 /* TrekRecord.swift in Sources */,
 				AA1100000000000000007CAB /* DesktopHabitMatrixWidget.swift in Sources */,
 				AA1100000000000000008CAB /* TodayAgendaWidget.swift in Sources */,
 				AA1100000000000000009CAB /* MementoMoriWidget.swift in Sources */,
@@ -1864,6 +1871,7 @@
 				AA1100000000000000004CAB /* TodoItem.swift in Sources */,
 				AA1100000000000000005CAB /* JournalNote.swift in Sources */,
 				AA1100000000000000006CAB /* SleepEntry.swift in Sources */,
+				TR1100000000000000000003 /* TrekRecord.swift in Sources */,
 				AA1100000000000000002EAB /* UserProfileView.swift in Sources */,
 				AA1100000000000000003AAB /* HealthKitManager+Body.swift in Sources */,
 				FEEDF300000000000000F002 /* EventsView.swift in Sources */,
