@@ -30,13 +30,20 @@ enum TodoMode: String, CaseIterable, Identifiable {
 struct MacTodoContentColumn: View {
 
     @Binding var selection: TodoItem?
-    @State private var mode: TodoMode = .plan
+    @AppStorage("mac_today_submode") private var modeString: String = "Plan"
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var mode: Binding<TodoMode> {
+        Binding(
+            get: { TodoMode(rawValue: modeString) ?? .plan },
+            set: { modeString = $0.rawValue }
+        )
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             // Sub-pillar toggle
-            Picker("Mode", selection: $mode) {
+            Picker("Mode", selection: mode) {
                 ForEach(TodoMode.allCases) { m in
                     Text(m.rawValue).tag(m)
                 }
@@ -49,13 +56,13 @@ struct MacTodoContentColumn: View {
 
             // Plan ↔ List ↔ Time crossfade
             ZStack {
-                if mode == .plan {
+                if mode.wrappedValue == .plan {
                     MacDayPlannerColumn(selection: $selection)
                         .transition(.asymmetric(
                             insertion: .opacity.combined(with: .move(edge: .leading)),
                             removal:   .opacity.combined(with: .move(edge: .trailing))
                         ))
-                } else if mode == .list {
+                } else if mode.wrappedValue == .list {
                     MacTodoListColumn(selection: $selection)
                         .transition(.asymmetric(
                             insertion: .opacity.combined(with: .move(edge: .trailing)),
@@ -69,12 +76,12 @@ struct MacTodoContentColumn: View {
                         ))
                 }
             }
-            .animation(reduceMotion ? .linear(duration: 0.1) : DS.Motion.settle, value: mode)
+            .animation(reduceMotion ? .linear(duration: 0.1) : DS.Motion.settle, value: mode.wrappedValue)
         }
         .navigationTitle("Today")
         // Vend context-sensitive ⌘N action to the menu bar
         .focusedValue(\.todayNewItemAction, {
-            switch mode {
+            switch mode.wrappedValue {
             case .plan: NotificationCenter.default.post(name: .locaAddBlock, object: nil)
             case .list: NotificationCenter.default.post(name: .locaFocusQuickAdd, object: nil)
             case .time: break

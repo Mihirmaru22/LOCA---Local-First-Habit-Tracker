@@ -25,6 +25,7 @@ struct FocusRoomView: View {
     @State private var activePanel: FocusRoomActivePanel = .none
     @State private var showGoalsPanel: Bool = true
     @State private var showTimerModal: Bool = false
+    @AppStorage("mac_today_submode") private var todaySubmode: String = "Plan"
     @State private var isFullscreen: Bool = false
 
     // Background State
@@ -280,11 +281,32 @@ struct FocusRoomView: View {
 
             Spacer()
 
-            // Top-Center: Pluto Brand Muted Tag
-            Text("PLUTO FOCUS")
-                .font(.system(size: 11, weight: .bold, design: .monospaced))
-                .tracking(2)
-                .foregroundStyle(.white.opacity(0.35))
+            // Top-Center: Sub-pillar Mode Switcher [ Plan | List | Time ]
+            HStack(spacing: 4) {
+                ForEach(["Plan", "List", "Time"], id: \.self) { mode in
+                    let isSelected = todaySubmode == mode
+                    Button {
+                        withAnimation(.spring(response: 0.35)) {
+                            todaySubmode = mode
+                        }
+                        PlutoSoundEngine.shared.play(.tabSwitch)
+                        Haptics.impact(.light)
+                    } label: {
+                        Text(mode)
+                            .font(.system(size: 11, weight: isSelected ? .bold : .medium))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 5)
+                            .background(isSelected ? Color.white.opacity(0.2) : Color.clear)
+                            .foregroundStyle(isSelected ? .white : .white.opacity(0.6))
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(3)
+            .background(.ultraThinMaterial, in: Capsule())
+            .background(Color.black.opacity(0.65), in: Capsule())
+            .overlay(Capsule().stroke(Color.white.opacity(0.15), lineWidth: 1))
 
             Spacer()
 

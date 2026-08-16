@@ -64,7 +64,7 @@ struct MacRootView: View {
     @AppStorage("mac_streak_alert_enabled") private var streakAlertEnabled: Bool = true
     @AppStorage("mac_streak_alert_time") private var streakAlertTime: String = "22:00"
     @AppStorage("mac_weekly_digest_enabled") private var weeklyDigestEnabled: Bool = true
-    @AppStorage("mac_default_habit_reminder_time") private var defaultHabitTime: String = "09:00"
+    @AppStorage("mac_today_submode") private var todaySubmode: String = "Plan"
 
     var body: some View {
         splitView
@@ -72,7 +72,10 @@ struct MacRootView: View {
 
     private var splitView: some View {
         Group {
-            if selectedSection == .work || selectedSection == .life || selectedSection == .settings {
+            if selectedSection == .today && todaySubmode == "Time" {
+                FocusRoomView()
+                    .transition(.opacity)
+            } else if selectedSection == .work || selectedSection == .life || selectedSection == .settings {
                 NavigationSplitView {
                     MacSidebarView(selection: $selectedSection)
                         .navigationSplitViewColumnWidth(
