@@ -594,6 +594,56 @@ struct TrekDetailOverlay: View {
                     .background(DS.Color.surfaceRecessed.opacity(0.5), in: RoundedRectangle(cornerRadius: 6))
             }
 
+            // Photos / Media Section Header
+            HStack {
+                Text("SUMMIT MEMORIES")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(DS.Color.textTertiary)
+
+                Spacer()
+
+                Button {
+                    Task {
+                        let fileNames = await TrekPhotoPickerHelper.pickSummitPhotos()
+                        guard !fileNames.isEmpty else { return }
+                        trek.attachPhotos(fileNames: fileNames)
+                        Haptics.notification(.success)
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "photo.badge.plus")
+                            .font(.system(size: 10, weight: .semibold))
+                        Text("Add Photos")
+                            .font(.system(size: 10, weight: .semibold))
+                    }
+                    .foregroundStyle(Color.cyan)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(Color.cyan.opacity(0.1), in: RoundedRectangle(cornerRadius: 5))
+                }
+                .buttonStyle(.plain)
+            }
+
+            // Dotted Dropzone or Photo Count Pill
+            if trek.photoFileNames.isEmpty {
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.down.doc")
+                        .font(.system(size: 11))
+                        .foregroundStyle(DS.Color.textTertiary)
+                    Text("Drag & drop summit photos here or click Add Photos")
+                        .font(.system(size: 10))
+                        .foregroundStyle(DS.Color.textSecondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(DS.Color.surfaceRecessed.opacity(0.4), in: RoundedRectangle(cornerRadius: 6))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                        .foregroundStyle(DS.Color.textTertiary.opacity(0.5))
+                )
+            }
+
             // Bottom Action Toggle
             Button(action: onToggleStatus) {
                 HStack {
@@ -619,6 +669,15 @@ struct TrekDetailOverlay: View {
                 .stroke(Color.white.opacity(0.12), lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(0.4), radius: 16, x: 0, y: 8)
+        .onDrop(of: [.fileURL], isTargeted: nil) { providers in
+            Task {
+                let fileNames = await TrekPhotoPickerHelper.processDroppedProviders(providers)
+                guard !fileNames.isEmpty else { return }
+                trek.attachPhotos(fileNames: fileNames)
+                Haptics.notification(.success)
+            }
+            return true
+        }
     }
 }
 
@@ -640,6 +699,7 @@ struct LogTrekModal: View {
     @State private var status: TrekStatus = .conquered
     @State private var difficulty: TrekDifficulty = .moderate
     @State private var personalNotes: String = ""
+    @State private var photoFileNames: [String] = []
 
     @State private var searchQuery: String = ""
     @State private var searchResults: [MKMapItem] = []
@@ -818,6 +878,28 @@ struct LogTrekModal: View {
                         }
                     }
 
+                    // Attach Summit Photos
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("Summit Photos").font(.system(size: 11, weight: .semibold)).foregroundStyle(DS.Color.textSecondary)
+                            Spacer()
+                            Button {
+                                Task {
+                                    let files = await TrekPhotoPickerHelper.pickSummitPhotos()
+                                    photoFileNames.append(contentsOf: files)
+                                }
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "photo.badge.plus")
+                                    Text("Add Photos (\(photoFileNames.count))")
+                                }
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundStyle(Color.cyan)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+
                     // Personal Reflections / Notes
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Summit Reflections & Memories").font(.system(size: 11, weight: .semibold)).foregroundStyle(DS.Color.textSecondary)
@@ -854,7 +936,8 @@ struct LogTrekModal: View {
                         status: status,
                         difficulty: difficulty,
                         dateConquered: status == .conquered ? Date() : nil,
-                        personalNotes: personalNotes
+                        personalNotes: personalNotes,
+                        photoFileNames: photoFileNames
                     )
                     onSave(newTrek)
                     dismiss()
