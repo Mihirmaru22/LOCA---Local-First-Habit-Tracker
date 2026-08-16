@@ -50,6 +50,7 @@ struct MacTrekAtlasCanvas: View {
     @State private var selectedFilter: TrekFilter = .all
     @State private var isLogModalPresented: Bool = false
     @State private var isTrophyCabinetPresented: Bool = false
+    @State private var passportTrek: TrekRecord? = nil
     @State private var quickLookTrek: TrekRecord? = nil
     @State private var quickLookPhotoIndex: Int = 0
     @State private var isFlyingTrail: Bool = false
@@ -189,6 +190,11 @@ struct MacTrekAtlasCanvas: View {
                     isTrophyCabinetPresented = false
                 }
             )
+        }
+        .sheet(item: $passportTrek) { trek in
+            ExpeditionPassportModal(trek: trek) {
+                passportTrek = nil
+            }
         }
         .onAppear {
             DispatchQueue.main.async {
@@ -430,6 +436,9 @@ struct MacTrekAtlasCanvas: View {
                         onToggleStatus: {
                             toggleTrekStatus(selectedTrek)
                         },
+                        onOpenPassport: {
+                            passportTrek = selectedTrek
+                        },
                         onOpenQuickLook: { fileName, index in
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                 quickLookTrek = selectedTrek
@@ -479,6 +488,9 @@ struct MacTrekAtlasCanvas: View {
                                 },
                                 onToggleStatus: {
                                     toggleTrekStatus(trek)
+                                },
+                                onOpenPassport: {
+                                    passportTrek = trek
                                 },
                                 onOpenQuickLook: { _, idx in
                                     quickLookTrek = trek
@@ -757,6 +769,7 @@ struct TrekListCard: View {
 struct TrekDetailOverlay: View {
     let trek: TrekRecord
     let onToggleStatus: () -> Void
+    var onOpenPassport: () -> Void = {}
     var onOpenQuickLook: (String, Int) -> Void = { _, _ in }
     var onScrubCoordinate: (CLLocationCoordinate2D?) -> Void = { _ in }
     var onFlyTrail: () -> Void = {}
@@ -1022,22 +1035,42 @@ struct TrekDetailOverlay: View {
 
             Divider().padding(.vertical, DS.Space.xs)
 
-            // Bottom Action Toggle (Pinned)
-            Button(action: onToggleStatus) {
-                HStack {
-                    Image(systemName: isConquered ? "arrow.uturn.backward" : "trophy.fill")
-                    Text(isConquered ? "Mark as Wishlist 📍" : "Mark as Conquered 🏆")
+            // Bottom Action Bar: Passport + Status Toggle
+            HStack(spacing: 8) {
+                Button {
+                    onOpenPassport()
+                    Haptics.impact(.medium)
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "doc.richtext.fill")
+                            .font(.system(size: 11))
+                        Text("Passport")
+                            .font(.system(size: 11, weight: .bold))
+                    }
+                    .foregroundStyle(Color(red: 0.95, green: 0.80, blue: 0.30))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background(Color(red: 0.95, green: 0.80, blue: 0.30).opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
+                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color(red: 0.95, green: 0.80, blue: 0.30).opacity(0.35), lineWidth: 1))
                 }
-                .font(.system(size: 12, weight: .bold))
-                .foregroundStyle(isConquered ? DS.Color.textPrimary : Color.black)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
-                .background(
-                    isConquered ? DS.Color.surfaceRecessed : Color.cyan,
-                    in: RoundedRectangle(cornerRadius: 6)
-                )
+                .buttonStyle(.plain)
+
+                Button(action: onToggleStatus) {
+                    HStack(spacing: 4) {
+                        Image(systemName: isConquered ? "arrow.uturn.backward" : "trophy.fill")
+                        Text(isConquered ? "Wishlist" : "Conquer 🏆")
+                    }
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(isConquered ? DS.Color.textPrimary : Color.black)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background(
+                        isConquered ? DS.Color.surfaceRecessed : Color.cyan,
+                        in: RoundedRectangle(cornerRadius: 6)
+                    )
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
         }
         .padding(DS.Space.md)
         .frame(width: 370)

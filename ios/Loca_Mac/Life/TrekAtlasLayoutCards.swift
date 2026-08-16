@@ -12,6 +12,7 @@ struct TrekEditorialCard: View {
     let isSelected: Bool
     let onSelect: () -> Void
     let onToggleStatus: () -> Void
+    var onOpenPassport: () -> Void = {}
     let onOpenQuickLook: (String, Int) -> Void
 
     private var isConquered: Bool {
@@ -161,6 +162,19 @@ struct TrekEditorialCard: View {
             }
 
             Spacer()
+
+            Button(action: onOpenPassport) {
+                HStack(spacing: 3) {
+                    Image(systemName: "doc.richtext.fill")
+                    Text("Passport")
+                }
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(Color(red: 0.95, green: 0.80, blue: 0.30))
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
+                .background(Color(red: 0.95, green: 0.80, blue: 0.30).opacity(0.12), in: RoundedRectangle(cornerRadius: 4))
+            }
+            .buttonStyle(.plain)
 
             Button(action: onToggleStatus) {
                 HStack(spacing: 4) {
