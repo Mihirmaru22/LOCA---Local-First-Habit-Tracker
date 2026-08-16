@@ -87,7 +87,7 @@ struct MacSettingsView: View {
             case .general:       return "Launch sizing and feedback"
             case .dataSync:      return "Local-First SwiftData & exports"
             case .habits:        return "Streak caching and metrics"
-            case .about:         return "PLUTO App Version 3.5"
+            case .about:         return "PLUTO App Version 4.0"
             }
         }
     }
@@ -1224,10 +1224,10 @@ struct MacSettingsView: View {
                         .foregroundStyle(accentColor)
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("PLUTO App Version 3.5")
+                        Text("PLUTO App Version 4.0")
                             .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(DS.Color.textPrimary)
-                        Text("Version 3.5 (Apple Silicon & Sequoia Edition) · Built with SwiftData & Neural Engine")
+                        Text("Version 4.0 (Alpine Edition) · Built with SwiftData, SwiftCharts & Topo MapKit")
                             .font(DS.Text.caption)
                             .foregroundStyle(DS.Color.textSecondary)
                     }
