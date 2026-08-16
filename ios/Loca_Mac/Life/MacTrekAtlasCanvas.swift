@@ -486,6 +486,29 @@ struct MacTrekAtlasCanvas: View {
                 )
                 .edgesIgnoringSafeArea(.all)
 
+                // Top-Left Floating Range Quick Jump Bar
+                VStack(alignment: .leading, spacing: 6) {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 5) {
+                            rangeJumpButton(title: "All Summits 🇮🇳", trek: nil)
+                            rangeJumpButton(title: "Girnar 🦁", trek: allTreks.first(where: { $0.name.localizedCaseInsensitiveContains("Girnar") }))
+                            rangeJumpButton(title: "Pavagadh 🪷", trek: allTreks.first(where: { $0.name.localizedCaseInsensitiveContains("Pavagadh") }))
+                            rangeJumpButton(title: "Kalsubai 🏰", trek: allTreks.first(where: { $0.name.localizedCaseInsensitiveContains("Kalsubai") }))
+                            rangeJumpButton(title: "Harishchandragad ⚔️", trek: allTreks.first(where: { $0.name.localizedCaseInsensitiveContains("Harishchandragad") }))
+                            rangeJumpButton(title: "Mount Abu 🏜️", trek: allTreks.first(where: { $0.name.localizedCaseInsensitiveContains("Guru Shikhar") || $0.name.localizedCaseInsensitiveContains("Abu") }))
+                            rangeJumpButton(title: "Kedarkantha 🕉️", trek: allTreks.first(where: { $0.name.localizedCaseInsensitiveContains("Kedarkantha") }))
+                            rangeJumpButton(title: "Stok Kangri ❄️", trek: allTreks.first(where: { $0.name.localizedCaseInsensitiveContains("Stok Kangri") }))
+                            rangeJumpButton(title: "Kangchenjunga 🏔️", trek: allTreks.first(where: { $0.name.localizedCaseInsensitiveContains("Kangchenjunga") || $0.name.localizedCaseInsensitiveContains("Goechala") }))
+                            rangeJumpButton(title: "Anamudi 🌴", trek: allTreks.first(where: { $0.name.localizedCaseInsensitiveContains("Anamudi") || $0.name.localizedCaseInsensitiveContains("Chembra") }))
+                        }
+                        .padding(4)
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.15), lineWidth: 0.8))
+                    }
+                }
+                .padding(14)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+
                 // Floating Detail Inspector Card
                 if let selectedTrek {
                     TrekDetailOverlay(
@@ -733,6 +756,32 @@ struct MacTrekAtlasCanvas: View {
     }
 
     // MARK: - Actions
+
+    private func rangeJumpButton(title: String, trek: TrekRecord?) -> some View {
+        Button {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                if let trek {
+                    selectedTrek = trek
+                } else {
+                    selectedTrek = nil
+                }
+            }
+            Haptics.selection()
+        } label: {
+            Text(title)
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(Color.white)
+                .padding(.horizontal, 8)
+                .frame(height: 22)
+                .background(
+                    selectedTrek?.id == trek?.id && trek != nil
+                        ? Color.orange
+                        : Color.white.opacity(0.12),
+                    in: RoundedRectangle(cornerRadius: 5)
+                )
+        }
+        .buttonStyle(.plain)
+    }
 
     private func toggleTrekStatus(_ trek: TrekRecord) {
         if trek.status == .conquered {

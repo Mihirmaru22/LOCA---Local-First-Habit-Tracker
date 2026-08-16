@@ -23,6 +23,14 @@ final class TrekAnnotation: NSObject, MKAnnotation {
 
 final class FogOfWarPolygon: MKPolygon {}
 
+// MARK: - MountainRangeOverlayPolygon
+
+final class MountainRangeOverlayPolygon: MKPolygon {
+    var massifID: String = ""
+    var isConquered: Bool = false
+    var isSelected: Bool = false
+}
+
 // MARK: - TrekTrailPolyline
 
 final class TrekTrailPolyline: MKPolyline {
@@ -283,7 +291,29 @@ struct MacTrekMapView: NSViewRepresentable {
             }
         }
 
-        // 2. GPX Trail Ridge Polylines with 60fps downsampling optimization
+        // 2. Mountain Range Geopolitical Massif Polygons
+        for massif in MountainRangeBoundaryData.allRanges {
+            let coords = massif.coordinates
+            guard coords.count >= 3 else { continue }
+            let poly = MountainRangeOverlayPolygon(coordinates: coords, count: coords.count)
+            poly.massifID = massif.id
+
+            // Check if any trek within this massif is conquered
+            let hasConqueredTrekInMassif = treks.contains { trek in
+                trek.status == .conquered &&
+                (trek.region.localizedCaseInsensitiveContains(massif.stateName) ||
+                 massif.rawCoordinates.contains { abs($0.0 - trek.latitude) < 0.35 && abs($0.1 - trek.longitude) < 0.35 })
+            }
+
+            poly.isConquered = hasConqueredTrekInMassif
+            poly.isSelected = selectedTrek.map { trek in
+                abs(massif.centerLatitude - trek.latitude) < 0.5 && abs(massif.centerLongitude - trek.longitude) < 0.5
+            } ?? false
+
+            mapView.addOverlay(poly, level: .aboveRoads)
+        }
+
+        // 3. GPX Trail Ridge Polylines with 60fps downsampling optimization
         for trek in treks where trek.hasGPXTrack {
             let coords = trek.trailCoordinates
             guard coords.count >= 2 else { continue }
@@ -404,6 +434,23 @@ struct MacTrekMapView: NSViewRepresentable {
                 }
                 renderer.lineCap = .round
                 renderer.lineJoin = .round
+                return renderer
+            } else if let massif = overlay as? MountainRangeOverlayPolygon {
+                let renderer = MKPolygonRenderer(polygon: massif)
+                if massif.isSelected {
+                    renderer.fillColor = NSColor(red: 1.0, green: 0.75, blue: 0.0, alpha: 0.32) // Amber Massif Glow
+                    renderer.strokeColor = NSColor(red: 1.0, green: 0.85, blue: 0.2, alpha: 1.0)
+                    renderer.lineWidth = 3.0
+                } else if massif.isConquered {
+                    renderer.fillColor = NSColor(red: 0.0, green: 0.85, blue: 0.45, alpha: 0.22) // Conquered Emerald
+                    renderer.strokeColor = NSColor(red: 0.2, green: 0.9, blue: 0.5, alpha: 0.85)
+                    renderer.lineWidth = 2.0
+                } else {
+                    renderer.fillColor = NSColor(white: 0.15, alpha: 0.08) // Unconquered Fog Massif
+                    renderer.strokeColor = NSColor(white: 0.5, alpha: 0.35)
+                    renderer.lineWidth = 1.0
+                    renderer.lineDashPattern = [5, 4]
+                }
                 return renderer
             } else if let fog = overlay as? FogOfWarPolygon {
                 let renderer = MKPolygonRenderer(polygon: fog)
