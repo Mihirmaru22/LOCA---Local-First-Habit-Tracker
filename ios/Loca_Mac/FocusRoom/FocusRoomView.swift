@@ -30,7 +30,7 @@ struct FocusRoomView: View {
     @State private var isFullscreen: Bool = false
 
     // Background State
-    @State private var selectedPresetID: String = "city_1"
+    @State private var selectedPresetID: String = "nat_1"
     @State private var youtubeVideoID: String? = nil
     @State private var currentSession: FocusSession? = nil
 

@@ -3,12 +3,12 @@ import SwiftUI
 // MARK: - BackgroundCategory
 
 enum BackgroundCategory: String, CaseIterable, Identifiable {
-    case anime    = "🌸 Anime"
-    case library  = "📚 Library"
     case nature   = "🌿 Nature"
-    case animals  = "🐱 Animals"
+    case library  = "📚 Library"
     case cafe     = "☕ Cafe"
+    case anime    = "🌸 Anime"
     case desk     = "🖥 Desk"
+    case animals  = "🐱 Animals"
     case city     = "🏙 City"
     case colors   = "🌈 Colors"
     case other    = "✨ Other"
@@ -17,12 +17,12 @@ enum BackgroundCategory: String, CaseIterable, Identifiable {
     
     var shortTitle: String {
         switch self {
-        case .anime: return "Anime"
-        case .library: return "Library"
         case .nature: return "Nature"
-        case .animals: return "Animals"
+        case .library: return "Library"
         case .cafe: return "Cafe"
+        case .anime: return "Anime"
         case .desk: return "Desk"
+        case .animals: return "Animals"
         case .city: return "City"
         case .colors: return "Colors"
         case .other: return "Other"
@@ -57,7 +57,7 @@ struct BackgroundPickerPanel: View {
     @Binding var youtubeVideoID: String?
     @Binding var youtubeVolume: Double
 
-    @State private var selectedCategory: BackgroundCategory = .anime
+    @State private var selectedCategory: BackgroundCategory = .nature
     @State private var youtubeInputText: String = ""
 
     // 54 High-Res Open Source Photo Presets (Unsplash Library)
