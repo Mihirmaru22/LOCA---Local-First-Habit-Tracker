@@ -305,22 +305,7 @@ struct BackgroundPickerPanel: View {
             withAnimation(.easeInOut(duration: 0.4)) {
                 youtubeVideoID = id
             }
-            PlutoSoundEngine.shared.play(.checkmark)
             Haptics.notify(.success)
         }
-    }
-
-    private func extractYouTubeID(from urlString: String) -> String? {
-        let pattern = "(?<=watch\\?v=|/videos/|/embed/|youtu.be/|/v/|/e/|watch\\?feature=player_embedded&v=|%2Fvideos%2F|embed%2F|youtu.be%2F|%2Fv%2F)[^#&?\\n]*"
-        if let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive),
-           let match = regex.firstMatch(in: urlString, options: [], range: NSRange(location: 0, length: urlString.utf16.count)),
-           let range = Range(match.range, in: urlString) {
-            let candidate = String(urlString[range])
-            if candidate.count == 11 { return candidate }
-        }
-        if urlString.count == 11 && !urlString.contains("/") && !urlString.contains("?") {
-            return urlString
-        }
-        return nil
     }
 }

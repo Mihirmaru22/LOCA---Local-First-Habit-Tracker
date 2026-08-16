@@ -163,10 +163,14 @@ struct FocusRoomView: View {
         .animation(.spring(response: 0.35, dampingFraction: 0.8), value: showQuoteCard)
         .animation(.spring(response: 0.35, dampingFraction: 0.8), value: showTimerModal)
         .onAppear {
-            startSession()
+            DispatchQueue.main.async {
+                startSession()
+            }
         }
         .onDisappear {
-            endSession()
+            DispatchQueue.main.async {
+                endSession()
+            }
         }
     }
 

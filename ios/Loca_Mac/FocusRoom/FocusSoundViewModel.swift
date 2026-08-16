@@ -55,8 +55,12 @@ final class FocusSoundViewModel: ObservableObject {
 
     private func setupMultiTrackEngine() {
         #if os(iOS)
-        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
-        try? AVAudioSession.sharedInstance().setActive(true)
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            print("AVAudioSession setup failed: \(error)")
+        }
         #endif
 
         let mainMixer = audioEngine.mainMixerNode
