@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import MapKit
+import AppKit
 
 // MARK: - TrekPanoramicCard (Used in Layout 2: Panoramic Horizon)
 
