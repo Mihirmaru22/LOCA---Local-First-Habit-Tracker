@@ -8,26 +8,20 @@ import CoreSpotlight
 /// Ordered to match the natural daily workflow: check habits first,
 /// then review today's completions, then journal.
 enum MacSection: String, CaseIterable, Identifiable {
-    case habits   = "Habits"
     case today    = "Today"
-    case time     = "Time"
+    case work     = "Work"
     case journal  = "Journal"
     case life     = "Life"
-    case treks    = "Trek Atlas"
-    case audit    = "Audit"
     case settings = "Settings"
 
     var id: String { rawValue }
 
     var systemImage: String {
         switch self {
-        case .habits:   "checkmark.circle"
-        case .today:    "sun.max"
-        case .time:     "timer"
-        case .journal:  "book.closed"
-        case .life:     "binoculars"
-        case .treks:    "mountain.2.fill"
-        case .audit:    "slider.horizontal.3"
+        case .today:    "sun.max.fill"
+        case .work:     "briefcase.fill"
+        case .journal:  "book.closed.fill"
+        case .life:     "mountain.2.fill"
         case .settings: "gearshape"
         }
     }
@@ -47,7 +41,7 @@ enum MacSection: String, CaseIterable, Identifiable {
 /// `@Binding`; the detail column reads it as a plain `let`.
 struct MacRootView: View {
 
-    @State private var selectedSection:     MacSection?      = .habits
+    @State private var selectedSection:     MacSection?      = .today
     @State private var selectedHabit:       HabitBoard?      = nil
     @State private var selectedTodo:        TodoItem?        = nil
     @State private var selectedJournalRow:  JournalRow?      = .todaysLog
@@ -78,7 +72,7 @@ struct MacRootView: View {
 
     private var splitView: some View {
         Group {
-            if selectedSection == .audit || selectedSection == .life || selectedSection == .time || selectedSection == .settings || selectedSection == .treks {
+            if selectedSection == .work || selectedSection == .life || selectedSection == .settings {
                 NavigationSplitView {
                     MacSidebarView(selection: $selectedSection)
                         .navigationSplitViewColumnWidth(
@@ -87,7 +81,7 @@ struct MacRootView: View {
                             max:   DS.Mac.sidebarMaxWidth
                         )
                 } detail: {
-                    if selectedSection == .audit {
+                    if selectedSection == .work {
                         MacAuditView()
                     } else if selectedSection == .life {
                         if vaultManager.isVaultSecurityEnabled && !vaultManager.isLifeUnlocked {
@@ -95,10 +89,6 @@ struct MacRootView: View {
                         } else {
                             MacLifeView()
                         }
-                    } else if selectedSection == .treks {
-                        MacTrekAtlasCanvas()
-                    } else if selectedSection == .time {
-                        MacTimeView()
                     } else {
                         MacSettingsView()
                     }
@@ -246,15 +236,11 @@ private struct MacContentColumn: View {
 
     var body: some View {
         switch section {
-        case .habits:
-            MacHabitContentColumn(selection: $selectedHabit)
         case .today:
             MacTodoContentColumn(selection: $selectedTodo)
         case .journal:
             MacJournalContentColumn(selectedRow: $selectedJournalRow, selectedNote: $selectedJournalNote)
-        case .life:
-            MacLifeContentColumn(selectedRow: $selectedLifeRow)
-        case .audit, .settings, .time, .treks:
+        case .work, .life, .settings:
             EmptyView()
         case nil:
             MacEmptyContentView()
@@ -276,19 +262,13 @@ private struct MacDetailColumn: View {
 
     var body: some View {
         switch section {
-        case .habits:
-            MacHabitDetailColumn(habit: selectedHabit)
         case .today:
             MacTodoDetailColumn(item: $selectedTodo)
         case .journal:
             MacJournalDetailColumn(selectedRow: $selectedJournalRow, selectedNote: $selectedJournalNote)
         case .life:
             MacLifeDetailColumn(selectedRow: selectedLifeRow)
-        case .treks:
-            MacTrekAtlasCanvas()
-        case .time:
-            MacTimeView()
-        case .audit:
+        case .work:
             MacAuditDetailColumn()
         case .settings:
             MacSettingsView()
