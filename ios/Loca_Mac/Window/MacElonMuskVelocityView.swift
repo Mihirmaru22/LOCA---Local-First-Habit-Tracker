@@ -503,7 +503,7 @@ struct MacElonMuskVelocityView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 4))
             }
 
-            Text(habit.isQuantitative ? "Target: \(Int(habit.targetValue ?? 1)) \(habit.unitLabel ?? "")" : "Status: Nominal")
+            Text(habit.targetValue != nil ? "Target: \(Int(habit.targetValue ?? 1)) \(habit.unitLabel ?? "")" : "Status: Nominal")
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(DS.Color.textTertiary)
 
@@ -601,19 +601,19 @@ struct MacElonMuskVelocityView: View {
                                 Text(trek.name.uppercased())
                                     .font(.system(size: 13, weight: .heavy, design: .monospaced))
                                     .foregroundStyle(DS.Color.textPrimary)
-                                Text("Elevation: \(Int(trek.altitudeMeters))m · Location: \(trek.locationName)")
+                                Text("Elevation: \(Int(trek.elevationMeters))m · Region: \(trek.region)")
                                     .font(.system(size: 11))
                                     .foregroundStyle(DS.Color.textSecondary)
                             }
 
                             Spacer()
 
-                            Text(trek.isCompleted ? "SUMMIT VERIFIED" : "IN TRAINING")
+                            Text(trek.status == .conquered ? "SUMMIT VERIFIED" : "IN TRAINING")
                                 .font(.system(size: 9, weight: .heavy, design: .monospaced))
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
-                                .background(trek.isCompleted ? Color.green.opacity(0.2) : Color.orange.opacity(0.2))
-                                .foregroundStyle(trek.isCompleted ? Color.green : Color.orange)
+                                .background(trek.status == .conquered ? Color.green.opacity(0.2) : Color.orange.opacity(0.2))
+                                .foregroundStyle(trek.status == .conquered ? Color.green : Color.orange)
                                 .clipShape(Capsule())
                         }
                         .padding(14)
