@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import Combine
 
 // MARK: - MacElonMuskVelocityView (The Elon Musk Cybernetic Velocity Cockpit)
 
@@ -18,7 +19,7 @@ struct MacElonMuskVelocityView: View {
     @Query(filter: #Predicate<HabitBoard> { $0.archivedAt == nil }, sort: \HabitBoard.createdAt)
     private var habits: [HabitBoard]
 
-    @Query(filter: #Predicate<TodoItem> { !$0.isCompleted }, sort: \TodoItem.priority, order: .reverse)
+    @Query(filter: #Predicate<TodoItem> { $0.completedAt == nil && $0.archivedAt == nil }, sort: \TodoItem.priority, order: .reverse)
     private var activeTodos: [TodoItem]
 
     @Query private var treks: [TrekRecord]
@@ -236,7 +237,7 @@ struct MacElonMuskVelocityView: View {
                     if let missionTodo = selectedMissionTodo ?? activeTodos.first {
                         HStack(spacing: 14) {
                             Button {
-                                missionTodo.isCompleted = true
+                                missionTodo.completedAt = Date()
                                 try? modelContext.save()
                                 PlutoSoundEngine.shared.play(.checkmark)
                                 Haptics.notify(.success)
@@ -260,7 +261,7 @@ struct MacElonMuskVelocityView: View {
                             Spacer()
 
                             Button("DEPLOY / DONE") {
-                                missionTodo.isCompleted = true
+                                missionTodo.completedAt = Date()
                                 try? modelContext.save()
                                 PlutoSoundEngine.shared.play(.checkmark)
                                 Haptics.notify(.success)

@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import Combine
 
 // MARK: - MacSteveJobsTrinityView (The Steve Jobs Sovereign Edition)
 
@@ -17,10 +18,10 @@ struct MacSteveJobsTrinityView: View {
     @Query(filter: #Predicate<HabitBoard> { $0.archivedAt == nil }, sort: \HabitBoard.createdAt)
     private var habits: [HabitBoard]
 
-    @Query(filter: #Predicate<TodoItem> { !$0.isCompleted }, sort: \TodoItem.priority, order: .reverse)
+    @Query(filter: #Predicate<TodoItem> { $0.completedAt == nil && $0.archivedAt == nil }, sort: \TodoItem.priority, order: .reverse)
     private var activeTodos: [TodoItem]
 
-    @Query(sort: \JournalNote.createdAt, order: .reverse)
+    @Query(sort: \JournalNote.date, order: .reverse)
     private var notes: [JournalNote]
 
     @Query private var treks: [TrekRecord]
@@ -252,7 +253,8 @@ struct MacSteveJobsTrinityView: View {
                 if let todo = selectedFocusTodo ?? activeTodos.first {
                     HStack(spacing: 12) {
                         Button {
-                            todo.isCompleted = true
+                            todo.completedAt = Date()
+                            try? modelContext.save()
                             PlutoSoundEngine.shared.play(.checkmark)
                             Haptics.notify(.success)
                         } label: {
@@ -413,7 +415,7 @@ struct MacSteveJobsTrinityView: View {
                         ForEach(activeTodos) { todo in
                             HStack(spacing: 12) {
                                 Button {
-                                    todo.isCompleted = true
+                                    todo.completedAt = Date()
                                     try? modelContext.save()
                                     PlutoSoundEngine.shared.play(.checkmark)
                                     Haptics.notify(.success)
@@ -492,7 +494,7 @@ struct MacSteveJobsTrinityView: View {
                         Spacer()
                         Button("Commit Evening Note") {
                             guard !eveningReflectionText.trimmingCharacters(in: .whitespaces).isEmpty else { return }
-                            let note = JournalNote(content: eveningReflectionText, mood: selectedMoodTag)
+                            let note = JournalNote(date: Date(), title: selectedMoodTag, text: eveningReflectionText, kind: .dailyNote)
                             modelContext.insert(note)
                             try? modelContext.save()
                             eveningReflectionText = ""
