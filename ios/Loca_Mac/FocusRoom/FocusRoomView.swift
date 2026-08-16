@@ -171,6 +171,31 @@ struct FocusRoomView: View {
     private var fullscreenBackgroundLayer: some View {
         if let videoID = youtubeVideoID, !videoID.isEmpty {
             YouTubeWebView(videoID: videoID, volume: soundVM.youtubeVolume)
+        } else if let preset = BackgroundPickerPanel.presets.first(where: { $0.id == selectedPresetID }) {
+            ZStack {
+                // High-Resolution Photo Background
+                AsyncImage(url: URL(string: preset.fullImageURL)) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .transition(.opacity)
+                    case .failure:
+                        LinearGradient(colors: preset.fallbackColors, startPoint: .topLeading, endPoint: .bottomTrailing)
+                    case .empty:
+                        ZStack {
+                            LinearGradient(colors: preset.fallbackColors, startPoint: .topLeading, endPoint: .bottomTrailing)
+                            ProgressView().tint(.white)
+                        }
+                    @unknown default:
+                        LinearGradient(colors: preset.fallbackColors, startPoint: .topLeading, endPoint: .bottomTrailing)
+                    }
+                }
+
+                // Subtle Atmospheric Tint for Translucent Card Readability
+                Color.black.opacity(0.20)
+            }
         } else {
             // High fidelity artistic landscape gradients
             presetGradientBackground(presetID: selectedPresetID)
