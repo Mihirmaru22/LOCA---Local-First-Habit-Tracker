@@ -543,9 +543,7 @@ struct MacBlockEditor: View {
         }
         
         blocks.insert(newBlock, at: idx + 1)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { 
-            activeBlockID = newBlock.id 
-        }
+        activeBlockID = newBlock.id
     }
     
     private func handleBackspace(from id: UUID) {
@@ -901,12 +899,12 @@ struct MacRichTextView: NSViewRepresentable {
         
         nsView.textStorage?.setAttributes(attributes, range: NSRange(location: 0, length: nsView.string.count))
         
-        if isActive && !context.coordinator.wasActive {
+        if isActive {
             DispatchQueue.main.async {
-                if nsView.window?.firstResponder != nsView {
-                    nsView.window?.makeFirstResponder(nsView)
+                if let window = nsView.window, window.firstResponder != nsView {
+                    window.makeFirstResponder(nsView)
+                    nsView.setSelectedRange(NSRange(location: nsView.string.count, length: 0))
                 }
-                nsView.setSelectedRange(NSRange(location: nsView.string.count, length: 0))
             }
         }
         context.coordinator.wasActive = isActive
@@ -1017,6 +1015,16 @@ struct MacRichTextView: NSViewRepresentable {
 
 class AutoSizingTextView: NSTextView {
     var placeholderString: String = "" { didSet { needsDisplay = true } }
+    
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        if let coordinator = delegate as? MacRichTextView.Coordinator, coordinator.parent.isActive {
+            DispatchQueue.main.async {
+                self.window?.makeFirstResponder(self)
+                self.setSelectedRange(NSRange(location: self.string.count, length: 0))
+            }
+        }
+    }
     
     override var intrinsicContentSize: NSSize {
         guard let layoutManager = layoutManager, let textContainer = textContainer else { return super.intrinsicContentSize }
