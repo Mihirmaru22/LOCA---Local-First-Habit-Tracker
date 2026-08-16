@@ -170,6 +170,28 @@ private func buildConfig(coordinator: WKScriptMessageHandler) -> WKWebViewConfig
                 }
             `;
             document.head.appendChild(s);
+
+            // Instant MutationObserver for 0ms DOM insertion suppression
+            var observer = new MutationObserver(function(mutations) {
+                ['.ytp-chrome-top','.ytp-chrome-bottom','.ytp-large-play-button',
+                 '.ytp-pause-overlay','.ytp-pause-overlay-container',
+                 '.ytp-chrome-controls','.ytp-button','.ytp-watermark',
+                 '.ytp-youtube-button','.ytp-gradient-top','.ytp-gradient-bottom',
+                 '.ytp-play-button','.ytp-prev-button','.ytp-next-button'
+                ].forEach(function(sel) {
+                    document.querySelectorAll(sel).forEach(function(el) {
+                        el.style.cssText += 
+                            'display:none!important;opacity:0!important;visibility:hidden!important;width:0!important;height:0!important;';
+                    });
+                });
+            });
+
+            if (document.body) {
+                observer.observe(document.body, { 
+                    childList: true, 
+                    subtree: true 
+                });
+            }
             
             // Continuous fast sweep — YouTube re-injects UI after events
             setInterval(function() {
