@@ -914,9 +914,7 @@ struct MacSettingsView: View {
 
     private func trekSubtitle(for l: TrekAtlasLayoutVariant) -> String {
         switch l {
-        case .splitMapInspector: return "List + 3D Topo Map"
-        case .panoramicHorizon:  return "Full-Bleed Map + Carousel"
-        case .bentoMatrix:       return "Modular Analytics Grid"
+        case .splitMapInspector: return "Directory List + 3D Topo Map"
         case .editorialList:     return "Magazine Journal Cards"
         }
     }
@@ -924,8 +922,6 @@ struct MacSettingsView: View {
     private func trekDescription(for l: TrekAtlasLayoutVariant) -> String {
         switch l {
         case .splitMapInspector: return "Classic executive split view with left search list and right 3D MapKit canvas."
-        case .panoramicHorizon:  return "Cinematic top 3D topographic globe with bottom horizontal expedition cards carousel."
-        case .bentoMatrix:       return "High-density modular bento dashboard allocating zones for map radar, elevation chart, and summits."
         case .editorialList:     return "50/50 magazine-style cards with photo headers, weather memoirs, and route inspection."
         }
     }
@@ -966,28 +962,6 @@ struct MacSettingsView: View {
                             RoundedRectangle(cornerRadius: 6).fill(Color.cyan.opacity(0.15))
                             RoundedRectangle(cornerRadius: 4).fill(DS.Color.surface).frame(width: 100, height: 50).padding(6)
                         }
-                    }
-                    .padding(8)
-
-                case .panoramicHorizon:
-                    VStack(spacing: 6) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 6).fill(Color.cyan.opacity(0.2))
-                            Image(systemName: "map.fill").foregroundStyle(Color.cyan.opacity(0.4)).font(.system(size: 28))
-                        }
-                        HStack(spacing: 6) {
-                            ForEach(0..<3) { _ in
-                                RoundedRectangle(cornerRadius: 4).fill(DS.Color.surface).frame(height: 35)
-                            }
-                        }
-                    }
-                    .padding(8)
-
-                case .bentoMatrix:
-                    HStack(spacing: 8) {
-                        RoundedRectangle(cornerRadius: 6).fill(Color.cyan.opacity(0.18)).frame(maxWidth: .infinity)
-                        RoundedRectangle(cornerRadius: 6).fill(Color.purple.opacity(0.18)).frame(maxWidth: .infinity)
-                        RoundedRectangle(cornerRadius: 6).fill(Color.orange.opacity(0.18)).frame(maxWidth: .infinity)
                     }
                     .padding(8)
 
