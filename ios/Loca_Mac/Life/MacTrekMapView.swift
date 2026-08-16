@@ -23,10 +23,18 @@ final class TrekAnnotation: NSObject, MKAnnotation {
 
 final class FogOfWarPolygon: MKPolygon {}
 
+// MARK: - TrekTrailPolyline
+
+final class TrekTrailPolyline: MKPolyline {
+    var trekID: UUID = UUID()
+    var isConquered: Bool = false
+    var isSelected: Bool = false
+}
+
 // MARK: - MacTrekMapView (NSViewRepresentable)
 
 /// Native AppKit MKMapView wrapper delivering precision camera controls, custom
-/// illuminated summit badges, glowing beacon rings, and Fog-of-War hole-punching overlays.
+/// illuminated summit badges, glowing beacon rings, GPX trail polylines, and Fog-of-War hole-punching overlays.
 struct MacTrekMapView: NSViewRepresentable {
 
     let treks: [TrekRecord]
@@ -77,19 +85,29 @@ struct MacTrekMapView: NSViewRepresentable {
             }
         }
 
-        // 2. Update Fog of War & Aura Overlays
-        updateFogOfWar(mapView: mapView)
+        // 2. Update Fog of War, Auras, and GPX Trail Overlays
+        updateMapOverlays(mapView: mapView)
 
         // 3. Fly Camera to Selected Trek
         if let selectedTrek, selectedTrek.id != context.coordinator.lastSelectedID {
             context.coordinator.lastSelectedID = selectedTrek.id
-            let camera = MKMapCamera(
-                lookingAtCenter: selectedTrek.coordinate,
-                fromDistance: 95_000,
-                pitch: 55,
-                heading: 10
-            )
-            mapView.setCamera(camera, animated: true)
+
+            // If selected trek has a GPX trail, frame the whole trail
+            let trailCoords = selectedTrek.trailCoordinates
+            if trailCoords.count >= 2 {
+                let poly = MKPolyline(coordinates: trailCoords, count: trailCoords.count)
+                let rect = poly.boundingMapRect
+                let edgePadding = NSEdgeInsets(top: 80, left: 80, bottom: 80, right: 380) // Leave space for detail card
+                mapView.setVisibleMapRect(rect, edgePadding: edgePadding, animated: true)
+            } else {
+                let camera = MKMapCamera(
+                    lookingAtCenter: selectedTrek.coordinate,
+                    fromDistance: 95_000,
+                    pitch: 55,
+                    heading: 10
+                )
+                mapView.setCamera(camera, animated: true)
+            }
 
             if let targetAnnotation = mapView.annotations.first(where: { ($0 as? TrekAnnotation)?.trek.id == selectedTrek.id }) {
                 mapView.selectAnnotation(targetAnnotation, animated: true)
@@ -97,44 +115,54 @@ struct MacTrekMapView: NSViewRepresentable {
         }
     }
 
-    private func updateFogOfWar(mapView: MKMapView) {
+    private func updateMapOverlays(mapView: MKMapView) {
         mapView.removeOverlays(mapView.overlays)
 
         let conqueredTreks = treks.filter { $0.status == .conquered }
 
-        guard !conqueredTreks.isEmpty else { return }
+        // 1. Fog of War & Radiant Aura Overlays
+        if !conqueredTreks.isEmpty {
+            let worldCoordinates: [CLLocationCoordinate2D] = [
+                CLLocationCoordinate2D(latitude: 85.0, longitude: -179.99),
+                CLLocationCoordinate2D(latitude: 85.0, longitude: 179.99),
+                CLLocationCoordinate2D(latitude: -85.0, longitude: 179.99),
+                CLLocationCoordinate2D(latitude: -85.0, longitude: -179.99)
+            ]
 
-        // Global Exterior Polygon Coordinates (Covering the whole Earth)
-        let worldCoordinates: [CLLocationCoordinate2D] = [
-            CLLocationCoordinate2D(latitude: 85.0, longitude: -179.99),
-            CLLocationCoordinate2D(latitude: 85.0, longitude: 179.99),
-            CLLocationCoordinate2D(latitude: -85.0, longitude: 179.99),
-            CLLocationCoordinate2D(latitude: -85.0, longitude: -179.99)
-        ]
+            var interiorHoles: [MKPolygon] = []
+            var auraCircles: [MKCircle] = []
 
-        // Cutout circular hole polygons for each conquered mountain
-        var interiorHoles: [MKPolygon] = []
-        var auraCircles: [MKCircle] = []
+            for trek in conqueredTreks {
+                let radius = max(20_000, trek.revealRadiusMeters ?? 45_000)
+                let hole = Self.createCirclePolygon(center: trek.coordinate, radiusMeters: radius)
+                interiorHoles.append(hole)
 
-        for trek in conqueredTreks {
-            let radius = max(20_000, trek.revealRadiusMeters ?? 45_000)
-            let hole = Self.createCirclePolygon(center: trek.coordinate, radiusMeters: radius)
-            interiorHoles.append(hole)
+                let aura = MKCircle(center: trek.coordinate, radius: radius)
+                auraCircles.append(aura)
+            }
 
-            // Radiant boundary circle
-            let aura = MKCircle(center: trek.coordinate, radius: radius)
-            auraCircles.append(aura)
+            let fogPolygon = FogOfWarPolygon(
+                coordinates: worldCoordinates,
+                count: worldCoordinates.count,
+                interiorPolygons: interiorHoles
+            )
+
+            mapView.addOverlay(fogPolygon, level: .aboveRoads)
+            for circle in auraCircles {
+                mapView.addOverlay(circle, level: .aboveRoads)
+            }
         }
 
-        let fogPolygon = FogOfWarPolygon(
-            coordinates: worldCoordinates,
-            count: worldCoordinates.count,
-            interiorPolygons: interiorHoles
-        )
+        // 2. GPX Trail Ridge Polylines (4.2)
+        for trek in treks where trek.hasGPXTrack {
+            let coords = trek.trailCoordinates
+            guard coords.count >= 2 else { continue }
 
-        mapView.addOverlay(fogPolygon, level: .aboveRoads)
-        for circle in auraCircles {
-            mapView.addOverlay(circle, level: .aboveRoads)
+            let polyline = TrekTrailPolyline(coordinates: coords, count: coords.count)
+            polyline.trekID = trek.id
+            polyline.isConquered = trek.status == .conquered
+            polyline.isSelected = trek.id == selectedTrek?.id
+            mapView.addOverlay(polyline, level: .aboveRoads)
         }
     }
 
@@ -188,7 +216,22 @@ struct MacTrekMapView: NSViewRepresentable {
         }
 
         func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
-            if let fog = overlay as? FogOfWarPolygon {
+            if let trail = overlay as? TrekTrailPolyline {
+                let renderer = MKPolylineRenderer(polyline: trail)
+                if trail.isSelected {
+                    renderer.strokeColor = NSColor(red: 0.0, green: 0.95, blue: 1.0, alpha: 1.0) // Radiant Neon Cyan
+                    renderer.lineWidth = 4.5
+                } else if trail.isConquered {
+                    renderer.strokeColor = NSColor(red: 0.0, green: 0.85, blue: 0.95, alpha: 0.85) // Conquered Cyan
+                    renderer.lineWidth = 3.2
+                } else {
+                    renderer.strokeColor = NSColor(red: 0.75, green: 0.5, blue: 1.0, alpha: 0.75) // Wishlist Violet
+                    renderer.lineWidth = 2.8
+                }
+                renderer.lineCap = .round
+                renderer.lineJoin = .round
+                return renderer
+            } else if let fog = overlay as? FogOfWarPolygon {
                 let renderer = MKPolygonRenderer(polygon: fog)
                 renderer.fillColor = NSColor(red: 0.05, green: 0.07, blue: 0.11, alpha: 0.72) // Obsidian Fog
                 return renderer
