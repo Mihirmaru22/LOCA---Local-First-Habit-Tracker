@@ -119,6 +119,7 @@ struct MacTodoListColumn: View {
 
 private struct List1BentoCardsView: View {
 
+    @Environment(\.modelContext) private var modelContext
     let items: [TodoItem]
     let doneItems: [TodoItem]
     @Binding var selection: TodoItem?
