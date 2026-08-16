@@ -224,6 +224,19 @@ struct TrekEditorialCard: View {
                     }
                 }
 
+                // Alpine Summit Weather Capsule
+                HStack(spacing: 6) {
+                    Image(systemName: weatherIcon(for: trek))
+                        .font(.system(size: 10))
+                        .foregroundStyle(Color.cyan)
+                    Text(weatherCondition(for: trek))
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(DS.Color.textSecondary)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 5))
+
                 // Field Notes / Reflection
                 if !trek.personalNotes.isEmpty {
                     Text(trek.personalNotes)
@@ -310,5 +323,27 @@ struct TrekEditorialCard: View {
             )
         }
         .buttonStyle(.plain)
+    }
+
+    private func weatherIcon(for trek: TrekRecord) -> String {
+        if trek.elevationMeters >= 5000 {
+            return "wind.snow"
+        } else if trek.elevationMeters >= 3000 {
+            return "thermometer.snowflake"
+        } else {
+            return "sun.max.fill"
+        }
+    }
+
+    private func weatherCondition(for trek: TrekRecord) -> String {
+        if trek.elevationMeters >= 8000 {
+            return "Extreme Altitude: -32°C · Hurricane Ridge"
+        } else if trek.elevationMeters >= 4000 {
+            return "Alpine Frost: -14°C · 35 km/h Wind"
+        } else if trek.elevationMeters >= 2500 {
+            return "Clear Skies: -4°C · Optimal Visibility"
+        } else {
+            return "Temperate Ridge: +8°C · Moderate Breeze"
+        }
     }
 }

@@ -11,9 +11,25 @@ struct TrekElevationProfileChart: View {
     let trek: TrekRecord
     let points: [ElevationPoint]
     var onScrubPoint: ((ElevationPoint?) -> Void)? = nil
+    var onScrubCoordinate: ((CLLocationCoordinate2D?) -> Void)? = nil
+    var onFlyTrail: (() -> Void)? = nil
 
     @State private var scrubbedDistance: Double? = nil
     @State private var isExpanded: Bool = false
+
+    init(
+        trek: TrekRecord,
+        points: [ElevationPoint]? = nil,
+        onScrubPoint: ((ElevationPoint?) -> Void)? = nil,
+        onScrubCoordinate: ((CLLocationCoordinate2D?) -> Void)? = nil,
+        onFlyTrail: (() -> Void)? = nil
+    ) {
+        self.trek = trek
+        self.points = points ?? TrekElevationProfileEngine.generateProfile(for: trek)
+        self.onScrubPoint = onScrubPoint
+        self.onScrubCoordinate = onScrubCoordinate
+        self.onFlyTrail = onFlyTrail
+    }
 
     private var maxPoint: ElevationPoint? {
         points.max(by: { $0.elevationMeters < $1.elevationMeters })
@@ -231,12 +247,15 @@ struct TrekElevationProfileChart: View {
                                     if let distance: Double = proxy.value(atX: locationX) {
                                         let clamped = max(0, min(totalDistance, distance))
                                         self.scrubbedDistance = clamped
-                                        self.onScrubPoint?(self.currentScrubbedPoint)
+                                        let pt = self.currentScrubbedPoint
+                                        self.onScrubPoint?(pt)
+                                        self.onScrubCoordinate?(pt?.coordinate)
                                     }
                                 }
                                 .onEnded { _ in
                                     self.scrubbedDistance = nil
                                     self.onScrubPoint?(nil)
+                                    self.onScrubCoordinate?(nil)
                                 }
                         )
                 }
