@@ -21,7 +21,7 @@ public func extractYouTubeID(from urlString: String) -> String? {
             }
         }
 
-        // 2. https://www.youtube.com/embed/ABC123
+        // 2. https://www.youtube.com/embed/ABC123 or https://www.youtube-nocookie.com/embed/ABC123
         if url.path.contains("/embed/") {
             let components = url.path.components(separatedBy: "/embed/")
             if let last = components.last, !last.isEmpty {
@@ -51,39 +51,23 @@ public func extractYouTubeID(from urlString: String) -> String? {
 
 // MARK: - YouTube HTML Generator
 
-private func generateYouTubeHTML(videoID: String, volume: Double) -> String {
+private func generateYouTubeHTML(videoID: String) -> String {
     """
     <!DOCTYPE html>
     <html>
     <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        background: #000;
-      }
-      html, body {
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-      }
-      iframe {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        border: none;
-      }
+      * { margin:0; padding:0; background:#000; box-sizing: border-box; }
+      html, body { width:100%; height:100%; overflow:hidden; }
+      iframe { position:fixed; top:0; left:0; width:100%; height:100%; border:none; }
     </style>
     </head>
     <body>
     <iframe
       id="yt-player"
-      src="https://www.youtube.com/embed/\(videoID)?autoplay=1&playsinline=1&loop=1&playlist=\(videoID)&controls=1&rel=0&modestbranding=1&enablejsapi=1"
-      allow="autoplay; encrypted-media; fullscreen"
+      src="https://www.youtube-nocookie.com/embed/\(videoID)?autoplay=1&playsinline=1&loop=1&playlist=\(videoID)&controls=1&rel=0&modestbranding=1&enablejsapi=1"
+      allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
       allowfullscreen>
     </iframe>
     <script>
@@ -105,15 +89,159 @@ private func generateYouTubeHTML(videoID: String, volume: Double) -> String {
     """
 }
 
-// MARK: - YouTubeWebView for macOS
+// MARK: - YouTube Scripts & Configuration Builder
 
-#if os(macOS)
-struct YouTubeWebView: NSViewRepresentable {
+private func makeConfiguredWKWebView() -> (WKWebViewConfiguration, WKUserScript, WKUserScript) {
+    let config = WKWebViewConfiguration()
+    config.mediaTypesRequiringUserActionForPlayback = []
+
+    let pagePrefs = WKWebpagePreferences()
+    pagePrefs.allowsContentJavaScript = true
+    config.defaultWebpagePreferences = pagePrefs
+    config.processPool = WKProcessPool()
+
+    #if os(macOS)
+    config.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
+    #elseif os(iOS)
+    config.allowsInlineMediaPlayback = true
+    #endif
+
+    // Change 2: Inject browser API spoof script at document start
+    let spoofScript = WKUserScript(
+        source: """
+            // Spoof Chrome browser environment
+            window.chrome = {
+                runtime: {
+                    connect: function() {},
+                    sendMessage: function() {}
+                },
+                loadTimes: function() { return {}; },
+                csi: function() { return {}; }
+            };
+            
+            // Spoof googletag (ad platform YouTube checks for)
+            window.googletag = window.googletag || {};
+            window.googletag.cmd = window.googletag.cmd || [];
+            
+            // Override WebView detection
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => undefined
+            });
+            
+            // Spoof plugins array
+            Object.defineProperty(navigator, 'plugins', {
+                get: () => [1, 2, 3, 4, 5]
+            });
+            
+            // Spoof languages
+            Object.defineProperty(navigator, 'languages', {
+                get: () => ['en-US', 'en']
+            });
+        """,
+        injectionTime: .atDocumentStart,
+        forMainFrameOnly: false
+    )
+    config.userContentController.addUserScript(spoofScript)
+
+    // Change 3: Error detection user script polling for YouTube error state
+    let errorDetectScript = WKUserScript(
+        source: """
+            setInterval(function() {
+                var errorScreen = document.querySelector('.ytp-error');
+                if (errorScreen && errorScreen.style.display !== 'none') {
+                    window.webkit.messageHandlers.youtubeError.postMessage(
+                        errorScreen.innerText || 'playback_error'
+                    );
+                }
+            }, 2000);
+        """,
+        injectionTime: .atDocumentEnd,
+        forMainFrameOnly: false
+    )
+    config.userContentController.addUserScript(errorDetectScript)
+
+    return (config, spoofScript, errorDetectScript)
+}
+
+// MARK: - YouTubeWebView (Main SwiftUI Container with Fallback UI)
+
+struct YouTubeWebView: View {
     let videoID: String
     var volume: Double // 0.0 to 1.0
 
-    class Coordinator: NSObject, WKNavigationDelegate {
+    @State private var showFallback: Bool = false
+
+    var body: some View {
+        ZStack {
+            YouTubeWebViewRepresentable(videoID: videoID, volume: volume, showFallback: $showFallback)
+
+            if showFallback {
+                VStack(spacing: 12) {
+                    Image(systemName: "play.slash.fill")
+                        .font(.system(size: 38))
+                        .foregroundStyle(.white.opacity(0.6))
+
+                    Text("YouTube playback restricted")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(.white)
+
+                    Text("This video does not allow in-app embedding.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.white.opacity(0.7))
+
+                    Button {
+                        #if os(macOS)
+                        if let url = URL(string: "https://youtu.be/\(videoID)") {
+                            NSWorkspace.shared.open(url)
+                        }
+                        #else
+                        if let url = URL(string: "https://youtu.be/\(videoID)") {
+                            UIApplication.shared.open(url)
+                        }
+                        #endif
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "safari.fill")
+                            Text("Open in Safari")
+                        }
+                        .font(.system(size: 12, weight: .semibold))
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                .padding(24)
+                .background(Color.black.opacity(0.85), in: RoundedRectangle(cornerRadius: 16))
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.15), lineWidth: 1))
+                .transition(.opacity)
+            }
+        }
+    }
+}
+
+// MARK: - Representables per Platform
+
+#if os(macOS)
+struct YouTubeWebViewRepresentable: NSViewRepresentable {
+    let videoID: String
+    var volume: Double
+    @Binding var showFallback: Bool
+
+    class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
+        var parent: YouTubeWebViewRepresentable
         var currentVideoID: String = ""
+
+        init(_ parent: YouTubeWebViewRepresentable) {
+            self.parent = parent
+        }
+
+        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+            if message.name == "youtubeError" {
+                DispatchQueue.main.async {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        self.parent.showFallback = true
+                    }
+                }
+            }
+        }
 
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
             print("WKWebView provisional load failed: \(error.localizedDescription)")
@@ -125,62 +253,66 @@ struct YouTubeWebView: NSViewRepresentable {
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator()
+        Coordinator(self)
     }
 
     func makeNSView(context: Context) -> WKWebView {
-        // Fix 2: WKWebViewConfiguration with process pool & JIT/page preferences
-        let config = WKWebViewConfiguration()
-        config.mediaTypesRequiringUserActionForPlayback = []
+        let (config, _, _) = makeConfiguredWKWebView()
+        config.userContentController.add(context.coordinator, name: "youtubeError")
 
-        let pagePrefs = WKWebpagePreferences()
-        pagePrefs.allowsContentJavaScript = true
-        config.defaultWebpagePreferences = pagePrefs
-        config.processPool = WKProcessPool()
-
-        config.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
-
-        // Init WKWebView with configured settings
         let webView = WKWebView(frame: .zero, configuration: config)
 
-        // Fix 1: Custom User Agent (macOS Safari)
+        // Change 2: Real macOS Safari User Agent
         webView.customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15"
-
-        // Fix 4: Assign navigation delegate
         webView.navigationDelegate = context.coordinator
 
-        // Fix 1: Load HTML string with youtube.com origin
-        let html = generateYouTubeHTML(videoID: videoID, volume: volume)
-        webView.loadHTMLString(html, baseURL: URL(string: "https://www.youtube.com")!)
+        // Change 1: Load via youtube-nocookie.com
+        let html = generateYouTubeHTML(videoID: videoID)
+        webView.loadHTMLString(html, baseURL: URL(string: "https://www.youtube-nocookie.com")!)
         context.coordinator.currentVideoID = videoID
 
         return webView
     }
 
     func updateNSView(_ nsView: WKWebView, context: Context) {
-        // Only reload if the videoID has actually changed
+        context.coordinator.parent = self
+
         if context.coordinator.currentVideoID != videoID && !videoID.isEmpty {
             context.coordinator.currentVideoID = videoID
             DispatchQueue.main.async {
-                let html = generateYouTubeHTML(videoID: videoID, volume: volume)
-                nsView.loadHTMLString(html, baseURL: URL(string: "https://www.youtube.com")!)
+                self.showFallback = false
+                let html = generateYouTubeHTML(videoID: self.videoID)
+                nsView.loadHTMLString(html, baseURL: URL(string: "https://www.youtube-nocookie.com")!)
             }
         }
 
-        // Update volume without resetting playback
         let js = "if (typeof setVolume === 'function') { setVolume(\(volume)); };"
         nsView.evaluateJavaScript(js, completionHandler: nil)
     }
 }
 #else
-// MARK: - YouTubeWebView for iOS
-
-struct YouTubeWebView: UIViewRepresentable {
+struct YouTubeWebViewRepresentable: UIViewRepresentable {
     let videoID: String
-    var volume: Double // 0.0 to 1.0
+    var volume: Double
+    @Binding var showFallback: Bool
 
-    class Coordinator: NSObject, WKNavigationDelegate {
+    class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
+        var parent: YouTubeWebViewRepresentable
         var currentVideoID: String = ""
+
+        init(_ parent: YouTubeWebViewRepresentable) {
+            self.parent = parent
+        }
+
+        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+            if message.name == "youtubeError" {
+                DispatchQueue.main.async {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        self.parent.showFallback = true
+                    }
+                }
+            }
+        }
 
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
             print("WKWebView provisional load failed: \(error.localizedDescription)")
@@ -192,39 +324,34 @@ struct YouTubeWebView: UIViewRepresentable {
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator()
+        Coordinator(self)
     }
 
     func makeUIView(context: Context) -> WKWebView {
-        let config = WKWebViewConfiguration()
-        config.allowsInlineMediaPlayback = true
-        config.mediaTypesRequiringUserActionForPlayback = []
-
-        let pagePrefs = WKWebpagePreferences()
-        pagePrefs.allowsContentJavaScript = true
-        config.defaultWebpagePreferences = pagePrefs
-        config.processPool = WKProcessPool()
+        let (config, _, _) = makeConfiguredWKWebView()
+        config.userContentController.add(context.coordinator, name: "youtubeError")
 
         let webView = WKWebView(frame: .zero, configuration: config)
 
-        // Fix 1: Custom User Agent (iOS Safari)
         webView.customUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
-
         webView.navigationDelegate = context.coordinator
 
-        let html = generateYouTubeHTML(videoID: videoID, volume: volume)
-        webView.loadHTMLString(html, baseURL: URL(string: "https://www.youtube.com")!)
+        let html = generateYouTubeHTML(videoID: videoID)
+        webView.loadHTMLString(html, baseURL: URL(string: "https://www.youtube-nocookie.com")!)
         context.coordinator.currentVideoID = videoID
 
         return webView
     }
 
     func updateUIView(_ uiView: WKWebView, context: Context) {
+        context.coordinator.parent = self
+
         if context.coordinator.currentVideoID != videoID && !videoID.isEmpty {
             context.coordinator.currentVideoID = videoID
             DispatchQueue.main.async {
-                let html = generateYouTubeHTML(videoID: videoID, volume: volume)
-                uiView.loadHTMLString(html, baseURL: URL(string: "https://www.youtube.com")!)
+                self.showFallback = false
+                let html = generateYouTubeHTML(videoID: self.videoID)
+                uiView.loadHTMLString(html, baseURL: URL(string: "https://www.youtube-nocookie.com")!)
             }
         }
 
