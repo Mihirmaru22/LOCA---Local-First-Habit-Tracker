@@ -22,6 +22,7 @@ struct MacSettingsView: View {
     @Query private var allTreks: [TrekRecord]
 
     // Settings Storage
+    @AppStorage("pluto_app_experience_mode") private var appExperienceMode: String = "original"
     @AppStorage("mac_sound_effects_enabled") private var soundEffectsEnabled: Bool = true
     @AppStorage("mac_open_full_window_on_launch") private var openFullWindow: Bool = true
     @AppStorage("mac_enable_haptics") private var enableHaptics: Bool = true
@@ -75,6 +76,11 @@ struct MacSettingsView: View {
                         .foregroundStyle(DS.Color.textSecondary)
                 }
                 .padding(.bottom, 4)
+
+                // 0. OS Architecture Mode (Original vs Steve Jobs)
+                bentoTile(title: "OS Architecture Mode", icon: "square.2.layers.3d.top.filled", accent: accentColor) {
+                    experienceModeControlBlock
+                }
 
                 // Bento Grid 2-Column
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)], spacing: 16) {
@@ -147,6 +153,98 @@ struct MacSettingsView: View {
     }
 
     // MARK: - Control Blocks
+
+    // 0. OS Experience Architecture Mode (Original vs Steve Jobs Trinity)
+    private var experienceModeControlBlock: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Select how PLUTO structures your executive life:")
+                .font(.system(size: 12))
+                .foregroundStyle(DS.Color.textSecondary)
+
+            HStack(spacing: 16) {
+
+                // Mode 1: Original 4-Pillars
+                let isOriginal = appExperienceMode == "original"
+                Button {
+                    appExperienceMode = "original"
+                    PlutoSoundEngine.shared.play(.checkmark)
+                    Haptics.impact(.medium)
+                } label: {
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            Image(systemName: "sidebar.left")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundStyle(isOriginal ? accentColor : DS.Color.textSecondary)
+
+                            Text("Original 4-Pillars")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(DS.Color.textPrimary)
+
+                            Spacer()
+
+                            if isOriginal {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(accentColor)
+                            }
+                        }
+
+                        Text("Classic macOS 2-Pane Navigation: Today (⌘1), Work (⌘2), Journal (⌘3), Life (⌘4).")
+                            .font(.system(size: 11))
+                            .foregroundStyle(DS.Color.textSecondary)
+                            .lineLimit(2)
+                    }
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(isOriginal ? accentColor.opacity(0.12) : DS.Color.background, in: RoundedRectangle(cornerRadius: 10))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(isOriginal ? accentColor : DS.Color.border.opacity(0.4), lineWidth: isOriginal ? 1.5 : 1)
+                    )
+                }
+                .buttonStyle(.plain)
+
+                // Mode 2: Steve Jobs Edition
+                let isSteve = appExperienceMode == "steve_jobs"
+                Button {
+                    appExperienceMode = "steve_jobs"
+                    PlutoSoundEngine.shared.play(.summitPassport)
+                    Haptics.impact(.rigid)
+                } label: {
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            Image(systemName: "apple.logo")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundStyle(isSteve ? accentColor : DS.Color.textSecondary)
+
+                            Text("Steve Jobs Edition")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(DS.Color.textPrimary)
+
+                            Spacer()
+
+                            if isSteve {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(accentColor)
+                            }
+                        }
+
+                        Text("The 3-Layer Glass Monolith: ⚡ Pulse (Now), ☀️ Orbit (Today Stream), 🏔️ Apex (Summits).")
+                            .font(.system(size: 11))
+                            .foregroundStyle(DS.Color.textSecondary)
+                            .lineLimit(2)
+                    }
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(isSteve ? accentColor.opacity(0.12) : DS.Color.background, in: RoundedRectangle(cornerRadius: 10))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(isSteve ? accentColor : DS.Color.border.opacity(0.4), lineWidth: isSteve ? 1.5 : 1)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
 
     // 1. Sound & Acoustics
     private var soundControlsBlock: some View {

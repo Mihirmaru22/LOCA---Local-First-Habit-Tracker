@@ -66,8 +66,14 @@ struct MacRootView: View {
     @AppStorage("mac_weekly_digest_enabled") private var weeklyDigestEnabled: Bool = true
     @AppStorage("mac_default_habit_reminder_time") private var defaultHabitTime: String = "09:00"
 
+    @AppStorage("pluto_app_experience_mode") private var appExperienceMode: String = "original"
+
     var body: some View {
-        splitView
+        if appExperienceMode == "steve_jobs" {
+            MacSteveJobsTrinityView()
+        } else {
+            splitView
+        }
     }
 
     private var splitView: some View {
