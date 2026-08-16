@@ -677,22 +677,16 @@ struct MacGitHubCosmosCanvas: View {
     }
 
     private func techTreePreviewCanvas(geo: GeometryProxy) -> some View {
-        ZStack {
-            Color(red: 0.04, green: 0.05, blue: 0.08).edgesIgnoringSafeArea(.all)
-
-            VStack(spacing: DS.Space.md) {
-                Image(systemName: "point.3.connected.trianglepath.dotted")
-                    .font(.system(size: 48))
-                    .foregroundStyle(Color(red: 0.95, green: 0.75, blue: 0.15))
-                Text("AI ENGINEERING TECH PROGRESSION TREE")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(DS.Color.textPrimary)
-                    .tracking(1.0)
-                Text("Sub-Phase 5.4: RPG-style skill matrix with Transformers, Flash Attention, Multi-Agent swarms & GRPO reasoning.")
-                    .font(DS.Text.caption)
-                    .foregroundStyle(DS.Color.textTertiary)
+        GitHubTechTreeMap(
+            repos: filteredRepos,
+            onSelectRepoName: { repoName in
+                if let found = allRepos.first(where: { $0.name.localizedCaseInsensitiveContains(repoName) }) {
+                    selectedRepo = found
+                    selectedViewMode = .directory
+                    Haptics.impact(.light)
+                }
             }
-        }
+        )
     }
 }
 
