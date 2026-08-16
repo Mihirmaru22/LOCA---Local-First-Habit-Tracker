@@ -1,88 +1,31 @@
 import Foundation
-import AudioToolbox
 import Combine
 
-#if canImport(AppKit) && !targetEnvironment(macCatalyst)
-import AppKit
-#endif
+// MARK: - PlutoSoundEngine (Completely Silenced Sound Engine)
 
-// MARK: - PlutoSoundEngine (Acoustic Audio & Haptic Feedback Engine)
-
-/// Native macOS acoustic sound engine providing tactile mechanical and resonant feedback.
+/// Native macOS acoustic feedback engine — completely silenced.
 public final class PlutoSoundEngine: ObservableObject {
 
     public static let shared = PlutoSoundEngine()
 
-    @Published public var isSoundEnabled: Bool = true
+    @Published public var isSoundEnabled: Bool = false
 
     private init() {
-        if UserDefaults.standard.object(forKey: "mac_sound_effects_enabled") != nil {
-            self.isSoundEnabled = UserDefaults.standard.bool(forKey: "mac_sound_effects_enabled")
-        }
+        self.isSoundEnabled = false
     }
 
     public enum AcousticSound {
-        case checkmark     // Crisp mechanical click for habit completion / task check
-        case timerStart    // Resonant crystal ping when focus sprint starts
-        case timerComplete // Harmonic chime when focus session finishes
-        case summitPassport// Triumphant gold-foil celebration chime
-        case tabSwitch     // Subtle tactile air-pop on navigation
-        case vaultLock     // Tumbler click on biometric lock
-        case deleteTrash   // Subtle paper swoosh on archive/delete
+        case checkmark
+        case timerStart
+        case timerComplete
+        case summitPassport
+        case tabSwitch
+        case vaultLock
+        case deleteTrash
     }
 
-    /// Plays a native acoustic sound with zero latency.
+    /// Completely silent — zero click/tab sounds.
     public func play(_ sound: AcousticSound) {
-        guard isSoundEnabled else { return }
-
-        #if canImport(AppKit) && !targetEnvironment(macCatalyst)
-        switch sound {
-        case .checkmark:
-            // Native Tink / Pop sound
-            if let nssound = NSSound(named: "Tink") {
-                nssound.play()
-            } else {
-                AudioServicesPlaySystemSound(1057)
-            }
-
-        case .timerStart:
-            if let nssound = NSSound(named: "Pop") {
-                nssound.play()
-            } else {
-                AudioServicesPlaySystemSound(1054)
-            }
-
-        case .timerComplete:
-            if let nssound = NSSound(named: "Ping") {
-                nssound.play()
-            } else {
-                AudioServicesPlaySystemSound(1016)
-            }
-
-        case .summitPassport:
-            if let nssound = NSSound(named: "Hero") {
-                nssound.play()
-            } else {
-                AudioServicesPlaySystemSound(1025)
-            }
-
-        case .tabSwitch:
-            AudioServicesPlaySystemSound(1054)
-
-        case .vaultLock:
-            if let nssound = NSSound(named: "Purr") {
-                nssound.play()
-            } else {
-                AudioServicesPlaySystemSound(1053)
-            }
-
-        case .deleteTrash:
-            if let nssound = NSSound(named: "Basso") {
-                nssound.play()
-            } else {
-                AudioServicesPlaySystemSound(1051)
-            }
-        }
-        #endif
+        // Completely disabled by user request
     }
 }
