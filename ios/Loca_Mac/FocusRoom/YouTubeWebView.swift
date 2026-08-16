@@ -49,56 +49,29 @@ public func extractYouTubeID(from urlString: String) -> String? {
     return nil
 }
 
-// MARK: - YouTube HTML Generator
+// MARK: - Direct Embed URL Builder
 
-private func generateYouTubeHTML(videoID: String) -> String {
-    """
-    <!DOCTYPE html>
-    <html>
-    <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-      * { margin:0; padding:0; background:#000; box-sizing: border-box; }
-      html, body { width:100%; height:100%; overflow:hidden; }
-      iframe { position:fixed; top:0; left:0; width:100%; height:100%; border:none; }
-    </style>
-    </head>
-    <body>
-    <iframe
-      id="yt-player"
-      src="https://www.youtube-nocookie.com/embed/\(videoID)?autoplay=1&loop=1&playlist=\(videoID)&controls=0&cc_load_policy=0&cc_lang_pref=off&disablekb=1&fs=0&iv_load_policy=3&rel=0&modestbranding=1&showinfo=0&autohide=1&playsinline=1&enablejsapi=1"
-      allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-      allowfullscreen>
-    </iframe>
-    <script>
-      function setVolume(vol) {
-        var iframe = document.getElementById('yt-player');
-        if (iframe && iframe.contentWindow) {
-          iframe.contentWindow.postMessage(JSON.stringify({
-            "event": "command",
-            "func": "setVolume",
-            "args": [vol * 100]
-          }), "*");
-        }
-        var v = document.querySelector('video');
-        if (v) { v.volume = vol; }
-      }
-    </script>
-    </body>
-    </html>
-    """
+public func buildEmbedURL(videoID: String) -> URL {
+    let urlString = "https://www.youtube-nocookie.com/embed/\(videoID)" +
+        "?autoplay=1&loop=1&playlist=\(videoID)" +
+        "&controls=0&disablekb=1&fs=0" +
+        "&iv_load_policy=3&rel=0&modestbranding=1" +
+        "&showinfo=0&autohide=1&playsinline=1" +
+        "&enablejsapi=1&cc_load_policy=0&cc_lang_pref=off" +
+        "&vq=hd720"
+    return URL(string: urlString)!
 }
 
-// MARK: - YouTube Scripts & Configuration Builder
+// MARK: - Configuration & UserScript Builder
 
-private func makeConfiguredWKWebView() -> (WKWebViewConfiguration, WKUserScript, WKUserScript, WKUserScript, WKUserScript) {
+private func buildConfig(coordinator: WKScriptMessageHandler) -> WKWebViewConfiguration {
     let config = WKWebViewConfiguration()
     config.mediaTypesRequiringUserActionForPlayback = []
+    config.processPool = WKProcessPool()
 
     let pagePrefs = WKWebpagePreferences()
     pagePrefs.allowsContentJavaScript = true
     config.defaultWebpagePreferences = pagePrefs
-    config.processPool = WKProcessPool()
 
     #if os(macOS)
     config.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
@@ -106,203 +79,94 @@ private func makeConfiguredWKWebView() -> (WKWebViewConfiguration, WKUserScript,
     config.allowsInlineMediaPlayback = true
     #endif
 
-    // Script 1: Inject browser API spoof script at document start
+    // Script A: Browser API Spoofing (atDocumentStart)
     let spoofScript = WKUserScript(
         source: """
-            // Spoof Chrome browser environment
             window.chrome = {
-                runtime: {
-                    connect: function() {},
-                    sendMessage: function() {}
-                },
-                loadTimes: function() { return {}; },
-                csi: function() { return {}; }
+                runtime: { connect(){}, sendMessage(){} },
+                loadTimes(){ return {}; },
+                csi(){ return {}; }
             };
-            
-            // Spoof googletag (ad platform YouTube checks for)
-            window.googletag = window.googletag || {};
-            window.googletag.cmd = window.googletag.cmd || [];
-            
-            // Override WebView detection
-            Object.defineProperty(navigator, 'webdriver', {
-                get: () => undefined
-            });
-            
-            // Spoof plugins array
-            Object.defineProperty(navigator, 'plugins', {
-                get: () => [1, 2, 3, 4, 5]
-            });
-            
-            // Spoof languages
-            Object.defineProperty(navigator, 'languages', {
-                get: () => ['en-US', 'en']
-            });
+            window.googletag = window.googletag || { cmd: [] };
+            Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+            Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+            Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
         """,
         injectionTime: .atDocumentStart,
         forMainFrameOnly: false
     )
     config.userContentController.addUserScript(spoofScript)
 
-    // Script 2: Force-hide all YouTube chrome, controls, titles, watermarks & gradients
+    // Script B: UI Removal & Direct Main-Frame Video Styler (atDocumentEnd)
     let hideControlsScript = WKUserScript(
         source: """
-            var style = document.createElement('style');
-            style.textContent = `
-                /* Center playback controls */
+            var s = document.createElement('style');
+            s.textContent = `
+                .ytp-chrome-top, .ytp-chrome-bottom,
+                .ytp-gradient-top, .ytp-gradient-bottom,
+                .ytp-watermark, .ytp-title, .ytp-title-channel,
+                .ytp-pause-overlay, .ytp-large-play-button,
                 .ytp-cued-thumbnail-overlay,
-                .ytp-cued-thumbnail-overlay-image,
-                .ytp-large-play-button,
-                .ytp-play-button,
-                .ytp-button,
-                .ytp-prev-button,
-                .ytp-next-button,
-                .html5-video-player .ytp-chrome-controls { 
-                    display: none !important; 
-                }
-
-                /* Subtitles and captions */
-                .ytp-caption-window-container,
-                .captions-text,
-                .caption-window,
-                .ytp-subtitles-button,
-                .ytp-caption-segment,
-                div.ytp-caption-window-rollup,
-                span.ytp-caption-segment { 
-                    display: none !important; 
-                }
-
-                /* Bottom "More videos" / YouTube branding bar */
-                .ytp-youtube-button,
-                .ytp-wordmark-text,
-                .branding-img-container,
-                .ytp-share-button-visible,
-                .html5-endscreen,
-                .ytp-upnext,
-                .ytp-upnext-autoplay,
-                .ytp-scroll-min,
-                .iv-drawer,
-                .ytp-more-videos-view { 
-                    display: none !important; 
-                }
-
-                /* Thumbnail card preview bottom right */
-                .ytp-videowall-still,
-                .ytp-endscreen-element,
-                .ytp-ce-element,
-                .ytp-ce-covering-overlay,
-                .ytp-ce-expanding-overlay,
-                .ytp-ce-covering-image,
-                .ytp-ce-expanding-image { 
-                    display: none !important; 
-                }
-
-                /* General Chrome & Watermarks */
-                .ytp-chrome-top,
-                .ytp-chrome-bottom,
-                .ytp-gradient-top,
-                .ytp-gradient-bottom,
-                .ytp-watermark,
-                .ytp-show-cards-title,
-                .ytp-pause-overlay,
-                .ytp-endscreen-content,
-                .ytp-cards-teaser,
-                .ytp-title,
-                .ytp-title-channel,
-                .ytp-share-button,
-                .ytp-watch-later-button,
-                .iv-branding,
-                .ytp-spinner,
-                .annotation,
-                .video-annotations,
-                .ytp-contextmenu,
-                .ytp-overflow-panel,
-                .branding-img {
+                .ytp-endscreen-content, .ytp-endscreen-element,
+                .ytp-cards-teaser, .ytp-ce-element,
+                .ytp-youtube-button, .branding-img,
+                .ytp-caption-window-container, .captions-text,
+                .ytp-caption-segment, .ytp-share-button,
+                .ytp-watch-later-button, .iv-branding,
+                .ytp-spinner, .annotation, .video-annotations,
+                .ytp-overflow-panel, .ytp-upnext,
+                .ytp-more-videos-view, .ytp-button,
+                .ytp-prev-button, .ytp-next-button,
+                .html5-video-player .ytp-chrome-controls {
                     display: none !important;
                     opacity: 0 !important;
                     visibility: hidden !important;
                     pointer-events: none !important;
                 }
                 
-                /* Ensure video fills frame with no gaps */
+                /* Force video to fill frame — no iframe compositing issues now */
                 video, .html5-main-video {
-                    width: 100% !important;
-                    height: 100% !important;
+                    width: 100vw !important;
+                    height: 100vh !important;
                     object-fit: cover !important;
+                    position: fixed !important;
+                    top: 0 !important; left: 0 !important;
+                    -webkit-transform: translateZ(0) !important;
+                    will-change: transform !important;
                 }
                 
-                /* Remove click-to-pause overlay that reveals controls */
+                body, html, .html5-video-container {
+                    background: #000 !important;
+                    overflow: hidden !important;
+                }
+                
+                /* Remove click area that shows controls on hover */
                 .html5-video-container {
                     pointer-events: none !important;
                 }
-
-                /* Force hardware compositing on video and iframe */
-                iframe, video, .html5-main-video, .html5-video-container {
-                    -webkit-transform: translateZ(0) !important;
-                    transform: translateZ(0) !important;
-                    -webkit-backface-visibility: hidden !important;
-                    will-change: transform !important;
-                }
             `;
-            document.head.appendChild(style);
-
-            // Re-run periodically because YouTube re-injects UI after interactions
+            document.head.appendChild(s);
+            
+            // Continuous sweep — YouTube re-injects UI after events
             setInterval(function() {
-                var elements = document.querySelectorAll(
-                    '.ytp-chrome-top, .ytp-chrome-bottom, .ytp-watermark, ' +
-                    '.ytp-pause-overlay, .ytp-endscreen-content, .ytp-title, .ytp-gradient-top, .ytp-gradient-bottom, ' +
-                    '.ytp-caption-window-container, .captions-text, .caption-window, .ytp-large-play-button, .ytp-cued-thumbnail-overlay'
-                );
-                elements.forEach(function(el) {
-                    el.style.setProperty('display', 'none', 'important');
-                    el.style.setProperty('opacity', '0', 'important');
-                    el.style.setProperty('visibility', 'hidden', 'important');
+                ['.ytp-chrome-top','.ytp-chrome-bottom','.ytp-watermark',
+                 '.ytp-title','.ytp-large-play-button','.ytp-pause-overlay',
+                 '.ytp-caption-window-container','.captions-text',
+                 '.ytp-endscreen-content','.ytp-gradient-bottom',
+                 '.ytp-gradient-top','.ytp-upnext','.ytp-button'].forEach(function(sel) {
+                    document.querySelectorAll(sel).forEach(function(el) {
+                        el.style.cssText += 
+                            'display:none!important;opacity:0!important;visibility:hidden!important;';
+                    });
                 });
-            }, 2000);
+            }, 800);
         """,
         injectionTime: .atDocumentEnd,
         forMainFrameOnly: false
     )
     config.userContentController.addUserScript(hideControlsScript)
 
-    // Script 3: Late UI hiding script to fight late YouTube injections
-    let lateHideScript = WKUserScript(
-        source: """
-            setTimeout(function() {
-                var style = document.createElement('style');
-                style.textContent = `
-                    .ytp-chrome-top, .ytp-chrome-bottom,
-                    .ytp-gradient-top, .ytp-gradient-bottom,
-                    .ytp-watermark, .ytp-title,
-                    .ytp-pause-overlay, .ytp-endscreen-content,
-                    .ytp-cued-thumbnail-overlay,
-                    .ytp-large-play-button,
-                    .ytp-youtube-button, .branding-img,
-                    .ytp-caption-window-container,
-                    .captions-text, .ytp-caption-segment {
-                        display: none !important;
-                        opacity: 0 !important;
-                    }
-                `;
-                document.head.appendChild(style);
-            }, 1500);
-
-            setInterval(function() {
-                ['.ytp-chrome-top','.ytp-chrome-bottom',
-                 '.ytp-watermark','.ytp-title',
-                 '.ytp-caption-window-container',
-                 '.captions-text'].forEach(function(sel) {
-                    document.querySelectorAll(sel).forEach(function(el) {
-                        el.style.cssText += 'display:none!important;opacity:0!important;';
-                    });
-                });
-            }, 1000);
-        """,
-        injectionTime: .atDocumentEnd,
-        forMainFrameOnly: false
-    )
-    config.userContentController.addUserScript(lateHideScript)
-
-    // Script 4: Error detection user script polling for YouTube error state
+    // Script C: Error State Listener
     let errorDetectScript = WKUserScript(
         source: """
             setInterval(function() {
@@ -318,8 +182,9 @@ private func makeConfiguredWKWebView() -> (WKWebViewConfiguration, WKUserScript,
         forMainFrameOnly: false
     )
     config.userContentController.addUserScript(errorDetectScript)
+    config.userContentController.add(coordinator, name: "youtubeError")
 
-    return (config, spoofScript, hideControlsScript, lateHideScript, errorDetectScript)
+    return config
 }
 
 // MARK: - YouTubeWebView (Main SwiftUI Container with Fallback UI)
@@ -416,35 +281,25 @@ struct YouTubeWebViewRepresentable: NSViewRepresentable {
     }
 
     func makeNSView(context: Context) -> WKWebView {
-        let (config, _, _, _, _) = makeConfiguredWKWebView()
-        config.userContentController.add(context.coordinator, name: "youtubeError")
+        let config = buildConfig(coordinator: context.coordinator)
 
-        // Fix 1: Real non-zero initial frame
         let webView = WKWebView(
             frame: NSRect(x: 0, y: 0, width: 1280, height: 720),
             configuration: config
         )
 
-        // Fix 2: Force video compositor onto correct layer
-        webView.setValue(false, forKey: "drawsBackground")
-        webView.layer?.backgroundColor = NSColor.black.cgColor
-        webView.wantsLayer = true
-
-        // Real macOS Safari User Agent
         webView.customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15"
+        webView.setValue(false, forKey: "drawsBackground")
+        webView.wantsLayer = true
+        webView.layer?.backgroundColor = NSColor.black.cgColor
         webView.navigationDelegate = context.coordinator
 
-        let html = generateYouTubeHTML(videoID: videoID)
-        webView.loadHTMLString(html, baseURL: URL(string: "https://www.youtube-nocookie.com")!)
+        // Direct main-frame URL load with Referer and Origin headers
+        var request = URLRequest(url: buildEmbedURL(videoID: videoID))
+        request.setValue("https://www.youtube-nocookie.com", forHTTPHeaderField: "Referer")
+        request.setValue("https://www.youtube-nocookie.com", forHTTPHeaderField: "Origin")
+        webView.load(request)
         context.coordinator.currentVideoID = videoID
-
-        // Fix 3: Reload once the view has been placed in the window and has real bounds
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            if !webView.bounds.isEmpty {
-                let html = generateYouTubeHTML(videoID: self.videoID)
-                webView.loadHTMLString(html, baseURL: URL(string: "https://www.youtube-nocookie.com")!)
-            }
-        }
 
         return webView
     }
@@ -456,12 +311,14 @@ struct YouTubeWebViewRepresentable: NSViewRepresentable {
             context.coordinator.currentVideoID = videoID
             DispatchQueue.main.async {
                 self.showFallback = false
-                let html = generateYouTubeHTML(videoID: self.videoID)
-                nsView.loadHTMLString(html, baseURL: URL(string: "https://www.youtube-nocookie.com")!)
+                var request = URLRequest(url: buildEmbedURL(videoID: self.videoID))
+                request.setValue("https://www.youtube-nocookie.com", forHTTPHeaderField: "Referer")
+                request.setValue("https://www.youtube-nocookie.com", forHTTPHeaderField: "Origin")
+                nsView.load(request)
             }
         }
 
-        let js = "if (typeof setVolume === 'function') { setVolume(\(volume)); };"
+        let js = "var v = document.querySelector('video'); if (v) { v.volume = \(volume); };"
         nsView.evaluateJavaScript(js, completionHandler: nil)
     }
 }
@@ -503,16 +360,20 @@ struct YouTubeWebViewRepresentable: UIViewRepresentable {
     }
 
     func makeUIView(context: Context) -> WKWebView {
-        let (config, _, _, _, _) = makeConfiguredWKWebView()
-        config.userContentController.add(context.coordinator, name: "youtubeError")
+        let config = buildConfig(coordinator: context.coordinator)
 
-        let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 1280, height: 720), configuration: config)
+        let webView = WKWebView(
+            frame: CGRect(x: 0, y: 0, width: 1280, height: 720),
+            configuration: config
+        )
 
         webView.customUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
         webView.navigationDelegate = context.coordinator
 
-        let html = generateYouTubeHTML(videoID: videoID)
-        webView.loadHTMLString(html, baseURL: URL(string: "https://www.youtube-nocookie.com")!)
+        var request = URLRequest(url: buildEmbedURL(videoID: videoID))
+        request.setValue("https://www.youtube-nocookie.com", forHTTPHeaderField: "Referer")
+        request.setValue("https://www.youtube-nocookie.com", forHTTPHeaderField: "Origin")
+        webView.load(request)
         context.coordinator.currentVideoID = videoID
 
         return webView
@@ -525,12 +386,14 @@ struct YouTubeWebViewRepresentable: UIViewRepresentable {
             context.coordinator.currentVideoID = videoID
             DispatchQueue.main.async {
                 self.showFallback = false
-                let html = generateYouTubeHTML(videoID: self.videoID)
-                uiView.loadHTMLString(html, baseURL: URL(string: "https://www.youtube-nocookie.com")!)
+                var request = URLRequest(url: buildEmbedURL(videoID: self.videoID))
+                request.setValue("https://www.youtube-nocookie.com", forHTTPHeaderField: "Referer")
+                request.setValue("https://www.youtube-nocookie.com", forHTTPHeaderField: "Origin")
+                uiView.load(request)
             }
         }
 
-        let js = "if (typeof setVolume === 'function') { setVolume(\(volume)); };"
+        let js = "var v = document.querySelector('video'); if (v) { v.volume = \(volume); };"
         uiView.evaluateJavaScript(js, completionHandler: nil)
     }
 }
