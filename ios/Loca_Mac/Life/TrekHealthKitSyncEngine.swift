@@ -1,5 +1,6 @@
 import SwiftUI
 import Foundation
+import Combine
 #if canImport(HealthKit)
 import HealthKit
 #endif

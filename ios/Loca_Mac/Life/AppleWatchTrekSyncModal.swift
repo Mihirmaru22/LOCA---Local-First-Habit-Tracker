@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import Combine
 
 // MARK: - AppleWatchTrekSyncModal
 
@@ -11,7 +12,7 @@ struct AppleWatchTrekSyncModal: View {
     let allTreks: [TrekRecord]
     let onDismiss: () -> Void
 
-    @StateObject private var syncEngine = TrekHealthKitSyncEngine.shared
+    @ObservedObject private var syncEngine = TrekHealthKitSyncEngine.shared
     @State private var selectedTrekForLinking: TrekRecord? = nil
     @State private var linkingWorkout: AppleWatchHikingWorkout? = nil
     @State private var toastMessage: String? = nil
@@ -402,7 +403,7 @@ struct AppleWatchTrekSyncModal: View {
                 .font(.system(size: 40))
                 .foregroundStyle(DS.Color.textTertiary)
             Text("No Outdoor Hiking Workouts Found")
-                .font(DS.Text.headline)
+                .font(DS.Text.heading)
                 .foregroundStyle(DS.Color.textPrimary)
             Text("Complete a Hiking or Climbing workout on your Apple Watch to sync biometrics.")
                 .font(DS.Text.caption)
