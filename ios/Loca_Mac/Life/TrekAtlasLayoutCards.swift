@@ -59,7 +59,7 @@ struct TrekPanoramicCard: View {
                     .background(Color.cyan.opacity(0.12), in: RoundedRectangle(cornerRadius: 4))
 
                     // Difficulty
-                    Text(trek.difficulty.rawValue)
+                    Text(trek.difficulty.title)
                         .font(.system(size: 9, weight: .bold))
                         .foregroundStyle(Color.orange)
                         .padding(.horizontal, 6)
@@ -299,7 +299,7 @@ struct TrekEditorialCard: View {
             HStack(spacing: 4) {
                 Image(systemName: "gauge.with.dots.needle.bottom.50percent")
                     .font(.system(size: 10))
-                Text(trek.difficulty.rawValue)
+                Text(trek.difficulty.title)
                     .font(.system(size: 10, weight: .semibold))
             }
             .foregroundStyle(Color.orange)
