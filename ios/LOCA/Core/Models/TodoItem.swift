@@ -97,7 +97,17 @@ final class TodoItem {
             }
         }
     }
-    
+
+    /// Decoded rich-text blocks with automatic plain-text legacy migration fallback.
+    var effectiveContentBlocks: [TodoContentBlock] {
+        if let blocks = contentBlocks, !blocks.isEmpty {
+            return blocks
+        }
+        if let text = notes, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return [TodoContentBlock(type: .paragraph, text: text)]
+        }
+        return []
+    }
     /// Decoded comments array. Returns `nil` when no comments exist.
     var comments: [TaskComment]? {
         get {

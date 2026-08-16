@@ -125,7 +125,8 @@ final class TrekHealthKitSyncEngine: ObservableObject {
 
                 guard let workouts = samples as? [HKWorkout], !workouts.isEmpty else {
                     DispatchQueue.main.async {
-                        self.loadMockAndCachedWorkouts(matching: treks)
+                        self.detectedWorkouts = []
+                        self.lastSyncDate = Date()
                         continuation.resume()
                     }
                     return
