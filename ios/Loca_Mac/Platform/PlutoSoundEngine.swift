@@ -1,5 +1,6 @@
 import Foundation
 import AudioToolbox
+import Combine
 
 #if canImport(AppKit) && !targetEnvironment(macCatalyst)
 import AppKit
@@ -8,7 +9,7 @@ import AppKit
 // MARK: - PlutoSoundEngine (Acoustic Audio & Haptic Feedback Engine)
 
 /// Native macOS acoustic sound engine providing tactile mechanical and resonant feedback.
-public final class PlutoSoundEngine {
+public final class PlutoSoundEngine: ObservableObject {
 
     public static let shared = PlutoSoundEngine()
 
