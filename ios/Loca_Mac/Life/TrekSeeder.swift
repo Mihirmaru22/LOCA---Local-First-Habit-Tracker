@@ -379,7 +379,7 @@ enum TrekSeeder {
             trailDistanceKm: 8.0,
             elevationGainMeters: 550,
             status: .conquered,
-            difficulty: .easy,
+            difficulty: .moderate,
             dateConquered: Calendar.current.date(byAdding: .month, value: -6, to: Date()),
             rating: 5,
             personalNotes: "Highest summit of the Blue Nilgiri Mountains. Rolling clouds, eucalyptus groves, and high-altitude telescope deck."
@@ -562,7 +562,7 @@ enum TrekSeeder {
             trailDistanceKm: 7.0,
             elevationGainMeters: 450,
             status: .conquered,
-            difficulty: .easy,
+            difficulty: .moderate,
             dateConquered: Calendar.current.date(byAdding: .month, value: -9, to: Date()),
             rating: 5,
             personalNotes: "Highest point of the ancient 1.5-billion-year-old Aravalli Mountain Range."
@@ -592,7 +592,7 @@ enum TrekSeeder {
             trailDistanceKm: 8.0,
             elevationGainMeters: 480,
             status: .conquered,
-            difficulty: .easy,
+            difficulty: .moderate,
             dateConquered: Calendar.current.date(byAdding: .month, value: -5, to: Date()),
             rating: 5,
             personalNotes: "Highest peak in Madhya Pradesh and the Satpura Range. Famous for crimson ravine sunsets."
