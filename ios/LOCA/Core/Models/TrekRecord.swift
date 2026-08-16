@@ -84,8 +84,9 @@ final class TrekRecord {
     var rating:              Int    = 5
 
     // Journal Reflections & Media
-    var personalNotes:       String = ""
-    var photoFileNames:      [String] = []
+    var personalNotes:          String = ""
+    var photoFileNames:         [String] = []
+    var linkedJournalNoteIDs:   [UUID] = []
 
     // MARK: - Future-Proofing Hooks (Phases 2, 3 & 4)
     var gpxData:               Data?   = nil
@@ -134,6 +135,45 @@ final class TrekRecord {
         return String(format: "+%.0f m", gain)
     }
 
+    // MARK: - Photo & Media Mutations (4.1)
+
+    func attachPhoto(fileName: String) {
+        guard !photoFileNames.contains(fileName) else { return }
+        photoFileNames.append(fileName)
+    }
+
+    func attachPhotos(fileNames: [String]) {
+        for name in fileNames where !photoFileNames.contains(name) {
+            photoFileNames.append(name)
+        }
+    }
+
+    func removePhoto(fileName: String) {
+        photoFileNames.removeAll { $0 == fileName }
+        TrekMediaManager.shared.deletePhoto(fileName: fileName)
+    }
+
+    func removePhoto(at index: Int) {
+        guard index >= 0 && index < photoFileNames.count else { return }
+        let fileName = photoFileNames.remove(at: index)
+        TrekMediaManager.shared.deletePhoto(fileName: fileName)
+    }
+
+    // MARK: - Apple Journal Cross-Link Mutations (4.1)
+
+    func linkJournalNote(id: UUID) {
+        guard !linkedJournalNoteIDs.contains(id) else { return }
+        linkedJournalNoteIDs.append(id)
+    }
+
+    func unlinkJournalNote(id: UUID) {
+        linkedJournalNoteIDs.removeAll { $0 == id }
+    }
+
+    func isJournalNoteLinked(id: UUID) -> Bool {
+        linkedJournalNoteIDs.contains(id)
+    }
+
     // MARK: - Initializer
 
     init(
@@ -150,7 +190,8 @@ final class TrekRecord {
         dateConquered: Date? = Date(),
         rating: Int = 5,
         personalNotes: String = "",
-        photoFileNames: [String] = []
+        photoFileNames: [String] = [],
+        linkedJournalNoteIDs: [UUID] = []
     ) {
         self.name = name
         self.region = region
@@ -166,6 +207,7 @@ final class TrekRecord {
         self.rating = rating
         self.personalNotes = personalNotes
         self.photoFileNames = photoFileNames
+        self.linkedJournalNoteIDs = linkedJournalNoteIDs
         self.createdAt = Date()
     }
 }
