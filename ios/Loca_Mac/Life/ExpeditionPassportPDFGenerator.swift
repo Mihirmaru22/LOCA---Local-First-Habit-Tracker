@@ -2,6 +2,7 @@ import SwiftUI
 import AppKit
 import PDFKit
 import UniformTypeIdentifiers
+import CoreLocation
 
 // MARK: - ExpeditionPassportPDFGenerator
 
