@@ -1,58 +1,52 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - MacSettingsView (Executive Settings Studio & Demo Lab)
+// MARK: - MacSettingsView (4 Experimental Setting Demos & Full Working Engine)
 
-/// Premium macOS Settings Studio for PLUTO.
-/// Features a native 2-pane Settings sidebar + detail canvas with:
-/// 1. 🧪 4 Experimental Demos (Demo 1 to Demo 4) with interactive blueprint inspectors and instant activation.
-/// 2. ⚡ Habits & Routines Manager (create, edit, archive, streak calculation).
-/// 3. 🔔 Notifications & Smart Scheduling.
-/// 4. 🔒 Privacy & Biometric Vault Security (Touch ID / Face ID).
-/// 5. 🎨 Appearance & Executive 8-Color Palette.
-/// 6. 💾 Data Sovereignty, Exports & Local SwiftData Diagnostics.
-/// 7. ℹ️ About PLUTO Sovereign OS.
+/// Executive Settings Studio featuring 4 Experimental Setting Demos (Demo 1 - Demo 4)
+/// with 100% full working settings across all 4 visual blueprints:
+/// - Setting Demo 1: Apple System Split (Native 2-Pane)
+/// - Setting Demo 2: Bento Grid Horizon (Interactive Visual Dashboard)
+/// - Setting Demo 3: Minimalist Linear Stream (Compact Continuous Monolith)
+/// - Setting Demo 4: Executive Matrix HUD (High-Density Tabbed Cockpit)
 struct MacSettingsView: View {
 
     @Environment(\.modelContext) private var modelContext
 
-    // Queries for Local-First Database
+    // Database Queries
     @Query(sort: \HabitBoard.createdAt) private var allHabits: [HabitBoard]
     @Query private var allTodos: [TodoItem]
     @Query private var allNotes: [JournalNote]
     @Query private var allTreks: [TrekRecord]
 
-    // Active Demo Preset (1 to 4)
-    @AppStorage("pluto_active_demo_preset") private var activeDemoPreset: Int = 1
+    // Active Setting Demo Variant (1 to 4)
+    @AppStorage("mac_setting_demo_variant_v1") private var selectedSettingDemo: Int = 1
 
-    // General & Workspace Storage
+    // Settings Storage
+    @AppStorage("mac_sound_effects_enabled") private var soundEffectsEnabled: Bool = true
     @AppStorage("mac_open_full_window_on_launch") private var openFullWindow: Bool = true
     @AppStorage("mac_enable_haptics") private var enableHaptics: Bool = true
-    @AppStorage("mac_week_start_monday") private var weekStartMonday: Bool = true
     @AppStorage("mac_selected_accent_index") private var selectedAccentIndex: Int = 0
     @AppStorage("mac_auto_calculate_streaks") private var autoCalculateStreaks: Bool = true
     @AppStorage("mac_calendar_sync_enabled") private var calendarSyncEnabled: Bool = true
 
-    // Notifications & Reminders Storage
+    // Notifications Storage
     @AppStorage("mac_notifications_master_enabled") private var masterNotificationsEnabled: Bool = true
     @AppStorage("mac_evening_reflection_enabled") private var eveningReflectionEnabled: Bool = true
-    @AppStorage("mac_evening_reflection_time") private var eveningReflectionTime: String = "21:00"
     @AppStorage("mac_streak_alert_enabled") private var streakAlertEnabled: Bool = true
-    @AppStorage("mac_streak_alert_time") private var streakAlertTime: String = "22:00"
     @AppStorage("mac_weekly_digest_enabled") private var weeklyDigestEnabled: Bool = true
-    @AppStorage("mac_default_habit_reminder_time") private var defaultHabitTime: String = "09:00"
 
     // Vault Security Storage
     @AppStorage("mac_vault_biometrics_enabled") private var isVaultSecurityEnabled: Bool = false
 
-    // Navigation State
-    @State private var selectedCategory: SettingsCategory = .demos
-    @State private var showExportSuccess = false
-    @State private var exportMessage = ""
+    // Local UI State
+    @State private var activeSidebarTab: SettingCategory = .habits
     @State private var showNewHabitSheet = false
     @State private var newHabitTitle = ""
+    @State private var showExportSuccess = false
+    @State private var exportMessage = ""
 
-    // Color Palette
+    // Accent Palette
     private var accentColor: Color {
         let palette: [Color] = [
             Color(red: 0.95, green: 0.77, blue: 0.25), // Golden Amber
@@ -70,441 +64,476 @@ struct MacSettingsView: View {
         return palette[0]
     }
 
-    enum SettingsCategory: String, CaseIterable, Identifiable {
-        case demos         = "Experimental Demos"
+    enum SettingCategory: String, CaseIterable, Identifiable {
         case habits        = "Habits & Routines"
-        case notifications = "Notifications & Schedule"
-        case security      = "Privacy & Vault Security"
+        case sound         = "Sound & Acoustics"
+        case notifications = "Notifications & Alerts"
+        case security      = "Privacy & Biometric Vault"
         case appearance    = "Appearance & Themes"
         case general       = "General & System"
         case dataSync      = "Data Sovereignty & Exports"
-        case about         = "About PLUTO"
 
         var id: String { rawValue }
 
         var icon: String {
             switch self {
-            case .demos:         return "sparkles.rectangle.stack.fill"
             case .habits:        return "flame.fill"
+            case .sound:         return "speaker.wave.3.fill"
             case .notifications: return "bell.badge.fill"
             case .security:      return "lock.shield.fill"
             case .appearance:    return "paintpalette.fill"
             case .general:       return "gearshape.fill"
             case .dataSync:      return "externaldrive.badge.icloud"
-            case .about:         return "info.circle.fill"
-            }
-        }
-
-        var subtitle: String {
-            switch self {
-            case .demos:         return "Demo 1 to Demo 4 Workspace Blueprints"
-            case .habits:        return "Manage habit targets, frequencies & streaks"
-            case .notifications: return "Actionable alerts, evening reviews & streak guards"
-            case .security:      return "Touch ID & Secure Enclave biometric lock"
-            case .appearance:    return "Executive 8-color palette & visual density"
-            case .general:       return "Startup sizing, hotkeys & calendar integration"
-            case .dataSync:      return "Local-First SwiftData health & JSON/CSV exports"
-            case .about:         return "PLUTO Sovereign OS v5.0"
             }
         }
     }
 
     var body: some View {
-        HStack(spacing: 0) {
+        VStack(spacing: 0) {
 
-            // Left Sidebar Categories
-            settingsSidebar
-                .frame(width: 240)
+            // Top Demo Switcher Bar
+            demoSelectorTopBar
                 .background(DS.Color.surface)
 
             Divider()
 
-            // Right Detail Canvas
-            settingsDetailCanvas
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(DS.Color.background)
+            // Main Active Setting Demo Canvas (Demo 1 to Demo 4)
+            Group {
+                switch selectedSettingDemo {
+                case 1:
+                    settingDemo1AppleSplitView
+                case 2:
+                    settingDemo2BentoGridView
+                case 3:
+                    settingDemo3LinearStreamView
+                case 4:
+                    settingDemo4MatrixHUDView
+                default:
+                    settingDemo1AppleSplitView
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(DS.Color.background)
         }
         .sheet(isPresented: $showNewHabitSheet) {
-            newHabitModal
+            newHabitSheetModal
         }
     }
 
-    // MARK: - Settings Sidebar
-    private var settingsSidebar: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Preferences")
-                    .font(.system(size: 18, weight: .bold))
+    // MARK: - Top Demo Selector Bar
+    private var demoSelectorTopBar: some View {
+        HStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Settings Studio")
+                    .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(DS.Color.textPrimary)
-
-                Text("PLUTO System Settings")
-                    .font(.system(size: 11, weight: .medium))
+                Text("Switch between 4 live Setting Demos")
+                    .font(.system(size: 11))
                     .foregroundStyle(DS.Color.textTertiary)
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 20)
-            .padding(.bottom, 16)
-
-            Divider()
-
-            ScrollView {
-                VStack(spacing: 4) {
-                    ForEach(SettingsCategory.allCases) { category in
-                        sidebarCategoryRow(category: category)
-                    }
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 12)
             }
 
             Spacer()
 
-            // Active Preset Badge
-            HStack(spacing: 8) {
-                Circle()
-                    .fill(accentColor)
-                    .frame(width: 8, height: 8)
-                Text("Demo \(activeDemoPreset) Active")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(DS.Color.textSecondary)
-                Spacer()
+            // 4 Demo Pills
+            HStack(spacing: 6) {
+                demoPillButton(id: 1, name: "Demo 1 · System Split", icon: "sidebar.left")
+                demoPillButton(id: 2, name: "Demo 2 · Bento Grid", icon: "square.grid.2x2.fill")
+                demoPillButton(id: 3, name: "Demo 3 · Linear Stream", icon: "list.bullet")
+                demoPillButton(id: 4, name: "Demo 4 · Matrix HUD", icon: "slider.horizontal.3")
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(DS.Color.surface.opacity(0.8))
+            .padding(4)
+            .background(DS.Color.background, in: RoundedRectangle(cornerRadius: 8))
         }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
     }
 
-    @ViewBuilder
-    private func sidebarCategoryRow(category: SettingsCategory) -> some View {
-        let isSelected = selectedCategory == category
-        Button {
-            selectedCategory = category
+    private func demoPillButton(id: Int, name: String, icon: String) -> some View {
+        let isSelected = selectedSettingDemo == id
+        return Button {
+            selectedSettingDemo = id
+            PlutoSoundEngine.shared.play(.tabSwitch)
             Haptics.impact(.light)
         } label: {
-            HStack(spacing: 12) {
-                Image(systemName: category.icon)
-                    .font(.system(size: 14))
-                    .foregroundStyle(isSelected ? accentColor : DS.Color.textSecondary)
-                    .frame(width: 22)
-
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(category.rawValue)
-                        .font(.system(size: 12, weight: isSelected ? .bold : .medium))
-                        .foregroundStyle(isSelected ? DS.Color.textPrimary : DS.Color.textSecondary)
-                }
-
-                Spacer()
-
-                if isSelected {
-                    Circle()
-                        .fill(accentColor)
-                        .frame(width: 6, height: 6)
-                }
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 11))
+                Text(name)
+                    .font(.system(size: 11, weight: isSelected ? .bold : .medium))
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 9)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(isSelected ? accentColor.opacity(0.15) : Color.clear)
-            )
-            .contentShape(Rectangle())
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(isSelected ? accentColor : Color.clear)
+            .foregroundStyle(isSelected ? .black : DS.Color.textSecondary)
+            .clipShape(RoundedRectangle(cornerRadius: 6))
         }
         .buttonStyle(.plain)
     }
 
-    // MARK: - Settings Detail Canvas
-    private var settingsDetailCanvas: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
+    // MARK: =====================================================================
+    // MARK: 🧪 SETTING DEMO 1: APPLE SYSTEM SPLIT (Native 2-Pane Sidebar)
+    // MARK: =====================================================================
 
-                // Header
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(selectedCategory.rawValue)
-                        .font(.system(size: 22, weight: .bold))
+    private var settingDemo1AppleSplitView: some View {
+        HStack(spacing: 0) {
+            // Sidebar
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Categories")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(DS.Color.textTertiary)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+                    .padding(.bottom, 6)
+
+                ScrollView {
+                    VStack(spacing: 3) {
+                        ForEach(SettingCategory.allCases) { cat in
+                            Button {
+                                activeSidebarTab = cat
+                                PlutoSoundEngine.shared.play(.tabSwitch)
+                                Haptics.impact(.light)
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: cat.icon)
+                                        .font(.system(size: 13))
+                                        .foregroundStyle(activeSidebarTab == cat ? accentColor : DS.Color.textSecondary)
+                                        .frame(width: 20)
+
+                                    Text(cat.rawValue)
+                                        .font(.system(size: 12, weight: activeSidebarTab == cat ? .bold : .medium))
+                                        .foregroundStyle(activeSidebarTab == cat ? DS.Color.textPrimary : DS.Color.textSecondary)
+
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .fill(activeSidebarTab == cat ? accentColor.opacity(0.15) : Color.clear)
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 8)
+                }
+
+                Spacer()
+            }
+            .frame(width: 220)
+            .background(DS.Color.surface)
+
+            Divider()
+
+            // Detail
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    Text(activeSidebarTab.rawValue)
+                        .font(.system(size: 20, weight: .bold))
                         .foregroundStyle(DS.Color.textPrimary)
+                        .padding(.bottom, 4)
 
-                    Text(selectedCategory.subtitle)
+                    switch activeSidebarTab {
+                    case .habits:
+                        habitsManagerControlBlock
+                    case .sound:
+                        soundControlsBlock
+                    case .notifications:
+                        notificationsControlBlock
+                    case .security:
+                        securityControlBlock
+                    case .appearance:
+                        appearanceControlBlock
+                    case .general:
+                        generalControlBlock
+                    case .dataSync:
+                        dataSyncControlBlock
+                    }
+
+                    Spacer(minLength: 40)
+                }
+                .padding(28)
+                .frame(maxWidth: 720, alignment: .leading)
+            }
+        }
+    }
+
+    // MARK: =====================================================================
+    // MARK: 🧪 SETTING DEMO 2: BENTO GRID HORIZON (Visual Tile Dashboard)
+    // MARK: =====================================================================
+
+    private var settingDemo2BentoGridView: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Bento Settings Horizon")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundStyle(DS.Color.textPrimary)
+                        Text("Visual interactive modules with direct control dials")
+                            .font(.system(size: 12))
+                            .foregroundStyle(DS.Color.textSecondary)
+                    }
+                    Spacer()
+                }
+
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)], spacing: 16) {
+
+                    // Sound & Acoustics Bento Tile
+                    bentoTile(title: "Sound & Acoustics", icon: "speaker.wave.3.fill", accent: accentColor) {
+                        soundControlsBlock
+                    }
+
+                    // Biometric Vault Bento Tile
+                    bentoTile(title: "Privacy & Vault", icon: "lock.shield.fill", accent: Color(red: 0.75, green: 0.55, blue: 0.95)) {
+                        securityControlBlock
+                    }
+
+                    // Appearance Bento Tile
+                    bentoTile(title: "Executive Accent", icon: "paintpalette.fill", accent: Color(red: 0.95, green: 0.55, blue: 0.35)) {
+                        appearanceControlBlock
+                    }
+
+                    // System & General Bento Tile
+                    bentoTile(title: "General & Hotkeys", icon: "gearshape.fill", accent: Color(red: 0.35, green: 0.65, blue: 0.95)) {
+                        generalControlBlock
+                    }
+                }
+
+                // Full Width Habits & Data Tiles
+                bentoTile(title: "Habits & Routine Templates", icon: "flame.fill", accent: accentColor) {
+                    habitsManagerControlBlock
+                }
+
+                bentoTile(title: "Data Sovereignty & SQLite", icon: "externaldrive.badge.icloud", accent: Color(red: 0.45, green: 0.85, blue: 0.55)) {
+                    dataSyncControlBlock
+                }
+            }
+            .padding(24)
+            .frame(maxWidth: 960)
+        }
+    }
+
+    private func bentoTile<Content: View>(title: String, icon: String, accent: Color, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(accent)
+                Text(title)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(DS.Color.textPrimary)
+                Spacer()
+            }
+            Divider()
+            content()
+        }
+        .padding(18)
+        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(DS.Color.border.opacity(0.6), lineWidth: 1))
+    }
+
+    // MARK: =====================================================================
+    // MARK: 🧪 SETTING DEMO 3: LINEAR MINIMALIST STREAM (Continuous Column)
+    // MARK: =====================================================================
+
+    private var settingDemo3LinearStreamView: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 32) {
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("System Preferences")
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundStyle(DS.Color.textPrimary)
+                    Text("Linear continuous settings stream")
                         .font(.system(size: 13))
                         .foregroundStyle(DS.Color.textSecondary)
                 }
-                .padding(.bottom, 8)
 
-                Divider()
+                streamSection(title: "Sound & Acoustics", icon: "speaker.wave.3.fill") {
+                    soundControlsBlock
+                }
 
-                // Detail Switcher
-                switch selectedCategory {
-                case .demos:
-                    demosDetailView
-                case .habits:
-                    habitsManagerDetailView
-                case .notifications:
-                    notificationsDetailView
-                case .security:
-                    securityDetailView
-                case .appearance:
-                    appearanceDetailView
-                case .general:
-                    generalDetailView
-                case .dataSync:
-                    dataSyncDetailView
-                case .about:
-                    aboutDetailView
+                streamSection(title: "Habits & Routines", icon: "flame.fill") {
+                    habitsManagerControlBlock
+                }
+
+                streamSection(title: "Notifications & Smart Schedule", icon: "bell.badge.fill") {
+                    notificationsControlBlock
+                }
+
+                streamSection(title: "Privacy & Biometric Vault", icon: "lock.shield.fill") {
+                    securityControlBlock
+                }
+
+                streamSection(title: "Appearance & Themes", icon: "paintpalette.fill") {
+                    appearanceControlBlock
+                }
+
+                streamSection(title: "Data Sovereignty & Local Storage", icon: "externaldrive.badge.icloud") {
+                    dataSyncControlBlock
                 }
 
                 Spacer(minLength: 40)
             }
-            .padding(.horizontal, 32)
-            .padding(.vertical, 24)
-            .frame(maxWidth: 860, alignment: .leading)
+            .padding(32)
+            .frame(maxWidth: 680, alignment: .leading)
         }
     }
 
-    // MARK: =====================================================================
-    // MARK: 🧪 1. EXPERIMENTAL DEMOS (DEMO 1 TO DEMO 4)
-    // MARK: =====================================================================
-
-    private struct DemoBlueprint: Identifiable {
-        let id: Int
-        let title: String
-        let tagline: String
-        let icon: String
-        let accent: Color
-        let pillars: [String]
-        let description: String
-        let highlights: [String]
-    }
-
-    private let demoBlueprints: [DemoBlueprint] = [
-        DemoBlueprint(
-            id: 1,
-            title: "Demo 1 · Sovereign Executive Flagship",
-            tagline: "The Uncompromised 4-Pillar Master Architecture",
-            icon: "crown.fill",
-            accent: Color(red: 0.95, green: 0.77, blue: 0.25),
-            pillars: ["☀️ Today", "💼 Work", "📖 Journal", "🏔️ Life"],
-            description: "The core flagship OS uniting daily Eisenhower action, focus timers, professional milestones, evening reflection habits, and 3D Himalayan expedition atlases.",
-            highlights: [
-                "1-Click Direct Teleportation across 4 distinct life domains",
-                "Today's Log seamlessly unifies habit tracking with evening reflection",
-                "3D Mountain Expedition Atlas integrated inside Life Strategy",
-                "Hardware-accelerated Pomodoro flow built directly into Today"
-            ]
-        ),
-        DemoBlueprint(
-            id: 2,
-            title: "Demo 2 · High-Velocity Command Matrix",
-            tagline: "Ultra-Dense Tactical Action & Focus Cockpit",
-            icon: "bolt.horizontal.fill",
-            accent: Color(red: 0.35, green: 0.65, blue: 0.95),
-            pillars: ["⚡ Action Hub", "⏱️ Deep Flow", "📊 Workload Audit"],
-            description: "Designed for intensive sprint cycles. Combines split-screen priority task boards, real-time keyboard completion triggers, and instantaneous focus timers.",
-            highlights: [
-                "Side-by-side Eisenhower Urgent vs Important matrix",
-                "Instant Space key focus timer sweep",
-                "Zero-friction scratchpad buffer for quick capture",
-                "Real-time velocity and deep work minutes telemetry"
-            ]
-        ),
-        DemoBlueprint(
-            id: 3,
-            title: "Demo 3 · Alpine Himalayan Explorer",
-            tagline: "3D Physical Pinnacle & High-Altitude Sovereignty",
-            icon: "mountain.2.fill",
-            accent: Color(red: 0.30, green: 0.85, blue: 0.80),
-            pillars: ["🏔️ 3D Atlas", "📜 Passports", "🏆 Trophies", "⌚ Apple Watch"],
-            description: "Dedicated to mountaineering, outdoor endurance, and high-altitude exploration across Sacred Indian summits with real MapKit coordinates and elevation profiles.",
-            highlights: [
-                "3D interactive topographic elevation canvas of Kedarkantha & Nanda Devi",
-                "Gold-embossed National Geographic style digital expedition passports",
-                "7-tier Mountaineer Rank progression and trophy cabinet",
-                "Apple Watch & HealthKit auto-sync for elevation gain & heart rate verification"
-            ]
-        ),
-        DemoBlueprint(
-            id: 4,
-            title: "Demo 4 · Deep Work & Philosophy Vault",
-            tagline: "Biometric Sovereignty & Reflective Intellectual Ledger",
-            icon: "lock.shield.fill",
-            accent: Color(red: 0.75, green: 0.55, blue: 0.95),
-            pillars: ["🔒 Touch ID Vault", "📖 Longform Journal", "🏛️ Life Blueprint"],
-            description: "The ultimate private mental sanctum. Zero external cloud exposure, hardware Touch ID / Face ID encryption, markdown reflection dossiers, and strategic life principles.",
-            highlights: [
-                "Secure Enclave hardware-backed vault auto-lock",
-                "Evening reflection prompt engine with mood & energy telemetry",
-                "10-Year Life Principles, North Star mission statements & regimes",
-                "Complete local-first privacy: Your thoughts never touch an external server"
-            ]
-        )
-    ]
-
-    private var demosDetailView: some View {
-        VStack(alignment: .leading, spacing: 20) {
-
-            // Banner
-            HStack(spacing: 16) {
-                Image(systemName: "sparkles")
-                    .font(.system(size: 28))
-                    .foregroundStyle(accentColor)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Select Active Experimental Demo")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(DS.Color.textPrimary)
-                    Text("Toggle between 4 distinct high-fidelity workspace blueprints. Every setting and database record works seamlessly across all 4 demos.")
-                        .font(.system(size: 12))
-                        .foregroundStyle(DS.Color.textSecondary)
-                }
-            }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(accentColor.opacity(0.08))
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(accentColor.opacity(0.2), lineWidth: 1))
-            )
-
-            // Demo Cards Grid (Demo 1 to Demo 4)
-            VStack(spacing: 16) {
-                ForEach(demoBlueprints) { demo in
-                    demoCard(demo: demo)
-                }
-            }
-        }
-    }
-
-    private func demoCard(demo: DemoBlueprint) -> some View {
-        let isActive = activeDemoPreset == demo.id
-        return VStack(alignment: .leading, spacing: 14) {
-
-            // Header row
-            HStack(alignment: .center, spacing: 12) {
-                Image(systemName: demo.icon)
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(demo.accent)
-                    .frame(width: 36, height: 36)
-                    .background(demo.accent.opacity(0.15), in: RoundedRectangle(cornerRadius: 8))
-
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 8) {
-                        Text(demo.title)
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(DS.Color.textPrimary)
-
-                        if isActive {
-                            Text("ACTIVE PRESET")
-                                .font(.system(size: 9, weight: .heavy))
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(demo.accent.opacity(0.25))
-                                .foregroundStyle(demo.accent)
-                                .clipShape(Capsule())
-                        }
-                    }
-
-                    Text(demo.tagline)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(DS.Color.textSecondary)
-                }
-
-                Spacer()
-
-                Button {
-                    activeDemoPreset = demo.id
-                    Haptics.impact(.medium)
-                } label: {
-                    Text(isActive ? "Active Blueprint" : "Activate Demo \(demo.id)")
-                        .font(.system(size: 12, weight: .bold))
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 6)
-                        .background(isActive ? demo.accent : DS.Color.surface)
-                        .foregroundStyle(isActive ? .black : DS.Color.textPrimary)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 6)
-                                .stroke(isActive ? Color.clear : DS.Color.border, lineWidth: 1)
-                        )
-                }
-                .buttonStyle(.plain)
-            }
-
-            Text(demo.description)
-                .font(.system(size: 12))
-                .foregroundStyle(DS.Color.textSecondary)
-                .lineSpacing(3)
-
-            // Pillars pills
+    private func streamSection<Content: View>(title: String, icon: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 8) {
-                Text("Core Pillars:")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(DS.Color.textTertiary)
-
-                ForEach(demo.pillars, id: \.self) { pillar in
-                    Text(pillar)
-                        .font(.system(size: 11, weight: .medium))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(DS.Color.surface)
-                        .foregroundStyle(DS.Color.textPrimary)
-                        .clipShape(RoundedRectangle(cornerRadius: 5))
-                }
+                Image(systemName: icon)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(accentColor)
+                Text(title)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(DS.Color.textPrimary)
             }
-
-            // Highlights
-            VStack(alignment: .leading, spacing: 6) {
-                ForEach(demo.highlights, id: \.self) { highlight in
-                    HStack(alignment: .top, spacing: 6) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 11))
-                            .foregroundStyle(demo.accent)
-                            .padding(.top, 2)
-                        Text(highlight)
-                            .font(.system(size: 11))
-                            .foregroundStyle(DS.Color.textSecondary)
-                    }
-                }
-            }
-            .padding(10)
-            .background(DS.Color.background.opacity(0.6), in: RoundedRectangle(cornerRadius: 6))
+            Divider()
+            content()
         }
-        .padding(18)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(DS.Color.surface)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(isActive ? demo.accent : DS.Color.border.opacity(0.6), lineWidth: isActive ? 2 : 1)
-                )
-        )
     }
 
     // MARK: =====================================================================
-    // MARK: ⚡ 2. HABITS & ROUTINES MANAGER
+    // MARK: 🧪 SETTING DEMO 4: EXECUTIVE MATRIX HUD (Tabbed Cockpit)
     // MARK: =====================================================================
 
-    private var habitsManagerDetailView: some View {
-        VStack(alignment: .leading, spacing: 20) {
+    private var settingDemo4MatrixHUDView: some View {
+        VStack(spacing: 0) {
 
-            // Top action bar
-            HStack {
+            // Horizontal Tab Strip
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(SettingCategory.allCases) { cat in
+                        Button {
+                            activeSidebarTab = cat
+                            PlutoSoundEngine.shared.play(.tabSwitch)
+                            Haptics.impact(.light)
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: cat.icon)
+                                Text(cat.rawValue)
+                            }
+                            .font(.system(size: 12, weight: activeSidebarTab == cat ? .bold : .medium))
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(activeSidebarTab == cat ? accentColor : DS.Color.surface)
+                            .foregroundStyle(activeSidebarTab == cat ? .black : DS.Color.textSecondary)
+                            .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 12)
+            }
+            .background(DS.Color.surface)
+
+            Divider()
+
+            // Content Canvas
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    switch activeSidebarTab {
+                    case .habits:
+                        habitsManagerControlBlock
+                    case .sound:
+                        soundControlsBlock
+                    case .notifications:
+                        notificationsControlBlock
+                    case .security:
+                        securityControlBlock
+                    case .appearance:
+                        appearanceControlBlock
+                    case .general:
+                        generalControlBlock
+                    case .dataSync:
+                        dataSyncControlBlock
+                    }
+                }
+                .padding(28)
+                .frame(maxWidth: 760, alignment: .leading)
+            }
+        }
+    }
+
+    // MARK: =====================================================================
+    // MARK: ⚙️ SHARED FULLY FUNCTIONAL CONTROL BLOCKS (WORK ACROSS ALL 4 DEMOS)
+    // MARK: =====================================================================
+
+    // 1. Sound & Acoustics Controls
+    private var soundControlsBlock: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Toggle(isOn: $soundEffectsEnabled) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Active Habit Templates (\(allHabits.filter { $0.archivedAt == nil }.count))")
-                        .font(.system(size: 14, weight: .bold))
+                    Text("Acoustic Sound Effects")
+                        .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(DS.Color.textPrimary)
-                    Text("Habits are logged daily inside Today's Log in Journal. Configure your templates here.")
-                        .font(.system(size: 12))
+                    Text("Play mechanical clicks on habit completion, focus timer rings, and summits.")
+                        .font(.system(size: 11))
                         .foregroundStyle(DS.Color.textSecondary)
                 }
+            }
+            .toggleStyle(.switch)
+            .tint(accentColor)
 
+            if soundEffectsEnabled {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Test Acoustic Sound Profiles:")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(DS.Color.textTertiary)
+
+                    HStack(spacing: 8) {
+                        soundTestButton(name: "Tink (Check)", sound: .checkmark)
+                        soundTestButton(name: "Pop (Timer)", sound: .timerStart)
+                        soundTestButton(name: "Ping (Complete)", sound: .timerComplete)
+                        soundTestButton(name: "Hero (Summit)", sound: .summitPassport)
+                    }
+                }
+                .padding(12)
+                .background(DS.Color.background, in: RoundedRectangle(cornerRadius: 8))
+            }
+        }
+    }
+
+    private func soundTestButton(name: String, sound: PlutoSoundEngine.AcousticSound) -> some View {
+        Button {
+            PlutoSoundEngine.shared.play(sound)
+            Haptics.impact(.light)
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "play.fill")
+                    .font(.system(size: 9))
+                Text(name)
+                    .font(.system(size: 11, weight: .medium))
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(DS.Color.surface)
+            .foregroundStyle(DS.Color.textPrimary)
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .overlay(RoundedRectangle(cornerRadius: 6).stroke(DS.Color.border, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+    }
+
+    // 2. Habits & Routines Controls
+    private var habitsManagerControlBlock: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text("Active Habits (\(allHabits.filter { $0.archivedAt == nil }.count))")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(DS.Color.textPrimary)
                 Spacer()
-
                 Button {
                     showNewHabitSheet = true
                 } label: {
-                    Label("New Habit Template", systemImage: "plus")
-                        .font(.system(size: 12, weight: .bold))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
+                    Label("Add Habit", systemImage: "plus")
+                        .font(.system(size: 11, weight: .bold))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
                         .background(accentColor)
                         .foregroundStyle(.black)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
@@ -512,181 +541,81 @@ struct MacSettingsView: View {
                 .buttonStyle(.plain)
             }
 
-            // Habits list
-            VStack(spacing: 8) {
+            VStack(spacing: 6) {
                 ForEach(allHabits.filter { $0.archivedAt == nil }) { habit in
-                    HStack(spacing: 12) {
+                    HStack(spacing: 10) {
                         Image(systemName: "flame.fill")
-                            .font(.system(size: 13))
+                            .font(.system(size: 12))
                             .foregroundStyle(accentColor)
-                            .frame(width: 24, height: 24)
-                            .background(accentColor.opacity(0.15), in: Circle())
 
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(habit.name)
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundStyle(DS.Color.textPrimary)
-
-                            Text(habit.metric == .quantitative ? "Quantitative Goal (\(Int(habit.targetValue ?? 1)) \(habit.unitLabel ?? ""))" : "Daily Check-in")
-                                .font(.system(size: 11))
-                                .foregroundStyle(DS.Color.textTertiary)
-                        }
+                        Text(habit.name)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(DS.Color.textPrimary)
 
                         Spacer()
 
                         Text("Streak: \(habit.currentStreak)d")
-                            .font(.system(size: 11, weight: .semibold))
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
-                            .background(DS.Color.background)
+                            .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(accentColor)
-                            .clipShape(Capsule())
 
-                        Button(role: .destructive) {
+                        Button {
                             habit.archivedAt = Date()
                             try? modelContext.save()
-                            Haptics.impact(.light)
+                            PlutoSoundEngine.shared.play(.deleteTrash)
                         } label: {
                             Image(systemName: "trash")
-                                .font(.system(size: 12))
+                                .font(.system(size: 11))
                                 .foregroundStyle(DS.Color.textTertiary)
                         }
                         .buttonStyle(.plain)
                     }
-                    .padding(12)
-                    .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: 8))
+                    .padding(10)
+                    .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: 6))
                 }
             }
 
-            // Calculation options
             Toggle(isOn: $autoCalculateStreaks) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Auto-Calculate Momentum & Streaks")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(DS.Color.textPrimary)
-                    Text("Automatically compute active streaks based on calendar days completed.")
-                        .font(.system(size: 11))
-                        .foregroundStyle(DS.Color.textSecondary)
-                }
+                Text("Auto-Calculate Momentum & Streaks")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(DS.Color.textPrimary)
             }
             .toggleStyle(.switch)
             .tint(accentColor)
-            .padding(.top, 8)
         }
     }
 
-    private var newHabitModal: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Create New Habit Template")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(DS.Color.textPrimary)
-
-            TextField("Habit Name (e.g. Morning Sunlight & Breathwork)", text: $newHabitTitle)
-                .textFieldStyle(.roundedBorder)
-
-            HStack {
-                Spacer()
-                Button("Cancel") {
-                    showNewHabitSheet = false
-                }
-                .buttonStyle(.plain)
-                .padding(.trailing, 8)
-
-                Button("Save Habit") {
-                    guard !newHabitTitle.trimmingCharacters(in: .whitespaces).isEmpty else { return }
-                    let habit = HabitBoard(name: newHabitTitle)
-                    modelContext.insert(habit)
-                    try? modelContext.save()
-                    newHabitTitle = ""
-                    showNewHabitSheet = false
-                    Haptics.impact(.medium)
-                }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 6)
-                .background(accentColor)
-                .foregroundStyle(.black)
-                .clipShape(RoundedRectangle(cornerRadius: 6))
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(24)
-        .frame(width: 420)
-        .background(DS.Color.surface)
-    }
-
-    // MARK: =====================================================================
-    // MARK: 🔔 3. NOTIFICATIONS & SCHEDULE
-    // MARK: =====================================================================
-
-    private var notificationsDetailView: some View {
-        VStack(alignment: .leading, spacing: 20) {
-
+    // 3. Notifications Controls
+    private var notificationsControlBlock: some View {
+        VStack(alignment: .leading, spacing: 14) {
             Toggle(isOn: $masterNotificationsEnabled) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Master Notifications Engine")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(DS.Color.textPrimary)
-                    Text("Allow PLUTO to deliver native macOS alerts and daily reminders.")
-                        .font(.system(size: 12))
-                        .foregroundStyle(DS.Color.textSecondary)
-                }
+                Text("Master Notification Engine")
+                    .font(.system(size: 13, weight: .bold))
             }
             .toggleStyle(.switch)
             .tint(accentColor)
 
-            Divider()
-
-            VStack(alignment: .leading, spacing: 16) {
-                Toggle(isOn: $eveningReflectionEnabled) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Evening Reflection Prompt")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(DS.Color.textPrimary)
-                        Text("Reminds you to close the day, log habits, and write evening reflections.")
-                            .font(.system(size: 11))
-                            .foregroundStyle(DS.Color.textSecondary)
-                    }
-                }
-                .toggleStyle(.switch)
-                .tint(accentColor)
-
-                Toggle(isOn: $streakAlertEnabled) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Streak Protection Guard")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(DS.Color.textPrimary)
-                        Text("Alerts you at night if uncompleted daily habits risk breaking an active streak.")
-                            .font(.system(size: 11))
-                            .foregroundStyle(DS.Color.textSecondary)
-                    }
-                }
-                .toggleStyle(.switch)
-                .tint(accentColor)
-
-                Toggle(isOn: $weeklyDigestEnabled) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Sunday Executive Digest")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(DS.Color.textPrimary)
-                        Text("Weekly summary of deep work hours, mountain expeditions, and habits.")
-                            .font(.system(size: 11))
-                            .foregroundStyle(DS.Color.textSecondary)
-                    }
-                }
-                .toggleStyle(.switch)
-                .tint(accentColor)
+            Toggle(isOn: $eveningReflectionEnabled) {
+                Text("Evening Reflection Reminders (21:00)")
+                    .font(.system(size: 12))
             }
-            .padding(16)
-            .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: 10))
+            .toggleStyle(.switch)
+            .tint(accentColor)
+
+            Toggle(isOn: $streakAlertEnabled) {
+                Text("Streak Protection Guard (22:00)")
+                    .font(.system(size: 12))
+            }
+            .toggleStyle(.switch)
+            .tint(accentColor)
 
             Button {
                 PlutoNotificationManager.shared.scheduleFocusCompletionNotification(tag: "Deep Work Sprint", seconds: 5, mode: "Pomodoro")
-                Haptics.impact(.medium)
+                PlutoSoundEngine.shared.play(.timerComplete)
             } label: {
                 Label("Trigger Test macOS Notification", systemImage: "bell.badge")
-                    .font(.system(size: 12, weight: .bold))
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
+                    .font(.system(size: 11, weight: .semibold))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
                     .background(DS.Color.surface)
                     .foregroundStyle(DS.Color.textPrimary)
                     .clipShape(RoundedRectangle(cornerRadius: 6))
@@ -696,37 +625,15 @@ struct MacSettingsView: View {
         }
     }
 
-    // MARK: =====================================================================
-    // MARK: 🔒 4. PRIVACY & VAULT SECURITY
-    // MARK: =====================================================================
-
-    private var securityDetailView: some View {
-        VStack(alignment: .leading, spacing: 20) {
-
-            HStack(spacing: 16) {
-                Image(systemName: "lock.shield.fill")
-                    .font(.system(size: 32))
-                    .foregroundStyle(accentColor)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Secure Enclave Biometric Protection")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(DS.Color.textPrimary)
-                    Text("Protect your Private Journal and Life Blueprint with Apple Touch ID, Face ID, or system password.")
-                        .font(.system(size: 12))
-                        .foregroundStyle(DS.Color.textSecondary)
-                }
-            }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: 10))
-
+    // 4. Security & Biometrics Controls
+    private var securityControlBlock: some View {
+        VStack(alignment: .leading, spacing: 14) {
             Toggle(isOn: $isVaultSecurityEnabled) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Enable Biometric Vault Lock")
-                        .font(.system(size: 13, weight: .semibold))
+                    Text("Touch ID / Face ID Biometric Lock")
+                        .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(DS.Color.textPrimary)
-                    Text("Require Touch ID / Password authentication to view Journal and Life Strategy.")
+                    Text("Locks Journal and Life Blueprint with Secure Enclave hardware.")
                         .font(.system(size: 11))
                         .foregroundStyle(DS.Color.textSecondary)
                 }
@@ -735,33 +642,27 @@ struct MacSettingsView: View {
             .tint(accentColor)
 
             if isVaultSecurityEnabled {
-                HStack {
-                    Button("Lock Vault Immediately") {
-                        LocaVaultAuthManager.shared.lockAll()
-                        Haptics.impact(.medium)
-                    }
-                    .font(.system(size: 12, weight: .bold))
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background(Color.red.opacity(0.15))
-                    .foregroundStyle(.red)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-                    .buttonStyle(.plain)
-
-                    Spacer()
+                Button("Lock Vault Immediately") {
+                    LocaVaultAuthManager.shared.lockAll()
+                    PlutoSoundEngine.shared.play(.vaultLock)
+                    Haptics.impact(.medium)
                 }
+                .font(.system(size: 11, weight: .bold))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Color.red.opacity(0.15))
+                .foregroundStyle(.red)
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .buttonStyle(.plain)
             }
         }
     }
 
-    // MARK: =====================================================================
-    // MARK: 🎨 5. APPEARANCE & THEMES
-    // MARK: =====================================================================
-
-    private var appearanceDetailView: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("Executive Accent Palette")
-                .font(.system(size: 14, weight: .bold))
+    // 5. Appearance & Colors Controls
+    private var appearanceControlBlock: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Executive 8-Color Palette")
+                .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(DS.Color.textPrimary)
 
             let palette: [Color] = [
@@ -775,129 +676,87 @@ struct MacSettingsView: View {
                 Color(red: 0.80, green: 0.80, blue: 0.85),
             ]
 
-            HStack(spacing: 16) {
+            HStack(spacing: 12) {
                 ForEach(0..<palette.count, id: \.self) { idx in
                     Button {
                         selectedAccentIndex = idx
+                        PlutoSoundEngine.shared.play(.tabSwitch)
                         Haptics.impact(.light)
                     } label: {
                         Circle()
                             .fill(palette[idx])
-                            .frame(width: 32, height: 32)
+                            .frame(width: 28, height: 28)
                             .overlay(
-                                Circle()
-                                    .stroke(Color.white, lineWidth: selectedAccentIndex == idx ? 3 : 0)
+                                Circle().stroke(Color.white, lineWidth: selectedAccentIndex == idx ? 2.5 : 0)
                             )
-                            .shadow(color: palette[idx].opacity(selectedAccentIndex == idx ? 0.6 : 0.1), radius: 6)
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(16)
-            .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: 10))
 
             Toggle(isOn: $enableHaptics) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Force Touch Trackpad Haptics")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(DS.Color.textPrimary)
-                    Text("Provide physical tactile feedback on task completions and timer triggers.")
-                        .font(.system(size: 11))
-                        .foregroundStyle(DS.Color.textSecondary)
-                }
+                Text("Force Touch Trackpad Haptics")
+                    .font(.system(size: 12))
             }
             .toggleStyle(.switch)
             .tint(accentColor)
         }
     }
 
-    // MARK: =====================================================================
-    // MARK: ⚙️ 6. GENERAL & SYSTEM
-    // MARK: =====================================================================
-
-    private var generalDetailView: some View {
-        VStack(alignment: .leading, spacing: 20) {
-
+    // 6. General & System Controls
+    private var generalControlBlock: some View {
+        VStack(alignment: .leading, spacing: 14) {
             Toggle(isOn: $openFullWindow) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Launch Full Screen on Startup")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(DS.Color.textPrimary)
-                    Text("Automatically expand PLUTO to the full native display on launch.")
-                        .font(.system(size: 11))
-                        .foregroundStyle(DS.Color.textSecondary)
-                }
+                Text("Launch Full Screen on Startup")
+                    .font(.system(size: 12))
             }
             .toggleStyle(.switch)
             .tint(accentColor)
 
             Toggle(isOn: $calendarSyncEnabled) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Apple Calendar Event Integration")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(DS.Color.textPrimary)
-                    Text("Sync scheduled blocks and deadlines directly with macOS EventKit Calendar.")
-                        .font(.system(size: 11))
-                        .foregroundStyle(DS.Color.textSecondary)
-                }
+                Text("Apple Calendar EventKit Sync")
+                    .font(.system(size: 12))
             }
             .toggleStyle(.switch)
             .tint(accentColor)
 
             HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Global Quick-Capture Hotkey")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(DS.Color.textPrimary)
-                    Text("Open PLUTO instant task capture from any app on macOS.")
-                        .font(.system(size: 11))
-                        .foregroundStyle(DS.Color.textSecondary)
-                }
+                Text("Global Quick-Capture Hotkey")
+                    .font(.system(size: 12))
                 Spacer()
                 Text("⌥ + Space")
-                    .font(.system(size: 12, weight: .bold, design: .monospaced))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
                     .background(DS.Color.surface)
-                    .foregroundStyle(DS.Color.textPrimary)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
             }
-            .padding(16)
-            .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: 10))
         }
     }
 
-    // MARK: =====================================================================
-    // MARK: 💾 7. DATA SOVEREIGNTY & EXPORTS
-    // MARK: =====================================================================
-
-    private var dataSyncDetailView: some View {
-        VStack(alignment: .leading, spacing: 20) {
-
-            // Local-First Telemetry Card
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Local-First SQLite Database Status")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(DS.Color.textPrimary)
-
-                HStack(spacing: 24) {
-                    dataStatPill(title: "Habits", count: allHabits.count)
-                    dataStatPill(title: "Tasks", count: allTodos.count)
-                    dataStatPill(title: "Journal Notes", count: allNotes.count)
-                    dataStatPill(title: "Trek Expeditions", count: allTreks.count)
-                }
+    // 7. Data Sovereignty & SQLite Controls
+    private var dataSyncControlBlock: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 16) {
+                statBox(title: "Habits", count: allHabits.count)
+                statBox(title: "Tasks", count: allTodos.count)
+                statBox(title: "Notes", count: allNotes.count)
+                statBox(title: "Treks", count: allTreks.count)
             }
-            .padding(16)
-            .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: 10))
 
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 Button {
-                    exportJSON()
+                    let exportData = "{\"app\":\"PLUTO\",\"version\":\"5.0\",\"habits\":\(allHabits.count),\"todos\":\(allTodos.count)}"
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(exportData, forType: .string)
+                    exportMessage = "JSON Copied to Clipboard!"
+                    showExportSuccess = true
+                    PlutoSoundEngine.shared.play(.checkmark)
                 } label: {
-                    Label("Export Full JSON Backup", systemImage: "square.and.arrow.up")
-                        .font(.system(size: 12, weight: .bold))
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
+                    Label("Export JSON", systemImage: "square.and.arrow.up")
+                        .font(.system(size: 11, weight: .bold))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
                         .background(accentColor)
                         .foregroundStyle(.black)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
@@ -906,13 +765,14 @@ struct MacSettingsView: View {
 
                 Button {
                     LocaSpotlightIndexer.shared.indexAll(context: modelContext)
-                    exportMessage = "Spotlight Index Rebuilt Successfully!"
+                    exportMessage = "Spotlight Re-indexed!"
                     showExportSuccess = true
+                    PlutoSoundEngine.shared.play(.checkmark)
                 } label: {
-                    Label("Re-index CoreSpotlight", systemImage: "magnifyingglass")
-                        .font(.system(size: 12, weight: .bold))
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
+                    Label("Re-index Spotlight", systemImage: "magnifyingglass")
+                        .font(.system(size: 11, weight: .semibold))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
                         .background(DS.Color.surface)
                         .foregroundStyle(DS.Color.textPrimary)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
@@ -922,61 +782,63 @@ struct MacSettingsView: View {
 
             if showExportSuccess {
                 Text(exportMessage)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.green)
             }
         }
     }
 
-    private func dataStatPill(title: String, count: Int) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+    private func statBox(title: String, count: Int) -> some View {
+        VStack(spacing: 2) {
             Text("\(count)")
-                .font(.system(size: 18, weight: .bold))
+                .font(.system(size: 16, weight: .bold))
                 .foregroundStyle(DS.Color.textPrimary)
             Text(title)
-                .font(.system(size: 11))
+                .font(.system(size: 10))
                 .foregroundStyle(DS.Color.textTertiary)
         }
+        .frame(maxWidth: .infinity)
+        .padding(8)
+        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: 6))
     }
 
-    private func exportJSON() {
-        let exportData = "{\"app\":\"PLUTO\",\"version\":\"5.0\",\"habits\":\(allHabits.count),\"todos\":\(allTodos.count)}"
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(exportData, forType: .string)
-        exportMessage = "JSON Backup Copied to Clipboard!"
-        showExportSuccess = true
-        Haptics.impact(.medium)
-    }
-
-    // MARK: =====================================================================
-    // MARK: ℹ️ 8. ABOUT PLUTO
-    // MARK: =====================================================================
-
-    private var aboutDetailView: some View {
+    // Modal Sheet for adding habit
+    private var newHabitSheetModal: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 16) {
-                Image(systemName: "circle.circle.fill")
-                    .font(.system(size: 44))
-                    .foregroundStyle(accentColor)
+            Text("New Habit Template")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(DS.Color.textPrimary)
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("PLUTO OS")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundStyle(DS.Color.textPrimary)
-                    Text("Version 5.0 · Sovereign Executive Edition")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(DS.Color.textSecondary)
+            TextField("Habit Name (e.g. Zone 2 Rucking)", text: $newHabitTitle)
+                .textFieldStyle(.roundedBorder)
+
+            HStack {
+                Spacer()
+                Button("Cancel") {
+                    showNewHabitSheet = false
                 }
-            }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: 10))
+                .buttonStyle(.plain)
+                .padding(.trailing, 8)
 
-            Text("Built as a local-first, privacy-native executive operating system for daily discipline, high-altitude expeditions, and life strategy. No third-party servers, zero telemetry tracking, pure native Swift performance.")
-                .font(.system(size: 12))
-                .foregroundStyle(DS.Color.textSecondary)
-                .lineSpacing(4)
+                Button("Save") {
+                    guard !newHabitTitle.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+                    let habit = HabitBoard(name: newHabitTitle)
+                    modelContext.insert(habit)
+                    try? modelContext.save()
+                    newHabitTitle = ""
+                    showNewHabitSheet = false
+                    PlutoSoundEngine.shared.play(.checkmark)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 6)
+                .background(accentColor)
+                .foregroundStyle(.black)
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .buttonStyle(.plain)
+            }
         }
+        .padding(24)
+        .frame(width: 380)
+        .background(DS.Color.surface)
     }
 }

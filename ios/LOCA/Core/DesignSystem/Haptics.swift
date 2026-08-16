@@ -37,8 +37,18 @@ enum Haptics {
         switch style {
         case .light, .soft, .medium:
             NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
+            if UserDefaults.standard.object(forKey: "mac_sound_effects_enabled") == nil || UserDefaults.standard.bool(forKey: "mac_sound_effects_enabled") {
+                if let snd = NSSound(named: "Tink") {
+                    snd.play()
+                }
+            }
         case .rigid:
             NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .now)
+            if UserDefaults.standard.object(forKey: "mac_sound_effects_enabled") == nil || UserDefaults.standard.bool(forKey: "mac_sound_effects_enabled") {
+                if let snd = NSSound(named: "Pop") {
+                    snd.play()
+                }
+            }
         }
         #endif
     }
@@ -52,6 +62,11 @@ enum Haptics {
         UISelectionFeedbackGenerator().selectionChanged()
         #elseif canImport(AppKit)
         NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now)
+        if UserDefaults.standard.object(forKey: "mac_sound_effects_enabled") == nil || UserDefaults.standard.bool(forKey: "mac_sound_effects_enabled") {
+            if let snd = NSSound(named: "Pop") {
+                snd.play()
+            }
+        }
         #endif
     }
 
@@ -74,10 +89,27 @@ enum Haptics {
         }
         #elseif canImport(AppKit)
         switch type {
-        case .success, .error:
+        case .success:
             NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .now)
+            if UserDefaults.standard.object(forKey: "mac_sound_effects_enabled") == nil || UserDefaults.standard.bool(forKey: "mac_sound_effects_enabled") {
+                if let snd = NSSound(named: "Hero") {
+                    snd.play()
+                }
+            }
+        case .error:
+            NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .now)
+            if UserDefaults.standard.object(forKey: "mac_sound_effects_enabled") == nil || UserDefaults.standard.bool(forKey: "mac_sound_effects_enabled") {
+                if let snd = NSSound(named: "Basso") {
+                    snd.play()
+                }
+            }
         case .warning:
             NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
+            if UserDefaults.standard.object(forKey: "mac_sound_effects_enabled") == nil || UserDefaults.standard.bool(forKey: "mac_sound_effects_enabled") {
+                if let snd = NSSound(named: "Ping") {
+                    snd.play()
+                }
+            }
         }
         #endif
     }
