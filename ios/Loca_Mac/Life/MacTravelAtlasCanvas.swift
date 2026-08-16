@@ -69,6 +69,7 @@ struct MacTravelAtlasCanvas: View {
     @State private var selectedFilter: TravelFilter = .all
     @State private var layoutVariant: TravelLayoutVariant = .splitMapInspector
     @State private var mapColorTheme: MapColorTheme = .visitedGlow
+    @State private var showDistricts: Bool = true
     @State private var searchText: String = ""
 
     // MapKit Camera Position centered over the Indian Subcontinent
@@ -334,13 +335,62 @@ struct MacTravelAtlasCanvas: View {
                 // Interactive MapKit Map with Full Fog-of-War Territory Illumination
                 Map(position: $mapCameraPosition) {
                     ForEach(activeStates) { state in
-                        // Real Geopolitical State Boundary Polygon
+                        let isSelectedState = selectedState?.id == state.id
+                        let stateDistricts = IndianDistrictBoundaryData.districts(for: state.stateCode)
+
+                        // 1. District Boundaries (When state is selected and districts exist)
+                        if showDistricts && isSelectedState && !stateDistricts.isEmpty {
+                            ForEach(stateDistricts) { district in
+                                let isDistrictVisited = state.visitedCities.contains { city in
+                                    city.localizedCaseInsensitiveContains(district.name) ||
+                                    district.name.localizedCaseInsensitiveContains(city)
+                                }
+
+                                MapPolygon(coordinates: district.coordinates)
+                                    .foregroundStyle(
+                                        isDistrictVisited
+                                            ? Color(red: 0.20, green: 0.85, blue: 0.45).opacity(0.45)
+                                            : Color.white.opacity(0.08)
+                                    )
+                                    .stroke(
+                                        isDistrictVisited
+                                            ? Color(red: 0.20, green: 0.85, blue: 0.45)
+                                            : Color.white.opacity(0.35),
+                                        lineWidth: isDistrictVisited ? 2.0 : 1.0
+                                    )
+
+                                Annotation(district.name, coordinate: district.centerCoordinate) {
+                                    Button {
+                                        toggleDistrictVisited(district.name, for: state)
+                                    } label: {
+                                        HStack(spacing: 3) {
+                                            Circle()
+                                                .fill(isDistrictVisited ? Color.green : Color.gray)
+                                                .frame(width: 5, height: 5)
+                                            Text(district.name)
+                                                .font(.system(size: 8, weight: isDistrictVisited ? .bold : .medium))
+                                                .foregroundStyle(isDistrictVisited ? Color.white : Color.white.opacity(0.7))
+                                        }
+                                        .padding(.horizontal, 4)
+                                        .padding(.vertical, 2)
+                                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 4))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 4)
+                                                .stroke(isDistrictVisited ? Color.green.opacity(0.6) : Color.white.opacity(0.15), lineWidth: 0.5)
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+
+                        // 2. Real Geopolitical State Boundary Polygon
                         if let boundary = IndianStateBoundaryData.polygon(for: state.stateCode) {
                             if mapColorTheme == .visitedGlow {
                                 if state.isVisited {
                                     MapPolygon(coordinates: boundary)
-                                        .foregroundStyle(zoneColor(for: state.zone).opacity(selectedState?.id == state.id ? 0.55 : 0.38))
-                                        .stroke(zoneColor(for: state.zone), lineWidth: selectedState?.id == state.id ? 3.5 : 2.0)
+                                        .foregroundStyle(zoneColor(for: state.zone).opacity(isSelectedState ? (showDistricts ? 0.15 : 0.55) : 0.38))
+                                        .stroke(zoneColor(for: state.zone), lineWidth: isSelectedState ? 3.5 : 2.0)
                                 } else {
                                     MapPolygon(coordinates: boundary)
                                         .foregroundStyle(Color.gray.opacity(0.08))
@@ -371,18 +421,20 @@ struct MacTravelAtlasCanvas: View {
                             }
                         }
 
-                        // Custom Rich Annotation Pin
-                        Annotation(state.name, coordinate: state.coordinate) {
-                            Button {
-                                selectState(state)
-                            } label: {
-                                StateMapPin(
-                                    state: state,
-                                    isSelected: selectedState?.id == state.id,
-                                    colorTheme: mapColorTheme
-                                )
+                        // Custom Rich Annotation Pin (Shown when state is not zoomed into districts)
+                        if !isSelectedState || !showDistricts {
+                            Annotation(state.name, coordinate: state.coordinate) {
+                                Button {
+                                    selectState(state)
+                                } label: {
+                                    StateMapPin(
+                                        state: state,
+                                        isSelected: isSelectedState,
+                                        colorTheme: mapColorTheme
+                                    )
+                                }
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
                         }
                     }
                 }
@@ -390,7 +442,7 @@ struct MacTravelAtlasCanvas: View {
 
                 // Top-Left Floating Map Theme & Region Strip
                 VStack(alignment: .leading, spacing: 8) {
-                    // Illumination Mode Switcher
+                    // Illumination Mode Switcher + District Toggle
                     HStack(spacing: 4) {
                         ForEach(MapColorTheme.allCases) { theme in
                             let isSelected = mapColorTheme == theme
@@ -415,6 +467,34 @@ struct MacTravelAtlasCanvas: View {
                             }
                             .buttonStyle(.plain)
                         }
+
+                        Divider().frame(height: 16).overlay(Color.white.opacity(0.2))
+
+                        // District Layer Toggle Button
+                        Button {
+                            withAnimation(.spring(response: 0.25)) {
+                                showDistricts.toggle()
+                            }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: showDistricts ? "square.grid.3x3.fill" : "square.grid.3x3")
+                                    .font(.system(size: 10))
+                                Text("Districts")
+                                    .font(.system(size: 10, weight: showDistricts ? .bold : .medium))
+                            }
+                            .foregroundStyle(showDistricts ? Color.green : DS.Color.textSecondary)
+                            .padding(.horizontal, 8)
+                            .frame(height: 24)
+                            .background(
+                                showDistricts ? Color.green.opacity(0.18) : Color.white.opacity(0.08),
+                                in: RoundedRectangle(cornerRadius: 6)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(showDistricts ? Color.green.opacity(0.5) : Color.clear, lineWidth: 1)
+                            )
+                        }
+                        .buttonStyle(.plain)
                     }
                     .padding(4)
                     .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
@@ -721,6 +801,56 @@ struct MacTravelAtlasCanvas: View {
                     .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 6))
                 }
 
+                // Official Districts Quick-Toggle Vault
+                let availableDistricts = IndianDistrictBoundaryData.districts(for: state.stateCode)
+                if !availableDistricts.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            Image(systemName: "square.grid.3x3.fill")
+                                .font(.system(size: 11))
+                                .foregroundStyle(Color.green)
+                            Text("OFFICIAL DISTRICTS OF \(state.name.uppercased()) (\(availableDistricts.count))")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundStyle(DS.Color.textTertiary)
+                        }
+
+                        FlowLayout(spacing: 4) {
+                            ForEach(availableDistricts) { district in
+                                let isVisited = state.visitedCities.contains { city in
+                                    city.localizedCaseInsensitiveContains(district.name) ||
+                                    district.name.localizedCaseInsensitiveContains(city)
+                                }
+
+                                Button {
+                                    toggleDistrictVisited(district.name, for: state)
+                                } label: {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: isVisited ? "checkmark.circle.fill" : "circle")
+                                            .font(.system(size: 8))
+                                            .foregroundStyle(isVisited ? Color.green : DS.Color.textTertiary)
+                                        Text(district.name)
+                                            .font(.system(size: 9.5, weight: isVisited ? .bold : .medium))
+                                    }
+                                    .foregroundStyle(isVisited ? Color.white : DS.Color.textSecondary)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 3)
+                                    .background(
+                                        isVisited
+                                            ? Color.green.opacity(0.18)
+                                            : Color.white.opacity(0.04),
+                                        in: RoundedRectangle(cornerRadius: 5)
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 5)
+                                            .stroke(isVisited ? Color.green.opacity(0.4) : Color.white.opacity(0.08), lineWidth: 0.8)
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
+
                 // Top Attractions
                 if !state.topAttractions.isEmpty {
                     VStack(alignment: .leading, spacing: 6) {
@@ -957,6 +1087,26 @@ struct MacTravelAtlasCanvas: View {
     private func removeCity(_ city: String, from state: TravelRecord) {
         state.visitedCities.removeAll { $0 == city }
         try? modelContext.save()
+    }
+
+    private func toggleDistrictVisited(_ districtName: String, for state: TravelRecord) {
+        withAnimation(.spring(response: 0.25)) {
+            if let index = state.visitedCities.firstIndex(where: {
+                $0.localizedCaseInsensitiveCompare(districtName) == .orderedSame ||
+                $0.localizedCaseInsensitiveContains(districtName) ||
+                districtName.localizedCaseInsensitiveContains($0)
+            }) {
+                state.visitedCities.remove(at: index)
+            } else {
+                state.visitedCities.append(districtName)
+                if !state.isVisited {
+                    state.status = .visited
+                    state.dateVisited = Date()
+                }
+            }
+            try? modelContext.save()
+        }
+        Haptics.selection()
     }
 }
 
