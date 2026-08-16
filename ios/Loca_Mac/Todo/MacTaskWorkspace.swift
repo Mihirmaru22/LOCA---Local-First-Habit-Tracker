@@ -90,7 +90,7 @@ struct MacTaskWorkspace: View {
             titleVisibility: .visible
         ) {
             Button("Delete", role: .destructive) {
-                item.archivedAt = Date()
+                item.archiveCascade(in: modelContext)
                 save()
                 onClose()
             }

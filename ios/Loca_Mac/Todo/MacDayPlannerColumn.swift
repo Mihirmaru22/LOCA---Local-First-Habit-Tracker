@@ -708,6 +708,7 @@ private struct PlannerBlock: View {
                     .padding(.bottom, 4)
             }
         }
+        .help(tooltipText)
         .onHover { isHovered = $0 }
         .scaleEffect(isDragging && !reduceMotion ? 1.02 : 1.0)
         .shadow(
@@ -716,6 +717,15 @@ private struct PlannerBlock: View {
         )
         .animation(reduceMotion ? .linear(duration: 0.05) : .spring(response: 0.2, dampingFraction: 0.75),
                    value: isDragging)
+    }
+
+    private var tooltipText: String {
+        let title = item.title.isEmpty ? "Untitled Task" : item.title
+        guard let start = item.startTime else { return title }
+        let startStr = start.formatted(date: .omitted, time: .shortened)
+        let end = item.endTime ?? start.addingTimeInterval(Double(item.durationMinutes * 60))
+        let endStr = end.formatted(date: .omitted, time: .shortened)
+        return "\(title)\n\(startStr) – \(endStr) (\(item.durationMinutes) min)"
     }
 
     private var blockBody: some View {

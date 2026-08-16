@@ -155,6 +155,25 @@ struct FocusRoomView: View {
                     .padding(.top, 16)
                     .frame(width: geo.size.width)
                     .zIndex(100)
+
+                // ===================================================================
+                // LAYER 4: BOTTOM KEYBOARD SHORTCUT HUD
+                // ===================================================================
+                VStack {
+                    Spacer()
+                    HStack(spacing: 12) {
+                        shortcutBadge(key: "Space", label: timerVM.isRunning ? "Pause" : "Resume")
+                        shortcutBadge(key: "⌘T", label: "Timer")
+                        shortcutBadge(key: "⌘F", label: "Fullscreen")
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.black.opacity(0.4).background(.ultraThinMaterial), in: Capsule())
+                    .overlay(Capsule().stroke(Color.white.opacity(0.12), lineWidth: 0.8))
+                    .padding(.bottom, 16)
+                }
+                .frame(width: geo.size.width)
+                .zIndex(70)
             }
             .frame(width: geo.size.width, height: geo.size.height)
         }
@@ -530,8 +549,30 @@ struct FocusRoomView: View {
 
     private func endSession() {
         guard let session = currentSession else { return }
+        let duration = timerVM.secondsElapsed
+        if duration < 15 {
+            modelContext.delete(session)
+            try? modelContext.save()
+            currentSession = nil
+            return
+        }
         session.endTime = Date()
-        session.durationSeconds = timerVM.secondsElapsed
+        session.durationSeconds = duration
         try? modelContext.save()
+        currentSession = nil
+    }
+
+    private func shortcutBadge(key: String, label: String) -> some View {
+        HStack(spacing: 4) {
+            Text(key)
+                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .padding(.horizontal, 4)
+                .padding(.vertical, 2)
+                .background(Color.white.opacity(0.15), in: RoundedRectangle(cornerRadius: 3))
+                .foregroundStyle(Color.white.opacity(0.85))
+            Text(label)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(Color.white.opacity(0.65))
+        }
     }
 }

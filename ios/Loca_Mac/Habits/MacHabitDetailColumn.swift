@@ -9,8 +9,10 @@ import SwiftData
 struct MacHabitDetailColumn: View {
 
     let habit: HabitBoard?
+    var onArchive: (() -> Void)? = nil
     @Environment(\.modelContext) private var modelContext
     @State private var showCheckInError = false
+    @State private var showArchiveConfirm = false
     @State private var customAmountText = ""
     @FocusState private var isAmountFocused: Bool
 
@@ -87,7 +89,26 @@ struct MacHabitDetailColumn: View {
                                 }
                             }
 
-                            Spacer()
+                            // Archive Habit Button
+                            Button {
+                                showArchiveConfirm = true
+                            } label: {
+                                Image(systemName: "archivebox")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(DS.Color.textTertiary)
+                                    .padding(8)
+                                    .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 6))
+                            }
+                            .buttonStyle(.plain)
+                            .help("Archive Habit")
+                            .confirmationDialog("Archive \"\(habit.name)\"?", isPresented: $showArchiveConfirm) {
+                                Button("Archive Habit", role: .destructive) {
+                                    archiveHabit(habit)
+                                }
+                                Button("Cancel", role: .cancel) {}
+                            } message: {
+                                Text("This habit will be hidden from active tracking. All historical logs and streaks will be preserved.")
+                            }
 
                             // Primary Complete / Reset Button
                             Button {
@@ -388,6 +409,16 @@ struct MacHabitDetailColumn: View {
     private func deleteEntry(_ entry: LogEntry, board: HabitBoard) {
         do {
             try CheckInWriter.delete(entry, board: board, context: modelContext)
+            Haptics.impact(.light)
+        } catch {
+            showCheckInError = true
+        }
+    }
+
+    private func archiveHabit(_ habit: HabitBoard) {
+        do {
+            try habit.archive(in: modelContext)
+            onArchive?()
             Haptics.impact(.light)
         } catch {
             showCheckInError = true

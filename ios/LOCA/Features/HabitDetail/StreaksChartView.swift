@@ -32,7 +32,8 @@ struct StreaksChartView: View {
                 continue
             }
 
-            var streak = 0
+            var maxStreak = 0
+            var currentStreak = 0
             var current = monthStart
 
             while current <= monthEnd {
@@ -42,13 +43,14 @@ struct StreaksChartView: View {
                 }
 
                 let dayTotal = (board.logs ?? [])
-                    .filter { $0.timestamp >= dayStart && $0.timestamp <= dayEnd }
+                    .filter { $0.timestamp >= dayStart && $0.timestamp <= dayEnd && $0.archivedAt == nil }
                     .reduce(0.0) { $0 + $1.value }
 
-                if dayTotal >= board.effectiveTarget {
-                    streak += 1
+                if dayTotal >= board.effectiveTarget - 1e-9 {
+                    currentStreak += 1
+                    maxStreak = max(maxStreak, currentStreak)
                 } else {
-                    break
+                    currentStreak = 0
                 }
 
                 guard let nextDay = Calendar.current.date(byAdding: .day, value: 1, to: current) else {
@@ -57,7 +59,7 @@ struct StreaksChartView: View {
                 current = nextDay
             }
 
-            results.append((monthStart, streak))
+            results.append((monthStart, maxStreak))
         }
         return results
     }

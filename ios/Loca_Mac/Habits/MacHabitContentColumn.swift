@@ -76,11 +76,11 @@ struct MacHabitContentColumn: View {
                 VStack(alignment: .leading, spacing: DS.Space.md) {
                     switch selectedVariant {
                     case .habit1:
-                        Habit1BentoRingsView(boards: boards, selection: $selection, onCheck: handleHabitAction, onAddAmount: logAmountDirect)
+                        Habit1BentoRingsView(boards: boards, selection: $selection, onCheck: handleHabitAction, onAddAmount: logAmountDirect, onArchive: archiveHabit)
                     case .habit2:
-                        Habit2HorizonStripsView(boards: boards, selection: $selection, onCheck: handleHabitAction)
+                        Habit2HorizonStripsView(boards: boards, selection: $selection, onCheck: handleHabitAction, onArchive: archiveHabit)
                     case .habit3:
-                        Habit3ProgressMatrixView(boards: boards, selection: $selection, onCheck: handleHabitAction, onAddAmount: logAmountDirect)
+                        Habit3ProgressMatrixView(boards: boards, selection: $selection, onCheck: handleHabitAction, onAddAmount: logAmountDirect, onArchive: archiveHabit)
                     }
                 }
                 .padding(.horizontal, DS.Space.md)
@@ -147,6 +147,18 @@ struct MacHabitContentColumn: View {
             showCheckInError = true
         }
     }
+
+    private func archiveHabit(_ board: HabitBoard) {
+        do {
+            if selection?.id == board.id {
+                selection = nil
+            }
+            try board.archive(in: modelContext)
+            Haptics.impact(.light)
+        } catch {
+            showCheckInError = true
+        }
+    }
 }
 
 // MARK: - Design 1: Habit1BentoRingsView (Bento Cards with Progress Rings)
@@ -157,15 +169,17 @@ private struct Habit1BentoRingsView: View {
     @Binding var selection: HabitBoard?
     let onCheck: (HabitBoard) -> Void
     let onAddAmount: (Double, HabitBoard) -> Void
+    let onArchive: (HabitBoard) -> Void
 
     var body: some View {
-        VStack(spacing: 6) {
+        LazyVStack(spacing: 6) {
             ForEach(boards, id: \.id) { board in
                 Habit1CardRow(
                     board: board, 
                     isSelected: selection?.id == board.id, 
                     onCheck: { onCheck(board) },
-                    onAddAmount: { amount in onAddAmount(amount, board) }
+                    onAddAmount: { amount in onAddAmount(amount, board) },
+                    onArchive: { onArchive(board) }
                 ) {
                     selection = board
                 }
@@ -179,6 +193,7 @@ private struct Habit1CardRow: View {
     let isSelected: Bool
     let onCheck: () -> Void
     let onAddAmount: (Double) -> Void
+    let onArchive: () -> Void
     let onSelect: () -> Void
 
     @State private var isHovered = false
@@ -254,7 +269,8 @@ private struct Habit1CardRow: View {
                                 .textFieldStyle(.roundedBorder)
                                 .frame(width: 90)
                                 .onSubmit {
-                                    if let val = Double(quickInput), val > 0 {
+                                    let cleaned = quickInput.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: ",", with: ".")
+                                    if let val = Double(cleaned), val > 0 {
                                         onAddAmount(val)
                                         quickInput = ""
                                         showAmountPopover = false
@@ -262,7 +278,8 @@ private struct Habit1CardRow: View {
                                 }
 
                             Button("Add") {
-                                if let val = Double(quickInput), val > 0 {
+                                let cleaned = quickInput.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: ",", with: ".")
+                                if let val = Double(cleaned), val > 0 {
                                     onAddAmount(val)
                                     quickInput = ""
                                     showAmountPopover = false
@@ -331,6 +348,13 @@ private struct Habit1CardRow: View {
                 .stroke(isSelected ? color.opacity(0.6) : DS.Color.border.opacity(0.3), lineWidth: 1)
         )
         .onTapGesture { onSelect() }
+        .contextMenu {
+            Button(role: .destructive) {
+                onArchive()
+            } label: {
+                Label("Archive Habit", systemImage: "archivebox")
+            }
+        }
         .onHover { hovering in
             isHovered = hovering
             if hovering {
@@ -349,6 +373,7 @@ private struct Habit2HorizonStripsView: View {
     let boards: [HabitBoard]
     @Binding var selection: HabitBoard?
     let onCheck: (HabitBoard) -> Void
+    let onArchive: (HabitBoard) -> Void
 
     private var weekDays: [Date] {
         let cal = Calendar.current
@@ -385,9 +410,9 @@ private struct Habit2HorizonStripsView: View {
 
             Divider()
 
-            VStack(spacing: 0) {
+            LazyVStack(spacing: 0) {
                 ForEach(boards, id: \.id) { board in
-                    Habit2StripRow(board: board, isSelected: selection?.id == board.id, weekDays: weekDays, onCheck: { onCheck(board) }) {
+                    Habit2StripRow(board: board, isSelected: selection?.id == board.id, weekDays: weekDays, onCheck: { onCheck(board) }, onArchive: { onArchive(board) }) {
                         selection = board
                     }
                     if board.id != boards.last?.id {
@@ -415,6 +440,7 @@ private struct Habit2StripRow: View {
     let isSelected: Bool
     let weekDays: [Date]
     let onCheck: () -> Void
+    let onArchive: () -> Void
     let onSelect: () -> Void
 
     @State private var isHovered = false
@@ -465,6 +491,13 @@ private struct Habit2StripRow: View {
         .contentShape(Rectangle())
         .background(isSelected ? color.opacity(0.12) : (isHovered ? DS.Color.surfaceRecessed.opacity(0.4) : Color.clear))
         .onTapGesture { onSelect() }
+        .contextMenu {
+            Button(role: .destructive) {
+                onArchive()
+            } label: {
+                Label("Archive Habit", systemImage: "archivebox")
+            }
+        }
         .onHover { hovering in
             isHovered = hovering
             if hovering {
@@ -491,15 +524,17 @@ private struct Habit3ProgressMatrixView: View {
     @Binding var selection: HabitBoard?
     let onCheck: (HabitBoard) -> Void
     let onAddAmount: (Double, HabitBoard) -> Void
+    let onArchive: (HabitBoard) -> Void
 
     var body: some View {
-        VStack(spacing: 8) {
+        LazyVStack(spacing: 8) {
             ForEach(boards, id: \.id) { board in
                 Habit3MatrixRow(
                     board: board, 
                     isSelected: selection?.id == board.id, 
                     onCheck: { onCheck(board) },
-                    onAddAmount: { amount in onAddAmount(amount, board) }
+                    onAddAmount: { amount in onAddAmount(amount, board) },
+                    onArchive: { onArchive(board) }
                 ) {
                     selection = board
                 }
@@ -513,6 +548,7 @@ private struct Habit3MatrixRow: View {
     let isSelected: Bool
     let onCheck: () -> Void
     let onAddAmount: (Double) -> Void
+    let onArchive: () -> Void
     let onSelect: () -> Void
 
     @State private var isHovered = false
@@ -608,6 +644,13 @@ private struct Habit3MatrixRow: View {
                 .stroke(isSelected ? color.opacity(0.6) : DS.Color.border.opacity(0.3), lineWidth: 1)
         )
         .onTapGesture { onSelect() }
+        .contextMenu {
+            Button(role: .destructive) {
+                onArchive()
+            } label: {
+                Label("Archive Habit", systemImage: "archivebox")
+            }
+        }
         .onHover { hovering in
             isHovered = hovering
             if hovering {

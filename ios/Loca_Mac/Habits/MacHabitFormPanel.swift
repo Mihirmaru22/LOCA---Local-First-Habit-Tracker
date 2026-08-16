@@ -292,10 +292,11 @@ struct MacHabitFormPanel: View {
         Haptics.impact(.light)
     }
 
-    // MARK: - Habit Saving
+    @State private var isSaving: Bool = false
 
     private func saveHabit() {
-        guard isValid else { return }
+        guard isValid && !isSaving else { return }
+        isSaving = true
         let cleanName = trimmedName
 
         let target: Double? = metricType == .quantitative ? max(targetValue, 1.0) : nil
@@ -316,6 +317,7 @@ struct MacHabitFormPanel: View {
             Haptics.impact(.rigid)
             dismiss()
         } catch {
+            isSaving = false
             modelContext.rollback()
         }
     }

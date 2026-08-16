@@ -16,6 +16,7 @@ struct MacDayDashboardHub: View {
 
     @State private var focusTimeRemaining: Int = 25 * 60
     @State private var isTimerRunning: Bool = false
+    @State private var timerEndTimestamp: Date? = nil
     @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     @State private var scratchpadText: String = ""
 
@@ -76,10 +77,15 @@ struct MacDayDashboardHub: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(DS.Color.background)
         .onReceive(timer) { _ in
-            if isTimerRunning && focusTimeRemaining > 0 {
-                focusTimeRemaining -= 1
-            } else if focusTimeRemaining == 0 {
+            guard isTimerRunning, let end = timerEndTimestamp else { return }
+            let remaining = Int(ceil(end.timeIntervalSinceNow))
+            if remaining <= 0 {
+                focusTimeRemaining = 0
                 isTimerRunning = false
+                timerEndTimestamp = nil
+                Haptics.notify(.success)
+            } else {
+                focusTimeRemaining = remaining
             }
         }
     }
@@ -297,7 +303,13 @@ struct MacDayDashboardHub: View {
             // Play / Pause / Reset Controls
             HStack(spacing: 12) {
                 Button {
-                    isTimerRunning.toggle()
+                    if isTimerRunning {
+                        isTimerRunning = false
+                        timerEndTimestamp = nil
+                    } else {
+                        isTimerRunning = true
+                        timerEndTimestamp = Date().addingTimeInterval(Double(focusTimeRemaining))
+                    }
                     Haptics.impact(.light)
                 } label: {
                     Image(systemName: isTimerRunning ? "pause.fill" : "play.fill")
@@ -311,6 +323,7 @@ struct MacDayDashboardHub: View {
                 Button {
                     focusTimeRemaining = 25 * 60
                     isTimerRunning = false
+                    timerEndTimestamp = nil
                     Haptics.impact(.light)
                 } label: {
                     Image(systemName: "arrow.counterclockwise")
