@@ -66,7 +66,7 @@ private func generateYouTubeHTML(videoID: String) -> String {
     <body>
     <iframe
       id="yt-player"
-      src="https://www.youtube-nocookie.com/embed/\(videoID)?autoplay=1&loop=1&playlist=\(videoID)&controls=0&disablekb=1&fs=0&iv_load_policy=3&rel=0&modestbranding=1&showinfo=0&autohide=1&playsinline=1&enablejsapi=1"
+      src="https://www.youtube-nocookie.com/embed/\(videoID)?autoplay=1&loop=1&playlist=\(videoID)&controls=0&cc_load_policy=0&cc_lang_pref=off&disablekb=1&fs=0&iv_load_policy=3&rel=0&modestbranding=1&showinfo=0&autohide=1&playsinline=1&enablejsapi=1"
       allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
       allowfullscreen>
     </iframe>
@@ -148,7 +148,55 @@ private func makeConfiguredWKWebView() -> (WKWebViewConfiguration, WKUserScript,
         source: """
             var style = document.createElement('style');
             style.textContent = `
-                /* Hide ALL YouTube player UI chrome */
+                /* Center playback controls */
+                .ytp-cued-thumbnail-overlay,
+                .ytp-cued-thumbnail-overlay-image,
+                .ytp-large-play-button,
+                .ytp-play-button,
+                .ytp-button,
+                .ytp-prev-button,
+                .ytp-next-button,
+                .html5-video-player .ytp-chrome-controls { 
+                    display: none !important; 
+                }
+
+                /* Subtitles and captions */
+                .ytp-caption-window-container,
+                .captions-text,
+                .caption-window,
+                .ytp-subtitles-button,
+                .ytp-caption-segment,
+                div.ytp-caption-window-rollup,
+                span.ytp-caption-segment { 
+                    display: none !important; 
+                }
+
+                /* Bottom "More videos" / YouTube branding bar */
+                .ytp-youtube-button,
+                .ytp-wordmark-text,
+                .branding-img-container,
+                .ytp-share-button-visible,
+                .html5-endscreen,
+                .ytp-upnext,
+                .ytp-upnext-autoplay,
+                .ytp-scroll-min,
+                .iv-drawer,
+                .ytp-more-videos-view { 
+                    display: none !important; 
+                }
+
+                /* Thumbnail card preview bottom right */
+                .ytp-videowall-still,
+                .ytp-endscreen-element,
+                .ytp-ce-element,
+                .ytp-ce-covering-overlay,
+                .ytp-ce-expanding-overlay,
+                .ytp-ce-covering-image,
+                .ytp-ce-expanding-image { 
+                    display: none !important; 
+                }
+
+                /* General Chrome & Watermarks */
                 .ytp-chrome-top,
                 .ytp-chrome-bottom,
                 .ytp-gradient-top,
@@ -158,7 +206,6 @@ private func makeConfiguredWKWebView() -> (WKWebViewConfiguration, WKUserScript,
                 .ytp-pause-overlay,
                 .ytp-endscreen-content,
                 .ytp-cards-teaser,
-                .ytp-ce-element,
                 .ytp-title,
                 .ytp-title-channel,
                 .ytp-share-button,
@@ -169,9 +216,7 @@ private func makeConfiguredWKWebView() -> (WKWebViewConfiguration, WKUserScript,
                 .video-annotations,
                 .ytp-contextmenu,
                 .ytp-overflow-panel,
-                .branding-img,
-                .ytp-youtube-button,
-                .ytp-cued-thumbnail-overlay {
+                .branding-img {
                     display: none !important;
                     opacity: 0 !important;
                     visibility: hidden !important;
@@ -196,14 +241,15 @@ private func makeConfiguredWKWebView() -> (WKWebViewConfiguration, WKUserScript,
             setInterval(function() {
                 var elements = document.querySelectorAll(
                     '.ytp-chrome-top, .ytp-chrome-bottom, .ytp-watermark, ' +
-                    '.ytp-pause-overlay, .ytp-endscreen-content, .ytp-title, .ytp-gradient-top, .ytp-gradient-bottom'
+                    '.ytp-pause-overlay, .ytp-endscreen-content, .ytp-title, .ytp-gradient-top, .ytp-gradient-bottom, ' +
+                    '.ytp-caption-window-container, .captions-text, .caption-window, .ytp-large-play-button, .ytp-cued-thumbnail-overlay'
                 );
                 elements.forEach(function(el) {
                     el.style.setProperty('display', 'none', 'important');
                     el.style.setProperty('opacity', '0', 'important');
                     el.style.setProperty('visibility', 'hidden', 'important');
                 });
-            }, 2500);
+            }, 2000);
         """,
         injectionTime: .atDocumentEnd,
         forMainFrameOnly: false
