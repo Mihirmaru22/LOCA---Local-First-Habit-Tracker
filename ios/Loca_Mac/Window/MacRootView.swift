@@ -258,7 +258,7 @@ private struct MacContentColumn: View {
             MacJournalContentColumn(selectedRow: $selectedJournalRow, selectedNote: $selectedJournalNote)
         case .life:
             MacLifeContentColumn(selectedRow: $selectedLifeRow)
-        case .audit, .settings, .time, .treks:
+        case .audit, .settings, .time, .treks, .github:
             EmptyView()
         case nil:
             MacEmptyContentView()
@@ -290,6 +290,8 @@ private struct MacDetailColumn: View {
             MacLifeDetailColumn(selectedRow: selectedLifeRow)
         case .treks:
             MacTrekAtlasCanvas()
+        case .github:
+            MacGitHubCosmosCanvas()
         case .time:
             MacTimeView()
         case .audit:
