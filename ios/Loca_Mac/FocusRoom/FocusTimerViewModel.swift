@@ -37,7 +37,7 @@ final class FocusTimerViewModel: ObservableObject {
     func resetTimer() {
         secondsElapsed = 0
         isRunning = false
-        PlutoSoundEngine.shared.play(.timerEnd)
+        PlutoSoundEngine.shared.play(.timerComplete)
         Haptics.impact(.medium)
     }
 
