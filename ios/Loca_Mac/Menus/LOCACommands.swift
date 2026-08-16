@@ -36,23 +36,17 @@ struct LOCACommands: Commands {
             Divider()
 
             // Section jump shortcuts mirror standard Mac sidebar navigation.
-            Button("Habits") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.habits) }
+            Button("Today") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.today) }
                 .keyboardShortcut("1", modifiers: [.command])
 
-            Button("Today") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.today) }
+            Button("Work") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.work) }
                 .keyboardShortcut("2", modifiers: [.command])
 
-            Button("Time") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.time) }
+            Button("Journal") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.journal) }
                 .keyboardShortcut("3", modifiers: [.command])
 
-            Button("Journal") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.journal) }
-                .keyboardShortcut("4", modifiers: [.command])
-
             Button("Life") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.life) }
-                .keyboardShortcut("5", modifiers: [.command])
-
-            Button("Audit") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.audit) }
-                .keyboardShortcut("6", modifiers: [.command])
+                .keyboardShortcut("4", modifiers: [.command])
 
             Button("Settings") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.settings) }
                 .keyboardShortcut(",", modifiers: [.command])

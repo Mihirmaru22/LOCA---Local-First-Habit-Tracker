@@ -95,7 +95,7 @@ struct MacSidebarView: View {
 
 #Preview {
     NavigationSplitView {
-        MacSidebarView(selection: .constant(.habits))
+        MacSidebarView(selection: .constant(.today))
     } detail: {
         Text("Detail")
     }

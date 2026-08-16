@@ -164,7 +164,7 @@ struct MacRootView: View {
                let (type, _) = LocaSpotlightIndexer.ItemType.parseIdentifier(identifier) {
                 switch type {
                 case .habit:
-                    selectedSection = .habits
+                    selectedSection = .journal
                 case .task:
                     selectedSection = .today
                 case .journal:
@@ -172,7 +172,7 @@ struct MacRootView: View {
                 case .principle, .bucket:
                     selectedSection = .life
                 case .goal:
-                    selectedSection = .audit
+                    selectedSection = .work
                 }
             }
         }

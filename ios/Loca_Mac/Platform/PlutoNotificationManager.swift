@@ -473,7 +473,7 @@ final class PlutoNotificationManager: NSObject, ObservableObject {
             }
             NotificationCenter.default.post(
                 name: .locaDeepLink,
-                object: DeepLinkPayload(section: .habits, habitID: habitUUID, taskID: nil, date: nil)
+                object: DeepLinkPayload(section: .journal, habitID: habitUUID, taskID: nil, date: nil)
             )
 
         case "today", "task", "tasks":
@@ -723,7 +723,7 @@ extension PlutoNotificationManager: UNUserNotificationCenterDelegate {
                         let habitUUID = (userInfo["habitID"] as? String).flatMap(UUID.init)
                         NotificationCenter.default.post(
                             name: .locaDeepLink,
-                            object: DeepLinkPayload(section: .habits, habitID: habitUUID, taskID: nil, date: nil)
+                            object: DeepLinkPayload(section: .journal, habitID: habitUUID, taskID: nil, date: nil)
                         )
                     }
                 } else if let type = userInfo["type"] as? String, type == "evening_reflection" {
@@ -734,7 +734,7 @@ extension PlutoNotificationManager: UNUserNotificationCenterDelegate {
                 } else {
                     NotificationCenter.default.post(
                         name: .locaDeepLink,
-                        object: DeepLinkPayload(section: .habits, habitID: nil, taskID: nil, date: nil)
+                        object: DeepLinkPayload(section: .journal, habitID: nil, taskID: nil, date: nil)
                     )
                 }
 
