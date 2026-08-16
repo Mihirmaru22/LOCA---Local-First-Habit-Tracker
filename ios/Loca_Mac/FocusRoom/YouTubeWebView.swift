@@ -131,7 +131,6 @@ struct YouTubeWebView: NSViewRepresentable {
     func makeNSView(context: Context) -> WKWebView {
         // Fix 2: WKWebViewConfiguration with process pool & JIT/page preferences
         let config = WKWebViewConfiguration()
-        config.allowsInlineMediaPlayback = true
         config.mediaTypesRequiringUserActionForPlayback = []
 
         let pagePrefs = WKWebpagePreferences()
