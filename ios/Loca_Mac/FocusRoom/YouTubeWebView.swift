@@ -49,15 +49,79 @@ public func extractYouTubeID(from urlString: String) -> String? {
     return nil
 }
 
-// MARK: - YouTubeWebView (Cross-Platform iOS & macOS)
+// MARK: - YouTube HTML Generator
+
+private func generateYouTubeHTML(videoID: String, volume: Double) -> String {
+    """
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        background: #000;
+      }
+      html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      iframe {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+      }
+    </style>
+    </head>
+    <body>
+    <iframe
+      id="yt-player"
+      src="https://www.youtube.com/embed/\(videoID)?autoplay=1&playsinline=1&loop=1&playlist=\(videoID)&controls=1&rel=0&modestbranding=1&enablejsapi=1"
+      allow="autoplay; encrypted-media; fullscreen"
+      allowfullscreen>
+    </iframe>
+    <script>
+      function setVolume(vol) {
+        var iframe = document.getElementById('yt-player');
+        if (iframe && iframe.contentWindow) {
+          iframe.contentWindow.postMessage(JSON.stringify({
+            "event": "command",
+            "func": "setVolume",
+            "args": [vol * 100]
+          }), "*");
+        }
+        var v = document.querySelector('video');
+        if (v) { v.volume = vol; }
+      }
+    </script>
+    </body>
+    </html>
+    """
+}
+
+// MARK: - YouTubeWebView for macOS
 
 #if os(macOS)
 struct YouTubeWebView: NSViewRepresentable {
     let videoID: String
     var volume: Double // 0.0 to 1.0
 
-    class Coordinator: NSObject {
+    class Coordinator: NSObject, WKNavigationDelegate {
         var currentVideoID: String = ""
+
+        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+            print("WKWebView provisional load failed: \(error.localizedDescription)")
+        }
+
+        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+            print("WKWebView navigation failed: \(error.localizedDescription)")
+        }
     }
 
     func makeCoordinator() -> Coordinator {
@@ -65,21 +129,30 @@ struct YouTubeWebView: NSViewRepresentable {
     }
 
     func makeNSView(context: Context) -> WKWebView {
-        // FIX 2: WKWebViewConfiguration before init
+        // Fix 2: WKWebViewConfiguration with process pool & JIT/page preferences
         let config = WKWebViewConfiguration()
+        config.allowsInlineMediaPlayback = true
         config.mediaTypesRequiringUserActionForPlayback = []
 
-        #if os(macOS)
-        config.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
-        #endif
+        let pagePrefs = WKWebpagePreferences()
+        pagePrefs.allowsContentJavaScript = true
+        config.defaultWebpagePreferences = pagePrefs
+        config.processPool = WKProcessPool()
 
+        config.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
+
+        // Init WKWebView with configured settings
         let webView = WKWebView(frame: .zero, configuration: config)
 
-        // FIX 1: Custom User Agent (macOS Safari)
+        // Fix 1: Custom User Agent (macOS Safari)
         webView.customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15"
 
-        // FIX 3: Load correct embed URL
-        loadEmbedURL(in: webView, for: videoID)
+        // Fix 4: Assign navigation delegate
+        webView.navigationDelegate = context.coordinator
+
+        // Fix 1: Load HTML string with youtube.com origin
+        let html = generateYouTubeHTML(videoID: videoID, volume: volume)
+        webView.loadHTMLString(html, baseURL: URL(string: "https://www.youtube.com")!)
         context.coordinator.currentVideoID = videoID
 
         return webView
@@ -87,32 +160,36 @@ struct YouTubeWebView: NSViewRepresentable {
 
     func updateNSView(_ nsView: WKWebView, context: Context) {
         // Only reload if the videoID has actually changed
-        if context.coordinator.currentVideoID != videoID {
+        if context.coordinator.currentVideoID != videoID && !videoID.isEmpty {
             context.coordinator.currentVideoID = videoID
-            loadEmbedURL(in: nsView, for: videoID)
+            DispatchQueue.main.async {
+                let html = generateYouTubeHTML(videoID: videoID, volume: volume)
+                nsView.loadHTMLString(html, baseURL: URL(string: "https://www.youtube.com")!)
+            }
         }
 
         // Update volume without resetting playback
-        let js = "var v = document.querySelector('video'); if (v) { v.volume = \(volume); };"
+        let js = "if (typeof setVolume === 'function') { setVolume(\(volume)); };"
         nsView.evaluateJavaScript(js, completionHandler: nil)
-    }
-
-    private func loadEmbedURL(in webView: WKWebView, for id: String) {
-        guard !id.isEmpty else { return }
-        let embedURL = "https://www.youtube.com/embed/\(id)?autoplay=1&playsinline=1&loop=1&playlist=\(id)&controls=1&rel=0&modestbranding=1&enablejsapi=1"
-        if let url = URL(string: embedURL) {
-            let request = URLRequest(url: url)
-            webView.load(request)
-        }
     }
 }
 #else
+// MARK: - YouTubeWebView for iOS
+
 struct YouTubeWebView: UIViewRepresentable {
     let videoID: String
     var volume: Double // 0.0 to 1.0
 
-    class Coordinator: NSObject {
+    class Coordinator: NSObject, WKNavigationDelegate {
         var currentVideoID: String = ""
+
+        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+            print("WKWebView provisional load failed: \(error.localizedDescription)")
+        }
+
+        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+            print("WKWebView navigation failed: \(error.localizedDescription)")
+        }
     }
 
     func makeCoordinator() -> Coordinator {
@@ -120,42 +197,40 @@ struct YouTubeWebView: UIViewRepresentable {
     }
 
     func makeUIView(context: Context) -> WKWebView {
-        // FIX 2: WKWebViewConfiguration before init
         let config = WKWebViewConfiguration()
         config.allowsInlineMediaPlayback = true
         config.mediaTypesRequiringUserActionForPlayback = []
 
+        let pagePrefs = WKWebpagePreferences()
+        pagePrefs.allowsContentJavaScript = true
+        config.defaultWebpagePreferences = pagePrefs
+        config.processPool = WKProcessPool()
+
         let webView = WKWebView(frame: .zero, configuration: config)
 
-        // FIX 1: Custom User Agent (iOS Safari)
+        // Fix 1: Custom User Agent (iOS Safari)
         webView.customUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
 
-        // FIX 3: Load correct embed URL
-        loadEmbedURL(in: webView, for: videoID)
+        webView.navigationDelegate = context.coordinator
+
+        let html = generateYouTubeHTML(videoID: videoID, volume: volume)
+        webView.loadHTMLString(html, baseURL: URL(string: "https://www.youtube.com")!)
         context.coordinator.currentVideoID = videoID
 
         return webView
     }
 
     func updateUIView(_ uiView: WKWebView, context: Context) {
-        // Only reload if the videoID has actually changed
-        if context.coordinator.currentVideoID != videoID {
+        if context.coordinator.currentVideoID != videoID && !videoID.isEmpty {
             context.coordinator.currentVideoID = videoID
-            loadEmbedURL(in: uiView, for: videoID)
+            DispatchQueue.main.async {
+                let html = generateYouTubeHTML(videoID: videoID, volume: volume)
+                uiView.loadHTMLString(html, baseURL: URL(string: "https://www.youtube.com")!)
+            }
         }
 
-        // Update volume without resetting playback
-        let js = "var v = document.querySelector('video'); if (v) { v.volume = \(volume); };"
+        let js = "if (typeof setVolume === 'function') { setVolume(\(volume)); };"
         uiView.evaluateJavaScript(js, completionHandler: nil)
-    }
-
-    private func loadEmbedURL(in webView: WKWebView, for id: String) {
-        guard !id.isEmpty else { return }
-        let embedURL = "https://www.youtube.com/embed/\(id)?autoplay=1&playsinline=1&loop=1&playlist=\(id)&controls=1&rel=0&modestbranding=1&enablejsapi=1"
-        if let url = URL(string: embedURL) {
-            let request = URLRequest(url: url)
-            webView.load(request)
-        }
     }
 }
 #endif
