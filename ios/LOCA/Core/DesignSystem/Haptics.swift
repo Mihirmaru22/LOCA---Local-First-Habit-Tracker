@@ -16,7 +16,7 @@ enum Haptics {
 
     /// Physical impact — a value committed, a check-in logged, a row removed.
     enum Impact {
-        case light, rigid, soft
+        case light, medium, rigid, soft
     }
 
     /// Fire a physical impact on iOS Taptic Engine or macOS Trackpad.
@@ -27,14 +27,15 @@ enum Haptics {
         #if canImport(UIKit)
         let generator: UIImpactFeedbackGenerator
         switch style {
-        case .light: generator = UIImpactFeedbackGenerator(style: .light)
-        case .rigid: generator = UIImpactFeedbackGenerator(style: .rigid)
-        case .soft:  generator = UIImpactFeedbackGenerator(style: .soft)
+        case .light:  generator = UIImpactFeedbackGenerator(style: .light)
+        case .medium: generator = UIImpactFeedbackGenerator(style: .medium)
+        case .rigid:  generator = UIImpactFeedbackGenerator(style: .rigid)
+        case .soft:   generator = UIImpactFeedbackGenerator(style: .soft)
         }
         generator.impactOccurred()
         #elseif canImport(AppKit)
         switch style {
-        case .light, .soft:
+        case .light, .soft, .medium:
             NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
         case .rigid:
             NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .now)
@@ -79,5 +80,10 @@ enum Haptics {
             NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
         }
         #endif
+    }
+
+    /// Convenience alias for semantic outcome notification.
+    static func notification(_ type: Notify) {
+        notify(type)
     }
 }
