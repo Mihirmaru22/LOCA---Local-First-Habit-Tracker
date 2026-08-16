@@ -262,9 +262,6 @@
 		AA1100000000000000005DAB /* JournalNote.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000005BAB /* JournalNote.swift */; };
 		AA1100000000000000006CAB /* SleepEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000006BAB /* SleepEntry.swift */; };
 		AA1100000000000000006DAB /* SleepEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000006BAB /* SleepEntry.swift */; };
-		TR1100000000000000000002 /* TrekRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = TR1100000000000000000001 /* TrekRecord.swift */; };
-		TR1100000000000000000003 /* TrekRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = TR1100000000000000000001 /* TrekRecord.swift */; };
-		TR1100000000000000000004 /* TrekRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = TR1100000000000000000001 /* TrekRecord.swift */; };
 		AA1100000000000000007CAB /* DesktopHabitMatrixWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000007BAB /* DesktopHabitMatrixWidget.swift */; };
 		AA1100000000000000008CAB /* TodayAgendaWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000008BAB /* TodayAgendaWidget.swift */; };
 		AA1100000000000000009CAB /* MementoMoriWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1100000000000000009BAB /* MementoMoriWidget.swift */; };
@@ -414,6 +411,12 @@
 		FEF8C0F424DF51FAC5172674 /* AnomalyDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE07B2B823DA4E2398F1027A /* AnomalyDetector.swift */; };
 		FF93ED60FD12C85D83BBF53B /* FocusInferenceModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710CC3A3E6F44B77B813D4D6 /* FocusInferenceModel.swift */; };
 		G7F6A7B8C9D0E1F2A3B4C5D6 /* LOCA/Learning/Synthesis/ContextEnricher.swift in Sources */ = {isa = PBXBuildFile; fileRef = H5F6A7B8C9D0E1F2A3B4C5D6 /* LOCA/Learning/Synthesis/ContextEnricher.swift */; };
+		TR1100000000000000000002 /* TrekRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = TR1100000000000000000001 /* TrekRecord.swift */; };
+		TR1100000000000000000003 /* TrekRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = TR1100000000000000000001 /* TrekRecord.swift */; };
+		TR1100000000000000000004 /* TrekRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = TR1100000000000000000001 /* TrekRecord.swift */; };
+		GH1100000000000000000002 /* GitHubRepoRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = GH1100000000000000000001 /* GitHubRepoRecord.swift */; };
+		GH1100000000000000000003 /* GitHubRepoRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = GH1100000000000000000001 /* GitHubRepoRecord.swift */; };
+		GH1100000000000000000004 /* GitHubRepoRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = GH1100000000000000000001 /* GitHubRepoRecord.swift */; };
 		V30000000000000000000030 /* RecordError.swift in Sources */ = {isa = PBXBuildFile; fileRef = V30000000000000000000010 /* RecordError.swift */; };
 		V30000000000000000000031 /* FactProvenance.swift in Sources */ = {isa = PBXBuildFile; fileRef = V30000000000000000000011 /* FactProvenance.swift */; };
 		V30000000000000000000032 /* FactPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = V30000000000000000000012 /* FactPayload.swift */; };
@@ -602,7 +605,6 @@
 		AA1100000000000000004BAB /* TodoItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoItem.swift; sourceTree = "<group>"; };
 		AA1100000000000000005BAB /* JournalNote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalNote.swift; sourceTree = "<group>"; };
 		AA1100000000000000006BAB /* SleepEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepEntry.swift; sourceTree = "<group>"; };
-		TR1100000000000000000001 /* TrekRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrekRecord.swift; sourceTree = "<group>"; };
 		AA1100000000000000007BAB /* DesktopHabitMatrixWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopHabitMatrixWidget.swift; sourceTree = "<group>"; };
 		AA1100000000000000008BAB /* TodayAgendaWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayAgendaWidget.swift; sourceTree = "<group>"; };
 		AA1100000000000000009BAB /* MementoMoriWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MementoMoriWidget.swift; sourceTree = "<group>"; };
@@ -689,6 +691,8 @@
 		FEEDF300000000000000F001 /* EventsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsView.swift; sourceTree = "<group>"; };
 		G4E5F6A7B8C9D0E1F2A3B4C5 /* LOCA/Learning/Synthesis/FeedbackProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LOCA/Learning/Synthesis/FeedbackProcessor.swift; sourceTree = SOURCE_ROOT; };
 		H5F6A7B8C9D0E1F2A3B4C5D6 /* LOCA/Learning/Synthesis/ContextEnricher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LOCA/Learning/Synthesis/ContextEnricher.swift; sourceTree = SOURCE_ROOT; };
+		TR1100000000000000000001 /* TrekRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrekRecord.swift; sourceTree = "<group>"; };
+		GH1100000000000000000001 /* GitHubRepoRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubRepoRecord.swift; sourceTree = "<group>"; };
 		V30000000000000000000010 /* RecordError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordError.swift; sourceTree = "<group>"; };
 		V30000000000000000000011 /* FactProvenance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FactProvenance.swift; sourceTree = "<group>"; };
 		V30000000000000000000012 /* FactPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FactPayload.swift; sourceTree = "<group>"; };
@@ -917,6 +921,7 @@
 				AA1100000000000000005BAB /* JournalNote.swift */,
 				AA1100000000000000006BAB /* SleepEntry.swift */,
 				TR1100000000000000000001 /* TrekRecord.swift */,
+				GH1100000000000000000001 /* GitHubRepoRecord.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -1608,6 +1613,7 @@
 				52582857A68BB8B58875B9B9 /* JournalNote.swift in Sources */,
 				DDCCA595485AB9B2C4DCCD07 /* SleepEntry.swift in Sources */,
 				TR1100000000000000000002 /* TrekRecord.swift in Sources */,
+				GH1100000000000000000002 /* GitHubRepoRecord.swift in Sources */,
 				B3034613D4BFF54609FAC7F0 /* UserProfileView.swift in Sources */,
 				196D531151455D8CE3D3D758 /* HealthKitManager+Body.swift in Sources */,
 				2E23CFB5D205F9B4D5E1842B /* EventsView.swift in Sources */,
@@ -1758,6 +1764,7 @@
 				AA1100000000000000005DAB /* JournalNote.swift in Sources */,
 				AA1100000000000000006DAB /* SleepEntry.swift in Sources */,
 				TR1100000000000000000004 /* TrekRecord.swift in Sources */,
+				GH1100000000000000000004 /* GitHubRepoRecord.swift in Sources */,
 				AA1100000000000000007CAB /* DesktopHabitMatrixWidget.swift in Sources */,
 				AA1100000000000000008CAB /* TodayAgendaWidget.swift in Sources */,
 				AA1100000000000000009CAB /* MementoMoriWidget.swift in Sources */,
@@ -1872,6 +1879,7 @@
 				AA1100000000000000005CAB /* JournalNote.swift in Sources */,
 				AA1100000000000000006CAB /* SleepEntry.swift in Sources */,
 				TR1100000000000000000003 /* TrekRecord.swift in Sources */,
+				GH1100000000000000000003 /* GitHubRepoRecord.swift in Sources */,
 				AA1100000000000000002EAB /* UserProfileView.swift in Sources */,
 				AA1100000000000000003AAB /* HealthKitManager+Body.swift in Sources */,
 				FEEDF300000000000000F002 /* EventsView.swift in Sources */,
@@ -2086,7 +2094,6 @@
 				CODE_SIGN_ENTITLEMENTS = Loca_Mac/Loca_Mac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 4;
 				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 44B7P458K7;
 				ENABLE_APP_SANDBOX = YES;
