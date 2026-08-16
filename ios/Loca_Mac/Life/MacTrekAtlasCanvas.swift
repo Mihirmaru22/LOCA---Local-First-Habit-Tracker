@@ -673,6 +673,9 @@ struct TrekDetailOverlay: View {
                 }
             }
 
+            // Apple Journal Cross-Link Drawer (4.1)
+            TrekJournalLinkSection(trek: trek)
+
             // Bottom Action Toggle
             Button(action: onToggleStatus) {
                 HStack {
