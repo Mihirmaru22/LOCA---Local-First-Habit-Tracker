@@ -135,6 +135,12 @@ final class TrekRecord {
         return String(format: "+%.0f m", gain)
     }
 
+    var coordinatesString: String {
+        let latDir = latitude >= 0 ? "N" : "S"
+        let lonDir = longitude >= 0 ? "E" : "W"
+        return String(format: "%.4f° %@, %.4f° %@", abs(latitude), latDir, abs(longitude), lonDir)
+    }
+
     // MARK: - Photo & Media Mutations (4.1)
 
     func attachPhoto(fileName: String) {
