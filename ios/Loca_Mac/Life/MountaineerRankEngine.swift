@@ -4,7 +4,7 @@ import Foundation
 // MARK: - ExplorerRank
 
 /// Progressive mountaineering ranks unlocked based on conquered peaks and cumulative vertical gain.
-public enum ExplorerRank: Int, CaseIterable, Identifiable, Sendable {
+enum ExplorerRank: Int, CaseIterable, Identifiable, Sendable {
     case basecampScout      = 1
     case valleyWanderer     = 2
     case ridgeRunner        = 3
@@ -12,9 +12,9 @@ public enum ExplorerRank: Int, CaseIterable, Identifiable, Sendable {
     case verticalTitan      = 5
     case sevenSummitsLegend = 6
 
-    public var id: Int { rawValue }
+    var id: Int { rawValue }
 
-    public var title: String {
+    var title: String {
         switch self {
         case .basecampScout:      return "Basecamp Scout"
         case .valleyWanderer:     return "Valley Wanderer"
@@ -25,7 +25,7 @@ public enum ExplorerRank: Int, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    public var subtitle: String {
+    var subtitle: String {
         switch self {
         case .basecampScout:      return "Taking first steps into high-altitude wilderness"
         case .valleyWanderer:     return "Building trail endurance across alpine passes"
@@ -36,7 +36,7 @@ public enum ExplorerRank: Int, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    public var icon: String {
+    var icon: String {
         switch self {
         case .basecampScout:      return "tent.fill"
         case .valleyWanderer:     return "figure.hiking"
@@ -47,7 +47,7 @@ public enum ExplorerRank: Int, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    public var minSummits: Int {
+    var minSummits: Int {
         switch self {
         case .basecampScout:      return 0
         case .valleyWanderer:     return 2
@@ -58,7 +58,7 @@ public enum ExplorerRank: Int, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    public var accentColor: Color {
+    var accentColor: Color {
         switch self {
         case .basecampScout:      return Color(red: 0.80, green: 0.50, blue: 0.20) // Bronze
         case .valleyWanderer:     return Color.green
@@ -72,31 +72,31 @@ public enum ExplorerRank: Int, CaseIterable, Identifiable, Sendable {
 
 // MARK: - MountaineerBadge
 
-public struct MountaineerBadge: Identifiable, Sendable {
-    public let id: String
-    public let title: String
-    public let subtitle: String
-    public let icon: String
-    public let category: String
-    public let isUnlocked: Bool
-    public let progress: Double
-    public let currentCount: Int
-    public let targetCount: Int
-    public let unlockedDate: Date?
-    public let tierColor: Color
-    public let contributingTreks: [String]
+struct MountaineerBadge: Identifiable, Sendable {
+    let id: String
+    let title: String
+    let subtitle: String
+    let icon: String
+    let category: String
+    let isUnlocked: Bool
+    let progress: Double
+    let currentCount: Int
+    let targetCount: Int
+    let unlockedDate: Date?
+    let tierColor: Color
+    let contributingTreks: [String]
 
-    public var formattedProgress: String {
+    var formattedProgress: String {
         "\(currentCount)/\(targetCount)"
     }
 }
 
 // MARK: - MountaineerRankEngine
 
-public enum MountaineerRankEngine {
+enum MountaineerRankEngine {
 
     /// Calculates current user rank based on conquered treks.
-    public static func currentRank(conqueredTreks: [TrekRecord]) -> ExplorerRank {
+    static func currentRank(conqueredTreks: [TrekRecord]) -> ExplorerRank {
         let count = conqueredTreks.count
         let totalGain = conqueredTreks.compactMap(\.elevationGainMeters).reduce(0, +)
 
@@ -116,7 +116,7 @@ public enum MountaineerRankEngine {
     }
 
     /// Computes progress toward the next rank tier.
-    public static func nextRankProgress(conqueredTreks: [TrekRecord]) -> (nextRank: ExplorerRank?, progress: Double, remainingSummits: Int) {
+    static func nextRankProgress(conqueredTreks: [TrekRecord]) -> (nextRank: ExplorerRank?, progress: Double, remainingSummits: Int) {
         let current = currentRank(conqueredTreks: conqueredTreks)
         let count = conqueredTreks.count
 
@@ -136,7 +136,7 @@ public enum MountaineerRankEngine {
     }
 
     /// Evaluates the 12 specialized expedition trophy badges.
-    public static func evaluateBadges(conqueredTreks: [TrekRecord], allTreks: [TrekRecord]) -> [MountaineerBadge] {
+    static func evaluateBadges(conqueredTreks: [TrekRecord], allTreks: [TrekRecord]) -> [MountaineerBadge] {
         var badges: [MountaineerBadge] = []
 
         // 1. 🇮🇳 Himalayan Sovereign (3+ Himalayan peaks > 3,500m)

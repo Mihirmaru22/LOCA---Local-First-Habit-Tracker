@@ -8,22 +8,22 @@ import HealthKit
 // MARK: - AppleWatchHikingWorkout
 
 /// A rich outdoor workout record imported from Apple Watch / HealthKit.
-public struct AppleWatchHikingWorkout: Identifiable, Sendable {
-    public let id: UUID
-    public let title: String
-    public let startDate: Date
-    public let endDate: Date
-    public let durationSeconds: Double
-    public let distanceKm: Double
-    public let elevationGainMeters: Double
-    public let activeCalories: Double
-    public let avgHeartRate: Double
-    public let maxHeartRate: Double
-    public let activityTypeName: String
-    public var isLinked: Bool
-    public var linkedTrekName: String?
+struct AppleWatchHikingWorkout: Identifiable, Sendable {
+    let id: UUID
+    let title: String
+    let startDate: Date
+    let endDate: Date
+    let durationSeconds: Double
+    let distanceKm: Double
+    let elevationGainMeters: Double
+    let activeCalories: Double
+    let avgHeartRate: Double
+    let maxHeartRate: Double
+    let activityTypeName: String
+    var isLinked: Bool
+    var linkedTrekName: String?
 
-    public var formattedDuration: String {
+    var formattedDuration: String {
         let hours = Int(durationSeconds) / 3600
         let minutes = (Int(durationSeconds) % 3600) / 60
         if hours > 0 {
@@ -33,15 +33,15 @@ public struct AppleWatchHikingWorkout: Identifiable, Sendable {
         }
     }
 
-    public var formattedCalories: String {
+    var formattedCalories: String {
         "\(Int(activeCalories).formatted()) kcal"
     }
 
-    public var formattedDistance: String {
+    var formattedDistance: String {
         String(format: "%.1f km", distanceKm)
     }
 
-    public var formattedHeartRate: String {
+    var formattedHeartRate: String {
         "\(Int(avgHeartRate)) bpm"
     }
 }
@@ -51,26 +51,26 @@ public struct AppleWatchHikingWorkout: Identifiable, Sendable {
 /// Synchronization engine managing Apple Watch hiking & climbing workouts,
 /// extracting biometric telemetry, and binding workouts to Trek Atlas mountain records.
 @MainActor
-public final class TrekHealthKitSyncEngine: ObservableObject {
+final class TrekHealthKitSyncEngine: ObservableObject {
 
-    public static let shared = TrekHealthKitSyncEngine()
+    static let shared = TrekHealthKitSyncEngine()
 
-    @Published public var detectedWorkouts: [AppleWatchHikingWorkout] = []
-    @Published public var isScanning: Bool = false
-    @Published public var lastSyncDate: Date? = nil
+    @Published var detectedWorkouts: [AppleWatchHikingWorkout] = []
+    @Published var isScanning: Bool = false
+    @Published var lastSyncDate: Date? = nil
 
     #if canImport(HealthKit)
     private let healthStore = HKHealthStore()
     #endif
 
-    public init() {
+    init() {
         loadMockAndCachedWorkouts()
     }
 
     // MARK: - Scan / Query Workouts
 
     /// Queries Apple Watch workouts from HealthKit, or generates realistic local mock workouts on standalone systems.
-    public func scanAppleWatchWorkouts(treks: [TrekRecord]) async {
+    func scanAppleWatchWorkouts(treks: [TrekRecord]) async {
         isScanning = true
         defer { isScanning = false }
 
@@ -172,7 +172,7 @@ public final class TrekHealthKitSyncEngine: ObservableObject {
     // MARK: - Bind Workout to Trek
 
     /// Binds an Apple Watch workout's biometrics directly into a TrekRecord.
-    public func bind(workout: AppleWatchHikingWorkout, to trek: TrekRecord) {
+    func bind(workout: AppleWatchHikingWorkout, to trek: TrekRecord) {
         trek.healthKitWorkoutUUID = workout.id.uuidString
         trek.avgHeartRate = workout.avgHeartRate
         trek.activeCalories = workout.activeCalories
@@ -193,7 +193,7 @@ public final class TrekHealthKitSyncEngine: ObservableObject {
     }
 
     /// Unbinds a workout from a TrekRecord.
-    public func unbind(trek: TrekRecord) {
+    func unbind(trek: TrekRecord) {
         let targetUUID = trek.healthKitWorkoutUUID
         trek.healthKitWorkoutUUID = nil
         trek.avgHeartRate = nil
@@ -211,7 +211,7 @@ public final class TrekHealthKitSyncEngine: ObservableObject {
     // MARK: - Auto-Match Engine
 
     /// Automatically pairs workouts to treks based on name, date proximity, or distance similarity.
-    public func autoMatchAll(treks: [TrekRecord]) -> Int {
+    func autoMatchAll(treks: [TrekRecord]) -> Int {
         var matchCount = 0
 
         for workout in detectedWorkouts where !workout.isLinked {
