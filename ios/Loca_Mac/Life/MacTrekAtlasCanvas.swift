@@ -49,6 +49,7 @@ struct MacTrekAtlasCanvas: View {
     @State private var searchText: String = ""
     @State private var selectedFilter: TrekFilter = .all
     @State private var isLogModalPresented: Bool = false
+    @State private var isTrophyCabinetPresented: Bool = false
     @State private var quickLookTrek: TrekRecord? = nil
     @State private var quickLookPhotoIndex: Int = 0
     @State private var isFlyingTrail: Bool = false
@@ -138,6 +139,10 @@ struct MacTrekAtlasCanvas: View {
         conqueredTreks.compactMap(\.trailDistanceKm).reduce(0, +)
     }
 
+    private var currentRank: ExplorerRank {
+        MountaineerRankEngine.currentRank(conqueredTreks: conqueredTreks)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
 
@@ -175,6 +180,15 @@ struct MacTrekAtlasCanvas: View {
                 }
                 Haptics.notification(.success)
             }
+        }
+        .sheet(isPresented: $isTrophyCabinetPresented) {
+            MountaineerTrophyCabinetModal(
+                conqueredTreks: conqueredTreks,
+                allTreks: activeTreks,
+                onDismiss: {
+                    isTrophyCabinetPresented = false
+                }
+            )
         }
         .onAppear {
             DispatchQueue.main.async {
@@ -267,6 +281,44 @@ struct MacTrekAtlasCanvas: View {
                         .foregroundStyle(DS.Color.textSecondary)
                 }
             }
+
+            Divider().frame(height: 24)
+
+            // Stat 4: Explorer Mountaineer Rank & Trophy Cabinet Button
+            Button {
+                isTrophyCabinetPresented = true
+                Haptics.impact(.medium)
+            } label: {
+                HStack(spacing: 7) {
+                    ZStack {
+                        Circle()
+                            .fill(currentRank.accentColor.opacity(0.18))
+                            .frame(width: 32, height: 32)
+                        Image(systemName: currentRank.icon)
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(currentRank.accentColor)
+                    }
+
+                    VStack(alignment: .leading, spacing: 1) {
+                        HStack(spacing: 3) {
+                            Text(currentRank.title.uppercased())
+                                .font(.system(size: 12, weight: .black))
+                                .foregroundStyle(DS.Color.textPrimary)
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 8, weight: .bold))
+                                .foregroundStyle(DS.Color.textTertiary)
+                        }
+                        Text("Rank \(currentRank.rawValue) · Trophy Cabinet")
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundStyle(currentRank.accentColor)
+                    }
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(currentRank.accentColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(currentRank.accentColor.opacity(0.35), lineWidth: 1))
+            }
+            .buttonStyle(.plain)
 
             Spacer()
 
