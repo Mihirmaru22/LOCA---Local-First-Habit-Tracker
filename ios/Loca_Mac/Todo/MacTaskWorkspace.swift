@@ -377,6 +377,8 @@ struct MacBlockEditor: View {
                         onFocus: { activeBlockID = block.id },
                         onEnter: { tail in handleEnter(from: block.id, splitText: tail) },
                         onBackspace: { handleBackspace(from: block.id) },
+                        onTab: { handleTab(from: block.id) },
+                        onBacktab: { handleBacktab(from: block.id) },
                         onUpArrow: { handleUpArrow(from: block.id) },
                         onDownArrow: { handleDownArrow(from: block.id) },
                         
@@ -577,6 +579,33 @@ struct MacBlockEditor: View {
         }
     }
     
+    private func handleTab(from id: UUID) {
+        guard let idx = blocks.firstIndex(where: { $0.id == id }) else { return }
+        if blocks[idx].type == .check || blocks[idx].type == .bullet || blocks[idx].type == .paragraph {
+            let child = TodoItem(parentID: item.id)
+            child.title = blocks[idx].text
+            modelContext.insert(child)
+            try? modelContext.save()
+            localChildren[child.id] = child
+            blocks[idx].type = .subtask
+            blocks[idx].refID = child.id
+            blocks[idx].text = ""
+        }
+    }
+    
+    private func handleBacktab(from id: UUID) {
+        guard let idx = blocks.firstIndex(where: { $0.id == id }) else { return }
+        if blocks[idx].type == .subtask {
+            if let child = childTodo(for: blocks[idx]) {
+                blocks[idx].text = child.title
+                child.archivedAt = Date()
+                try? modelContext.save()
+            }
+            blocks[idx].type = .paragraph
+            blocks[idx].refID = nil
+        }
+    }
+    
     private func handleUpArrow(from id: UUID) {
         guard let idx = blocks.firstIndex(where: { $0.id == id }), idx > 0 else { return }
         activeBlockID = blocks[idx - 1].id
@@ -658,6 +687,8 @@ struct MacBlockRow: View {
     let onFocus: () -> Void
     let onEnter: (String) -> Void
     let onBackspace: () -> Void
+    let onTab: () -> Void
+    let onBacktab: () -> Void
     let onUpArrow: () -> Void
     let onDownArrow: () -> Void
     
@@ -720,6 +751,8 @@ struct MacBlockRow: View {
                     onFocus: onFocus,
                     onEnter: onEnter,
                     onBackspaceOnEmpty: onBackspace,
+                    onTab: onTab,
+                    onBacktab: onBacktab,
                     onUpArrow: onUpArrow,
                     onDownArrow: onDownArrow,
                     onSlash: onSlash,
@@ -856,6 +889,8 @@ struct MacRichTextView: NSViewRepresentable {
     var onFocus: () -> Void
     var onEnter: (String) -> Void
     var onBackspaceOnEmpty: () -> Void
+    var onTab: () -> Void
+    var onBacktab: () -> Void
     var onUpArrow: () -> Void
     var onDownArrow: () -> Void
     
@@ -973,6 +1008,14 @@ struct MacRichTextView: NSViewRepresentable {
             }
             if commandSelector == #selector(NSResponder.deleteBackward(_:)) {
                 if textView.string.isEmpty { parent.onBackspaceOnEmpty(); return true }
+            }
+            if commandSelector == #selector(NSResponder.insertTab(_:)) {
+                parent.onTab()
+                return true
+            }
+            if commandSelector == #selector(NSResponder.insertBacktab(_:)) {
+                parent.onBacktab()
+                return true
             }
             if commandSelector == #selector(NSResponder.moveUp(_:)) {
                 let range = textView.selectedRange()
