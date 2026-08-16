@@ -3,7 +3,7 @@ import SwiftData
 
 // MARK: - MacHabitFormPanel (Native Inset Grouped Habit Creation Modal)
 
-/// Clean, native macOS Inset Grouped dialog for creating a new habit.
+/// Clean, native macOS Inset Grouped dialog for creating a new habit with strict title & value validation.
 struct MacHabitFormPanel: View {
 
     @Environment(\.dismiss) private var dismiss
@@ -20,9 +20,18 @@ struct MacHabitFormPanel: View {
     @FocusState private var isNameFocused: Bool
 
     private static let schedules = ["Anytime", "Morning", "Afternoon", "Evening"]
+    private static let maxTitleLength: Int = 60
+
+    private var trimmedName: String {
+        String(habitName.trimmingCharacters(in: .whitespacesAndNewlines).prefix(Self.maxTitleLength))
+    }
 
     private var isValid: Bool {
-        !habitName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        guard !trimmedName.isEmpty else { return false }
+        if metricType == .quantitative {
+            return targetValue > 0
+        }
+        return true
     }
 
     private var activeColor: Color {
@@ -60,6 +69,12 @@ struct MacHabitFormPanel: View {
                         .onSubmit {
                             if isValid { saveHabit() }
                         }
+
+                    if habitName.count > 45 {
+                        Text("\(habitName.count)/\(Self.maxTitleLength)")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(habitName.count > Self.maxTitleLength ? Color.red : DS.Color.textTertiary)
+                    }
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
@@ -272,7 +287,7 @@ struct MacHabitFormPanel: View {
         habitName = tmpl.name
         colorIndex = tmpl.colorIndex
         metricType = tmpl.metricType
-        targetValue = tmpl.targetValue
+        targetValue = max(tmpl.targetValue, 1.0)
         selectedUnit = tmpl.unit
         Haptics.impact(.light)
     }
@@ -280,14 +295,14 @@ struct MacHabitFormPanel: View {
     // MARK: - Habit Saving
 
     private func saveHabit() {
-        let trimmed = habitName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
+        guard isValid else { return }
+        let cleanName = trimmedName
 
-        let target: Double? = metricType == .quantitative ? targetValue : nil
-        let unit: String? = metricType == .quantitative ? selectedUnit.rawValue : nil
+        let target: Double? = metricType == .quantitative ? max(targetValue, 1.0) : nil
+        let unit: String? = metricType == .quantitative ? selectedUnit.label : nil
 
         let newHabit = HabitBoard(
-            name: trimmed,
+            name: cleanName,
             metricType: metricType.rawValue,
             targetValue: target,
             unitLabel: unit,
@@ -295,10 +310,14 @@ struct MacHabitFormPanel: View {
         )
 
         modelContext.insert(newHabit)
-        try? modelContext.save()
-        PlutoTelemetryEngine.shared.trackHabitCreated(board: newHabit)
-        Haptics.impact(.rigid)
-        dismiss()
+        do {
+            try modelContext.save()
+            PlutoTelemetryEngine.shared.trackHabitCreated(board: newHabit)
+            Haptics.impact(.rigid)
+            dismiss()
+        } catch {
+            modelContext.rollback()
+        }
     }
 
     // MARK: - Curated Templates Data
