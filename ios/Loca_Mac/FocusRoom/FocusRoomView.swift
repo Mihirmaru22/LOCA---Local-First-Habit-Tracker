@@ -515,9 +515,9 @@ struct FocusRoomView: View {
 
     private func startSession() {
         let session = FocusSession(
-            targetMinutes: Int(timerVM.targetMinutes),
-            ambientSoundPreset: "Procedural Mixer",
-            backgroundPreset: selectedPresetID
+            startTime: Date(),
+            sessionTag: "Study Stream",
+            backgroundCategory: selectedPresetID
         )
         modelContext.insert(session)
         try? modelContext.save()
@@ -526,9 +526,8 @@ struct FocusRoomView: View {
 
     private func endSession() {
         guard let session = currentSession else { return }
-        session.durationSeconds = timerVM.elapsedSeconds
-        session.isCompleted = true
-        session.completedGoalsCount = totalGoalsCount - openGoalsCount
+        session.endTime = Date()
+        session.durationSeconds = timerVM.secondsElapsed
         try? modelContext.save()
     }
 }
