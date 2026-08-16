@@ -1,6 +1,5 @@
 import SwiftUI
 import SwiftData
-import UniformTypeIdentifiers
 
 // MARK: - MacSettingsView (Executive Settings Studio & Demo Lab)
 
@@ -10,7 +9,7 @@ import UniformTypeIdentifiers
 /// 2. ⚡ Habits & Routines Manager (create, edit, archive, streak calculation).
 /// 3. 🔔 Notifications & Smart Scheduling.
 /// 4. 🔒 Privacy & Biometric Vault Security (Touch ID / Face ID).
-/// 5. 🎨 Appearance & Executive 12-Color Palette.
+/// 5. 🎨 Appearance & Executive 8-Color Palette.
 /// 6. 💾 Data Sovereignty, Exports & Local SwiftData Diagnostics.
 /// 7. ℹ️ About PLUTO Sovereign OS.
 struct MacSettingsView: View {
@@ -43,21 +42,15 @@ struct MacSettingsView: View {
     @AppStorage("mac_weekly_digest_enabled") private var weeklyDigestEnabled: Bool = true
     @AppStorage("mac_default_habit_reminder_time") private var defaultHabitTime: String = "09:00"
 
-    // Layout Variant Settings
-    @AppStorage("mac_life_layout_v3") private var lifeLayout: LifeDesignVariant = .life1
-
-    // Vault Security
-    @ObservedObject private var vaultManager = LocaVaultAuthManager.shared
-    @ObservedObject private var notificationManager = PlutoNotificationManager.shared
+    // Vault Security Storage
+    @AppStorage("mac_vault_biometrics_enabled") private var isVaultSecurityEnabled: Bool = false
 
     // Navigation State
     @State private var selectedCategory: SettingsCategory = .demos
-    @State private var hoveredDemoIndex: Int? = nil
     @State private var showExportSuccess = false
     @State private var exportMessage = ""
     @State private var showNewHabitSheet = false
     @State private var newHabitTitle = ""
-    @State private var newHabitCategory = "Health & Energy"
 
     // Color Palette
     private var accentColor: Color {
@@ -119,14 +112,14 @@ struct MacSettingsView: View {
     var body: some View {
         HStack(spacing: 0) {
 
-            // MARK: - Left Sidebar Categories
+            // Left Sidebar Categories
             settingsSidebar
                 .frame(width: 240)
                 .background(DS.Color.surface)
 
             Divider()
 
-            // MARK: - Right Detail Canvas
+            // Right Detail Canvas
             settingsDetailCanvas
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(DS.Color.background)
@@ -182,9 +175,10 @@ struct MacSettingsView: View {
         }
     }
 
+    @ViewBuilder
     private func sidebarCategoryRow(category: SettingsCategory) -> some View {
         let isSelected = selectedCategory == category
-        return Button {
+        Button {
             selectedCategory = category
             Haptics.impact(.light)
         } label: {
@@ -307,7 +301,7 @@ struct MacSettingsView: View {
             description: "Designed for intensive sprint cycles. Combines split-screen priority task boards, real-time keyboard completion triggers, and instantaneous focus timers.",
             highlights: [
                 "Side-by-side Eisenhower Urgent vs Important matrix",
-                "Instant `Space` key focus timer sweep",
+                "Instant Space key focus timer sweep",
                 "Zero-friction scratchpad buffer for quick capture",
                 "Real-time velocity and deep work minutes telemetry"
             ]
@@ -529,23 +523,23 @@ struct MacSettingsView: View {
                             .background(accentColor.opacity(0.15), in: Circle())
 
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(habit.title)
+                            Text(habit.name)
                                 .font(.system(size: 13, weight: .bold))
                                 .foregroundStyle(DS.Color.textPrimary)
 
-                            Text(habit.category.isEmpty ? "General" : habit.category)
+                            Text(habit.isQuantitative ? "Quantitative Goal (\(Int(habit.targetValue ?? 1)) \(habit.unitLabel ?? ""))" : "Daily Check-in")
                                 .font(.system(size: 11))
                                 .foregroundStyle(DS.Color.textTertiary)
                         }
 
                         Spacer()
 
-                        Text("Daily Goal")
-                            .font(.system(size: 10, weight: .semibold))
+                        Text("Streak: \(habit.currentStreak)d")
+                            .font(.system(size: 11, weight: .semibold))
                             .padding(.horizontal, 8)
                             .padding(.vertical, 3)
                             .background(DS.Color.background)
-                            .foregroundStyle(DS.Color.textSecondary)
+                            .foregroundStyle(accentColor)
                             .clipShape(Capsule())
 
                         Button(role: .destructive) {
@@ -587,10 +581,7 @@ struct MacSettingsView: View {
                 .font(.system(size: 16, weight: .bold))
                 .foregroundStyle(DS.Color.textPrimary)
 
-            TextField("Habit Title (e.g. 5km Morning Run)", text: $newHabitTitle)
-                .textFieldStyle(.roundedBorder)
-
-            TextField("Category (e.g. Health & Vitality)", text: $newHabitCategory)
+            TextField("Habit Name (e.g. Morning Sunlight & Breathwork)", text: $newHabitTitle)
                 .textFieldStyle(.roundedBorder)
 
             HStack {
@@ -603,7 +594,7 @@ struct MacSettingsView: View {
 
                 Button("Save Habit") {
                     guard !newHabitTitle.trimmingCharacters(in: .whitespaces).isEmpty else { return }
-                    let habit = HabitBoard(title: newHabitTitle, category: newHabitCategory)
+                    let habit = HabitBoard(name: newHabitTitle)
                     modelContext.insert(habit)
                     try? modelContext.save()
                     newHabitTitle = ""
@@ -689,7 +680,7 @@ struct MacSettingsView: View {
             .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: 10))
 
             Button {
-                notificationManager.scheduleStreakAlert(at: "now", streakCount: 14)
+                PlutoNotificationManager.shared.scheduleFocusCompletionNotification(tag: "Deep Work Sprint", seconds: 5, mode: "Pomodoro")
                 Haptics.impact(.medium)
             } label: {
                 Label("Trigger Test macOS Notification", systemImage: "bell.badge")
@@ -730,7 +721,7 @@ struct MacSettingsView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: 10))
 
-            Toggle(isOn: $vaultManager.isVaultSecurityEnabled) {
+            Toggle(isOn: $isVaultSecurityEnabled) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Enable Biometric Vault Lock")
                         .font(.system(size: 13, weight: .semibold))
@@ -743,10 +734,10 @@ struct MacSettingsView: View {
             .toggleStyle(.switch)
             .tint(accentColor)
 
-            if vaultManager.isVaultSecurityEnabled {
+            if isVaultSecurityEnabled {
                 HStack {
                     Button("Lock Vault Immediately") {
-                        vaultManager.lockAllVaults()
+                        LocaVaultAuthManager.shared.lockAll()
                         Haptics.impact(.medium)
                     }
                     .font(.system(size: 12, weight: .bold))
