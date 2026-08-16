@@ -678,6 +678,71 @@ struct TrekDetailOverlay: View {
                         }
                     }
 
+                    // GPX Trail Ridge Track (4.2)
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            HStack(spacing: 4) {
+                                Image(systemName: "point.topleft.down.to.point.bottomright.curvepath.fill")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(Color.cyan)
+                                Text(trek.hasGPXTrack ? "GPS RIDGE TRAIL" : "GPX TRAIL TRACK")
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundStyle(DS.Color.textTertiary)
+                            }
+
+                            Spacer()
+
+                            if trek.hasGPXTrack {
+                                Button {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                        trek.removeGPXTrack()
+                                    }
+                                    Haptics.impact(.medium)
+                                } label: {
+                                    Text("Remove")
+                                        .font(.system(size: 10, weight: .semibold))
+                                        .foregroundStyle(Color.red.opacity(0.8))
+                                }
+                                .buttonStyle(.plain)
+                            } else {
+                                Button {
+                                    Task {
+                                        if let result = await TrekGPXPickerHelper.pickGPXFile() {
+                                            trek.attachGPXTrack(result: result)
+                                            Haptics.notification(.success)
+                                        }
+                                    }
+                                } label: {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "square.and.arrow.down")
+                                            .font(.system(size: 9, weight: .bold))
+                                        Text("Import GPX")
+                                            .font(.system(size: 10, weight: .semibold))
+                                    }
+                                    .foregroundStyle(Color.cyan)
+                                    .padding(.horizontal, 7)
+                                    .padding(.vertical, 2)
+                                    .background(Color.cyan.opacity(0.12), in: RoundedRectangle(cornerRadius: 4))
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+
+                        if trek.hasGPXTrack {
+                            HStack(spacing: 6) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(Color.cyan)
+                                Text("\(trek.decodedTrackPoints.count.formatted()) GPS Trackpoints · Polyline Active")
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .foregroundStyle(DS.Color.textPrimary)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(8)
+                            .background(Color.cyan.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
+                        }
+                    }
+
                     // Apple Journal Cross-Link Drawer (4.1)
                     TrekJournalLinkSection(trek: trek)
                 }
@@ -714,6 +779,14 @@ struct TrekDetailOverlay: View {
         .shadow(color: Color.black.opacity(0.4), radius: 16, x: 0, y: 8)
         .onDrop(of: [.fileURL], isTargeted: nil) { providers in
             Task {
+                // Check if dropped file is a GPX track
+                if let gpxResult = await TrekGPXPickerHelper.processDroppedGPXProviders(providers) {
+                    trek.attachGPXTrack(result: gpxResult)
+                    Haptics.notification(.success)
+                    return
+                }
+
+                // Otherwise process as photo attachments
                 let fileNames = await TrekPhotoPickerHelper.processDroppedProviders(providers)
                 guard !fileNames.isEmpty else { return }
                 trek.attachPhotos(fileNames: fileNames)
@@ -743,6 +816,7 @@ struct LogTrekModal: View {
     @State private var difficulty: TrekDifficulty = .moderate
     @State private var personalNotes: String = ""
     @State private var photoFileNames: [String] = []
+    @State private var importedGPXResult: GPXParseResult? = nil
 
     @State private var searchQuery: String = ""
     @State private var searchResults: [MKMapItem] = []
@@ -764,7 +838,7 @@ struct LogTrekModal: View {
                     Text("Log Mountain Peak or Trail")
                         .font(.system(size: 15, weight: .bold))
                         .foregroundStyle(DS.Color.textPrimary)
-                    Text("Search Apple Maps or enter coordinates manually")
+                    Text("Search Apple Maps, import a GPX file, or enter details manually")
                         .font(.system(size: 11))
                         .foregroundStyle(DS.Color.textSecondary)
                 }
@@ -781,6 +855,50 @@ struct LogTrekModal: View {
             // Form Content
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Space.md) {
+
+                    // GPX Auto-Fill Shortcut Banner
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "point.topleft.down.to.point.bottomright.curvepath.fill")
+                                    .foregroundStyle(Color.cyan)
+                                Text("Import GPX Track")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundStyle(DS.Color.textPrimary)
+                            }
+                            Text(importedGPXResult != nil ? "✓ GPX Loaded (\(importedGPXResult!.trackPoints.count) trackpoints)" : "Auto-fill distance, vert gain, altitude & GPS coordinates")
+                                .font(.system(size: 10))
+                                .foregroundStyle(importedGPXResult != nil ? Color.cyan : DS.Color.textSecondary)
+                        }
+
+                        Spacer()
+
+                        Button {
+                            Task {
+                                if let result = await TrekGPXPickerHelper.pickGPXFile() {
+                                    applyGPXResult(result)
+                                    Haptics.notification(.success)
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "square.and.arrow.down")
+                                Text(importedGPXResult != nil ? "Replace GPX" : "Choose GPX File")
+                            }
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Color.cyan)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(Color.cyan.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(10)
+                    .background(Color.cyan.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.cyan.opacity(0.2), lineWidth: 1)
+                    )
 
                     // Apple Maps Search Autocomplete Bar
                     VStack(alignment: .leading, spacing: 4) {
@@ -982,6 +1100,11 @@ struct LogTrekModal: View {
                         personalNotes: personalNotes,
                         photoFileNames: photoFileNames
                     )
+
+                    if let gpx = importedGPXResult {
+                        newTrek.attachGPXTrack(result: gpx)
+                    }
+
                     onSave(newTrek)
                     dismiss()
                 }
@@ -993,7 +1116,42 @@ struct LogTrekModal: View {
             .padding(.vertical, DS.Space.md)
             .background(DS.Color.surface)
         }
-        .frame(width: 480, height: 560)
+        .frame(width: 500, height: 600)
+        .onDrop(of: [.fileURL], isTargeted: nil) { providers in
+            Task {
+                if let result = await TrekGPXPickerHelper.processDroppedGPXProviders(providers) {
+                    applyGPXResult(result)
+                    Haptics.notification(.success)
+                    return
+                }
+
+                let files = await TrekPhotoPickerHelper.processDroppedProviders(providers)
+                guard !files.isEmpty else { return }
+                photoFileNames.append(contentsOf: files)
+                Haptics.notification(.success)
+            }
+            return true
+        }
+    }
+
+    private func applyGPXResult(_ result: GPXParseResult) {
+        self.importedGPXResult = result
+        if let tName = result.trackName, !tName.isEmpty, self.name.isEmpty {
+            self.name = tName
+        }
+        if result.totalDistanceKm > 0 {
+            self.trailDistanceKm = String(format: "%.1f", result.totalDistanceKm)
+        }
+        if result.elevationGainMeters > 0 {
+            self.elevationGainMeters = String(format: "%.0f", result.elevationGainMeters)
+        }
+        if result.maxAltitudeMeters > 0 {
+            self.elevationMeters = String(format: "%.0f", result.maxAltitudeMeters)
+        }
+        if let summit = result.summitCoordinate {
+            self.latitude = String(format: "%.5f", summit.latitude)
+            self.longitude = String(format: "%.5f", summit.longitude)
+        }
     }
 
     private func performLocalSearch(query: String) {
