@@ -69,7 +69,9 @@ struct MacRootView: View {
     @AppStorage("pluto_app_experience_mode") private var appExperienceMode: String = "original"
 
     var body: some View {
-        if appExperienceMode == "steve_jobs" {
+        if appExperienceMode == "elon_musk" {
+            MacElonMuskVelocityView()
+        } else if appExperienceMode == "steve_jobs" {
             MacSteveJobsTrinityView()
         } else {
             splitView

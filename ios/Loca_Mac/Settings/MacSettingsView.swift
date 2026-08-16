@@ -161,7 +161,7 @@ struct MacSettingsView: View {
                 .font(.system(size: 12))
                 .foregroundStyle(DS.Color.textSecondary)
 
-            HStack(spacing: 16) {
+            HStack(spacing: 12) {
 
                 // Mode 1: Original 4-Pillars
                 let isOriginal = appExperienceMode == "original"
@@ -173,11 +173,11 @@ struct MacSettingsView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
                             Image(systemName: "sidebar.left")
-                                .font(.system(size: 14, weight: .bold))
+                                .font(.system(size: 13, weight: .bold))
                                 .foregroundStyle(isOriginal ? accentColor : DS.Color.textSecondary)
 
                             Text("Original 4-Pillars")
-                                .font(.system(size: 13, weight: .bold))
+                                .font(.system(size: 12, weight: .bold))
                                 .foregroundStyle(DS.Color.textPrimary)
 
                             Spacer()
@@ -188,12 +188,12 @@ struct MacSettingsView: View {
                             }
                         }
 
-                        Text("Classic macOS 2-Pane Navigation: Today (⌘1), Work (⌘2), Journal (⌘3), Life (⌘4).")
-                            .font(.system(size: 11))
+                        Text("Classic 2-Pane: Today (⌘1), Work (⌘2), Journal (⌘3), Life (⌘4).")
+                            .font(.system(size: 10))
                             .foregroundStyle(DS.Color.textSecondary)
                             .lineLimit(2)
                     }
-                    .padding(14)
+                    .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(isOriginal ? accentColor.opacity(0.12) : DS.Color.background, in: RoundedRectangle(cornerRadius: 10))
                     .overlay(
@@ -213,11 +213,11 @@ struct MacSettingsView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
                             Image(systemName: "apple.logo")
-                                .font(.system(size: 14, weight: .bold))
+                                .font(.system(size: 13, weight: .bold))
                                 .foregroundStyle(isSteve ? accentColor : DS.Color.textSecondary)
 
-                            Text("Steve Jobs Edition")
-                                .font(.system(size: 13, weight: .bold))
+                            Text("Steve Jobs Trinity")
+                                .font(.system(size: 12, weight: .bold))
                                 .foregroundStyle(DS.Color.textPrimary)
 
                             Spacer()
@@ -228,17 +228,57 @@ struct MacSettingsView: View {
                             }
                         }
 
-                        Text("The 3-Layer Glass Monolith: ⚡ Pulse (Now), ☀️ Orbit (Today Stream), 🏔️ Apex (Summits).")
-                            .font(.system(size: 11))
+                        Text("3-Layer Glass Monolith: ⚡ Pulse (Now), ☀️ Orbit (Day), 🏔️ Apex.")
+                            .font(.system(size: 10))
                             .foregroundStyle(DS.Color.textSecondary)
                             .lineLimit(2)
                     }
-                    .padding(14)
+                    .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(isSteve ? accentColor.opacity(0.12) : DS.Color.background, in: RoundedRectangle(cornerRadius: 10))
                     .overlay(
                         RoundedRectangle(cornerRadius: 10)
                             .stroke(isSteve ? accentColor : DS.Color.border.opacity(0.4), lineWidth: isSteve ? 1.5 : 1)
+                    )
+                }
+                .buttonStyle(.plain)
+
+                // Mode 3: Elon Musk Edition
+                let isElon = appExperienceMode == "elon_musk"
+                Button {
+                    appExperienceMode = "elon_musk"
+                    PlutoSoundEngine.shared.play(.timerStart)
+                    Haptics.impact(.rigid)
+                } label: {
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            Image(systemName: "flame.fill")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(isElon ? Color.orange : DS.Color.textSecondary)
+
+                            Text("Elon Musk Velocity")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(DS.Color.textPrimary)
+
+                            Spacer()
+
+                            if isElon {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(Color.orange)
+                            }
+                        }
+
+                        Text("5 Cybernetic Pillars: 🔥 Thrust, ⚡ Telemetry, 🛰️ Trajectory, 🏔️ Endurance, 🛡️ Air-Gap.")
+                            .font(.system(size: 10))
+                            .foregroundStyle(DS.Color.textSecondary)
+                            .lineLimit(2)
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(isElon ? Color.orange.opacity(0.15) : DS.Color.background, in: RoundedRectangle(cornerRadius: 10))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(isElon ? Color.orange : DS.Color.border.opacity(0.4), lineWidth: isElon ? 1.5 : 1)
                     )
                 }
                 .buttonStyle(.plain)
