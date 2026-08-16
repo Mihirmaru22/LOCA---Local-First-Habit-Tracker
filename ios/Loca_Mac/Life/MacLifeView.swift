@@ -9,6 +9,7 @@ enum LifeDesignVariant: String, CaseIterable, Identifiable {
     case life3 = "Life 3 · Life Eras & Chronology"
     case life4 = "Life 4 · Self-Mastery & Audits"
     case life5 = "Life 5 · Trek & Mountain Atlas"
+    case life6 = "Life 6 · Travel & State Atlas"
 
     var id: String { rawValue }
 
@@ -19,6 +20,7 @@ enum LifeDesignVariant: String, CaseIterable, Identifiable {
         case .life3: return "Life Eras & Chronology"
         case .life4: return "Self-Mastery & Audits"
         case .life5: return "Trek & Mountain Atlas"
+        case .life6: return "Travel & State Atlas"
         }
     }
 
@@ -29,6 +31,7 @@ enum LifeDesignVariant: String, CaseIterable, Identifiable {
         case .life3: return "timeline.selection"
         case .life4: return "sparkles.rectangle.stack.fill"
         case .life5: return "mountain.2.fill"
+        case .life6: return "globe.asia.australia.fill"
         }
     }
 }
@@ -58,7 +61,7 @@ struct MacLifeView: View {
 
                 Spacer()
 
-                // Top Tab Switcher for the 5 Life Sections
+                // Top Tab Switcher for the Life Sections
                 HStack(spacing: 4) {
                     ForEach(LifeDesignVariant.allCases) { variant in
                         let isSelected = selectedVariant == variant
@@ -92,9 +95,11 @@ struct MacLifeView: View {
 
             Divider()
 
-            // Main Body: Full Canvas for Trek Atlas, Scrollable Body for Life 1-4
+            // Main Body: Full Canvas for Trek Atlas / Travel Atlas, Scrollable Body for Life 1-4
             if selectedVariant == .life5 {
                 MacTrekAtlasCanvas()
+            } else if selectedVariant == .life6 {
+                MacTravelAtlasCanvas()
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: DS.Space.xl) {
@@ -107,7 +112,7 @@ struct MacLifeView: View {
                             Life3LifeErasChronologyView()
                         case .life4:
                             Life4SelfMasteryAuditsView()
-                        case .life5:
+                        case .life5, .life6:
                             EmptyView()
                         }
 

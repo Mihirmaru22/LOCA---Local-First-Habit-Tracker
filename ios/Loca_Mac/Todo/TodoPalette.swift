@@ -18,14 +18,17 @@ enum TodoPalette {
     /// mockup's 150° gradient angle.
     static var bubbleGradient: LinearGradient {
         LinearGradient(
-            colors: [Color.accentColor, accent2],
+            colors: [
+                Color(red: 0.42, green: 0.31, blue: 0.88), // Rich Royal Violet
+                Color(red: 0.64, green: 0.42, blue: 0.98)  // Electric Lavender
+            ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
     }
 
     /// Coloured glow beneath an active bubble (`box-shadow: 0 1px 3px accent@40%`).
-    static let bubbleGlow = Color.accentColor.opacity(0.40)
+    static let bubbleGlow = Color(red: 0.52, green: 0.36, blue: 0.95).opacity(0.40)
 }
 
 // MARK: - Bubble modifier

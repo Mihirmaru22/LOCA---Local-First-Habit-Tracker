@@ -29,13 +29,15 @@ public enum TrekStatus: Int, CaseIterable, Codable, Sendable {
 // MARK: - TrekDifficulty
 
 public enum TrekDifficulty: Int, CaseIterable, Codable, Sendable {
-    case moderate     = 0
-    case strenuous    = 1
-    case alpineExpert = 2
-    case extreme      = 3
+    case easy         = 0
+    case moderate     = 1
+    case strenuous    = 2
+    case alpineExpert = 3
+    case extreme      = 4
 
     public var title: String {
         switch self {
+        case .easy:         return "Easy"
         case .moderate:     return "Moderate"
         case .strenuous:    return "Strenuous"
         case .alpineExpert: return "Alpine Expert"
@@ -45,6 +47,7 @@ public enum TrekDifficulty: Int, CaseIterable, Codable, Sendable {
 
     public var badgeColorHex: String {
         switch self {
+        case .easy:         return "#6EE7B7" // Mint
         case .moderate:     return "#34D399" // Emerald
         case .strenuous:    return "#FBBF24" // Amber
         case .alpineExpert: return "#F87171" // Coral Red

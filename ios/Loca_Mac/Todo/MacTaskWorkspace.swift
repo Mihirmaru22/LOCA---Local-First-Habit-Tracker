@@ -349,20 +349,8 @@ struct MacBlockEditor: View {
     @State private var activeSlashBlockID: UUID? = nil
     
     var body: some View {
-        ZStack(alignment: .topLeading) {
-            // Dismiss slash menu on outside click
-            if activeSlashBlockID != nil {
-                Color.black.opacity(0.001)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        closeSlashMenu()
-                    }
-                    .zIndex(50)
-            }
-
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(blocks) { block in
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(blocks) { block in
                     MacBlockRow(
                         block: Binding(
                             get: { block },
@@ -403,11 +391,15 @@ struct MacBlockEditor: View {
                         childItem: childTodo(for: block),
                         onSave: onSave
                     )
-                }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .onAppear { 
+            initializeBlocks()
+            DispatchQueue.main.async { isInitializing = false }
+        }
+        .onChange(of: item.id) { _, _ in
+            isInitializing = true
             initializeBlocks()
             DispatchQueue.main.async { isInitializing = false }
         }
@@ -492,6 +484,9 @@ struct MacBlockEditor: View {
     private func initializeBlocks() {
         if let cb = item.contentBlocks, !cb.isEmpty {
             blocks = cb
+        } else if let notes = item.notes, !notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let lines = notes.components(separatedBy: .newlines)
+            blocks = lines.map { TodoContentBlock(type: .paragraph, text: $0) }
         } else {
             blocks = [TodoContentBlock(type: .paragraph)]
         }
@@ -674,6 +669,7 @@ struct MacBlockEditor: View {
         }
         
         closeSlashMenu()
+        onSave()
         // Focus stays on block naturally
     }
 }
@@ -763,17 +759,19 @@ struct MacBlockRow: View {
                     isSlashMenuOpen: isSlashMenuOpen
                 )
                 .frame(minHeight: 24)
-                .overlay(alignment: .topLeading) {
-                    if isSlashMenuOpen {
-                        SlashCommandMenu(
-                            query: slashQuery,
-                            selectedIndex: slashMenuSelectedIndex,
-                            onSelect: { type in onSlashEnter(type) },
-                            onClose: onSlashClose
-                        )
-                        .offset(x: menuAnchor.minX, y: menuAnchor.minY + 24)
-                        .zIndex(100)
-                    }
+                .popover(
+                    isPresented: Binding(
+                        get: { isSlashMenuOpen },
+                        set: { if !$0 { onSlashClose() } }
+                    ),
+                    arrowEdge: .bottom
+                ) {
+                    SlashCommandMenu(
+                        query: slashQuery,
+                        selectedIndex: slashMenuSelectedIndex,
+                        onSelect: { type in onSlashEnter(type) },
+                        onClose: onSlashClose
+                    )
                 }
             }
         }
@@ -919,8 +917,14 @@ struct MacRichTextView: NSViewRepresentable {
     func updateNSView(_ nsView: AutoSizingTextView, context: Context) {
         context.coordinator.parent = self
         
+        let isFirstResponder = nsView.window?.firstResponder == nsView
         if nsView.string != text {
-            nsView.string = text
+            if !isFirstResponder || text.count < nsView.string.count || !nsView.string.hasPrefix(text) {
+                let savedSelectedRange = nsView.selectedRange()
+                nsView.string = text
+                let newPos = min(text.count, savedSelectedRange.location)
+                nsView.setSelectedRange(NSRange(location: newPos, length: 0))
+            }
         }
         
         nsView.placeholderString = placeholder
@@ -932,9 +936,11 @@ struct MacRichTextView: NSViewRepresentable {
             .strikethroughColor: textColor
         ]
         
-        nsView.textStorage?.setAttributes(attributes, range: NSRange(location: 0, length: nsView.string.count))
+        if nsView.string.count > 0 {
+            nsView.textStorage?.setAttributes(attributes, range: NSRange(location: 0, length: nsView.string.count))
+        }
         
-        if isActive {
+        if isActive && !context.coordinator.wasActive {
             DispatchQueue.main.async {
                 if let window = nsView.window, window.firstResponder != nsView {
                     window.makeFirstResponder(nsView)
@@ -985,6 +991,12 @@ struct MacRichTextView: NSViewRepresentable {
                 if commandSelector == #selector(NSResponder.moveUp(_:)) { parent.onSlashNavigate(-1); return true }
                 if commandSelector == #selector(NSResponder.moveDown(_:)) { parent.onSlashNavigate(1); return true }
                 if commandSelector == #selector(NSResponder.insertNewline(_:)) {
+                    var str = textView.string
+                    if let slashIdx = str.lastIndex(of: "/") {
+                        str = String(str[..<slashIdx])
+                    }
+                    textView.string = str
+                    parent.text = str
                     parent.onSlashEnter()
                     slashQueryRange = nil
                     return true

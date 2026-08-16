@@ -168,7 +168,8 @@ struct FocusRoomView: View {
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(Color.black.opacity(0.4).background(.ultraThinMaterial), in: Capsule())
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .background(Color.black.opacity(0.65), in: Capsule())
                     .overlay(Capsule().stroke(Color.white.opacity(0.12), lineWidth: 0.8))
                     .padding(.bottom, 16)
                 }

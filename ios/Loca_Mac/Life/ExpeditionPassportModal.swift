@@ -82,14 +82,16 @@ struct ExpeditionPassportModal: View {
                     }
                 } label: {
                     Image(systemName: "minus.magnifyingglass")
-                        .font(.system(size: 12))
+                        .font(.system(size: 11))
+                        .foregroundStyle(DS.Color.textSecondary)
+                        .frame(width: 24, height: 24)
                 }
                 .buttonStyle(.plain)
 
                 Text("\(Int(zoomScale * 100))%")
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                    .foregroundStyle(DS.Color.textSecondary)
-                    .frame(width: 42)
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .foregroundStyle(DS.Color.textPrimary)
+                    .frame(width: 44)
 
                 Button {
                     withAnimation(.spring(response: 0.2)) {
@@ -97,7 +99,9 @@ struct ExpeditionPassportModal: View {
                     }
                 } label: {
                     Image(systemName: "plus.magnifyingglass")
-                        .font(.system(size: 12))
+                        .font(.system(size: 11))
+                        .foregroundStyle(DS.Color.textSecondary)
+                        .frame(width: 24, height: 24)
                 }
                 .buttonStyle(.plain)
 
@@ -107,14 +111,15 @@ struct ExpeditionPassportModal: View {
                     }
                 }
                 .buttonStyle(.plain)
-                .font(.system(size: 10, weight: .bold))
-                .padding(.horizontal, 6)
-                .padding(.vertical, 3)
-                .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 4))
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(DS.Color.textSecondary)
+                .padding(.horizontal, 8)
+                .frame(height: 24)
+                .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 6))
+            .padding(.horizontal, 6)
+            .frame(height: 32)
+            .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 8))
 
             Divider().frame(height: 20)
 
@@ -127,14 +132,19 @@ struct ExpeditionPassportModal: View {
                         showToast("Copied Passport Image to Clipboard")
                     }
                 } label: {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 5) {
                         Image(systemName: "doc.on.doc")
+                            .font(.system(size: 11))
                         Text("Copy")
+                            .font(.system(size: 11, weight: .semibold))
                     }
-                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(DS.Color.textPrimary)
+                    .lineLimit(1)
+                    .fixedSize()
                     .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
+                    .frame(height: 32)
+                    .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.12), lineWidth: 1))
                 }
                 .buttonStyle(.plain)
 
@@ -146,14 +156,19 @@ struct ExpeditionPassportModal: View {
                         }
                     }
                 } label: {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 5) {
                         Image(systemName: "point.topleft.down.to.point.bottomright.filled.curvepath")
+                            .font(.system(size: 11))
                         Text("Export GPX")
+                            .font(.system(size: 11, weight: .semibold))
                     }
-                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(DS.Color.textPrimary)
+                    .lineLimit(1)
+                    .fixedSize()
                     .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
+                    .frame(height: 32)
+                    .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.12), lineWidth: 1))
                 }
                 .buttonStyle(.plain)
 
@@ -165,14 +180,19 @@ struct ExpeditionPassportModal: View {
                         }
                     }
                 } label: {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 5) {
                         Image(systemName: "photo")
+                            .font(.system(size: 11))
                         Text("Save PNG")
+                            .font(.system(size: 11, weight: .semibold))
                     }
-                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(DS.Color.textPrimary)
+                    .lineLimit(1)
+                    .fixedSize()
                     .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
+                    .frame(height: 32)
+                    .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.12), lineWidth: 1))
                 }
                 .buttonStyle(.plain)
 
@@ -186,19 +206,26 @@ struct ExpeditionPassportModal: View {
                 } label: {
                     HStack(spacing: 5) {
                         Image(systemName: "arrow.down.doc.fill")
+                            .font(.system(size: 11, weight: .bold))
                         Text("Save PDF")
+                            .font(.system(size: 11, weight: .bold))
                     }
-                    .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(Color.black)
+                    .lineLimit(1)
+                    .fixedSize()
                     .padding(.horizontal, 14)
-                    .padding(.vertical, 6)
+                    .frame(height: 32)
                     .background(
                         LinearGradient(
-                            colors: [Color(red: 0.95, green: 0.80, blue: 0.30), Color(red: 0.85, green: 0.65, blue: 0.15)],
+                            colors: [Color(red: 0.98, green: 0.82, blue: 0.32), Color(red: 0.88, green: 0.68, blue: 0.18)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
-                        in: RoundedRectangle(cornerRadius: 6)
+                        in: RoundedRectangle(cornerRadius: 8)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color(red: 1.0, green: 0.9, blue: 0.5), lineWidth: 0.8)
                     )
                 }
                 .buttonStyle(.plain)
@@ -209,8 +236,9 @@ struct ExpeditionPassportModal: View {
             // Close
             Button(action: onDismiss) {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 18))
+                    .font(.system(size: 20))
                     .foregroundStyle(DS.Color.textSecondary)
+                    .frame(width: 32, height: 32)
             }
             .buttonStyle(.plain)
             .keyboardShortcut(.escape, modifiers: [])

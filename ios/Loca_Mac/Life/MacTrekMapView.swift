@@ -443,6 +443,7 @@ final class TrekAnnotationView: MKAnnotationView {
 
     private func setupViews() {
         canShowCallout = false
+        clusteringIdentifier = "summitCluster"
         frame = NSRect(x: 0, y: 0, width: 44, height: 44)
         wantsLayer = true
 

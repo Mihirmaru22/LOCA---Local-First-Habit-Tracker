@@ -34,6 +34,7 @@ private struct MacTodoEditor: View {
     @State private var showIconPicker    = false
     @State private var showStartPicker   = false
     @State private var showDatePicker    = false
+    @State private var activeBlockID: UUID? = nil
 
     private var subtasks: [TodoItem] {
         allItems.filter { $0.parentID == item.id && !$0.isArchived }
@@ -366,7 +367,8 @@ private struct MacTodoEditor: View {
     private var noteSection: some View {
         VStack(alignment: .leading, spacing: DS.Space.xs) {
             detLabel("NOTE")
-            MacBlockEditor(item: item, activeBlockID: .constant(nil), allItems: [], onSave: autosave)
+            MacBlockEditor(item: item, activeBlockID: $activeBlockID, allItems: allItems, onSave: autosave)
+                .id(item.id)
         }
     }
 

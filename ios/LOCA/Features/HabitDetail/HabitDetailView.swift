@@ -601,6 +601,7 @@ struct RefHeatCell: View {
         }
         .scaleEffect(isHovered ? 1.25 : 1.0)
         .zIndex(isHovered ? 10 : 1)
+        .help(tooltipText)
         .onHover { h in
             withAnimation(reduceMotion ? nil : DS.Motion.hover120Hz) {
                 isHovered = h
@@ -608,6 +609,19 @@ struct RefHeatCell: View {
         }
         .transition(.opacity)
         .animation(DS.Motion.settle(reduceMotion: reduceMotion), value: cellsByDate)
+    }
+
+    private var tooltipText: String {
+        guard let date = cellDate else { return "" }
+        let dateStr = date.formatted(.dateTime.month(.abbreviated).day())
+        if isFuture {
+            return "\(dateStr) (Future)"
+        }
+        guard let cell = cell, cell.total > 0 else {
+            return "\(dateStr): No check-in"
+        }
+        let formattedTotal = cell.total.formatted(.number.precision(.fractionLength(0...1)))
+        return "\(dateStr): \(formattedTotal) logged"
     }
 }
 

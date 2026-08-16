@@ -76,6 +76,62 @@ final class LocaSpotlightIndexer {
         }
     }
 
+    // MARK: - Granular Incremental Indexing
+
+    func indexHabit(_ habit: HabitBoard) {
+        guard habit.archivedAt == nil else {
+            removeHabit(id: habit.id.uuidString)
+            return
+        }
+        let item = makeHabitItem(habit)
+        Task {
+            try? await CSSearchableIndex.default().indexSearchableItems([item])
+        }
+    }
+
+    func removeHabit(id: String) {
+        let identifier = ItemType.habit.makeIdentifier(id: id)
+        Task {
+            try? await CSSearchableIndex.default().deleteSearchableItems(withIdentifiers: [identifier])
+        }
+    }
+
+    func indexTaskItem(_ task: TodoItem) {
+        guard task.archivedAt == nil, !task.title.isEmpty else {
+            removeTask(id: task.id.uuidString)
+            return
+        }
+        let item = makeTaskItem(task)
+        Task {
+            try? await CSSearchableIndex.default().indexSearchableItems([item])
+        }
+    }
+
+    func removeTask(id: String) {
+        let identifier = ItemType.task.makeIdentifier(id: id)
+        Task {
+            try? await CSSearchableIndex.default().deleteSearchableItems(withIdentifiers: [identifier])
+        }
+    }
+
+    func indexJournalNoteItem(_ note: JournalNote) {
+        guard !note.isArchived, !note.text.isEmpty else {
+            removeJournalNote(id: note.id.uuidString)
+            return
+        }
+        let item = makeJournalItem(note)
+        Task {
+            try? await CSSearchableIndex.default().indexSearchableItems([item])
+        }
+    }
+
+    func removeJournalNote(id: String) {
+        let identifier = ItemType.journal.makeIdentifier(id: id)
+        Task {
+            try? await CSSearchableIndex.default().deleteSearchableItems(withIdentifiers: [identifier])
+        }
+    }
+
     // MARK: - Item Builders
 
     private func makeHabitItem(_ habit: HabitBoard) -> CSSearchableItem {

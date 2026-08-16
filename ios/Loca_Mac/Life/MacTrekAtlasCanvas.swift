@@ -7,7 +7,9 @@ import UniformTypeIdentifiers
 
 enum TrekFilter: String, CaseIterable, Identifiable {
     case all          = "All Summits"
-    case india        = "All India 🇮🇳"
+    case gujarat      = "Gujarat 🦁"
+    case maharashtra  = "Maharashtra 🏰"
+    case rajasthan    = "Rajasthan 🏜️"
     case himalayas    = "Himalayas 🏔️"
     case westernGhats = "Western Ghats 🌿"
     case conquered    = "Conquered 🏆"
@@ -76,8 +78,38 @@ struct MacTrekAtlasCanvas: View {
             switch selectedFilter {
             case .all:
                 return true
-            case .india:
-                return trek.country.localizedCaseInsensitiveContains("India")
+            case .gujarat:
+                return trek.region.localizedCaseInsensitiveContains("Gujarat") ||
+                       trek.region.localizedCaseInsensitiveContains("Junagadh") ||
+                       trek.region.localizedCaseInsensitiveContains("Kutch") ||
+                       trek.region.localizedCaseInsensitiveContains("Dang") ||
+                       trek.region.localizedCaseInsensitiveContains("Panchmahal") ||
+                       trek.region.localizedCaseInsensitiveContains("Valsad") ||
+                       trek.region.localizedCaseInsensitiveContains("Saurashtra") ||
+                       trek.region.localizedCaseInsensitiveContains("Sabarkantha") ||
+                       trek.region.localizedCaseInsensitiveContains("Banaskantha")
+            case .maharashtra:
+                return trek.region.localizedCaseInsensitiveContains("Maharashtra") ||
+                       trek.region.localizedCaseInsensitiveContains("Sahyadri") ||
+                       trek.region.localizedCaseInsensitiveContains("Pune") ||
+                       trek.region.localizedCaseInsensitiveContains("Nashik") ||
+                       trek.region.localizedCaseInsensitiveContains("Ahmednagar") ||
+                       trek.region.localizedCaseInsensitiveContains("Satara") ||
+                       trek.region.localizedCaseInsensitiveContains("Raigad") ||
+                       trek.region.localizedCaseInsensitiveContains("Igatpuri") ||
+                       trek.region.localizedCaseInsensitiveContains("Lonavala") ||
+                       trek.region.localizedCaseInsensitiveContains("Panvel") ||
+                       trek.region.localizedCaseInsensitiveContains("Baglan")
+            case .rajasthan:
+                return trek.region.localizedCaseInsensitiveContains("Rajasthan") ||
+                       trek.region.localizedCaseInsensitiveContains("Aravalli") ||
+                       trek.region.localizedCaseInsensitiveContains("Abu") ||
+                       trek.region.localizedCaseInsensitiveContains("Jaipur") ||
+                       trek.region.localizedCaseInsensitiveContains("Ajmer") ||
+                       trek.region.localizedCaseInsensitiveContains("Udaipur") ||
+                       trek.region.localizedCaseInsensitiveContains("Sirohi") ||
+                       trek.region.localizedCaseInsensitiveContains("Chittorgarh") ||
+                       trek.region.localizedCaseInsensitiveContains("Sikar")
             case .himalayas:
                 return trek.country.localizedCaseInsensitiveContains("India") && (
                     trek.region.localizedCaseInsensitiveContains("Himalaya") ||
@@ -98,9 +130,6 @@ struct MacTrekAtlasCanvas: View {
                     trek.region.localizedCaseInsensitiveContains("Karnataka") ||
                     trek.region.localizedCaseInsensitiveContains("Kerala") ||
                     trek.region.localizedCaseInsensitiveContains("Nilgiri") ||
-                    trek.region.localizedCaseInsensitiveContains("Pune") ||
-                    trek.region.localizedCaseInsensitiveContains("Ahmednagar") ||
-                    trek.region.localizedCaseInsensitiveContains("Nashik") ||
                     trek.region.localizedCaseInsensitiveContains("Coorg") ||
                     trek.region.localizedCaseInsensitiveContains("Wayanad") ||
                     trek.region.localizedCaseInsensitiveContains("Munnar") ||
@@ -234,14 +263,14 @@ struct MacTrekAtlasCanvas: View {
                 ZStack {
                     Circle()
                         .fill(Color.cyan.opacity(0.15))
-                        .frame(width: 34, height: 34)
+                        .frame(width: 32, height: 32)
                     Image(systemName: "trophy.fill")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(Color.cyan)
                 }
                 VStack(alignment: .leading, spacing: 1) {
                     Text("\(totalConqueredCount) SUMMITS")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(DS.Color.textPrimary)
                     Text("Conquered Milestones")
                         .font(.system(size: 10, weight: .medium))
@@ -249,21 +278,21 @@ struct MacTrekAtlasCanvas: View {
                 }
             }
 
-            Divider().frame(height: 24)
+            Divider().frame(height: 20)
 
             // Stat 2: Highest Peak
             HStack(spacing: DS.Space.sm) {
                 ZStack {
                     Circle()
                         .fill(Color.orange.opacity(0.15))
-                        .frame(width: 34, height: 34)
+                        .frame(width: 32, height: 32)
                     Image(systemName: "mountain.2.fill")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(Color.orange)
                 }
                 VStack(alignment: .leading, spacing: 1) {
                     Text(highestConqueredElevation > 0 ? "\(Int(highestConqueredElevation).formatted()) m" : "—")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(DS.Color.textPrimary)
                     Text(highestConqueredName)
                         .font(.system(size: 10, weight: .medium))
@@ -272,21 +301,21 @@ struct MacTrekAtlasCanvas: View {
                 }
             }
 
-            Divider().frame(height: 24)
+            Divider().frame(height: 20)
 
             // Stat 3: Total Vertical Gain
             HStack(spacing: DS.Space.sm) {
                 ZStack {
                     Circle()
                         .fill(Color.purple.opacity(0.15))
-                        .frame(width: 34, height: 34)
+                        .frame(width: 32, height: 32)
                     Image(systemName: "arrow.up.right")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(Color.purple)
                 }
                 VStack(alignment: .leading, spacing: 1) {
                     Text(totalVerticalGain > 0 ? "+\(Int(totalVerticalGain).formatted()) m" : "—")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(DS.Color.textPrimary)
                     Text("Vertical Ascended")
                         .font(.system(size: 10, weight: .medium))
@@ -294,17 +323,17 @@ struct MacTrekAtlasCanvas: View {
                 }
             }
 
-            Divider().frame(height: 24)
+            Divider().frame(height: 20)
 
             // Stat 4: Explorer Mountaineer Rank & Trophy Cabinet Button
             Button {
                 isTrophyCabinetPresented = true
                 Haptics.impact(.medium)
             } label: {
-                HStack(spacing: 7) {
+                HStack(spacing: DS.Space.sm) {
                     ZStack {
                         Circle()
-                            .fill(currentRank.accentColor.opacity(0.18))
+                            .fill(currentRank.accentColor.opacity(0.15))
                             .frame(width: 32, height: 32)
                         Image(systemName: currentRank.icon)
                             .font(.system(size: 13, weight: .bold))
@@ -314,25 +343,23 @@ struct MacTrekAtlasCanvas: View {
                     VStack(alignment: .leading, spacing: 1) {
                         HStack(spacing: 3) {
                             Text(currentRank.title.uppercased())
-                                .font(.system(size: 12, weight: .black))
+                                .font(.system(size: 12, weight: .bold))
                                 .foregroundStyle(DS.Color.textPrimary)
                             Image(systemName: "chevron.right")
                                 .font(.system(size: 8, weight: .bold))
                                 .foregroundStyle(DS.Color.textTertiary)
                         }
                         Text("Rank \(currentRank.rawValue) · Trophy Cabinet")
-                            .font(.system(size: 9, weight: .semibold))
+                            .font(.system(size: 10, weight: .semibold))
                             .foregroundStyle(currentRank.accentColor)
                     }
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(currentRank.accentColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(currentRank.accentColor.opacity(0.35), lineWidth: 1))
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .help("Open Trophy Cabinet")
 
-            Divider().frame(height: 24)
+            Divider().frame(height: 20)
 
             // Apple Watch Sync Button
             Button {
@@ -347,12 +374,13 @@ struct MacTrekAtlasCanvas: View {
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(DS.Color.textPrimary)
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .background(Color.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
-                .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.orange.opacity(0.3), lineWidth: 1))
+                .padding(.horizontal, 10)
+                .frame(height: 32)
+                .background(Color.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.orange.opacity(0.3), lineWidth: 1))
             }
             .buttonStyle(.plain)
+            .help("Sync routes & summit waypoints with Apple Watch")
 
             Spacer()
 
@@ -373,8 +401,8 @@ struct MacTrekAtlasCanvas: View {
                                 .font(.system(size: 11, weight: isSelected ? .semibold : .medium))
                         }
                         .foregroundStyle(isSelected ? Color.white : DS.Color.textSecondary)
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 5)
+                        .padding(.horizontal, 10)
+                        .frame(height: 26)
                         .background(
                             isSelected
                                 ? LinearGradient(colors: [Color.cyan.opacity(0.35), Color.blue.opacity(0.25)], startPoint: .topLeading, endPoint: .bottomTrailing)
@@ -390,9 +418,10 @@ struct MacTrekAtlasCanvas: View {
                 }
             }
             .padding(3)
+            .frame(height: 32)
             .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 8))
 
-            Divider().frame(height: 24)
+            Divider().frame(height: 20)
 
             // Primary Action: + Log Trek
             Button {
@@ -407,20 +436,20 @@ struct MacTrekAtlasCanvas: View {
                 }
                 .foregroundStyle(.white)
                 .padding(.horizontal, 13)
-                .padding(.vertical, 7)
+                .frame(height: 32)
                 .background(
                     LinearGradient(
                         colors: [Color(red: 0.1, green: 0.6, blue: 0.9), Color(red: 0.38, green: 0.45, blue: 0.98)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
-                    in: RoundedRectangle(cornerRadius: 7)
+                    in: RoundedRectangle(cornerRadius: 8)
                 )
             }
             .buttonStyle(.plain)
         }
         .padding(.horizontal, DS.Space.xl)
-        .padding(.vertical, DS.Space.md)
+        .padding(.vertical, 10)
         .background(DS.Color.surface)
     }
 
@@ -614,27 +643,47 @@ struct MacTrekAtlasCanvas: View {
             .padding(.vertical, 6)
             .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 6))
 
-            // Filter Tabs
-            HStack(spacing: 4) {
-                ForEach(TrekFilter.allCases) { filter in
-                    let isSelected = selectedFilter == filter
-                    Button {
-                        selectedFilter = filter
-                        Haptics.impact(.light)
-                    } label: {
-                        Text(filter.rawValue)
-                            .font(.system(size: 10, weight: isSelected ? .bold : .medium))
-                            .foregroundStyle(isSelected ? Color.white : DS.Color.textSecondary)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(
-                                isSelected ? Color(red: 0.38, green: 0.45, blue: 0.98) : Color.clear,
-                                in: RoundedRectangle(cornerRadius: 5)
-                            )
+            // Filter Tabs with Standardized Box Size & Single-Line Font
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(TrekFilter.allCases) { filter in
+                        let isSelected = selectedFilter == filter
+                        Button {
+                            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                selectedFilter = filter
+                            }
+                            Haptics.impact(.light)
+                        } label: {
+                            Text(filter.rawValue)
+                                .font(.system(size: 11, weight: isSelected ? .semibold : .medium))
+                                .foregroundStyle(isSelected ? Color.white : DS.Color.textSecondary)
+                                .lineLimit(1)
+                                .fixedSize(horizontal: true, vertical: false)
+                                .padding(.horizontal, 10)
+                                .frame(height: 28)
+                                .background(
+                                    isSelected
+                                        ? LinearGradient(
+                                            colors: [Color(red: 0.28, green: 0.45, blue: 0.98), Color(red: 0.48, green: 0.38, blue: 0.98)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                        : LinearGradient(
+                                            colors: [DS.Color.surfaceRecessed],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        ),
+                                    in: RoundedRectangle(cornerRadius: 7)
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 7)
+                                        .stroke(isSelected ? Color.blue.opacity(0.5) : DS.Color.border.opacity(0.4), lineWidth: 1)
+                                )
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
-                Spacer()
+                .padding(.vertical, 2)
             }
         }
         .padding(DS.Space.md)

@@ -66,6 +66,7 @@ enum RippleSchemaV1: VersionedSchema {
             JournalNote.self,
             SleepEntry.self,
             TrekRecord.self,
+            TravelRecord.self,
             FocusSession.self,
             FocusGoal.self,
         ]

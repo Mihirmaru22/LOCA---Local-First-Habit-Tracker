@@ -9,6 +9,7 @@ enum LifeRow: String, CaseIterable, Identifiable {
     case chronology  = "Life Eras & Timeline"
     case selfMastery = "Self-Mastery & Audits"
     case trekAtlas   = "Trek & Mountain Atlas"
+    case travelAtlas = "Travel & State Atlas"
 
     var id: String { rawValue }
 
@@ -19,6 +20,7 @@ enum LifeRow: String, CaseIterable, Identifiable {
         case .chronology:  return "timeline.selection"
         case .selfMastery: return "sparkles.rectangle.stack.fill"
         case .trekAtlas:   return "mountain.2.fill"
+        case .travelAtlas: return "globe.asia.australia.fill"
         }
     }
 
@@ -29,6 +31,7 @@ enum LifeRow: String, CaseIterable, Identifiable {
         case .chronology:  return "90-year horizon & eras"
         case .selfMastery: return "Weekly audits & wisdom"
         case .trekAtlas:   return "Conquered peaks & summit atlas"
+        case .travelAtlas: return "States, capitals & subcontinent odyssey"
         }
     }
 
@@ -39,6 +42,7 @@ enum LifeRow: String, CaseIterable, Identifiable {
         case .chronology:  return .life3
         case .selfMastery: return .life4
         case .trekAtlas:   return .life5
+        case .travelAtlas: return .life6
         }
     }
 
@@ -49,6 +53,7 @@ enum LifeRow: String, CaseIterable, Identifiable {
         case .life3: return .chronology
         case .life4: return .selfMastery
         case .life5: return .trekAtlas
+        case .life6: return .travelAtlas
         }
     }
 }
