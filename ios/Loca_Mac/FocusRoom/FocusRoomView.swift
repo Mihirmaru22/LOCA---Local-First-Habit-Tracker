@@ -243,7 +243,8 @@ struct FocusRoomView: View {
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
-                    .background(Color.black.opacity(0.65).background(.ultraThinMaterial), in: RoundedRectangle(cornerRadius: 10))
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+                    .background(Color.black.opacity(0.65), in: RoundedRectangle(cornerRadius: 10))
                     .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.15), lineWidth: 1))
                 }
                 .buttonStyle(.plain)
@@ -270,7 +271,8 @@ struct FocusRoomView: View {
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
-                    .background(Color.black.opacity(0.65).background(.ultraThinMaterial), in: RoundedRectangle(cornerRadius: 10))
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+                    .background(Color.black.opacity(0.65), in: RoundedRectangle(cornerRadius: 10))
                     .overlay(RoundedRectangle(cornerRadius: 10).stroke(showGoalsPanel ? Color.blue.opacity(0.8) : Color.white.opacity(0.15), lineWidth: 1))
                 }
                 .buttonStyle(.plain)
@@ -306,7 +308,8 @@ struct FocusRoomView: View {
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.white)
                         .frame(width: 36, height: 36)
-                        .background(Color.black.opacity(0.65).background(.ultraThinMaterial), in: RoundedRectangle(cornerRadius: 10))
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+                    .background(Color.black.opacity(0.65), in: RoundedRectangle(cornerRadius: 10))
                         .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.15), lineWidth: 1))
                 }
                 .buttonStyle(.plain)
@@ -333,7 +336,8 @@ struct FocusRoomView: View {
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(width: 36, height: 36)
-                .background(Color.black.opacity(0.65).background(.ultraThinMaterial), in: RoundedRectangle(cornerRadius: 10))
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+                .background(Color.black.opacity(0.65), in: RoundedRectangle(cornerRadius: 10))
                 .overlay(
                     RoundedRectangle(cornerRadius: 10)
                         .stroke(isActive ? Color.blue : Color.white.opacity(0.15), lineWidth: isActive ? 2 : 1)
