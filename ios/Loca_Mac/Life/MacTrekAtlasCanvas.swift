@@ -27,6 +27,8 @@ struct MacTrekAtlasCanvas: View {
     @State private var searchText: String = ""
     @State private var selectedFilter: TrekFilter = .all
     @State private var isLogModalPresented: Bool = false
+    @State private var quickLookTrek: TrekRecord? = nil
+    @State private var quickLookPhotoIndex: Int = 0
 
     // MARK: - Filtered Treks
 
@@ -126,6 +128,12 @@ struct MacTrekAtlasCanvas: View {
                                 onToggleStatus: {
                                     toggleTrekStatus(selectedTrek)
                                 },
+                                onOpenQuickLook: { fileName, index in
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                        quickLookTrek = selectedTrek
+                                        quickLookPhotoIndex = index
+                                    }
+                                },
                                 onClose: {
                                     withAnimation(.easeOut(duration: 0.2)) {
                                         self.selectedTrek = nil
@@ -138,6 +146,21 @@ struct MacTrekAtlasCanvas: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
+            }
+        }
+        .overlay {
+            if let qTrek = quickLookTrek {
+                SummitPhotoQuickLookModal(
+                    trek: qTrek,
+                    currentPhotoIndex: $quickLookPhotoIndex,
+                    onDismiss: {
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            quickLookTrek = nil
+                        }
+                    }
+                )
+                .transition(.opacity)
+                .zIndex(999)
             }
         }
         .sheet(isPresented: $isLogModalPresented) {
