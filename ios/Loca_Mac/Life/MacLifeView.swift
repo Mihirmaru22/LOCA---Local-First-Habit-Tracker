@@ -8,6 +8,7 @@ enum LifeDesignVariant: String, CaseIterable, Identifiable {
     case life2 = "Life 2 · Master Bucket List"
     case life3 = "Life 3 · Life Eras & Chronology"
     case life4 = "Life 4 · Self-Mastery & Audits"
+    case life5 = "Life 5 · Trek & Mountain Atlas"
 
     var id: String { rawValue }
 
@@ -17,6 +18,7 @@ enum LifeDesignVariant: String, CaseIterable, Identifiable {
         case .life2: return "Master Bucket List"
         case .life3: return "Life Eras & Chronology"
         case .life4: return "Self-Mastery & Audits"
+        case .life5: return "Trek & Mountain Atlas"
         }
     }
 
@@ -26,6 +28,7 @@ enum LifeDesignVariant: String, CaseIterable, Identifiable {
         case .life2: return "trophy.fill"
         case .life3: return "timeline.selection"
         case .life4: return "sparkles.rectangle.stack.fill"
+        case .life5: return "mountain.2.fill"
         }
     }
 }
@@ -55,7 +58,7 @@ struct MacLifeView: View {
 
                 Spacer()
 
-                // Top Tab Switcher for the 4 Life Sections
+                // Top Tab Switcher for the 5 Life Sections
                 HStack(spacing: 4) {
                     ForEach(LifeDesignVariant.allCases) { variant in
                         let isSelected = selectedVariant == variant
@@ -89,25 +92,31 @@ struct MacLifeView: View {
 
             Divider()
 
-            // Main Scrollable Body
-            ScrollView {
-                VStack(alignment: .leading, spacing: DS.Space.xl) {
-                    switch selectedVariant {
-                    case .life1:
-                        Life1BlueprintPrinciplesView()
-                    case .life2:
-                        Life2MasterBucketListView()
-                    case .life3:
-                        Life3LifeErasChronologyView()
-                    case .life4:
-                        Life4SelfMasteryAuditsView()
-                    }
+            // Main Body: Full Canvas for Trek Atlas, Scrollable Body for Life 1-4
+            if selectedVariant == .life5 {
+                MacTrekAtlasCanvas()
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: DS.Space.xl) {
+                        switch selectedVariant {
+                        case .life1:
+                            Life1BlueprintPrinciplesView()
+                        case .life2:
+                            Life2MasterBucketListView()
+                        case .life3:
+                            Life3LifeErasChronologyView()
+                        case .life4:
+                            Life4SelfMasteryAuditsView()
+                        case .life5:
+                            EmptyView()
+                        }
 
-                    Spacer(minLength: DS.Space.xxxl)
+                        Spacer(minLength: DS.Space.xxxl)
+                    }
+                    .padding(.horizontal, DS.Space.xl)
+                    .padding(.vertical, DS.Space.lg)
+                    .frame(maxWidth: 1040, alignment: .leading)
                 }
-                .padding(.horizontal, DS.Space.xl)
-                .padding(.vertical, DS.Space.lg)
-                .frame(maxWidth: 1040, alignment: .leading)
             }
         }
         .background(DS.Color.background)
