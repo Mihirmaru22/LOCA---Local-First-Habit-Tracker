@@ -174,6 +174,41 @@ final class TrekRecord {
         linkedJournalNoteIDs.contains(id)
     }
 
+    // MARK: - GPX Trail Mutations & Accessors (4.2)
+
+    var hasGPXTrack: Bool {
+        gpxData != nil || (gpxTrackPointsJSON != nil && gpxTrackPointsJSON != "[]")
+    }
+
+    var decodedTrackPoints: [GPXTrackPoint] {
+        guard let json = gpxTrackPointsJSON, let data = json.data(using: .utf8) else { return [] }
+        return (try? JSONDecoder().decode([GPXTrackPoint].self, from: data)) ?? []
+    }
+
+    var trailCoordinates: [CLLocationCoordinate2D] {
+        decodedTrackPoints.map(\.coordinate)
+    }
+
+    func attachGPXTrack(result: GPXParseResult) {
+        self.gpxData = result.rawGPXData
+        self.gpxTrackPointsJSON = result.jsonTrackPointsString
+        self.trailDistanceKm = result.totalDistanceKm
+        self.elevationGainMeters = result.elevationGainMeters
+
+        if self.elevationMeters <= 0 && result.maxAltitudeMeters > 0 {
+            self.elevationMeters = result.maxAltitudeMeters
+        }
+        if (self.latitude == 0 && self.longitude == 0), let summit = result.summitCoordinate {
+            self.latitude = summit.latitude
+            self.longitude = summit.longitude
+        }
+    }
+
+    func removeGPXTrack() {
+        self.gpxData = nil
+        self.gpxTrackPointsJSON = nil
+    }
+
     // MARK: - Initializer
 
     init(
