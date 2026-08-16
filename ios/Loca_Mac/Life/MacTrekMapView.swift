@@ -19,10 +19,14 @@ final class TrekAnnotation: NSObject, MKAnnotation {
     }
 }
 
+// MARK: - FogOfWarPolygon
+
+final class FogOfWarPolygon: MKPolygon {}
+
 // MARK: - MacTrekMapView (NSViewRepresentable)
 
 /// Native AppKit MKMapView wrapper delivering precision camera controls, custom
-/// illuminated summit badges, and smooth fly-to animations for Pluto's Trek Atlas.
+/// illuminated summit badges, glowing beacon rings, and Fog-of-War hole-punching overlays.
 struct MacTrekMapView: NSViewRepresentable {
 
     let treks: [TrekRecord]
@@ -45,9 +49,9 @@ struct MacTrekMapView: NSViewRepresentable {
         // Register custom summit annotation view
         mapView.register(TrekAnnotationView.self, forAnnotationViewWithReuseIdentifier: TrekAnnotationView.reuseIdentifier)
 
-        // Set initial camera over world/Alps
-        let initialCoord = CLLocationCoordinate2D(latitude: 35.0, longitude: 20.0)
-        let camera = MKMapCamera(lookingAtCenter: initialCoord, fromDistance: 18_000_000, pitch: 35, heading: 0)
+        // Set initial camera over world
+        let initialCoord = CLLocationCoordinate2D(latitude: 30.0, longitude: 15.0)
+        let camera = MKMapCamera(lookingAtCenter: initialCoord, fromDistance: 16_000_000, pitch: 40, heading: 0)
         mapView.setCamera(camera, animated: false)
 
         return mapView
@@ -56,7 +60,7 @@ struct MacTrekMapView: NSViewRepresentable {
     func updateNSView(_ mapView: MKMapView, context: Context) {
         context.coordinator.parent = self
 
-        // Update annotations if trek count or IDs changed
+        // 1. Update Annotations
         let currentAnnotations = mapView.annotations.compactMap { $0 as? TrekAnnotation }
         let currentIDs = Set(currentAnnotations.map { $0.trek.id })
         let newIDs = Set(treks.map { $0.id })
@@ -66,7 +70,6 @@ struct MacTrekMapView: NSViewRepresentable {
             let newAnnotations = treks.map { TrekAnnotation(trek: $0) }
             mapView.addAnnotations(newAnnotations)
         } else {
-            // Update visual state of existing annotation views
             for annotation in currentAnnotations {
                 if let view = mapView.view(for: annotation) as? TrekAnnotationView {
                     view.updateVisuals(isSelected: annotation.trek.id == selectedTrek?.id)
@@ -74,22 +77,81 @@ struct MacTrekMapView: NSViewRepresentable {
             }
         }
 
-        // Fly camera to selected trek if changed
+        // 2. Update Fog of War & Aura Overlays
+        updateFogOfWar(mapView: mapView)
+
+        // 3. Fly Camera to Selected Trek
         if let selectedTrek, selectedTrek.id != context.coordinator.lastSelectedID {
             context.coordinator.lastSelectedID = selectedTrek.id
             let camera = MKMapCamera(
                 lookingAtCenter: selectedTrek.coordinate,
-                fromDistance: 120_000,
+                fromDistance: 95_000,
                 pitch: 55,
-                heading: 15
+                heading: 10
             )
             mapView.setCamera(camera, animated: true)
 
-            // Select annotation pin
             if let targetAnnotation = mapView.annotations.first(where: { ($0 as? TrekAnnotation)?.trek.id == selectedTrek.id }) {
                 mapView.selectAnnotation(targetAnnotation, animated: true)
             }
         }
+    }
+
+    private func updateFogOfWar(mapView: MKMapView) {
+        mapView.removeOverlays(mapView.overlays)
+
+        let conqueredTreks = treks.filter { $0.status == .conquered }
+
+        guard !conqueredTreks.isEmpty else { return }
+
+        // Global Exterior Polygon Coordinates (Covering the whole Earth)
+        let worldCoordinates: [CLLocationCoordinate2D] = [
+            CLLocationCoordinate2D(latitude: 85.0, longitude: -179.99),
+            CLLocationCoordinate2D(latitude: 85.0, longitude: 179.99),
+            CLLocationCoordinate2D(latitude: -85.0, longitude: 179.99),
+            CLLocationCoordinate2D(latitude: -85.0, longitude: -179.99)
+        ]
+
+        // Cutout circular hole polygons for each conquered mountain
+        var interiorHoles: [MKPolygon] = []
+        var auraCircles: [MKCircle] = []
+
+        for trek in conqueredTreks {
+            let radius = max(20_000, trek.revealRadiusMeters ?? 45_000)
+            let hole = Self.createCirclePolygon(center: trek.coordinate, radiusMeters: radius)
+            interiorHoles.append(hole)
+
+            // Radiant boundary circle
+            let aura = MKCircle(center: trek.coordinate, radius: radius)
+            auraCircles.append(aura)
+        }
+
+        let fogPolygon = FogOfWarPolygon(
+            coordinates: worldCoordinates,
+            count: worldCoordinates.count,
+            interiorPolygons: interiorHoles
+        )
+
+        mapView.addOverlay(fogPolygon, level: .aboveRoads)
+        for circle in auraCircles {
+            mapView.addOverlay(circle, level: .aboveRoads)
+        }
+    }
+
+    /// Generates a 32-point circular polygon for interior hole punching.
+    static func createCirclePolygon(center: CLLocationCoordinate2D, radiusMeters: Double) -> MKPolygon {
+        let latDelta = radiusMeters / 111_000.0
+        let lonDelta = radiusMeters / (111_000.0 * max(0.1, cos(center.latitude * .pi / 180.0)))
+        var points: [CLLocationCoordinate2D] = []
+
+        for i in 0..<32 {
+            let angle = Double(i) * (2.0 * .pi / 32.0)
+            let ptLat = center.latitude + latDelta * sin(angle)
+            let ptLon = center.longitude + lonDelta * cos(angle)
+            points.append(CLLocationCoordinate2D(latitude: ptLat, longitude: ptLon))
+        }
+
+        return MKPolygon(coordinates: points, count: points.count)
     }
 
     func makeCoordinator() -> Coordinator {
@@ -123,6 +185,22 @@ struct MacTrekMapView: NSViewRepresentable {
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
             guard let trekAnnotation = view.annotation as? TrekAnnotation else { return }
             parent.onSelectTrek(trekAnnotation.trek)
+        }
+
+        func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+            if let fog = overlay as? FogOfWarPolygon {
+                let renderer = MKPolygonRenderer(polygon: fog)
+                renderer.fillColor = NSColor(red: 0.05, green: 0.07, blue: 0.11, alpha: 0.72) // Obsidian Fog
+                return renderer
+            } else if let circle = overlay as? MKCircle {
+                let renderer = MKCircleRenderer(circle: circle)
+                renderer.fillColor = NSColor(red: 0.0, green: 0.85, blue: 1.0, alpha: 0.06)
+                renderer.strokeColor = NSColor(red: 0.0, green: 0.85, blue: 1.0, alpha: 0.7)
+                renderer.lineWidth = 1.5
+                renderer.lineDashPattern = [5, 4]
+                return renderer
+            }
+            return MKOverlayRenderer(overlay: overlay)
         }
     }
 }

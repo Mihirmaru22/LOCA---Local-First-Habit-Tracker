@@ -641,6 +641,10 @@ struct LogTrekModal: View {
     @State private var difficulty: TrekDifficulty = .moderate
     @State private var personalNotes: String = ""
 
+    @State private var searchQuery: String = ""
+    @State private var searchResults: [MKMapItem] = []
+    @State private var isSearching: Bool = false
+
     private var isValid: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty &&
         (Double(elevationMeters) ?? 0) > 0 &&
@@ -653,9 +657,14 @@ struct LogTrekModal: View {
 
             // Header
             HStack {
-                Text("Log Mountain Peak or Trail")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(DS.Color.textPrimary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Log Mountain Peak or Trail")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(DS.Color.textPrimary)
+                    Text("Search Apple Maps or enter coordinates manually")
+                        .font(.system(size: 11))
+                        .foregroundStyle(DS.Color.textSecondary)
+                }
                 Spacer()
                 Button("Cancel") { dismiss() }
                     .buttonStyle(.plain)
@@ -669,6 +678,68 @@ struct LogTrekModal: View {
             // Form Content
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Space.md) {
+
+                    // Apple Maps Search Autocomplete Bar
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Search Apple Maps for Peak / Trail")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Color.cyan)
+
+                        HStack {
+                            Image(systemName: "magnifyingglass")
+                                .foregroundStyle(DS.Color.textTertiary)
+                            TextField("e.g. Mount Rainier, Matterhorn, Yosemite Half Dome...", text: $searchQuery)
+                                .textFieldStyle(.plain)
+                                .font(.system(size: 12))
+                                .onChange(of: searchQuery) { _, query in
+                                    performLocalSearch(query: query)
+                                }
+
+                            if isSearching {
+                                ProgressView().controlSize(.small)
+                            }
+                        }
+                        .padding(8)
+                        .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 6))
+
+                        // Autocomplete Results Dropdown
+                        if !searchResults.isEmpty {
+                            VStack(alignment: .leading, spacing: 2) {
+                                ForEach(searchResults.prefix(4), id: \.self) { item in
+                                    Button {
+                                        selectMapItem(item)
+                                    } label: {
+                                        HStack {
+                                            Image(systemName: "mappin.circle.fill")
+                                                .foregroundStyle(Color.cyan)
+                                            VStack(alignment: .leading, spacing: 1) {
+                                                Text(item.name ?? "Unknown Peak")
+                                                    .font(.system(size: 12, weight: .semibold))
+                                                    .foregroundStyle(DS.Color.textPrimary)
+                                                if let sub = item.placemark.title {
+                                                    Text(sub)
+                                                        .font(.system(size: 10))
+                                                        .foregroundStyle(DS.Color.textSecondary)
+                                                        .lineLimit(1)
+                                                }
+                                            }
+                                            Spacer()
+                                            Text("Select")
+                                                .font(.system(size: 10, weight: .bold))
+                                                .foregroundStyle(Color.cyan)
+                                        }
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 6)
+                                        .background(Color.cyan.opacity(0.08), in: RoundedRectangle(cornerRadius: 5))
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(.top, 4)
+                        }
+                    }
+
+                    Divider()
 
                     // Name
                     VStack(alignment: .leading, spacing: 4) {
@@ -796,6 +867,47 @@ struct LogTrekModal: View {
             .padding(.vertical, DS.Space.md)
             .background(DS.Color.surface)
         }
-        .frame(width: 480, height: 520)
+        .frame(width: 480, height: 560)
+    }
+
+    private func performLocalSearch(query: String) {
+        let trimmed = query.trimmingCharacters(in: .whitespaces)
+        guard trimmed.count >= 2 else {
+            searchResults = []
+            return
+        }
+
+        isSearching = true
+        let request = MKLocalSearch.Request()
+        request.naturalLanguageQuery = trimmed
+        request.resultTypes = [.pointOfInterest, .address]
+
+        let search = MKLocalSearch(request: request)
+        search.start { response, error in
+            DispatchQueue.main.async {
+                self.isSearching = false
+                guard let response = response, error == nil else {
+                    self.searchResults = []
+                    return
+                }
+                self.searchResults = response.mapItems
+            }
+        }
+    }
+
+    private func selectMapItem(_ item: MKMapItem) {
+        if let placeName = item.name {
+            self.name = placeName
+        }
+        if let state = item.placemark.administrativeArea {
+            self.region = state
+        }
+        if let c = item.placemark.country {
+            self.country = c
+        }
+        self.latitude = String(format: "%.5f", item.placemark.coordinate.latitude)
+        self.longitude = String(format: "%.5f", item.placemark.coordinate.longitude)
+        self.searchResults = []
+        self.searchQuery = ""
     }
 }
