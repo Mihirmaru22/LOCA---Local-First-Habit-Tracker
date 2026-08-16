@@ -41,125 +41,123 @@ struct FocusRoomView: View {
     private var totalGoalsCount: Int { allGoals.count }
 
     var body: some View {
-        ZStack {
+        GeometryReader { geo in
+            ZStack(alignment: .topLeading) {
 
-            // ===================================================================
-            // LAYER 1: FULLSCREEN BACKGROUND (Always Behind, Clipped)
-            // ===================================================================
-            fullscreenBackgroundLayer
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .clipped()
-                .ignoresSafeArea(.all)
-                .zIndex(0)
+                // ===================================================================
+                // LAYER 1: FULLSCREEN BACKGROUND (Strictly Clipped to Window Frame)
+                // ===================================================================
+                fullscreenBackground(size: geo.size)
+                    .frame(width: geo.size.width, height: geo.size.height)
+                    .clipped()
+                    .ignoresSafeArea(.all)
+                    .zIndex(0)
 
-            // ===================================================================
-            // LAYER 2: FLOATING TOP BAR
-            // ===================================================================
-            VStack {
-                topFloatingBar
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
+                // ===================================================================
+                // LAYER 3: FLOATING PANELS OVERLAY
+                // ===================================================================
+                HStack(alignment: .top, spacing: 0) {
 
-                Spacer()
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .zIndex(100)
+                    // Left Column: Timer Card + Session Goals Panel stacked vertically
+                    VStack(alignment: .leading, spacing: 12) {
+                        if showTimerModal {
+                            bigTimerModal
+                                .transition(.asymmetric(
+                                    insertion: .move(edge: .top).combined(with: .opacity),
+                                    removal: .move(edge: .top).combined(with: .opacity)
+                                ))
+                        }
 
-            // ===================================================================
-            // LAYER 3: FLOATING PANELS OVERLAY
-            // ===================================================================
-            HStack(alignment: .top) {
+                        if showGoalsPanel {
+                            FocusGoalsPanel(isPresented: $showGoalsPanel)
+                                .transition(.asymmetric(
+                                    insertion: .move(edge: .leading).combined(with: .opacity),
+                                    removal: .move(edge: .leading).combined(with: .opacity)
+                                ))
+                        }
 
-                // Left Column: Timer Card + Session Goals Panel stacked vertically
-                VStack(alignment: .leading, spacing: 12) {
-                    if showTimerModal {
-                        bigTimerModal
-                            .transition(.asymmetric(
-                                insertion: .move(edge: .top).combined(with: .opacity),
-                                removal: .move(edge: .top).combined(with: .opacity)
-                            ))
+                        Spacer()
                     }
-
-                    if showGoalsPanel {
-                        FocusGoalsPanel(isPresented: $showGoalsPanel)
-                            .transition(.asymmetric(
-                                insertion: .move(edge: .leading).combined(with: .opacity),
-                                removal: .move(edge: .leading).combined(with: .opacity)
-                            ))
-                    }
+                    .padding(.leading, 20)
+                    .padding(.top, 76)
 
                     Spacer()
-                }
-                .padding(.leading, 20)
-                .padding(.top, 76)
 
-                Spacer()
-
-                // Right Column: Active Tool Panels + Persistent Quote Card
-                VStack(alignment: .trailing, spacing: 12) {
-                    switch activePanel {
-                    case .background:
-                        BackgroundPickerPanel(
-                            isPresented: Binding(
-                                get: { activePanel == .background },
-                                set: { if !$0 { activePanel = .none } }
-                            ),
-                            selectedPresetID: $selectedPresetID,
-                            youtubeVideoID: $youtubeVideoID,
-                            youtubeVolume: $soundVM.youtubeVolume
-                        )
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .trailing).combined(with: .opacity),
-                            removal: .move(edge: .trailing).combined(with: .opacity)
-                        ))
-
-                    case .sound:
-                        SoundMixerPanel(
-                            soundVM: soundVM,
-                            isPresented: Binding(
-                                get: { activePanel == .sound },
-                                set: { if !$0 { activePanel = .none } }
+                    // Right Column: Active Tool Panels + Persistent Quote Card
+                    VStack(alignment: .trailing, spacing: 12) {
+                        switch activePanel {
+                        case .background:
+                            BackgroundPickerPanel(
+                                isPresented: Binding(
+                                    get: { activePanel == .background },
+                                    set: { if !$0 { activePanel = .none } }
+                                ),
+                                selectedPresetID: $selectedPresetID,
+                                youtubeVideoID: $youtubeVideoID,
+                                youtubeVolume: $soundVM.youtubeVolume
                             )
-                        )
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .trailing).combined(with: .opacity),
-                            removal: .move(edge: .trailing).combined(with: .opacity)
-                        ))
-
-                    case .stats:
-                        StudyStatsPanel(
-                            isPresented: Binding(
-                                get: { activePanel == .stats },
-                                set: { if !$0 { activePanel = .none } }
-                            )
-                        )
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .trailing).combined(with: .opacity),
-                            removal: .move(edge: .trailing).combined(with: .opacity)
-                        ))
-
-                    case .none, .quote:
-                        EmptyView()
-                    }
-
-                    // Persistent Quote Card (always stays visible on screen unless closed)
-                    if showQuoteCard {
-                        QuotePanel(isPresented: $showQuoteCard)
                             .transition(.asymmetric(
                                 insertion: .move(edge: .trailing).combined(with: .opacity),
                                 removal: .move(edge: .trailing).combined(with: .opacity)
                             ))
-                    }
 
-                    Spacer()
+                        case .sound:
+                            SoundMixerPanel(
+                                soundVM: soundVM,
+                                isPresented: Binding(
+                                    get: { activePanel == .sound },
+                                    set: { if !$0 { activePanel = .none } }
+                                )
+                            )
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .trailing).combined(with: .opacity),
+                                removal: .move(edge: .trailing).combined(with: .opacity)
+                            ))
+
+                        case .stats:
+                            StudyStatsPanel(
+                                isPresented: Binding(
+                                    get: { activePanel == .stats },
+                                    set: { if !$0 { activePanel = .none } }
+                                )
+                            )
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .trailing).combined(with: .opacity),
+                                removal: .move(edge: .trailing).combined(with: .opacity)
+                            ))
+
+                        case .none, .quote:
+                            EmptyView()
+                        }
+
+                        // Persistent Quote Card (always stays visible on screen unless closed)
+                        if showQuoteCard {
+                            QuotePanel(isPresented: $showQuoteCard)
+                                .transition(.asymmetric(
+                                    insertion: .move(edge: .trailing).combined(with: .opacity),
+                                    removal: .move(edge: .trailing).combined(with: .opacity)
+                                ))
+                        }
+
+                        Spacer()
+                    }
+                    .padding(.trailing, 20)
+                    .padding(.top, 76)
                 }
-                .padding(.trailing, 20)
-                .padding(.top, 76)
+                .frame(width: geo.size.width, height: geo.size.height)
+                .zIndex(50)
+
+                // ===================================================================
+                // LAYER 2: FLOATING TOP BAR (Pinned to Top-Center & Edges)
+                // ===================================================================
+                topFloatingBar
+                    .padding(.horizontal, 20)
+                    .padding(.top, 16)
+                    .frame(width: geo.size.width)
+                    .zIndex(100)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .zIndex(50)
+            .frame(width: geo.size.width, height: geo.size.height)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .animation(.spring(response: 0.35, dampingFraction: 0.8), value: activePanel)
         .animation(.spring(response: 0.35, dampingFraction: 0.8), value: showGoalsPanel)
         .animation(.spring(response: 0.35, dampingFraction: 0.8), value: showQuoteCard)
@@ -172,26 +170,28 @@ struct FocusRoomView: View {
         }
     }
 
-    // MARK: - Layer 1: Fullscreen Background
+    // MARK: - Layer 1: Fullscreen Background (Constrained to Window Bounds)
 
     @ViewBuilder
-    private var fullscreenBackgroundLayer: some View {
+    private func fullscreenBackground(size: CGSize) -> some View {
         if let videoID = youtubeVideoID, !videoID.isEmpty {
             YouTubeWebView(videoID: videoID, volume: soundVM.youtubeVolume)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(width: size.width, height: size.height)
                 .clipped()
         } else if let preset = BackgroundPickerPanel.presets.first(where: { $0.id == selectedPresetID }) {
             ZStack {
-                // High-Resolution Photo Background
+                // Base fallback gradient
+                LinearGradient(colors: preset.fallbackColors, startPoint: .topLeading, endPoint: .bottomTrailing)
+
+                // High-Resolution Photo Background constrained to exact window size
                 AsyncImage(url: URL(string: preset.fullImageURL)) { phase in
                     switch phase {
                     case .success(let image):
                         image
                             .resizable()
                             .aspectRatio(contentMode: .fill)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .frame(width: size.width, height: size.height)
                             .clipped()
-                            .transition(.opacity)
                     case .failure:
                         LinearGradient(colors: preset.fallbackColors, startPoint: .topLeading, endPoint: .bottomTrailing)
                     case .empty:
@@ -203,18 +203,17 @@ struct FocusRoomView: View {
                         LinearGradient(colors: preset.fallbackColors, startPoint: .topLeading, endPoint: .bottomTrailing)
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(width: size.width, height: size.height)
                 .clipped()
 
                 // Subtle Atmospheric Tint for Translucent Card Readability
                 Color.black.opacity(0.20)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(width: size.width, height: size.height)
             .clipped()
         } else {
-            // High fidelity artistic landscape gradients
             presetGradientBackground(presetID: selectedPresetID)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(width: size.width, height: size.height)
                 .clipped()
         }
     }
@@ -397,7 +396,7 @@ struct FocusRoomView: View {
                         .foregroundStyle(.white)
                         .frame(width: 36, height: 36)
                         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
-                    .background(Color.black.opacity(0.65), in: RoundedRectangle(cornerRadius: 10))
+                        .background(Color.black.opacity(0.65), in: RoundedRectangle(cornerRadius: 10))
                         .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.15), lineWidth: 1))
                 }
                 .buttonStyle(.plain)
@@ -408,7 +407,6 @@ struct FocusRoomView: View {
 
     private func topIconButton(icon: String, panel: FocusRoomActivePanel) -> some View {
         let isActive = activePanel == panel
-
         return Button {
             withAnimation(.spring(response: 0.35)) {
                 if activePanel == panel {
@@ -516,17 +514,21 @@ struct FocusRoomView: View {
     // MARK: - Session Persistence
 
     private func startSession() {
-        let session = FocusSession(startTime: Date())
+        let session = FocusSession(
+            targetMinutes: Int(timerVM.targetMinutes),
+            ambientSoundPreset: "Procedural Mixer",
+            backgroundPreset: selectedPresetID
+        )
         modelContext.insert(session)
         try? modelContext.save()
         currentSession = session
     }
 
     private func endSession() {
-        if let session = currentSession {
-            session.endTime = Date()
-            session.durationSeconds = timerVM.secondsElapsed
-            try? modelContext.save()
-        }
+        guard let session = currentSession else { return }
+        session.durationSeconds = timerVM.elapsedSeconds
+        session.isCompleted = true
+        session.completedGoalsCount = totalGoalsCount - openGoalsCount
+        try? modelContext.save()
     }
 }
