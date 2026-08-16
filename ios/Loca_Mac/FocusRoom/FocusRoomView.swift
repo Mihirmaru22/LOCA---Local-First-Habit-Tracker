@@ -147,7 +147,8 @@ struct FocusRoomView: View {
             // Big Timer Floating Modal (if toggled)
             if showTimerModal {
                 bigTimerModal
-                    .position(x: 160, y: 150)
+                    .position(x: 140, y: 140)
+                    .zIndex(150)
                     .transition(.scale.combined(with: .opacity))
             }
         }
