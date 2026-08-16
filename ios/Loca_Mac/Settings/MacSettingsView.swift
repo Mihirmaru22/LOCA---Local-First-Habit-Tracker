@@ -527,7 +527,7 @@ struct MacSettingsView: View {
                                 .font(.system(size: 13, weight: .bold))
                                 .foregroundStyle(DS.Color.textPrimary)
 
-                            Text(habit.isQuantitative ? "Quantitative Goal (\(Int(habit.targetValue ?? 1)) \(habit.unitLabel ?? ""))" : "Daily Check-in")
+                            Text(habit.metric == .quantitative ? "Quantitative Goal (\(Int(habit.targetValue ?? 1)) \(habit.unitLabel ?? ""))" : "Daily Check-in")
                                 .font(.system(size: 11))
                                 .foregroundStyle(DS.Color.textTertiary)
                         }
