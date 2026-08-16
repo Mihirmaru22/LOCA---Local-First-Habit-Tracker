@@ -522,9 +522,9 @@ struct TrekDetailOverlay: View {
     private var isConquered: Bool { trek.status == .conquered }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.md) {
+        VStack(alignment: .leading, spacing: 0) {
 
-            // Top Header
+            // Top Header (Pinned)
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
@@ -553,130 +553,141 @@ struct TrekDetailOverlay: View {
                 }
                 .buttonStyle(.plain)
             }
+            .padding(.bottom, DS.Space.sm)
 
-            // Metric Pills Grid
-            HStack(spacing: DS.Space.sm) {
-                // Elevation
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("ELEVATION")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(DS.Color.textTertiary)
-                    Text(trek.formattedElevation)
-                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                        .foregroundStyle(DS.Color.textPrimary)
-                }
-                .padding(8)
-                .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 6))
+            // Scrollable Content
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: DS.Space.md) {
 
-                // Trail Distance
-                if let dist = trek.formattedDistance {
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("DISTANCE")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(DS.Color.textTertiary)
-                        Text(dist)
-                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(DS.Color.textPrimary)
-                    }
-                    .padding(8)
-                    .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 6))
-                }
-
-                // Vertical Gain
-                if let gain = trek.formattedGain {
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("VERT GAIN")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(DS.Color.textTertiary)
-                        Text(gain)
-                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(Color.purple)
-                    }
-                    .padding(8)
-                    .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 6))
-                }
-
-                // Difficulty
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("DIFFICULTY")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(DS.Color.textTertiary)
-                    Text(trek.difficulty.title)
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(Color(hex: trek.difficulty.badgeColorHex) ?? DS.Color.textPrimary)
-                }
-                .padding(8)
-                .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 6))
-            }
-
-            // Notes Section
-            if !trek.personalNotes.isEmpty {
-                Text(trek.personalNotes)
-                    .font(.system(size: 12))
-                    .foregroundStyle(DS.Color.textSecondary)
-                    .padding(8)
-                    .background(DS.Color.surfaceRecessed.opacity(0.5), in: RoundedRectangle(cornerRadius: 6))
-            }
-
-            // Summit Photo Memories (4.1)
-            if !trek.photoFileNames.isEmpty {
-                SummitPhotoStripView(trek: trek) { fileName, index in
-                    onOpenQuickLook(fileName, index)
-                }
-            } else {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Text("SUMMIT MEMORIES")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(DS.Color.textTertiary)
-
-                        Spacer()
-
-                        Button {
-                            Task {
-                                let fileNames = await TrekPhotoPickerHelper.pickSummitPhotos()
-                                guard !fileNames.isEmpty else { return }
-                                trek.attachPhotos(fileNames: fileNames)
-                                Haptics.notification(.success)
-                            }
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "photo.badge.plus")
-                                    .font(.system(size: 10, weight: .semibold))
-                                Text("Add Photos")
-                                    .font(.system(size: 10, weight: .semibold))
-                            }
-                            .foregroundStyle(Color.cyan)
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 3)
-                            .background(Color.cyan.opacity(0.1), in: RoundedRectangle(cornerRadius: 5))
+                    // Metric Pills Grid
+                    HStack(spacing: DS.Space.sm) {
+                        // Elevation
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("ELEVATION")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundStyle(DS.Color.textTertiary)
+                            Text(trek.formattedElevation)
+                                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                                .foregroundStyle(DS.Color.textPrimary)
                         }
-                        .buttonStyle(.plain)
+                        .padding(8)
+                        .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 6))
+
+                        // Trail Distance
+                        if let dist = trek.formattedDistance {
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text("DISTANCE")
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundStyle(DS.Color.textTertiary)
+                                Text(dist)
+                                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                                    .foregroundStyle(DS.Color.textPrimary)
+                            }
+                            .padding(8)
+                            .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 6))
+                        }
+
+                        // Vertical Gain
+                        if let gain = trek.formattedGain {
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text("VERT GAIN")
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundStyle(DS.Color.textTertiary)
+                                Text(gain)
+                                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                                    .foregroundStyle(Color.purple)
+                            }
+                            .padding(8)
+                            .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 6))
+                        }
+
+                        // Difficulty
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("DIFFICULTY")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundStyle(DS.Color.textTertiary)
+                            Text(trek.difficulty.title)
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(Color(hex: trek.difficulty.badgeColorHex) ?? DS.Color.textPrimary)
+                        }
+                        .padding(8)
+                        .background(DS.Color.surfaceRecessed, in: RoundedRectangle(cornerRadius: 6))
                     }
 
-                    HStack(spacing: 6) {
-                        Image(systemName: "arrow.down.doc")
-                            .font(.system(size: 11))
-                            .foregroundStyle(DS.Color.textTertiary)
-                        Text("Drag & drop photos here or click Add Photos")
-                            .font(.system(size: 10))
+                    // Notes Section
+                    if !trek.personalNotes.isEmpty {
+                        Text(trek.personalNotes)
+                            .font(.system(size: 12))
                             .foregroundStyle(DS.Color.textSecondary)
+                            .padding(8)
+                            .background(DS.Color.surfaceRecessed.opacity(0.5), in: RoundedRectangle(cornerRadius: 6))
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                    .background(DS.Color.surfaceRecessed.opacity(0.4), in: RoundedRectangle(cornerRadius: 6))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6)
-                            .stroke(style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
-                            .foregroundStyle(DS.Color.textTertiary.opacity(0.5))
-                    )
+
+                    // Summit Photo Memories (4.1)
+                    if !trek.photoFileNames.isEmpty {
+                        SummitPhotoStripView(trek: trek) { fileName, index in
+                            onOpenQuickLook(fileName, index)
+                        }
+                    } else {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text("SUMMIT MEMORIES")
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundStyle(DS.Color.textTertiary)
+
+                                Spacer()
+
+                                Button {
+                                    Task {
+                                        let fileNames = await TrekPhotoPickerHelper.pickSummitPhotos()
+                                        guard !fileNames.isEmpty else { return }
+                                        trek.attachPhotos(fileNames: fileNames)
+                                        Haptics.notification(.success)
+                                    }
+                                } label: {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "photo.badge.plus")
+                                            .font(.system(size: 10, weight: .semibold))
+                                        Text("Add Photos")
+                                            .font(.system(size: 10, weight: .semibold))
+                                    }
+                                    .foregroundStyle(Color.cyan)
+                                    .padding(.horizontal, 7)
+                                    .padding(.vertical, 3)
+                                    .background(Color.cyan.opacity(0.1), in: RoundedRectangle(cornerRadius: 5))
+                                }
+                                .buttonStyle(.plain)
+                            }
+
+                            HStack(spacing: 6) {
+                                Image(systemName: "arrow.down.doc")
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(DS.Color.textTertiary)
+                                Text("Drag & drop photos here or click Add Photos")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(DS.Color.textSecondary)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(DS.Color.surfaceRecessed.opacity(0.4), in: RoundedRectangle(cornerRadius: 6))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                                    .foregroundStyle(DS.Color.textTertiary.opacity(0.5))
+                            )
+                        }
+                    }
+
+                    // Apple Journal Cross-Link Drawer (4.1)
+                    TrekJournalLinkSection(trek: trek)
                 }
+                .padding(.vertical, DS.Space.xs)
             }
+            .frame(maxHeight: 460)
 
-            // Apple Journal Cross-Link Drawer (4.1)
-            TrekJournalLinkSection(trek: trek)
+            Divider().padding(.vertical, DS.Space.xs)
 
-            // Bottom Action Toggle
+            // Bottom Action Toggle (Pinned)
             Button(action: onToggleStatus) {
                 HStack {
                     Image(systemName: isConquered ? "arrow.uturn.backward" : "trophy.fill")
@@ -694,7 +705,7 @@ struct TrekDetailOverlay: View {
             .buttonStyle(.plain)
         }
         .padding(DS.Space.md)
-        .frame(width: 360)
+        .frame(width: 370)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
