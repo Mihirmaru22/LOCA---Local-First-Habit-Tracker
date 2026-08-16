@@ -372,7 +372,9 @@ struct MacTrekMapView: NSViewRepresentable {
 
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
             guard let trekAnnotation = view.annotation as? TrekAnnotation else { return }
-            parent.onSelectTrek(trekAnnotation.trek)
+            DispatchQueue.main.async {
+                self.parent.onSelectTrek(trekAnnotation.trek)
+            }
         }
 
         func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {

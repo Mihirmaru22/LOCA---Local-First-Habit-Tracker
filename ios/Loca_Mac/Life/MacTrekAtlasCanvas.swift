@@ -148,9 +148,11 @@ struct MacTrekAtlasCanvas: View {
             }
         }
         .onAppear {
-            TrekSeeder.seedIfNeeded(context: modelContext)
-            if selectedTrek == nil {
-                selectedTrek = filteredTreks.first
+            DispatchQueue.main.async {
+                TrekSeeder.seedIfNeeded(context: modelContext)
+                if selectedTrek == nil {
+                    selectedTrek = filteredTreks.first
+                }
             }
         }
     }

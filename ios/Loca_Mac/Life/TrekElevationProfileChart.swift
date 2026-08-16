@@ -249,14 +249,18 @@ struct TrekElevationProfileChart: View {
                                         let clamped = max(0, min(totalDistance, distance))
                                         self.scrubbedDistance = clamped
                                         let pt = self.currentScrubbedPoint
-                                        self.onScrubPoint?(pt)
-                                        self.onScrubCoordinate?(pt?.coordinate)
+                                        DispatchQueue.main.async {
+                                            self.onScrubPoint?(pt)
+                                            self.onScrubCoordinate?(pt?.coordinate)
+                                        }
                                     }
                                 }
                                 .onEnded { _ in
                                     self.scrubbedDistance = nil
-                                    self.onScrubPoint?(nil)
-                                    self.onScrubCoordinate?(nil)
+                                    DispatchQueue.main.async {
+                                        self.onScrubPoint?(nil)
+                                        self.onScrubCoordinate?(nil)
+                                    }
                                 }
                         )
                 }
