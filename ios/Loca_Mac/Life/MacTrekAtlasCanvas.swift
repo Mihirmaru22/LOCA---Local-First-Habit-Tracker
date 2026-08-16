@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import MapKit
+import UniformTypeIdentifiers
 
 // MARK: - TrekFilter
 
@@ -385,7 +386,7 @@ struct MacTrekAtlasCanvas: View {
                             .font(.system(size: 32))
                             .foregroundStyle(DS.Color.textTertiary)
                         Text("No mountain peaks found")
-                            .font(DS.Text.subheadline)
+                            .font(DS.Text.body)
                             .foregroundStyle(DS.Color.textSecondary)
                     }
                     .frame(maxWidth: .infinity)
