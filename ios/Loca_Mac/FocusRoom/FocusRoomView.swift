@@ -24,6 +24,7 @@ struct FocusRoomView: View {
     // Active Navigation / Panels State
     @State private var activePanel: FocusRoomActivePanel = .none
     @State private var showGoalsPanel: Bool = true
+    @State private var showQuoteCard: Bool = true
     @State private var showTimerModal: Bool = false
     @AppStorage("mac_today_submode") private var todaySubmode: String = "Plan"
     @State private var isFullscreen: Bool = false
@@ -64,7 +65,7 @@ struct FocusRoomView: View {
             // ===================================================================
             HStack(alignment: .top) {
 
-                // Left Column: Timer Card + Session Goals Panel stacked vertically (never overlap!)
+                // Left Column: Timer Card + Session Goals Panel stacked vertically
                 VStack(alignment: .leading, spacing: 12) {
                     if showTimerModal {
                         bigTimerModal
@@ -89,8 +90,8 @@ struct FocusRoomView: View {
 
                 Spacer()
 
-                // Right: Active Tool Panel (Background, Sound, Quote, Stats)
-                VStack {
+                // Right Column: Active Tool Panels + Persistent Quote Card
+                VStack(alignment: .trailing, spacing: 12) {
                     switch activePanel {
                     case .background:
                         BackgroundPickerPanel(
@@ -120,18 +121,6 @@ struct FocusRoomView: View {
                             removal: .move(edge: .trailing).combined(with: .opacity)
                         ))
 
-                    case .quote:
-                        QuotePanel(
-                            isPresented: Binding(
-                                get: { activePanel == .quote },
-                                set: { if !$0 { activePanel = .none } }
-                            )
-                        )
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .trailing).combined(with: .opacity),
-                            removal: .move(edge: .trailing).combined(with: .opacity)
-                        ))
-
                     case .stats:
                         StudyStatsPanel(
                             isPresented: Binding(
@@ -144,9 +133,19 @@ struct FocusRoomView: View {
                             removal: .move(edge: .trailing).combined(with: .opacity)
                         ))
 
-                    case .none:
+                    case .none, .quote:
                         EmptyView()
                     }
+
+                    // Persistent Quote Card (always stays visible on screen unless closed)
+                    if showQuoteCard {
+                        QuotePanel(isPresented: $showQuoteCard)
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .trailing).combined(with: .opacity),
+                                removal: .move(edge: .trailing).combined(with: .opacity)
+                            ))
+                    }
+
                     Spacer()
                 }
                 .padding(.trailing, 20)
@@ -156,6 +155,7 @@ struct FocusRoomView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .animation(.spring(response: 0.35, dampingFraction: 0.8), value: activePanel)
         .animation(.spring(response: 0.35, dampingFraction: 0.8), value: showGoalsPanel)
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: showQuoteCard)
         .animation(.spring(response: 0.35, dampingFraction: 0.8), value: showTimerModal)
         .onAppear {
             startSession()
@@ -341,7 +341,29 @@ struct FocusRoomView: View {
             HStack(spacing: 8) {
                 topIconButton(icon: "photo.on.rectangle.angled", panel: .background)
                 topIconButton(icon: "music.note", panel: .sound)
-                topIconButton(icon: "quote.bubble.fill", panel: .quote)
+                
+                // Quote Button (toggles persistent quote card on screen)
+                Button {
+                    withAnimation(.spring(response: 0.35)) {
+                        showQuoteCard.toggle()
+                    }
+                    PlutoSoundEngine.shared.play(.tabSwitch)
+                    Haptics.impact(.light)
+                } label: {
+                    Image(systemName: "quote.bubble.fill")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 36, height: 36)
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+                        .background(Color.black.opacity(0.65), in: RoundedRectangle(cornerRadius: 10))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(showQuoteCard ? Color.blue : Color.white.opacity(0.15), lineWidth: showQuoteCard ? 2 : 1)
+                        )
+                }
+                .buttonStyle(.plain)
+                .help("Toggle Motivational Quote")
+
                 topIconButton(icon: "chart.bar.fill", panel: .stats)
 
                 // Fullscreen / Exit Button
