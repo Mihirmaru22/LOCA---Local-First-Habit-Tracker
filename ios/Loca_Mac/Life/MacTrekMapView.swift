@@ -107,7 +107,8 @@ struct MacTrekMapView: NSViewRepresentable {
         mapView.showsZoomControls = true
 
         // Configure realistic topo terrain on macOS 14+
-        let config = MKStandardMapConfiguration(elevationStyle: .realistic, poiFilter: .excludingAll)
+        let config = MKStandardMapConfiguration(elevationStyle: .realistic)
+        config.pointOfInterestFilter = .excludingAll
         config.showsTraffic = false
         mapView.preferredConfiguration = config
 
@@ -478,7 +479,8 @@ final class TrekAnnotationView: MKAnnotationView {
             iconImageView.contentTintColor = NSColor(white: 0.7, alpha: 1.0)
         }
 
-        transform = isSelected ? CGAffineTransform(scaleX: 1.25, y: 1.25) : .identity
+        let scale: CGFloat = isSelected ? 1.25 : 1.0
+        self.layer?.setAffineTransform(CGAffineTransform(scaleX: scale, y: scale))
         CATransaction.commit()
     }
 }
