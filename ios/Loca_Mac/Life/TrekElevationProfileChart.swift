@@ -42,8 +42,10 @@ struct TrekElevationProfileChart: View {
     }
 
     private var maxElevation: Double {
+        let minVal = minElevation
         let maxVal = points.map(\.elevationMeters).max() ?? 1000
-        return maxVal + (maxVal * 0.15)
+        let baseMax = maxVal + (maxVal * 0.15)
+        return max(minVal + 10.0, baseMax)
     }
 
     private var totalDistance: Double {

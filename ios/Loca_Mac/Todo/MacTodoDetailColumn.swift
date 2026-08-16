@@ -391,7 +391,7 @@ private struct MacTodoEditor: View {
     }
 
     private func archiveItem() {
-        item.archivedAt = Date()
+        item.archiveCascade(in: modelContext)
         autosave()
     }
 

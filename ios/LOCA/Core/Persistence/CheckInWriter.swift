@@ -40,7 +40,7 @@ enum CheckInWriter {
 
     // MARK: - Insert
 
-    /// Inserts a new `LogEntry` for `board` and saves.
+    /// Inserts a new `LogEntry` for `board` and saves, enforcing single-entry idempotency for binary habits.
     static func insert(
         value: Double,
         timestamp: Date = .now,
@@ -48,6 +48,20 @@ enum CheckInWriter {
         board: HabitBoard,
         context: ModelContext
     ) throws {
+        let cal = Calendar.current
+        // Idempotency guard: prevent duplicate log entries on the same day for binary habits
+        if board.metric == .binary {
+            let existing = (board.logs ?? []).first {
+                $0.archivedAt == nil && cal.isDate($0.timestamp, inSameDayAs: timestamp)
+            }
+            if let existing {
+                existing.value = value
+                if let note { existing.note = note }
+                try saveAndReload(context: context)
+                return
+            }
+        }
+
         let entry = LogEntry(
             timestamp: timestamp,
             value: value,
@@ -56,7 +70,7 @@ enum CheckInWriter {
             board: board
         )
         context.insert(entry)
-        let isToday = Calendar.current.isDateInToday(timestamp)
+        let isToday = cal.isDateInToday(timestamp)
         if isToday {
             board.updateStreak(using: .current)
         } else {

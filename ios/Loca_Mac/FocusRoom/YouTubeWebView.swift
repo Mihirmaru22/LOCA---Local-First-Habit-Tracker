@@ -336,10 +336,20 @@ struct YouTubeWebViewRepresentable: NSViewRepresentable {
 
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
             print("WKWebView provisional load failed: \(error.localizedDescription)")
+            DispatchQueue.main.async {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    self.parent.showFallback = true
+                }
+            }
         }
 
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
             print("WKWebView navigation failed: \(error.localizedDescription)")
+            DispatchQueue.main.async {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    self.parent.showFallback = true
+                }
+            }
         }
     }
 
@@ -415,10 +425,20 @@ struct YouTubeWebViewRepresentable: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
             print("WKWebView provisional load failed: \(error.localizedDescription)")
+            DispatchQueue.main.async {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    self.parent.showFallback = true
+                }
+            }
         }
 
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
             print("WKWebView navigation failed: \(error.localizedDescription)")
+            DispatchQueue.main.async {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    self.parent.showFallback = true
+                }
+            }
         }
     }
 

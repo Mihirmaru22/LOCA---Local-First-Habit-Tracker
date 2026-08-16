@@ -1135,6 +1135,7 @@ struct AppleJournalEditorCanvas: View {
                             controller: richTextController
                         )
                         .frame(minHeight: 280)
+                        .onChange(of: note.text) { _, _ in saveNote() }
 
                         // Attached Photos Gallery (Prominent Apple Journal Hero Layout)
                         if !note.photoFileNames.isEmpty {
@@ -1317,6 +1318,9 @@ struct AppleJournalEditorCanvas: View {
                 .frame(width: 230)
                 .background(Color(red: 0.12, green: 0.11, blue: 0.17))
             }
+        }
+        .onDisappear {
+            saveNote()
         }
     }
 

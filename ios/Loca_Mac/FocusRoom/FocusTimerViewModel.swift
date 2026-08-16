@@ -1,7 +1,7 @@
 import SwiftUI
 import Combine
 
-// MARK: - FocusTimerViewModel
+// MARK: - FocusTimerViewModel (Wall-Clock Precision Focus Sprint Timer)
 
 @MainActor
 final class FocusTimerViewModel: ObservableObject {
@@ -12,7 +12,11 @@ final class FocusTimerViewModel: ObservableObject {
     @Published var showFullTimerCard: Bool = false
 
     private var cancellables = Set<AnyCancellable>()
-    private var timerPublisher = Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()
+    private var timerPublisher = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
+
+    // Wall-clock delta anchors
+    private var lastResumeDate: Date? = Date()
+    private var accumulatedSeconds: Int = 0
 
     init() {
         startTimer()
@@ -20,24 +24,39 @@ final class FocusTimerViewModel: ObservableObject {
 
     func startTimer() {
         isRunning = true
+        lastResumeDate = Date()
+
         timerPublisher
             .sink { [weak self] _ in
-                guard let self = self, self.isRunning else { return }
-                self.secondsElapsed += 1
+                guard let self = self, self.isRunning, let start = self.lastResumeDate else { return }
+                let delta = max(0, Int(Date().timeIntervalSince(start)))
+                self.secondsElapsed = self.accumulatedSeconds + delta
             }
             .store(in: &cancellables)
     }
 
     func togglePlayPause() {
-        isRunning.toggle()
-        PlutoSoundEngine.shared.play(.checkmark)
+        if isRunning {
+            // Pausing
+            if let start = lastResumeDate {
+                accumulatedSeconds += max(0, Int(Date().timeIntervalSince(start)))
+            }
+            secondsElapsed = accumulatedSeconds
+            lastResumeDate = nil
+            isRunning = false
+        } else {
+            // Resuming
+            lastResumeDate = Date()
+            isRunning = true
+        }
         Haptics.impact(.light)
     }
 
     func resetTimer() {
+        accumulatedSeconds = 0
         secondsElapsed = 0
+        lastResumeDate = nil
         isRunning = false
-        PlutoSoundEngine.shared.play(.timerComplete)
         Haptics.impact(.medium)
     }
 

@@ -170,6 +170,19 @@ final class TodoItem {
         self.completedAt     = completedAt
         self.archivedAt      = archivedAt
     }
+
+    // MARK: - Cascade Archiving
+
+    func archiveCascade(in context: ModelContext) {
+        let now = Date()
+        self.archivedAt = now
+        let targetParentID = self.id
+        if let children = try? context.fetch(FetchDescriptor<TodoItem>(predicate: #Predicate { $0.parentID == targetParentID })) {
+            for child in children {
+                child.archivedAt = now
+            }
+        }
+    }
 }
 
 // MARK: - Priority 2 Block Editor Models
