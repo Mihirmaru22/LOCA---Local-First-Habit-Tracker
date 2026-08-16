@@ -39,6 +39,8 @@ struct MacTrekMapView: NSViewRepresentable {
 
     let treks: [TrekRecord]
     let selectedTrek: TrekRecord?
+    var isFlyingTrail: Bool = false
+    var onFinishFlyTrail: () -> Void = {}
     let onSelectTrek: (TrekRecord) -> Void
 
     func makeNSView(context: Context) -> MKMapView {
@@ -88,7 +90,16 @@ struct MacTrekMapView: NSViewRepresentable {
         // 2. Update Fog of War, Auras, and GPX Trail Overlays
         updateMapOverlays(mapView: mapView)
 
-        // 3. Fly Camera to Selected Trek
+        // 3. Handle Active Trail Flyover
+        if isFlyingTrail, let selectedTrek, selectedTrek.hasGPXTrack {
+            let coords = selectedTrek.trailCoordinates
+            if coords.count >= 2 {
+                performTrailFlyover(mapView: mapView, coords: coords)
+            }
+            return
+        }
+
+        // 4. Fly Camera to Selected Trek
         if let selectedTrek, selectedTrek.id != context.coordinator.lastSelectedID {
             context.coordinator.lastSelectedID = selectedTrek.id
 
@@ -112,6 +123,46 @@ struct MacTrekMapView: NSViewRepresentable {
             if let targetAnnotation = mapView.annotations.first(where: { ($0 as? TrekAnnotation)?.trek.id == selectedTrek.id }) {
                 mapView.selectAnnotation(targetAnnotation, animated: true)
             }
+        }
+    }
+
+    private func performTrailFlyover(mapView: MKMapView, coords: [CLLocationCoordinate2D]) {
+        guard coords.count >= 2 else { return }
+
+        // Start at Trailhead with immersive 3D terrain pitch
+        let start = coords.first!
+        let cameraStart = MKMapCamera(lookingAtCenter: start, fromDistance: 14_000, pitch: 65, heading: 0)
+        mapView.setCamera(cameraStart, animated: true)
+
+        let stepCount = min(5, coords.count)
+        let strideStep = max(1, coords.count / stepCount)
+
+        for stepIndex in 1..<stepCount {
+            let ptIndex = min(coords.count - 1, stepIndex * strideStep)
+            let pt = coords[ptIndex]
+            let prevPt = coords[max(0, ptIndex - 1)]
+
+            // Compute path bearing heading
+            let dLon = (pt.longitude - prevPt.longitude) * .pi / 180.0
+            let lat1 = prevPt.latitude * .pi / 180.0
+            let lat2 = pt.latitude * .pi / 180.0
+            let y = sin(dLon) * cos(lat2)
+            let x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLon)
+            let heading = (atan2(y, x) * 180.0 / .pi + 360.0).truncatingRemainder(dividingBy: 360.0)
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(stepIndex) * 1.5) {
+                let camera = MKMapCamera(lookingAtCenter: pt, fromDistance: 12_000, pitch: 65, heading: heading)
+                mapView.setCamera(camera, animated: true)
+            }
+        }
+
+        // Finish at summit with panoramic framing
+        DispatchQueue.main.asyncAfter(deadline: .now() + Double(stepCount) * 1.5) {
+            if let last = coords.last {
+                let summitCamera = MKMapCamera(lookingAtCenter: last, fromDistance: 28_000, pitch: 50, heading: 20)
+                mapView.setCamera(summitCamera, animated: true)
+            }
+            self.onFinishFlyTrail()
         }
     }
 

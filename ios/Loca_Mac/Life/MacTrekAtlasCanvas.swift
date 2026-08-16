@@ -29,6 +29,7 @@ struct MacTrekAtlasCanvas: View {
     @State private var isLogModalPresented: Bool = false
     @State private var quickLookTrek: TrekRecord? = nil
     @State private var quickLookPhotoIndex: Int = 0
+    @State private var isFlyingTrail: Bool = false
 
     // MARK: - Filtered Treks
 
@@ -112,6 +113,10 @@ struct MacTrekAtlasCanvas: View {
                         MacTrekMapView(
                             treks: filteredTreks,
                             selectedTrek: selectedTrek,
+                            isFlyingTrail: isFlyingTrail,
+                            onFinishFlyTrail: {
+                                isFlyingTrail = false
+                            },
                             onSelectTrek: { trek in
                                 withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                     selectedTrek = trek
@@ -133,6 +138,12 @@ struct MacTrekAtlasCanvas: View {
                                         quickLookTrek = selectedTrek
                                         quickLookPhotoIndex = index
                                     }
+                                },
+                                onFlyTrail: {
+                                    withAnimation {
+                                        isFlyingTrail = true
+                                    }
+                                    Haptics.impact(.medium)
                                 },
                                 onClose: {
                                     withAnimation(.easeOut(duration: 0.2)) {
@@ -517,6 +528,7 @@ struct TrekDetailOverlay: View {
     let trek: TrekRecord
     let onToggleStatus: () -> Void
     var onOpenQuickLook: (String, Int) -> Void = { _, _ in }
+    var onFlyTrail: () -> Void = {}
     let onClose: () -> Void
 
     private var isConquered: Bool { trek.status == .conquered }
@@ -733,9 +745,27 @@ struct TrekDetailOverlay: View {
                                 Image(systemName: "checkmark.circle.fill")
                                     .font(.system(size: 11))
                                     .foregroundStyle(Color.cyan)
-                                Text("\(trek.decodedTrackPoints.count.formatted()) GPS Trackpoints · Polyline Active")
+                                Text("\(trek.decodedTrackPoints.count.formatted()) GPS Trackpoints")
                                     .font(.system(size: 10, weight: .semibold))
                                     .foregroundStyle(DS.Color.textPrimary)
+
+                                Spacer()
+
+                                Button {
+                                    onFlyTrail()
+                                } label: {
+                                    HStack(spacing: 3) {
+                                        Image(systemName: "play.fill")
+                                            .font(.system(size: 8))
+                                        Text("Fly Trail")
+                                            .font(.system(size: 10, weight: .bold))
+                                    }
+                                    .foregroundStyle(Color.cyan)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Color.cyan.opacity(0.15), in: RoundedRectangle(cornerRadius: 4))
+                                }
+                                .buttonStyle(.plain)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(8)
