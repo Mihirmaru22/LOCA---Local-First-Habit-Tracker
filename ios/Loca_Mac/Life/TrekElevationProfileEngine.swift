@@ -3,32 +3,32 @@ import CoreLocation
 
 // MARK: - ElevationPoint
 
-public struct ElevationPoint: Identifiable, Sendable, Codable, Equatable {
-    public var id: UUID = UUID()
-    public let distanceKm: Double
-    public let elevationMeters: Double
-    public let gradePercentage: Double
-    public let latitude: Double
-    public let longitude: Double
+struct ElevationPoint: Identifiable, Sendable, Codable, Equatable {
+    var id: UUID = UUID()
+    let distanceKm: Double
+    let elevationMeters: Double
+    let gradePercentage: Double
+    let latitude: Double
+    let longitude: Double
 
-    public var coordinate: CLLocationCoordinate2D {
+    var coordinate: CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
 
-    public var elevationFeet: Double {
+    var elevationFeet: Double {
         elevationMeters * 3.28084
     }
 
-    public var formattedElevation: String {
+    var formattedElevation: String {
         "\(Int(elevationMeters).formatted()) m"
     }
 
-    public var formattedGrade: String {
+    var formattedGrade: String {
         let prefix = gradePercentage >= 0 ? "+" : ""
         return String(format: "%@%.1f%%", prefix, gradePercentage)
     }
 
-    public init(distanceKm: Double, elevationMeters: Double, gradePercentage: Double, latitude: Double, longitude: Double) {
+    init(distanceKm: Double, elevationMeters: Double, gradePercentage: Double, latitude: Double, longitude: Double) {
         self.distanceKm = distanceKm
         self.elevationMeters = elevationMeters
         self.gradePercentage = gradePercentage
@@ -40,10 +40,10 @@ public struct ElevationPoint: Identifiable, Sendable, Codable, Equatable {
 // MARK: - TrekElevationProfileEngine
 
 /// High-performance elevation aggregator and synthetic profile generator for Pluto's Alpine Elevation Charts.
-public enum TrekElevationProfileEngine {
+enum TrekElevationProfileEngine {
 
     /// Generates high-fidelity elevation profile points from GPX tracks or synthetic mountain telemetry.
-    public static func generateProfile(for trek: TrekRecord) -> [ElevationPoint] {
+    static func generateProfile(for trek: TrekRecord) -> [ElevationPoint] {
         let trackPoints = trek.decodedTrackPoints
 
         if trackPoints.count >= 2 {

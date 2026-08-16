@@ -3,14 +3,14 @@ import CoreLocation
 
 // MARK: - GPXTrackPoint
 
-public struct GPXTrackPoint: Codable, Identifiable, Sendable {
-    public var id: UUID = UUID()
-    public let latitude: Double
-    public let longitude: Double
-    public let elevation: Double?
-    public let timestamp: Date?
+struct GPXTrackPoint: Codable, Identifiable, Sendable {
+    var id: UUID = UUID()
+    let latitude: Double
+    let longitude: Double
+    let elevation: Double?
+    let timestamp: Date?
 
-    public var coordinate: CLLocationCoordinate2D {
+    var coordinate: CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
 
@@ -21,7 +21,7 @@ public struct GPXTrackPoint: Codable, Identifiable, Sendable {
         case timestamp = "time"
     }
 
-    public init(latitude: Double, longitude: Double, elevation: Double? = nil, timestamp: Date? = nil) {
+    init(latitude: Double, longitude: Double, elevation: Double? = nil, timestamp: Date? = nil) {
         self.latitude = latitude
         self.longitude = longitude
         self.elevation = elevation
@@ -31,19 +31,19 @@ public struct GPXTrackPoint: Codable, Identifiable, Sendable {
 
 // MARK: - GPXParseResult
 
-public struct GPXParseResult: Sendable {
-    public let trackName: String?
-    public let trackPoints: [GPXTrackPoint]
-    public let totalDistanceKm: Double
-    public let elevationGainMeters: Double
-    public let maxAltitudeMeters: Double
-    public let minAltitudeMeters: Double
-    public let startCoordinate: CLLocationCoordinate2D?
-    public let summitCoordinate: CLLocationCoordinate2D?
-    public let rawGPXData: Data
-    public let jsonTrackPointsString: String
+struct GPXParseResult: Sendable {
+    let trackName: String?
+    let trackPoints: [GPXTrackPoint]
+    let totalDistanceKm: Double
+    let elevationGainMeters: Double
+    let maxAltitudeMeters: Double
+    let minAltitudeMeters: Double
+    let startCoordinate: CLLocationCoordinate2D?
+    let summitCoordinate: CLLocationCoordinate2D?
+    let rawGPXData: Data
+    let jsonTrackPointsString: String
 
-    public var coordinates: [CLLocationCoordinate2D] {
+    var coordinates: [CLLocationCoordinate2D] {
         trackPoints.map(\.coordinate)
     }
 }
@@ -51,16 +51,16 @@ public struct GPXParseResult: Sendable {
 // MARK: - TrekGPXEngine
 
 /// High-performance XML parser and mathematical elevation engine for GPX tracks in Pluto's Trek Atlas.
-public final class TrekGPXEngine: NSObject, XMLParserDelegate, @unchecked Sendable {
+final class TrekGPXEngine: NSObject, XMLParserDelegate, @unchecked Sendable {
 
     // MARK: - Static Parser API
 
-    public static func parse(url: URL) async throws -> GPXParseResult {
+    static func parse(url: URL) async throws -> GPXParseResult {
         let data = try Data(contentsOf: url)
         return try await parse(data: data)
     }
 
-    public static func parse(data: Data) async throws -> GPXParseResult {
+    static func parse(data: Data) async throws -> GPXParseResult {
         try await withCheckedThrowingContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
                 let engine = TrekGPXEngine(data: data)
