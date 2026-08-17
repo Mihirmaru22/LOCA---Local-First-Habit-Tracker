@@ -14,6 +14,14 @@ enum TodoMode: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    var index: Int {
+        switch self {
+        case .plan: return 0
+        case .list: return 1
+        case .time: return 2
+        }
+    }
+
     var icon: String {
         switch self {
         case .plan: return "calendar.day.timeline.left"
@@ -31,11 +39,18 @@ enum TodoMode: String, CaseIterable, Identifiable {
     }
 }
 
+// MARK: - Transition Direction
+
+private enum TransitionDirection {
+    case forward
+    case backward
+}
+
 // MARK: - MacTodoContentColumn
 
 /// Middle column of the Mac layout for the Today (Todo) section.
 /// Features a floating macOS Liquid Glass pill switcher with live telemetry,
-/// ultra-thin materials, and seamless cross-fade transitions.
+/// ultra-thin materials, and seamless direction-aware spatial transitions.
 struct MacTodoContentColumn: View {
 
     @Binding var selection: TodoItem?
@@ -43,6 +58,9 @@ struct MacTodoContentColumn: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query(sort: [SortDescriptor(\TodoItem.createdAt)], animation: .default)
     private var allItems: [TodoItem]
+
+    @State private var transitionDirection: TransitionDirection = .forward
+    @State private var lastModeIndex: Int = 0
 
     private var openItems: [TodoItem] {
         allItems.filter { !$0.isArchived && $0.parentID == nil && !$0.isCompleted }
@@ -55,7 +73,12 @@ struct MacTodoContentColumn: View {
     private var mode: Binding<TodoMode> {
         Binding(
             get: { TodoMode(rawValue: modeString) ?? .plan },
-            set: { modeString = $0.rawValue }
+            set: { newMode in
+                let newIndex = newMode.index
+                transitionDirection = newIndex >= lastModeIndex ? .forward : .backward
+                lastModeIndex = newIndex
+                modeString = newMode.rawValue
+            }
         )
     }
 
@@ -69,31 +92,29 @@ struct MacTodoContentColumn: View {
             Divider()
                 .opacity(0.4)
 
-            // Plan ↔ List ↔ Time crossfade view
+            // Direction-Aware Spatial Glide Viewport (Plan ↔ List ↔ Time)
             ZStack {
                 if mode.wrappedValue == .plan {
                     MacDayPlannerColumn(selection: $selection)
-                        .transition(.asymmetric(
-                            insertion: .opacity.combined(with: .scale(scale: 0.98)),
-                            removal:   .opacity.combined(with: .scale(scale: 1.02))
-                        ))
+                        .transition(contentTransition)
                 } else if mode.wrappedValue == .list {
                     MacTodoListColumn(selection: $selection)
-                        .transition(.asymmetric(
-                            insertion: .opacity.combined(with: .scale(scale: 0.98)),
-                            removal:   .opacity.combined(with: .scale(scale: 1.02))
-                        ))
+                        .transition(contentTransition)
                 } else {
                     MacTimeView()
-                        .transition(.asymmetric(
-                            insertion: .opacity.combined(with: .scale(scale: 0.98)),
-                            removal:   .opacity.combined(with: .scale(scale: 1.02))
-                        ))
+                        .transition(contentTransition)
                 }
             }
-            .animation(reduceMotion ? .linear(duration: 0.1) : .spring(response: 0.35, dampingFraction: 0.82), value: mode.wrappedValue)
+            .clipped()
+            .animation(
+                reduceMotion ? .linear(duration: 0.12) : .spring(response: 0.30, dampingFraction: 0.82),
+                value: mode.wrappedValue
+            )
         }
         .navigationTitle("Today")
+        .onAppear {
+            lastModeIndex = (TodoMode(rawValue: modeString) ?? .plan).index
+        }
         // Vend context-sensitive ⌘N action to the menu bar
         .focusedValue(\.todayNewItemAction, {
             switch mode.wrappedValue {
@@ -102,6 +123,26 @@ struct MacTodoContentColumn: View {
             case .time: break
             }
         })
+    }
+
+    // MARK: - Spatial Content Transition
+
+    private var contentTransition: AnyTransition {
+        if reduceMotion {
+            return .opacity
+        }
+        switch transitionDirection {
+        case .forward:
+            return .asymmetric(
+                insertion: .offset(x: 28).combined(with: .opacity),
+                removal: .offset(x: -28).combined(with: .opacity)
+            )
+        case .backward:
+            return .asymmetric(
+                insertion: .offset(x: -28).combined(with: .opacity),
+                removal: .offset(x: 28).combined(with: .opacity)
+            )
+        }
     }
 
     @Namespace private var glassPillNamespace
