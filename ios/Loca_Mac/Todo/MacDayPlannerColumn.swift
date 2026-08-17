@@ -936,49 +936,6 @@ extension MacDayPlannerColumn {
 
     private func bentoTaskRow(task: TodoItem) -> some View {
         let isSelected = selection?.id == task.id
-
-        return Button {
-            selection = task
-            Haptics.impact(.light)
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: task.iconName ?? "checkmark")
-                    .font(.system(size: 10, weight: .semibold))
-                    .todoBubble(diameter: 24, done: task.isCompleted)
-
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(task.title.isEmpty ? "Untitled Task" : task.title)
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(task.isCompleted ? DS.Color.textTertiary : DS.Color.textPrimary)
-                        .strikethrough(task.isCompleted, color: DS.Color.textTertiary)
-
-                    if let start = task.startTime, let end = task.endTime {
-                        Text("\(start.formatted(.dateTime.hour().minute())) - \(end.formatted(.dateTime.hour().minute())) (\(task.durationMinutes)m)")
-                            .font(.system(size: 9))
-                            .foregroundStyle(DS.Color.textSecondary)
-                    }
-                }
-
-                Spacer()
-
-                if task.isCompleted {
-                    Button {
-                        task.archivedAt = Date()
-                        try? modelContext.save()
-                        PlutoSoundEngine.shared.play(.deleteTrash)
-                        Haptics.impact(.light)
-                    } label: {
-                        Image(systemName: "trash")
-                            .font(.system(size: 11))
-                            .foregroundStyle(Color.red.opacity(0.8))
-                    }
-                    .buttonStyle(.plain)
-                    .help("Delete completed task")
-                }
-
-                Button {
-    private func bentoTaskRow(task: TodoItem) -> some View {
-        let isSelected = selection?.id == task.id
         let catColor = task.category.color
 
         return Button {
