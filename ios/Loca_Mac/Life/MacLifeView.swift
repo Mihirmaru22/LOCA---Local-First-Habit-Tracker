@@ -337,7 +337,7 @@ private struct Life1BlueprintPrinciplesView: View {
 
 private struct Life2MasterBucketListView: View {
 
-    enum BucketCategory: String, CaseIterable, Identifiable {
+    enum BucketCategory: String, CaseIterable, Identifiable, Codable {
         case all        = "All Dreams"
         case travel     = "Travel & World"
         case master     = "Craft & Mastery"
@@ -360,7 +360,7 @@ private struct Life2MasterBucketListView: View {
     @State private var selectedCategory: BucketCategory = .all
     @State private var showingAddSheet = false
 
-    private struct BucketItem: Identifiable {
+    private struct BucketItem: Identifiable, Equatable, Codable {
         let id: String
         var title: String
         var category: BucketCategory
@@ -370,16 +370,22 @@ private struct Life2MasterBucketListView: View {
         var locationOrNotes: String
     }
 
-    @State private var bucketItems: [BucketItem] = [
-        BucketItem(id: "1", title: "Witness the Aurora Borealis in Northern Norway", category: .travel, targetHorizon: "2027", isAchieved: false, achievedYear: nil, locationOrNotes: "Tromsø, Norway · Winter Expedition"),
-        BucketItem(id: "2", title: "Complete a Full Marathon (42.195 km)", category: .physical, targetHorizon: "2026", isAchieved: false, achievedYear: nil, locationOrNotes: "Berlin or Tokyo Marathon"),
-        BucketItem(id: "3", title: "Design & Ship PLUTO App Version 3.5", category: .master, targetHorizon: "2026", isAchieved: true, achievedYear: "2026", locationOrNotes: "PLUTO macOS & iOS Ecosystem V3.5"),
-        BucketItem(id: "4", title: "Hike the Torres del Paine Circuit in Patagonia", category: .travel, targetHorizon: "2028", isAchieved: false, achievedYear: nil, locationOrNotes: "Chile · W-Trek Adventure"),
-        BucketItem(id: "5", title: "Master Japanese to Conversational Fluency", category: .master, targetHorizon: "2028", isAchieved: false, achievedYear: nil, locationOrNotes: "JLPT N3+ Standard"),
-        BucketItem(id: "6", title: "Build a Custom Minimalist Wooden Cabin in the Woods", category: .lifestyle, targetHorizon: "Lifetime", isAchieved: false, achievedYear: nil, locationOrNotes: "Solar-powered off-grid sanctuary"),
-        BucketItem(id: "7", title: "Achieve 15 Consecutive Clean Strict Pull-Ups", category: .physical, targetHorizon: "2026", isAchieved: true, achievedYear: "2026", locationOrNotes: "Calisthenics benchmark"),
-        BucketItem(id: "8", title: "Solo Scuba Dive the Great Barrier Reef", category: .travel, targetHorizon: "Lifetime", isAchieved: false, achievedYear: nil, locationOrNotes: "Cairns, Australia")
-    ]
+    @State private var bucketItems: [BucketItem] = []
+
+    private func loadBucketItems() {
+        if let data = UserDefaults.standard.data(forKey: "pluto_bucket_items_v1"),
+           let decoded = try? JSONDecoder().decode([BucketItem].self, from: data) {
+            bucketItems = decoded
+        } else {
+            bucketItems = []
+        }
+    }
+
+    private func saveBucketItems() {
+        if let encoded = try? JSONEncoder().encode(bucketItems) {
+            UserDefaults.standard.set(encoded, forKey: "pluto_bucket_items_v1")
+        }
+    }
 
     @State private var newTitle = ""
     @State private var newCategory: BucketCategory = .travel
@@ -551,9 +557,12 @@ private struct Life2MasterBucketListView: View {
                                         locationOrNotes: newNotes
                                     )
                                     bucketItems.append(item)
+                                    saveBucketItems()
                                     newTitle = ""
                                     newNotes = ""
                                     showingAddSheet = false
+                                    PlutoSoundEngine.shared.play(.checkmark)
+                                    Haptics.impact(.rigid)
                                 }
                             }
                             .buttonStyle(.borderedProminent)
@@ -566,14 +575,38 @@ private struct Life2MasterBucketListView: View {
             }
 
             // Minimalist Bucket List Cards Grid (Uniform Dark Surface with Subtle Neutral Borders)
-            LazyVGrid(
-                columns: [GridItem(.adaptive(minimum: 280, maximum: 460), spacing: DS.Space.md)],
-                spacing: DS.Space.md
-            ) {
-                ForEach(filteredItems) { item in
-                    minimalistBucketItemCard(item)
+            if filteredItems.isEmpty {
+                VStack(spacing: 8) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 24))
+                        .foregroundStyle(DS.Color.textTertiary)
+                    Text("No bucket list dreams in this category")
+                        .font(DS.Text.body)
+                        .foregroundStyle(DS.Color.textTertiary)
+                    Text("Click '+ Add Dream' to log your lifetime milestones.")
+                        .font(DS.Text.caption)
+                        .foregroundStyle(DS.Color.textTertiary)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(DS.Space.xxl)
+                .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+                .overlay(RoundedRectangle(cornerRadius: DS.Radius.card).stroke(DS.Color.border.opacity(0.4), lineWidth: 1))
+            } else {
+                LazyVGrid(
+                    columns: [GridItem(.adaptive(minimum: 280, maximum: 460), spacing: DS.Space.md)],
+                    spacing: DS.Space.md
+                ) {
+                    ForEach(filteredItems) { item in
+                        minimalistBucketItemCard(item)
+                    }
                 }
             }
+        }
+        .onAppear {
+            loadBucketItems()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .plutoDataDidReset)) { _ in
+            loadBucketItems()
         }
     }
 
@@ -617,6 +650,12 @@ private struct Life2MasterBucketListView: View {
                     if let idx = bucketItems.firstIndex(where: { $0.id == item.id }) {
                         bucketItems[idx].isAchieved.toggle()
                         bucketItems[idx].achievedYear = bucketItems[idx].isAchieved ? "2026" : nil
+                        saveBucketItems()
+                        if bucketItems[idx].isAchieved {
+                            PlutoSoundEngine.shared.play(.summitPassport)
+                        } else {
+                            PlutoSoundEngine.shared.play(.checkmark)
+                        }
                         Haptics.impact(.rigid)
                     }
                 } label: {
@@ -625,6 +664,22 @@ private struct Life2MasterBucketListView: View {
                         .foregroundStyle(item.isAchieved ? DS.Color.success : DS.Color.textTertiary)
                 }
                 .buttonStyle(.plain)
+
+                // Delete Button
+                Button {
+                    if let idx = bucketItems.firstIndex(where: { $0.id == item.id }) {
+                        bucketItems.remove(at: idx)
+                        saveBucketItems()
+                        PlutoSoundEngine.shared.play(.deleteTrash)
+                        Haptics.impact(.light)
+                    }
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.system(size: 11))
+                        .foregroundStyle(DS.Color.textTertiary.opacity(0.5))
+                }
+                .buttonStyle(.plain)
+                .help("Delete Dream")
             }
 
             // Title
@@ -685,7 +740,8 @@ private struct Life2MasterBucketListView: View {
             }
         }
         .padding(DS.Space.lg)
-        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+        .background(DS.Color.surface)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.card)
                 .stroke(DS.Color.border.opacity(0.4), lineWidth: 1)

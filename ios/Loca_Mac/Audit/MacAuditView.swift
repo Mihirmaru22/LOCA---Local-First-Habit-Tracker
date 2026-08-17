@@ -31,13 +31,13 @@ struct MacAuditView: View {
     @AppStorage("mac_audit_selected_horizon") var selectedHorizon: HorizonCategory = .all
     @AppStorage("mac_selected_accent_index") private var selectedAccentIndex: Int = 0
 
-    struct MilestoneCheckpoint: Identifiable, Equatable {
+    struct MilestoneCheckpoint: Identifiable, Equatable, Codable {
         let id: String
         var title: String
         var isDone: Bool
     }
 
-    struct DetailedGoalItem: Identifiable, Equatable {
+    struct DetailedGoalItem: Identifiable, Equatable, Codable {
         let id: String
         var title: String
         var customTag: String // Freeform custom project or domain tag
@@ -48,54 +48,22 @@ struct MacAuditView: View {
         var checkpoints: [MilestoneCheckpoint]
     }
 
-    @State private var goals: [DetailedGoalItem] = [
-        DetailedGoalItem(
-            id: "1",
-            title: "Ship PLUTO Sovereign OS Version 5.0",
-            customTag: "ENGINEERING",
-            horizon: .quarter,
-            progress: 0.80,
-            targetDate: "September 2026",
-            engineHabit: "Deep Focus Coding · 90 min",
-            checkpoints: [
-                MilestoneCheckpoint(id: "l1", title: "Local-First SwiftData schema architecture", isDone: true),
-                MilestoneCheckpoint(id: "l2", title: "Habit Heatmap & Streak Calculation engine", isDone: true),
-                MilestoneCheckpoint(id: "l3", title: "4-Pillar Executive navigation consolidation", isDone: true),
-                MilestoneCheckpoint(id: "l4", title: "Native Acoustic Audio & Sound Engine integration", isDone: true),
-                MilestoneCheckpoint(id: "l5", title: "App Store production release & TestFlight", isDone: false)
-            ]
-        ),
-        DetailedGoalItem(
-            id: "2",
-            title: "Close Enterprise & Creator Alpha Pipeline",
-            customTag: "REVENUE",
-            horizon: .quarter,
-            progress: 0.40,
-            targetDate: "October 2026",
-            engineHabit: "Strategic Prospecting · 45 min",
-            checkpoints: [
-                MilestoneCheckpoint(id: "c1", title: "Develop sovereign offline demo deck", isDone: true),
-                MilestoneCheckpoint(id: "c2", title: "Conduct 10 executive customer interviews", isDone: true),
-                MilestoneCheckpoint(id: "c3", title: "Deploy private beta builds to early adopters", isDone: false),
-                MilestoneCheckpoint(id: "c4", title: "Achieve $10k Monthly Recurring Target", isDone: false)
-            ]
-        ),
-        DetailedGoalItem(
-            id: "3",
-            title: "Zero-Latency Local SwiftData Storage Core",
-            customTag: "ARCHITECTURE",
-            horizon: .year,
-            progress: 0.75,
-            targetDate: "December 2026",
-            engineHabit: "System Architecture Audit · Weekly",
-            checkpoints: [
-                MilestoneCheckpoint(id: "b1", title: "Sub-0.2ms write benchmarks verified", isDone: true),
-                MilestoneCheckpoint(id: "b2", title: "Secure Enclave hardware biometric vault lock", isDone: true),
-                MilestoneCheckpoint(id: "b3", title: "Automated database migration unit tests", isDone: true),
-                MilestoneCheckpoint(id: "b4", title: "Zero-cloud air-gapped security certification", isDone: false)
-            ]
-        )
-    ]
+    @State private var goals: [DetailedGoalItem] = []
+
+    private func loadGoals() {
+        if let data = UserDefaults.standard.data(forKey: "pluto_work_goals_v1"),
+           let decoded = try? JSONDecoder().decode([DetailedGoalItem].self, from: data) {
+            goals = decoded
+        } else {
+            goals = []
+        }
+    }
+
+    private func saveGoals() {
+        if let encoded = try? JSONEncoder().encode(goals) {
+            UserDefaults.standard.set(encoded, forKey: "pluto_work_goals_v1")
+        }
+    }
 
     // New Goal Creator State
     @State private var showingAddGoalSheet = false
@@ -251,6 +219,12 @@ struct MacAuditView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(DS.Color.background)
+        .onAppear {
+            loadGoals()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .plutoDataDidReset)) { _ in
+            loadGoals()
+        }
         .sheet(isPresented: $showingAddGoalSheet) {
             newGoalStudioModal
         }
@@ -448,6 +422,7 @@ struct MacAuditView: View {
         )
 
         goals.insert(newGoal, at: 0)
+        saveGoals()
         showingAddGoalSheet = false
         PlutoSoundEngine.shared.play(.checkmark)
         Haptics.impact(.rigid)
@@ -527,6 +502,7 @@ struct MacAuditView: View {
                     Button {
                         if let idx = goals.firstIndex(where: { $0.id == goal.id }) {
                             goals[idx].progress = max(0.0, goals[idx].progress - 0.05)
+                            saveGoals()
                             PlutoSoundEngine.shared.play(.checkmark)
                             Haptics.impact(.light)
                         }
@@ -548,6 +524,7 @@ struct MacAuditView: View {
                     Button {
                         if let idx = goals.firstIndex(where: { $0.id == goal.id }) {
                             goals[idx].progress = min(1.0, goals[idx].progress + 0.05)
+                            saveGoals()
                             if goals[idx].progress >= 1.0 {
                                 PlutoSoundEngine.shared.play(.summitPassport)
                             } else {
@@ -568,6 +545,7 @@ struct MacAuditView: View {
                     Button {
                         if let idx = goals.firstIndex(where: { $0.id == goal.id }) {
                             goals.remove(at: idx)
+                            saveGoals()
                             PlutoSoundEngine.shared.play(.deleteTrash)
                             Haptics.impact(.light)
                         }
@@ -737,6 +715,7 @@ struct MacAuditView: View {
            let cIdx = goals[gIdx].checkpoints.firstIndex(where: { $0.id == checkpointId }) {
             goals[gIdx].checkpoints[cIdx].isDone.toggle()
             recalculateProgress(goalIdx: gIdx)
+            saveGoals()
             PlutoSoundEngine.shared.play(.checkmark)
             Haptics.impact(.rigid)
         }
@@ -746,6 +725,7 @@ struct MacAuditView: View {
         if let gIdx = goals.firstIndex(where: { $0.id == goalId }) {
             goals[gIdx].checkpoints.removeAll { $0.id == checkpointId }
             recalculateProgress(goalIdx: gIdx)
+            saveGoals()
             PlutoSoundEngine.shared.play(.deleteTrash)
             Haptics.impact(.light)
         }
@@ -762,6 +742,7 @@ struct MacAuditView: View {
             let newCP = MilestoneCheckpoint(id: UUID().uuidString, title: trimmed, isDone: false)
             goals[gIdx].checkpoints.append(newCP)
             recalculateProgress(goalIdx: gIdx)
+            saveGoals()
             inlinePointText = ""
             PlutoSoundEngine.shared.play(.checkmark)
             Haptics.impact(.light)

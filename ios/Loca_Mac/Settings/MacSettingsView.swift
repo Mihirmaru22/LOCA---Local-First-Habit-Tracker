@@ -41,6 +41,9 @@ struct MacSettingsView: View {
     @State private var showExportSuccess = false
     @State private var exportMessage = ""
     @State private var showKeynoteJourneyModal = false
+    @State private var showingResetConfirmation = false
+    @State private var showResetSuccess = false
+    @State private var resetSuccessMessage = ""
 
     // Accent Palette
     private var accentColor: Color {
@@ -110,7 +113,12 @@ struct MacSettingsView: View {
                     dataSyncControlBlock
                 }
 
-                // 7. About Pluto Tile
+                // 7. Danger Zone & Factory Data Reset (Full Width)
+                bentoTile(title: "Danger Zone · Factory Data Reset", icon: "trash.fill", accent: Color(red: 0.95, green: 0.35, blue: 0.35)) {
+                    dangerZoneControlBlock
+                }
+
+                // 8. About Pluto Tile
                 bentoTile(title: "About PLUTO OS", icon: "info.circle.fill", accent: Color(red: 0.80, green: 0.80, blue: 0.85)) {
                     aboutControlBlock
                 }
@@ -121,6 +129,22 @@ struct MacSettingsView: View {
             .frame(maxWidth: 960)
         }
         .background(DS.Color.background)
+        .confirmationDialog(
+            "Reset Whole App Data?",
+            isPresented: $showingResetConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Reset Everything (Clean Slate)", role: .destructive) {
+                PlutoDataResetManager.resetAllAppData(context: modelContext)
+                PlutoSoundEngine.shared.play(.deleteTrash)
+                Haptics.notification(.success)
+                resetSuccessMessage = "All App Data Has Been Reset to Clean Slate!"
+                showResetSuccess = true
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will permanently erase all tasks, work goals, journal notes, master bucket list items, and habit logs. This action cannot be undone.")
+        }
         .sheet(isPresented: $showKeynoteJourneyModal) {
             PlutoKeynoteJourneyModal()
         }
@@ -433,6 +457,59 @@ struct MacSettingsView: View {
         .frame(maxWidth: .infinity)
         .padding(8)
         .background(DS.Color.background, in: RoundedRectangle(cornerRadius: 6))
+    }
+
+    // 7. Danger Zone & Factory Data Reset
+    private var dangerZoneControlBlock: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Reset All App Data to Empty State")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(DS.Color.textPrimary)
+                Text("Permanently erase all tasks, work goals, journal notes, master bucket list items, and habit check-in logs. Restores a pure, empty sovereign canvas.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(DS.Color.textSecondary)
+            }
+
+            HStack(spacing: 12) {
+                Button {
+                    PlutoSoundEngine.shared.play(.tabSwitch)
+                    Haptics.impact(.medium)
+                    showingResetConfirmation = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "trash.fill")
+                            .font(.system(size: 11, weight: .bold))
+                        Text("Reset Whole App Data")
+                            .font(.system(size: 11, weight: .bold))
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 7)
+                    .background(
+                        Color(red: 0.95, green: 0.35, blue: 0.35).opacity(0.18),
+                        in: RoundedRectangle(cornerRadius: 6)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(Color(red: 0.95, green: 0.35, blue: 0.35).opacity(0.5), lineWidth: 1)
+                    )
+                    .foregroundStyle(Color(red: 0.95, green: 0.45, blue: 0.45))
+                }
+                .buttonStyle(.plain)
+
+                if showResetSuccess {
+                    HStack(spacing: 5) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.green)
+                        Text(resetSuccessMessage)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Color.green)
+                    }
+                    .transition(.opacity)
+                }
+            }
+        }
     }
 
     // 7. About Pluto
