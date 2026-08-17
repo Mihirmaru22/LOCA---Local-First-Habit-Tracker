@@ -127,7 +127,10 @@ enum PlutoDataResetManager {
                 for t in treks {
                     t.status = .wishlist
                     t.dateConquered = nil
-                    t.rating = nil
+                    t.rating = 0
+                    t.personalNotes = ""
+                    t.photoFileNames = []
+                    t.linkedJournalNoteIDs = []
                 }
                 logger.info("Reset \(treks.count) TrekRecord entries to unconquered wishlist.")
             }

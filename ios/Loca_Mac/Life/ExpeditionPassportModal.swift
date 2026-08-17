@@ -57,16 +57,16 @@ struct ExpeditionPassportModal: View {
     private var toolbarHeader: some View {
         HStack(spacing: DS.Space.md) {
             HStack(spacing: 8) {
-                Image(systemName: "doc.richtext.fill")
+                Image(systemName: "compass.drawing")
                     .font(.system(size: 14))
-                    .foregroundStyle(Color(red: 0.95, green: 0.80, blue: 0.30))
+                    .foregroundStyle(Color(red: 0.78, green: 0.66, blue: 0.48))
 
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("\(trek.name.uppercased()) EXPEDITION PASSPORT")
+                    Text("\(trek.name.uppercased()) EXPEDITION DOSSIER")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(DS.Color.textPrimary)
 
-                    Text("Official Alpine Registry & Summit Dossier")
+                    Text("Official Himalayan & Alpine Summit Registry")
                         .font(.system(size: 10))
                         .foregroundStyle(DS.Color.textTertiary)
                 }
@@ -217,7 +217,7 @@ struct ExpeditionPassportModal: View {
                     .frame(height: 32)
                     .background(
                         LinearGradient(
-                            colors: [Color(red: 0.98, green: 0.82, blue: 0.32), Color(red: 0.88, green: 0.68, blue: 0.18)],
+                            colors: [Color(red: 0.82, green: 0.70, blue: 0.52), Color(red: 0.68, green: 0.56, blue: 0.38)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
@@ -225,7 +225,7 @@ struct ExpeditionPassportModal: View {
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color(red: 1.0, green: 0.9, blue: 0.5), lineWidth: 0.8)
+                            .stroke(Color(red: 0.90, green: 0.80, blue: 0.65).opacity(0.6), lineWidth: 0.8)
                     )
                 }
                 .buttonStyle(.plain)

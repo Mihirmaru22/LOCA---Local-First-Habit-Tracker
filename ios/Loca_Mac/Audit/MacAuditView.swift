@@ -3,7 +3,7 @@ import SwiftData
 
 // MARK: - HorizonCategory
 
-enum HorizonCategory: String, CaseIterable, Identifiable {
+enum HorizonCategory: String, CaseIterable, Identifiable, Codable {
     case all     = "All Horizons"
     case quarter = "This Quarter (Q3)"
     case year    = "This Year (2026)"
