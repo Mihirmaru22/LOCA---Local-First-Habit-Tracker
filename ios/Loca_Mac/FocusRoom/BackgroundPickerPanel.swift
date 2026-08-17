@@ -40,11 +40,11 @@ struct BackgroundPreset: Identifiable {
     let fallbackColors: [Color]
 
     var thumbnailURL: String {
-        "https://images.unsplash.com/\(photoID)?auto=format&fit=crop&w=260&q=70"
+        "https://images.unsplash.com/\(photoID)?auto=format&fit=crop&w=320&q=65"
     }
 
     var fullImageURL: String {
-        "https://images.unsplash.com/\(photoID)?auto=format&fit=crop&w=2560&q=85"
+        "https://images.unsplash.com/\(photoID)?auto=format&fit=crop&w=1920&q=75"
     }
 }
 
@@ -199,24 +199,11 @@ struct BackgroundPickerPanel: View {
                             Haptics.impact(.light)
                         } label: {
                             ZStack {
-                                // Async Thumbnail Image with Fallback Gradient
-                                AsyncImage(url: URL(string: preset.thumbnailURL)) { phase in
-                                    switch phase {
-                                    case .success(let image):
-                                        image
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fill)
-                                    case .failure:
-                                        LinearGradient(colors: preset.fallbackColors, startPoint: .topLeading, endPoint: .bottomTrailing)
-                                    case .empty:
-                                        ZStack {
-                                            LinearGradient(colors: preset.fallbackColors, startPoint: .topLeading, endPoint: .bottomTrailing)
-                                            ProgressView().scaleEffect(0.6).tint(.white)
-                                        }
-                                    @unknown default:
-                                        LinearGradient(colors: preset.fallbackColors, startPoint: .topLeading, endPoint: .bottomTrailing)
-                                    }
-                                }
+                                // Fast Cached Thumbnail Image with Fallback Gradient
+                                FocusCachedImageView(
+                                    urlString: preset.thumbnailURL,
+                                    fallbackColors: preset.fallbackColors
+                                )
                                 .frame(height: 64)
                                 .clipped()
 

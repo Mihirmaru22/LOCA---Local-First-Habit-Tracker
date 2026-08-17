@@ -32,10 +32,17 @@ struct FocusRoomView: View {
     @AppStorage("mac_today_submode") private var todaySubmode: String = "Plan"
     @State private var isFullscreen: Bool = false
 
-    // Background State
-    @State private var selectedPresetID: String = "nat_1"
-    @State private var youtubeVideoID: String? = nil
+    // Persistent Background State (Persists across App Restarts & Tab Switches)
+    @AppStorage("focus_room_selected_preset_id") private var selectedPresetID: String = "nat_1"
+    @AppStorage("focus_room_youtube_video_id") private var storedYoutubeVideoID: String = ""
     @State private var currentSession: FocusSession? = nil
+
+    private var youtubeVideoIDBinding: Binding<String?> {
+        Binding(
+            get: { storedYoutubeVideoID.isEmpty ? nil : storedYoutubeVideoID },
+            set: { storedYoutubeVideoID = $0 ?? "" }
+        )
+    }
 
     // Queries for Telemetry & Badges
     @Query private var allGoals: [FocusGoal]
@@ -100,7 +107,7 @@ struct FocusRoomView: View {
                                     set: { if !$0 { activePanel = .none } }
                                 ),
                                 selectedPresetID: $selectedPresetID,
-                                youtubeVideoID: $youtubeVideoID,
+                                youtubeVideoID: youtubeVideoIDBinding,
                                 youtubeVolume: $soundVM.youtubeVolume
                             )
                             .transition(.asymmetric(
@@ -199,6 +206,9 @@ struct FocusRoomView: View {
         .onAppear {
             DispatchQueue.main.async {
                 startSession()
+                // Prefetch nature preset wallpapers in background
+                let presetURLs = BackgroundPickerPanel.presets.prefix(8).map { $0.fullImageURL }
+                FocusWallpaperManager.shared.prefetch(urls: presetURLs)
             }
         }
         .onDisappear {
@@ -212,35 +222,17 @@ struct FocusRoomView: View {
 
     @ViewBuilder
     private func fullscreenBackground(size: CGSize) -> some View {
-        if let videoID = youtubeVideoID, !videoID.isEmpty {
-            YouTubeWebView(videoID: videoID, volume: soundVM.youtubeVolume)
+        if !storedYoutubeVideoID.isEmpty {
+            YouTubeWebView(videoID: storedYoutubeVideoID, volume: soundVM.youtubeVolume)
                 .frame(width: size.width, height: size.height)
                 .clipped()
         } else if let preset = BackgroundPickerPanel.presets.first(where: { $0.id == selectedPresetID }) {
             ZStack {
-                // Base fallback gradient
-                LinearGradient(colors: preset.fallbackColors, startPoint: .topLeading, endPoint: .bottomTrailing)
-
-                // High-Resolution Photo Background constrained to exact window size
-                AsyncImage(url: URL(string: preset.fullImageURL)) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: size.width, height: size.height)
-                            .clipped()
-                    case .failure:
-                        LinearGradient(colors: preset.fallbackColors, startPoint: .topLeading, endPoint: .bottomTrailing)
-                    case .empty:
-                        ZStack {
-                            LinearGradient(colors: preset.fallbackColors, startPoint: .topLeading, endPoint: .bottomTrailing)
-                            ProgressView().tint(.white)
-                        }
-                    @unknown default:
-                        LinearGradient(colors: preset.fallbackColors, startPoint: .topLeading, endPoint: .bottomTrailing)
-                    }
-                }
+                // High-Speed Cached Wallpaper with 0ms RAM/Disk hit and zero lag
+                FocusCachedImageView(
+                    urlString: preset.fullImageURL,
+                    fallbackColors: preset.fallbackColors
+                )
                 .frame(width: size.width, height: size.height)
                 .clipped()
 
