@@ -106,14 +106,16 @@ struct MacTodoContentColumn: View {
 
     @Namespace private var glassPillNamespace
     @State private var hoveredMode: TodoMode? = nil
+    @State private var mouseLocation: CGPoint = .zero
+    @State private var isHoveringCapsule: Bool = false
 
-    // MARK: - Apple Liquid Glass Capsule Switcher (matching Apple Music / Safari)
+    // MARK: - Apple Liquid Glass Capsule Switcher (with Optical Refraction & Hover Glint)
 
     private var glassPillarSwitcher: some View {
-        HStack(spacing: 2) {
+        HStack(spacing: 3) {
             ForEach(Array(TodoMode.allCases.enumerated()), id: \.element.id) { index, m in
                 let isSelected = mode.wrappedValue == m
-                let isHovered = hoveredMode == m && !isSelected
+                let isHovered = hoveredMode == m
 
                 Button {
                     guard mode.wrappedValue != m else { return }
@@ -124,103 +126,127 @@ struct MacTodoContentColumn: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: m.icon)
-                            .font(.system(size: 11, weight: isSelected ? .bold : .medium))
-                            .foregroundStyle(isSelected ? Color.white : (isHovered ? Color.white.opacity(0.9) : Color.white.opacity(0.65)))
+                            .font(.system(size: 11.5, weight: isSelected ? .bold : .semibold))
+                            .foregroundStyle(isSelected ? Color.white : (isHovered ? Color.white : Color.white.opacity(0.68)))
+                            .scaleEffect(isHovered ? 1.08 : 1.0)
+                            .animation(.spring(response: 0.2), value: isHovered)
 
                         Text(m.rawValue)
                             .font(.system(size: 13, weight: isSelected ? .semibold : .medium))
-                            .foregroundStyle(isSelected ? Color.white : (isHovered ? Color.white.opacity(0.9) : Color.white.opacity(0.65)))
+                            .foregroundStyle(isSelected ? Color.white : (isHovered ? Color.white : Color.white.opacity(0.68)))
 
                         // Badge Counts
                         if m == .plan && !scheduledItems.isEmpty {
                             Text("\(scheduledItems.count)")
                                 .font(.system(size: 9, weight: .bold, design: .monospaced))
-                                .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.60))
+                                .foregroundStyle(isSelected ? Color.white : (isHovered ? Color.white : Color.white.opacity(0.60)))
                                 .padding(.horizontal, 5)
                                 .padding(.vertical, 1)
                                 .background(
                                     Capsule()
-                                        .fill(isSelected ? Color.white.opacity(0.20) : Color.white.opacity(0.08))
+                                        .fill(isSelected ? Color.white.opacity(0.22) : (isHovered ? Color.white.opacity(0.14) : Color.white.opacity(0.08)))
                                 )
                         } else if m == .list && !openItems.isEmpty {
                             Text("\(openItems.count)")
                                 .font(.system(size: 9, weight: .bold, design: .monospaced))
-                                .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.60))
+                                .foregroundStyle(isSelected ? Color.white : (isHovered ? Color.white : Color.white.opacity(0.60)))
                                 .padding(.horizontal, 5)
                                 .padding(.vertical, 1)
                                 .background(
                                     Capsule()
-                                        .fill(isSelected ? Color.white.opacity(0.20) : Color.white.opacity(0.08))
+                                        .fill(isSelected ? Color.white.opacity(0.22) : (isHovered ? Color.white.opacity(0.14) : Color.white.opacity(0.08)))
                                 )
                         }
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 6)
+                    .padding(.vertical, 6.5)
                     .contentShape(Capsule())
                     .background {
                         if isSelected {
                             ZStack {
-                                // Glass thumb fill
+                                // Active glass thumb fill with depth
                                 Capsule()
                                     .fill(
                                         LinearGradient(
                                             colors: [
-                                                Color.white.opacity(0.28),
-                                                Color.white.opacity(0.18)
+                                                Color.white.opacity(isHovered ? 0.34 : 0.28),
+                                                Color.white.opacity(isHovered ? 0.22 : 0.18)
                                             ],
                                             startPoint: .top,
                                             endPoint: .bottom
                                         )
                                     )
 
-                                // Chromatic optical refraction rim (VisionOS / Apple physical glass)
+                                // Chromatic optical refraction rim (VisionOS / Apple physical lens)
                                 Capsule()
                                     .stroke(
                                         LinearGradient(
                                             stops: [
-                                                .init(color: Color.white.opacity(0.55), location: 0.0),
-                                                .init(color: Color.cyan.opacity(0.15), location: 0.3),
-                                                .init(color: Color.purple.opacity(0.12), location: 0.6),
-                                                .init(color: Color.white.opacity(0.10), location: 1.0)
+                                                .init(color: Color.white.opacity(isHovered ? 0.70 : 0.55), location: 0.0),
+                                                .init(color: Color.cyan.opacity(isHovered ? 0.28 : 0.18), location: 0.28),
+                                                .init(color: Color(red: 0.9, green: 0.4, blue: 0.9).opacity(isHovered ? 0.25 : 0.14), location: 0.65),
+                                                .init(color: Color.white.opacity(0.12), location: 1.0)
                                             ],
                                             startPoint: .topLeading,
                                             endPoint: .bottomTrailing
                                         ),
-                                        lineWidth: 0.85
+                                        lineWidth: isHovered ? 1.1 : 0.85
                                     )
                             }
-                            .shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 1.5)
+                            .shadow(color: Color.black.opacity(isHovered ? 0.35 : 0.22), radius: isHovered ? 6 : 4, x: 0, y: isHovered ? 2 : 1.5)
                             .matchedGeometryEffect(id: "activeAppleGlassPill", in: glassPillNamespace)
                         } else if isHovered {
-                            Capsule()
-                                .fill(Color.white.opacity(0.07))
-                                .transition(.opacity)
+                            // Inactive tab hover glass spotlight
+                            ZStack {
+                                Capsule()
+                                    .fill(Color.white.opacity(0.11))
+
+                                Capsule()
+                                    .stroke(
+                                        LinearGradient(
+                                            colors: [
+                                                Color.white.opacity(0.35),
+                                                Color.white.opacity(0.06)
+                                            ],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        ),
+                                        lineWidth: 0.75
+                                    )
+                            }
+                            .transition(.opacity.combined(with: .scale(scale: 0.96)))
                         }
                     }
+                    .scaleEffect(isHovered && !isSelected ? 1.02 : 1.0)
                 }
                 .buttonStyle(.plain)
                 .onHover { hovering in
-                    withAnimation(.easeInOut(duration: 0.15)) {
+                    withAnimation(.spring(response: 0.22, dampingFraction: 0.8)) {
                         hoveredMode = hovering ? m : nil
+                    }
+                    if hovering {
+                        NSCursor.pointingHand.push()
+                    } else {
+                        NSCursor.pop()
                     }
                 }
                 .keyboardShortcut(KeyEquivalent(Character("\(index + 1)")), modifiers: .command)
                 .help("\(m.subtitle)  ⌘\(index + 1)")
             }
         }
-        .padding(3)
+        .padding(3.5)
         .background(
             ZStack {
                 // Outer dark translucent glass track
                 Capsule()
-                    .fill(Color.white.opacity(0.10))
+                    .fill(Color.white.opacity(0.09))
 
                 // Track specular stroke
                 Capsule()
                     .stroke(
                         LinearGradient(
                             colors: [
-                                Color.white.opacity(0.20),
+                                Color.white.opacity(0.22),
                                 Color.white.opacity(0.04)
                             ],
                             startPoint: .top,

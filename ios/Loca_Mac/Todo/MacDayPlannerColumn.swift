@@ -935,94 +935,9 @@ extension MacDayPlannerColumn {
     }
 
     private func bentoTaskRow(task: TodoItem) -> some View {
-        let isSelected = selection?.id == task.id
-        let catColor = task.categoryColor
-
-        return Button {
+        BentoPlannerTaskRow(task: task, isSelected: selection?.id == task.id) {
             selection = task
-            Haptics.impact(.light)
-        } label: {
-            HStack(spacing: 9) {
-                // Category/Task Bubble Indicator
-                Image(systemName: task.iconName ?? (task.isCompleted ? "checkmark.circle.fill" : "circle"))
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(task.isCompleted ? DS.Color.success : catColor)
-                    .frame(width: 22, height: 22)
-                    .background(task.isCompleted ? DS.Color.success.opacity(0.12) : catColor.opacity(0.12), in: Circle())
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(task.title.isEmpty ? "Untitled Task" : task.title)
-                        .font(.system(size: 12.5, weight: .semibold))
-                        .foregroundStyle(task.isCompleted ? DS.Color.textTertiary : DS.Color.textPrimary)
-                        .strikethrough(task.isCompleted, color: DS.Color.textTertiary)
-                        .lineLimit(1)
-
-                    HStack(spacing: 6) {
-                        if let start = task.startTime, let end = task.endTime {
-                            HStack(spacing: 3) {
-                                Image(systemName: "clock")
-                                    .font(.system(size: 8))
-                                Text("\(start.formatted(.dateTime.hour().minute())) – \(end.formatted(.dateTime.hour().minute()))")
-                                    .font(.system(size: 9.5, weight: .medium, design: .monospaced))
-                            }
-                            .foregroundStyle(DS.Color.textSecondary)
-                        }
-
-                        Text("•")
-                            .font(.system(size: 7))
-                            .foregroundStyle(DS.Color.textTertiary)
-
-                        Text("\(task.durationMinutes)m")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(catColor)
-                    }
-                }
-
-                Spacer()
-
-                // Checkmark toggle button
-                Button {
-                    withAnimation(.spring(response: 0.25)) {
-                        if task.isCompleted {
-                            task.completedAt = nil
-                        } else {
-                            task.completedAt = Date()
-                            PlutoSoundEngine.shared.play(.completePop)
-                        }
-                        try? modelContext.save()
-                    }
-                    Haptics.impact(.light)
-                } label: {
-                    Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
-                        .font(.system(size: 15))
-                        .foregroundStyle(task.isCompleted ? DS.Color.success : DS.Color.textTertiary)
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(
-                ZStack {
-                    if isSelected {
-                        RoundedRectangle(cornerRadius: 9)
-                            .fill(Color.accentColor.opacity(0.14))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 9)
-                                    .stroke(Color.accentColor.opacity(0.4), lineWidth: 1)
-                            )
-                    } else {
-                        RoundedRectangle(cornerRadius: 9)
-                            .fill(Color.white.opacity(0.04))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 9)
-                                    .stroke(Color.white.opacity(0.06), lineWidth: 0.6)
-                            )
-                    }
-                }
-            )
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
     }
 
     var agendaStreamView: some View {
@@ -1369,5 +1284,129 @@ extension MacDayPlannerColumn {
         try? modelContext.save()
         selection = item
         Haptics.impact(.rigid)
+    }
+}
+
+// MARK: - BentoPlannerTaskRow (with High-Fidelity Glass Hover Physics)
+
+private struct BentoPlannerTaskRow: View {
+    @Bindable var task: TodoItem
+    let isSelected: Bool
+    let onSelect: () -> Void
+
+    @Environment(\.modelContext) private var modelContext
+    @State private var isHovered: Bool = false
+
+    private var catColor: Color { task.categoryColor }
+
+    var body: some View {
+        Button {
+            onSelect()
+            Haptics.impact(.light)
+        } label: {
+            HStack(spacing: 9) {
+                // Category/Task Bubble Indicator
+                Image(systemName: task.iconName ?? (task.isCompleted ? "checkmark.circle.fill" : "circle"))
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(task.isCompleted ? DS.Color.success : catColor)
+                    .frame(width: 22, height: 22)
+                    .background(task.isCompleted ? DS.Color.success.opacity(0.12) : catColor.opacity(0.12), in: Circle())
+                    .scaleEffect(isHovered ? 1.08 : 1.0)
+                    .animation(.spring(response: 0.2), value: isHovered)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(task.title.isEmpty ? "Untitled Task" : task.title)
+                        .font(.system(size: 12.5, weight: .semibold))
+                        .foregroundStyle(task.isCompleted ? DS.Color.textTertiary : DS.Color.textPrimary)
+                        .strikethrough(task.isCompleted, color: DS.Color.textTertiary)
+                        .lineLimit(1)
+
+                    HStack(spacing: 6) {
+                        if let start = task.startTime, let end = task.endTime {
+                            HStack(spacing: 3) {
+                                Image(systemName: "clock")
+                                    .font(.system(size: 8))
+                                Text("\(start.formatted(.dateTime.hour().minute())) – \(end.formatted(.dateTime.hour().minute()))")
+                                    .font(.system(size: 9.5, weight: .medium, design: .monospaced))
+                            }
+                            .foregroundStyle(DS.Color.textSecondary)
+                        }
+
+                        Text("•")
+                            .font(.system(size: 7))
+                            .foregroundStyle(DS.Color.textTertiary)
+
+                        Text("\(task.durationMinutes)m")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(catColor)
+                    }
+                }
+
+                Spacer()
+
+                // Checkmark toggle button
+                Button {
+                    withAnimation(.spring(response: 0.25)) {
+                        if task.isCompleted {
+                            task.completedAt = nil
+                        } else {
+                            task.completedAt = Date()
+                            PlutoSoundEngine.shared.play(.checkmark)
+                        }
+                        try? modelContext.save()
+                    }
+                    Haptics.impact(.light)
+                } label: {
+                    Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: 15))
+                        .foregroundStyle(task.isCompleted ? DS.Color.success : DS.Color.textTertiary)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(
+                ZStack {
+                    if isSelected {
+                        RoundedRectangle(cornerRadius: 9)
+                            .fill(Color.accentColor.opacity(0.14))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 9)
+                                    .stroke(Color.accentColor.opacity(0.4), lineWidth: 1)
+                            )
+                    } else {
+                        RoundedRectangle(cornerRadius: 9)
+                            .fill(isHovered ? Color.white.opacity(0.08) : Color.white.opacity(0.04))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 9)
+                                    .stroke(
+                                        LinearGradient(
+                                            colors: [
+                                                isHovered ? catColor.opacity(0.35) : Color.white.opacity(0.06),
+                                                Color.white.opacity(0.02)
+                                            ],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        ),
+                                        lineWidth: 0.8
+                                    )
+                            )
+                    }
+                }
+            )
+            .offset(y: isHovered ? -1.5 : 0)
+            .shadow(color: isHovered ? Color.black.opacity(0.16) : Color.clear, radius: 5, x: 0, y: 2)
+            .animation(.spring(response: 0.22, dampingFraction: 0.8), value: isHovered)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            isHovered = hovering
+            if hovering {
+                NSCursor.pointingHand.push()
+            } else {
+                NSCursor.pop()
+            }
+        }
     }
 }

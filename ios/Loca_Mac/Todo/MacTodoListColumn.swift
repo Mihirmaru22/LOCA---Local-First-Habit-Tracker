@@ -451,12 +451,19 @@ private struct List1CardRow: View {
                 }
             }
         )
-        .offset(y: isHovered ? -1 : 0)
-        .shadow(color: isHovered ? Color.black.opacity(0.1) : Color.clear, radius: 4, x: 0, y: 2)
-        .animation(.spring(response: 0.25), value: isHovered)
+        .offset(y: isHovered ? -1.5 : 0)
+        .shadow(color: isHovered ? Color.black.opacity(0.16) : Color.black.opacity(0.04), radius: isHovered ? 6 : 2, x: 0, y: isHovered ? 3 : 1)
+        .animation(.spring(response: 0.22, dampingFraction: 0.8), value: isHovered)
         .contentShape(Rectangle())
         .onTapGesture { onSelect() }
-        .onHover { isHovered = $0 }
+        .onHover { hovering in
+            isHovered = hovering
+            if hovering {
+                NSCursor.pointingHand.push()
+            } else {
+                NSCursor.pop()
+            }
+        }
     }
 
     private func priorityPill(_ p: Int) -> some View {
@@ -764,10 +771,19 @@ private struct List3FocusCard: View {
                 }
             }
         )
-        .offset(y: isHovered ? -1 : 0)
+        .offset(y: isHovered ? -1.5 : 0)
+        .shadow(color: isHovered ? Color.black.opacity(0.16) : Color.black.opacity(0.04), radius: isHovered ? 6 : 2, x: 0, y: isHovered ? 3 : 1)
+        .animation(.spring(response: 0.22, dampingFraction: 0.8), value: isHovered)
         .contentShape(Rectangle())
         .onTapGesture { onSelect() }
-        .onHover { isHovered = $0 }
+        .onHover { hovering in
+            isHovered = hovering
+            if hovering {
+                NSCursor.pointingHand.push()
+            } else {
+                NSCursor.pop()
+            }
+        }
     }
 
     private func priorityColor(_ p: Int) -> Color {
