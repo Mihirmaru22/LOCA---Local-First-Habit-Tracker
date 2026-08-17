@@ -72,18 +72,45 @@ struct MacDayPlannerColumn: View {
         static let resizeZone: CGFloat = 14    // bottom pt that triggers resize
     }
 
+    private var isToday: Bool {
+        cal.isDateInToday(selectedDate)
+    }
+
+    private var isFuture: Bool {
+        cal.startOfDay(for: selectedDate) > cal.startOfDay(for: .now)
+    }
+
+    private var standardDayStart: Date {
+        cal.date(bySettingHour: 9, minute: 0, second: 0, of: selectedDate) ?? selectedDate
+    }
+
     private var railStart: Date {
-        let day7 = cal.date(bySettingHour: 7, minute: 0, second: 0, of: selectedDate) ?? selectedDate
         let earliest = scheduled.compactMap { $0.startTime }.min()
-        if let e = earliest, e < day7 { return floorHour(e) }
-        return day7
+
+        if isToday {
+            let now = Date.now
+            // If planning early morning before 9:00 AM (e.g. 7am or 8am): Show full day from 9:00 AM (or earlier if tasks exist)
+            if now < standardDayStart {
+                if let e = earliest, e < standardDayStart { return floorHour(e) }
+                return standardDayStart
+            } else {
+                // Day is in-progress (e.g. 11am, 2pm): Anchor timeline from current hour
+                let currentHour = floorHour(now)
+                if let e = earliest, e < currentHour { return floorHour(e) }
+                return currentHour
+            }
+        } else {
+            // Future or Past day: Show full day starting from 9:00 AM
+            if let e = earliest, e < standardDayStart { return floorHour(e) }
+            return standardDayStart
+        }
     }
 
     private var railEnd: Date {
-        let day21 = cal.date(bySettingHour: 21, minute: 0, second: 0, of: selectedDate) ?? selectedDate
+        let day22 = cal.date(bySettingHour: 22, minute: 0, second: 0, of: selectedDate) ?? selectedDate
         let latest = scheduled.compactMap { $0.endTime }.max()
-        if let l = latest, l > day21 { return ceilHour(l) }
-        return day21
+        if let l = latest, l > day22 { return ceilHour(l) }
+        return day22
     }
 
     private var totalMinutes: CGFloat {
@@ -722,8 +749,26 @@ struct MacDayPlannerColumn: View {
     }
 
     private func defaultStart() -> Date {
-        if let last = scheduled.last, let end = last.endTime { return end }
-        return cal.date(bySettingHour: 9, minute: 0, second: 0, of: selectedDate) ?? selectedDate
+        if let last = scheduled.last, let end = last.endTime {
+            if isToday {
+                return max(end, snap5(Date.now))
+            }
+            return end
+        }
+
+        if isToday {
+            let now = Date.now
+            if now < standardDayStart {
+                // Planning at 7am or 8am before day starts: first task starts at 9:00 AM (full day visible)
+                return standardDayStart
+            } else {
+                // Planning during the day (e.g. 2:15 PM): first task starts right now
+                return snap5(now)
+            }
+        } else {
+            // Planning for a future day: first task starts at standard 9:00 AM
+            return standardDayStart
+        }
     }
 }
 
