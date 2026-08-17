@@ -331,21 +331,30 @@ struct FocusRoomView: View {
                 .keyboardShortcut("b", modifiers: .command)
                 .help("Toggle Navigation Sidebar (⌘B)")
 
-                // 1. Personal Timer Pill
+                // 1. Pomodoro Focus Pill
                 Button {
                     showTimerModal.toggle()
                     PlutoSoundEngine.shared.play(.tabSwitch)
                     Haptics.impact(.light)
                 } label: {
                     HStack(spacing: 6) {
-                        Image(systemName: "timer")
+                        Image(systemName: timerVM.mode.icon)
                             .font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(.white.opacity(0.8))
+                            .foregroundStyle(timerVM.mode.themeColor)
 
                         VStack(alignment: .leading, spacing: 0) {
-                            Text("Personal timer")
-                                .font(.system(size: 8, weight: .bold))
-                                .foregroundStyle(.white.opacity(0.6))
+                            HStack(spacing: 4) {
+                                Text(timerVM.mode.rawValue)
+                                    .font(.system(size: 8, weight: .bold))
+                                    .foregroundStyle(.white.opacity(0.7))
+
+                                if timerVM.mode == .focus {
+                                    Text("• R\(timerVM.completedRounds % timerVM.totalRoundsTarget + 1)/\(timerVM.totalRoundsTarget)")
+                                        .font(.system(size: 7.5, weight: .semibold))
+                                        .foregroundStyle(.white.opacity(0.5))
+                                }
+                            }
+
                             Text(timerVM.formattedTime)
                                 .font(.system(size: 11, weight: .heavy, design: .monospaced))
                                 .monospacedDigit()
@@ -356,9 +365,13 @@ struct FocusRoomView: View {
                     .padding(.vertical, 6)
                     .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
                     .background(Color.black.opacity(0.65), in: RoundedRectangle(cornerRadius: 10))
-                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.15), lineWidth: 1))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(showTimerModal ? timerVM.mode.themeColor.opacity(0.8) : Color.white.opacity(0.15), lineWidth: 1)
+                    )
                 }
                 .buttonStyle(.plain)
+                .help("Toggle Pomodoro Timer (⌘T)")
 
                 // 2. Session Goals Pill (Toggles Goals Panel)
                 Button {
@@ -586,14 +599,21 @@ struct FocusRoomView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Big Timer Modal Popup
+    // MARK: - Big Pomodoro Modal Popup
 
     private var bigTimerModal: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 14) {
+            // Top Header: Title + Mute + Close
             HStack {
-                Label("Personal timer", systemImage: "timer")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.9))
+                HStack(spacing: 6) {
+                    Image(systemName: "timer")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(timerVM.mode.themeColor)
+
+                    Text("POMODORO")
+                        .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.9))
+                }
 
                 Spacer()
 
@@ -606,6 +626,7 @@ struct FocusRoomView: View {
                         .foregroundStyle(.white.opacity(0.6))
                 }
                 .buttonStyle(.plain)
+                .help(timerVM.isMuted ? "Unmute Bell" : "Mute Bell")
 
                 Button {
                     withAnimation(.spring(response: 0.3)) {
@@ -621,48 +642,169 @@ struct FocusRoomView: View {
                 .buttonStyle(.plain)
             }
 
-            HStack {
-                Text(timerVM.formattedTime)
-                    .font(.system(size: 32, weight: .heavy, design: .monospaced))
-                    .monospacedDigit()
-                    .foregroundStyle(.white)
-
-                Spacer()
-
-                HStack(spacing: 8) {
+            // Mode Segmented Control: [ Focus | Short Break | Long Break ]
+            HStack(spacing: 4) {
+                ForEach(PomodoroMode.allCases) { m in
+                    let isSelected = timerVM.mode == m
                     Button {
-                        timerVM.resetTimer()
+                        timerVM.setMode(m)
                     } label: {
-                        Image(systemName: "stop.fill")
-                            .font(.system(size: 13))
-                            .foregroundStyle(.white)
-                            .frame(width: 36, height: 36)
-                            .background(Color.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
-                    }
-                    .buttonStyle(.plain)
-
-                    Button {
-                        timerVM.togglePlayPause()
-                    } label: {
-                        Image(systemName: timerVM.isRunning ? "pause.fill" : "play.fill")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 36, height: 36)
-                            .background(Color.blue, in: RoundedRectangle(cornerRadius: 8))
+                        HStack(spacing: 4) {
+                            Image(systemName: m.icon)
+                                .font(.system(size: 9, weight: .bold))
+                            Text(m.rawValue)
+                                .font(.system(size: 10, weight: isSelected ? .bold : .medium))
+                        }
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 5)
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            isSelected
+                                ? m.themeColor.opacity(0.35)
+                                : Color.white.opacity(0.04),
+                            in: RoundedRectangle(cornerRadius: 6)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(isSelected ? m.themeColor.opacity(0.8) : Color.white.opacity(0.08), lineWidth: 0.8)
+                        )
+                        .foregroundStyle(isSelected ? .white : .white.opacity(0.6))
                     }
                     .buttonStyle(.plain)
                 }
             }
+            .padding(2)
+            .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))
+
+            // Big Countdown Time Display with Quick Adjust
+            VStack(spacing: 6) {
+                HStack(alignment: .center) {
+                    // -5m Button
+                    Button {
+                        timerVM.adjustDuration(deltaMinutes: -5)
+                    } label: {
+                        Text("-5m")
+                            .font(.system(size: 10, weight: .bold, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.6))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 4)
+                            .background(Color.white.opacity(0.08), in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .help("Decrease 5 minutes")
+
+                    Spacer()
+
+                    Text(timerVM.formattedTime)
+                        .font(.system(size: 38, weight: .heavy, design: .monospaced))
+                        .monospacedDigit()
+                        .foregroundStyle(.white)
+
+                    Spacer()
+
+                    // +5m Button
+                    Button {
+                        timerVM.adjustDuration(deltaMinutes: 5)
+                    } label: {
+                        Text("+5m")
+                            .font(.system(size: 10, weight: .bold, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.6))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 4)
+                            .background(Color.white.opacity(0.08), in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .help("Increase 5 minutes")
+                }
+
+                // Subtle animated progress line
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(Color.white.opacity(0.08))
+                            .frame(height: 4)
+
+                        Capsule()
+                            .fill(timerVM.mode.themeColor)
+                            .frame(width: max(4, geo.size.width * CGFloat(timerVM.progress)), height: 4)
+                            .animation(.linear(duration: 0.5), value: timerVM.progress)
+                    }
+                }
+                .frame(height: 4)
+            }
+
+            // Rounds Indicator Dots
+            HStack {
+                HStack(spacing: 5) {
+                    ForEach(0..<timerVM.totalRoundsTarget, id: \.self) { round in
+                        let isDone = round < (timerVM.completedRounds % timerVM.totalRoundsTarget)
+                        Circle()
+                            .fill(isDone ? timerVM.mode.themeColor : Color.white.opacity(0.18))
+                            .frame(width: 7, height: 7)
+                    }
+                }
+
+                Spacer()
+
+                Text("Round \(timerVM.completedRounds % timerVM.totalRoundsTarget + 1) of \(timerVM.totalRoundsTarget)")
+                    .font(.system(size: 9.5, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.55))
+            }
+
+            Divider().opacity(0.2)
+
+            // Primary Actions: Reset, Play/Pause, Skip Next
+            HStack(spacing: 12) {
+                Button {
+                    timerVM.resetTimer()
+                } label: {
+                    Image(systemName: "arrow.counterclockwise")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.8))
+                        .frame(width: 36, height: 36)
+                        .background(Color.white.opacity(0.10), in: RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(.plain)
+                .help("Reset Session")
+
+                Button {
+                    timerVM.togglePlayPause()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: timerVM.isRunning ? "pause.fill" : "play.fill")
+                            .font(.system(size: 14, weight: .bold))
+                        Text(timerVM.isRunning ? "PAUSE" : "START")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 36)
+                    .background(timerVM.mode.themeColor, in: RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    timerVM.skipNext()
+                } label: {
+                    Image(systemName: "forward.fill")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.8))
+                        .frame(width: 36, height: 36)
+                        .background(Color.white.opacity(0.10), in: RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(.plain)
+                .help("Skip to Next Phase")
+            }
         }
         .padding(16)
-        .frame(width: 290)
+        .frame(width: 310)
         .background(
-            Color.black.opacity(0.72)
+            Color.black.opacity(0.80)
                 .background(.ultraThinMaterial)
         )
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.14), lineWidth: 1))
-        .shadow(color: .black.opacity(0.4), radius: 20, x: 0, y: 10)
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.16), lineWidth: 1))
+        .shadow(color: .black.opacity(0.5), radius: 24, x: 0, y: 10)
     }
 
     // MARK: - Session Persistence
