@@ -105,26 +105,31 @@ struct MacTodoContentColumn: View {
     }
 
     @Namespace private var glassPillNamespace
+    @State private var hoveredMode: TodoMode? = nil
 
     // MARK: - Apple Liquid Glass Capsule Switcher (matching Apple Music / Safari)
 
     private var glassPillarSwitcher: some View {
         HStack(spacing: 2) {
-            ForEach(TodoMode.allCases) { m in
+            ForEach(Array(TodoMode.allCases.enumerated()), id: \.element.id) { index, m in
                 let isSelected = mode.wrappedValue == m
+                let isHovered = hoveredMode == m && !isSelected
+
                 Button {
+                    guard mode.wrappedValue != m else { return }
                     withAnimation(.spring(response: 0.28, dampingFraction: 0.78)) {
                         mode.wrappedValue = m
                     }
+                    Haptics.impact(.light)
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: m.icon)
                             .font(.system(size: 11, weight: isSelected ? .bold : .medium))
-                            .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.70))
+                            .foregroundStyle(isSelected ? Color.white : (isHovered ? Color.white.opacity(0.9) : Color.white.opacity(0.65)))
 
                         Text(m.rawValue)
                             .font(.system(size: 13, weight: isSelected ? .semibold : .medium))
-                            .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.70))
+                            .foregroundStyle(isSelected ? Color.white : (isHovered ? Color.white.opacity(0.9) : Color.white.opacity(0.65)))
 
                         // Badge Counts
                         if m == .plan && !scheduledItems.isEmpty {
@@ -186,10 +191,21 @@ struct MacTodoContentColumn: View {
                             }
                             .shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 1.5)
                             .matchedGeometryEffect(id: "activeAppleGlassPill", in: glassPillNamespace)
+                        } else if isHovered {
+                            Capsule()
+                                .fill(Color.white.opacity(0.07))
+                                .transition(.opacity)
                         }
                     }
                 }
                 .buttonStyle(.plain)
+                .onHover { hovering in
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        hoveredMode = hovering ? m : nil
+                    }
+                }
+                .keyboardShortcut(KeyEquivalent(Character("\(index + 1)")), modifiers: .command)
+                .help("\(m.subtitle)  ⌘\(index + 1)")
             }
         }
         .padding(3)
@@ -214,5 +230,16 @@ struct MacTodoContentColumn: View {
                     )
             }
         )
+    }
+
+    private func cycleMode(delta: Int) {
+        let all = TodoMode.allCases
+        if let idx = all.firstIndex(of: mode.wrappedValue) {
+            let nextIdx = (idx + delta + all.count) % all.count
+            withAnimation(.spring(response: 0.28, dampingFraction: 0.78)) {
+                mode.wrappedValue = all[nextIdx]
+                Haptics.impact(.light)
+            }
+        }
     }
 }
