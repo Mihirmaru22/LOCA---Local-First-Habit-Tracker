@@ -80,6 +80,10 @@ final class FocusTimerViewModel: ObservableObject {
         return Double(elapsed) / Double(totalDurationSeconds)
     }
 
+    var secondsElapsed: Int {
+        totalDurationSeconds - secondsRemaining
+    }
+
     private func setupTimer() {
         timerPublisher
             .sink { [weak self] _ in
