@@ -104,82 +104,115 @@ struct MacTodoContentColumn: View {
         })
     }
 
-    // MARK: - Glass Pillar Switcher
+    @Namespace private var glassPillNamespace
+
+    // MARK: - Apple Liquid Glass Capsule Switcher (matching Apple Music / Safari)
 
     private var glassPillarSwitcher: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 2) {
             ForEach(TodoMode.allCases) { m in
                 let isSelected = mode.wrappedValue == m
                 Button {
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.8)) {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.78)) {
                         mode.wrappedValue = m
                     }
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: m.icon)
-                            .font(.system(size: 11.5, weight: isSelected ? .bold : .medium))
-                            .foregroundStyle(isSelected ? Color.accentColor : DS.Color.textSecondary)
+                            .font(.system(size: 11, weight: isSelected ? .bold : .medium))
+                            .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.70))
 
                         Text(m.rawValue)
-                            .font(.system(size: 12, weight: isSelected ? .bold : .medium))
-                            .foregroundStyle(isSelected ? DS.Color.textPrimary : DS.Color.textSecondary)
+                            .font(.system(size: 13, weight: isSelected ? .semibold : .medium))
+                            .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.70))
 
                         // Badge Counts
                         if m == .plan && !scheduledItems.isEmpty {
                             Text("\(scheduledItems.count)")
-                                .font(.system(size: 8.5, weight: .bold, design: .monospaced))
-                                .foregroundStyle(isSelected ? Color.accentColor : DS.Color.textTertiary)
-                                .padding(.horizontal, 4)
+                                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                                .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.60))
+                                .padding(.horizontal, 5)
                                 .padding(.vertical, 1)
-                                .background(isSelected ? Color.accentColor.opacity(0.15) : Color.white.opacity(0.06), in: Capsule())
+                                .background(
+                                    Capsule()
+                                        .fill(isSelected ? Color.white.opacity(0.20) : Color.white.opacity(0.08))
+                                )
                         } else if m == .list && !openItems.isEmpty {
                             Text("\(openItems.count)")
-                                .font(.system(size: 8.5, weight: .bold, design: .monospaced))
-                                .foregroundStyle(isSelected ? Color.accentColor : DS.Color.textTertiary)
-                                .padding(.horizontal, 4)
+                                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                                .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.60))
+                                .padding(.horizontal, 5)
                                 .padding(.vertical, 1)
-                                .background(isSelected ? Color.accentColor.opacity(0.15) : Color.white.opacity(0.06), in: Capsule())
+                                .background(
+                                    Capsule()
+                                        .fill(isSelected ? Color.white.opacity(0.20) : Color.white.opacity(0.08))
+                                )
                         }
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 6)
-                    .background(
-                        ZStack {
-                            if isSelected {
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color.white.opacity(0.10))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .stroke(
-                                                LinearGradient(
-                                                    colors: [.white.opacity(0.35), .white.opacity(0.05)],
-                                                    startPoint: .top,
-                                                    endPoint: .bottom
-                                                ),
-                                                lineWidth: 1
-                                            )
+                    .contentShape(Capsule())
+                    .background {
+                        if isSelected {
+                            ZStack {
+                                // Glass thumb fill
+                                Capsule()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [
+                                                Color.white.opacity(0.28),
+                                                Color.white.opacity(0.18)
+                                            ],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        )
                                     )
-                                    .shadow(color: Color.black.opacity(0.15), radius: 4, x: 0, y: 2)
+
+                                // Chromatic optical refraction rim (VisionOS / Apple physical glass)
+                                Capsule()
+                                    .stroke(
+                                        LinearGradient(
+                                            stops: [
+                                                .init(color: Color.white.opacity(0.55), location: 0.0),
+                                                .init(color: Color.cyan.opacity(0.15), location: 0.3),
+                                                .init(color: Color.purple.opacity(0.12), location: 0.6),
+                                                .init(color: Color.white.opacity(0.10), location: 1.0)
+                                            ],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 0.85
+                                    )
                             }
+                            .shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 1.5)
+                            .matchedGeometryEffect(id: "activeAppleGlassPill", in: glassPillNamespace)
                         }
-                    )
-                    .contentShape(Rectangle())
+                    }
                 }
                 .buttonStyle(.plain)
             }
         }
         .padding(3)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 11))
-        .overlay(
-            RoundedRectangle(cornerRadius: 11)
-                .stroke(
-                    LinearGradient(
-                        colors: [.white.opacity(0.20), .white.opacity(0.04)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    ),
-                    lineWidth: 0.8
-                )
+        .background(
+            ZStack {
+                // Outer dark translucent glass track
+                Capsule()
+                    .fill(Color.white.opacity(0.10))
+
+                // Track specular stroke
+                Capsule()
+                    .stroke(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.20),
+                                Color.white.opacity(0.04)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: 0.75
+                    )
+            }
         )
     }
 }

@@ -112,56 +112,117 @@ struct MacTodoListColumn: View {
 
     // MARK: - Top Glass Header
 
+    @Namespace private var layoutPillNamespace
+
+    // MARK: - Top Apple Liquid Glass Header
+
     private var topGlassHeader: some View {
         HStack(spacing: DS.Space.sm) {
-            // Task count chip
+            // Task count chip in glass capsule
             HStack(spacing: 5) {
                 Circle()
-                    .fill(Color.accentColor)
-                    .frame(width: 6, height: 6)
+                    .fill(Color.white.opacity(0.85))
+                    .frame(width: 5, height: 5)
 
                 Text("\(openItems.count) tasks open")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(DS.Color.textPrimary)
+                    .font(.system(size: 11.5, weight: .semibold))
+                    .foregroundStyle(Color.white)
 
                 if !doneItems.isEmpty {
                     Text("• \(doneItems.count) done")
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(DS.Color.textTertiary)
+                        .font(.system(size: 10.5, weight: .medium))
+                        .foregroundStyle(Color.white.opacity(0.65))
                 }
             }
-            .padding(.horizontal, 8)
+            .padding(.horizontal, 9)
             .padding(.vertical, 4)
-            .background(.ultraThinMaterial, in: Capsule())
-            .overlay(Capsule().stroke(Color.white.opacity(0.12), lineWidth: 0.8))
+            .background(
+                Capsule()
+                    .fill(Color.white.opacity(0.09))
+            )
+            .overlay(
+                Capsule()
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.20), Color.white.opacity(0.04)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: 0.75
+                    )
+            )
 
             Spacer()
 
-            // Layout Picker Pill
-            HStack(spacing: 3) {
+            // Apple Music / VisionOS Style Layout Switcher Capsule
+            HStack(spacing: 2) {
                 ForEach(ListDesignVariant.allCases) { variant in
                     let isSelected = selectedVariant == variant
                     Button {
-                        withAnimation(.spring(response: 0.25)) {
+                        withAnimation(.spring(response: 0.28, dampingFraction: 0.78)) {
                             selectedVariant = variant
                         }
                     } label: {
                         Image(systemName: variant.icon)
-                            .font(.system(size: 11, weight: isSelected ? .bold : .medium))
-                            .foregroundStyle(isSelected ? Color.white : DS.Color.textSecondary)
-                            .frame(width: 24, height: 22)
-                            .background(
-                                isSelected ? Color.accentColor : Color.clear,
-                                in: RoundedRectangle(cornerRadius: 5)
-                            )
+                            .font(.system(size: 11.5, weight: isSelected ? .bold : .medium))
+                            .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.60))
+                            .frame(width: 26, height: 22)
+                            .contentShape(Capsule())
+                            .background {
+                                if isSelected {
+                                    ZStack {
+                                        Capsule()
+                                            .fill(
+                                                LinearGradient(
+                                                    colors: [
+                                                        Color.white.opacity(0.28),
+                                                        Color.white.opacity(0.18)
+                                                    ],
+                                                    startPoint: .top,
+                                                    endPoint: .bottom
+                                                )
+                                            )
+
+                                        Capsule()
+                                            .stroke(
+                                                LinearGradient(
+                                                    stops: [
+                                                        .init(color: Color.white.opacity(0.55), location: 0.0),
+                                                        .init(color: Color.cyan.opacity(0.15), location: 0.3),
+                                                        .init(color: Color.purple.opacity(0.12), location: 0.6),
+                                                        .init(color: Color.white.opacity(0.10), location: 1.0)
+                                                    ],
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                ),
+                                                lineWidth: 0.85
+                                            )
+                                    }
+                                    .shadow(color: Color.black.opacity(0.22), radius: 3, x: 0, y: 1)
+                                    .matchedGeometryEffect(id: "activeLayoutGlassPill", in: layoutPillNamespace)
+                                }
+                            }
                     }
                     .buttonStyle(.plain)
                     .help(variant.rawValue)
                 }
             }
-            .padding(3)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 7))
-            .overlay(RoundedRectangle(cornerRadius: 7).stroke(Color.white.opacity(0.1), lineWidth: 0.8))
+            .padding(2.5)
+            .background(
+                Capsule()
+                    .fill(Color.white.opacity(0.09))
+            )
+            .overlay(
+                Capsule()
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.20), Color.white.opacity(0.04)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: 0.75
+                    )
+            )
         }
     }
 }
