@@ -2,16 +2,49 @@ import SwiftUI
 import AppKit
 import CoreLocation
 
+// MARK: - PassportEditionTheme
+
+/// The 4 prestigious real-world diplomatic & historical mountaineering certificate aesthetics:
+/// 1. 🏛️ Diplomatic Ivory: Swiss Alpine Club & UN Diplomatic Treaty (Luminous Ivory & Oxford Navy)
+/// 2. 📜 Royal Geographic Vellum: Royal Geographical Society 1953 Everest & Colonial Archival Vellum (Antique Sepia & Burgundy)
+/// 3. ❄️ Nordic Polar Technical: Scandinavian Arctic & Japanese Alpine Club (Glacial Ice Slate & Arctic Blue)
+/// 4. 👑 Sovereign Obsidian Gold: Head of State Special Diplomatic Passport (Matte Obsidian & 24K Gold Foil)
+enum PassportEditionTheme: String, CaseIterable, Identifiable {
+    case diplomaticIvory   = "Diplomatic Ivory"
+    case royalVellum       = "Royal Geographic Vellum"
+    case nordicTechnical   = "Nordic Polar Technical"
+    case obsidianGold      = "Sovereign Obsidian Gold"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .diplomaticIvory: return "building.columns.fill"
+        case .royalVellum:     return "scroll.fill"
+        case .nordicTechnical: return "mountain.2.fill"
+        case .obsidianGold:    return "crown.fill"
+        }
+    }
+
+    var shortTag: String {
+        switch self {
+        case .diplomaticIvory: return "GENEVA / SWISS"
+        case .royalVellum:     return "RGS 1953 VINTAGE"
+        case .nordicTechnical: return "NORDIC TECHNICAL"
+        case .obsidianGold:    return "SOVEREIGN GOLD"
+        }
+    }
+}
+
 // MARK: - ExpeditionPassportDocumentView
 
-/// Diplomatic-grade, high-prestige Archival Alpine Expedition Passport & Summit Dossier.
-/// Designed according to sovereign state registry and diplomatic treaty standards (Swiss Alpine Club,
-/// Himalayan Database, and Ministry of Geological Survey expedition credentials).
-/// Features a luminous warm ivory/linen parchment foundation, intaglio security borders,
-/// authentic vermilion state registry seals, cartographic topographic isohypse maps, and ICAO MRZ.
+/// Authentic, prestigious Alpine Expedition Passport & Summit Dossier.
+/// Supports 4 live distinct diplomatic & historical document editions (Ivory, Vintage Vellum, Nordic Slate, Obsidian Gold).
+/// Features precision cartographic contour maps, geodetic coordinates, dynamic route stages, and state seals.
 struct ExpeditionPassportDocumentView: View {
 
     let trek: TrekRecord
+    var theme: PassportEditionTheme = .diplomaticIvory
 
     private var isConquered: Bool {
         trek.status == .conquered
@@ -33,7 +66,7 @@ struct ExpeditionPassportDocumentView: View {
     }
 
     private var verificationHash: String {
-        let raw = "\(trek.name)-\(trek.elevationMeters)-\(permitNumber)-\(recordYear)"
+        let raw = "\(trek.name)-\(trek.elevationMeters)-\(permitNumber)-\(recordYear)-\(theme.rawValue)"
         let hash = abs(raw.hashValue)
         return String(format: "IMF-%04X-%04X-%04X", (hash >> 16) & 0xFFFF, (hash >> 8) & 0xFFFF, hash & 0xFFFF)
     }
@@ -50,18 +83,83 @@ struct ExpeditionPassportDocumentView: View {
         return "\(permitNumber.replacingOccurrences(of: "-", with: ""))\(elevCode)IND2608167M<<<<<\(cleanTrek)<<06"
     }
 
-    // High-Prestige Diplomatic Parchment Palette
-    private let parchmentLight   = Color(red: 0.98, green: 0.97, blue: 0.95) // Warm Archival Ivory Linen
-    private let parchmentDark    = Color(red: 0.94, green: 0.92, blue: 0.88) // Aged Vellum Base
-    private let parchmentCard    = Color(red: 0.96, green: 0.95, blue: 0.92) // Recessed Card Parchment
-    private let inkPrimary       = Color(red: 0.10, green: 0.12, blue: 0.16) // Deep Archival Carbon Ink
-    private let inkSecondary     = Color(red: 0.28, green: 0.32, blue: 0.40) // Muted Slate Ink
-    private let inkTertiary      = Color(red: 0.50, green: 0.54, blue: 0.62) // Technical Annotation Text
-    private let diplomaticGold   = Color(red: 0.68, green: 0.54, blue: 0.32) // Intaglio Gold / Bronze
-    private let diplomaticNavy   = Color(red: 0.12, green: 0.18, blue: 0.28) // Oxford Diplomatic Navy
-    private let borderEngraved   = Color(red: 0.68, green: 0.54, blue: 0.32).opacity(0.35) // Engraved Hairline
-    private let sealCrimson      = Color(red: 0.62, green: 0.14, blue: 0.14) // Authentic Inked State Wax Red
-    private let statusGreen      = Color(red: 0.11, green: 0.42, blue: 0.24) // Diplomatic Forest Emerald
+    // MARK: - Dynamic Theme Color Tokens
+
+    private var bgGradient: [Color] {
+        switch theme {
+        case .diplomaticIvory:
+            return [Color(red: 0.98, green: 0.97, blue: 0.95), Color(red: 0.94, green: 0.92, blue: 0.88)]
+        case .royalVellum:
+            return [Color(red: 0.95, green: 0.91, blue: 0.82), Color(red: 0.89, green: 0.84, blue: 0.73)]
+        case .nordicTechnical:
+            return [Color(red: 0.96, green: 0.97, blue: 0.99), Color(red: 0.90, green: 0.93, blue: 0.96)]
+        case .obsidianGold:
+            return [Color(red: 0.09, green: 0.10, blue: 0.13), Color(red: 0.04, green: 0.05, blue: 0.07)]
+        }
+    }
+
+    private var inkPrimary: Color {
+        switch theme {
+        case .diplomaticIvory: return Color(red: 0.10, green: 0.12, blue: 0.16)
+        case .royalVellum:     return Color(red: 0.16, green: 0.12, blue: 0.08)
+        case .nordicTechnical: return Color(red: 0.08, green: 0.11, blue: 0.16)
+        case .obsidianGold:    return Color(red: 0.95, green: 0.86, blue: 0.65) // Metallic Gold Ink
+        }
+    }
+
+    private var inkSecondary: Color {
+        switch theme {
+        case .diplomaticIvory: return Color(red: 0.28, green: 0.32, blue: 0.40)
+        case .royalVellum:     return Color(red: 0.32, green: 0.24, blue: 0.16)
+        case .nordicTechnical: return Color(red: 0.22, green: 0.28, blue: 0.38)
+        case .obsidianGold:    return Color(red: 0.80, green: 0.82, blue: 0.88)
+        }
+    }
+
+    private var inkTertiary: Color {
+        switch theme {
+        case .diplomaticIvory: return Color(red: 0.50, green: 0.54, blue: 0.62)
+        case .royalVellum:     return Color(red: 0.52, green: 0.44, blue: 0.34)
+        case .nordicTechnical: return Color(red: 0.46, green: 0.52, blue: 0.60)
+        case .obsidianGold:    return Color(red: 0.55, green: 0.58, blue: 0.65)
+        }
+    }
+
+    private var accentColor: Color {
+        switch theme {
+        case .diplomaticIvory: return Color(red: 0.68, green: 0.54, blue: 0.32) // Intaglio Gold
+        case .royalVellum:     return Color(red: 0.55, green: 0.40, blue: 0.20) // Antique Brass
+        case .nordicTechnical: return Color(red: 0.14, green: 0.42, blue: 0.65) // Glacial Blue
+        case .obsidianGold:    return Color(red: 0.88, green: 0.74, blue: 0.44) // Radiant 24K Gold
+        }
+    }
+
+    private var outerBorderColor: Color {
+        switch theme {
+        case .diplomaticIvory: return Color(red: 0.12, green: 0.18, blue: 0.28)
+        case .royalVellum:     return Color(red: 0.35, green: 0.25, blue: 0.15)
+        case .nordicTechnical: return Color(red: 0.14, green: 0.28, blue: 0.45)
+        case .obsidianGold:    return Color(red: 0.78, green: 0.64, blue: 0.36)
+        }
+    }
+
+    private var cardFillColor: Color {
+        switch theme {
+        case .diplomaticIvory: return Color.white.opacity(0.65)
+        case .royalVellum:     return Color(red: 0.98, green: 0.96, blue: 0.90).opacity(0.7)
+        case .nordicTechnical: return Color.white.opacity(0.85)
+        case .obsidianGold:    return Color.black.opacity(0.35)
+        }
+    }
+
+    private var sealColor: Color {
+        switch theme {
+        case .diplomaticIvory: return isConquered ? Color(red: 0.62, green: 0.14, blue: 0.14) : Color(red: 0.12, green: 0.18, blue: 0.28)
+        case .royalVellum:     return isConquered ? Color(red: 0.48, green: 0.12, blue: 0.14) : Color(red: 0.32, green: 0.22, blue: 0.12)
+        case .nordicTechnical: return isConquered ? Color(red: 0.12, green: 0.38, blue: 0.58) : Color(red: 0.25, green: 0.32, blue: 0.42)
+        case .obsidianGold:    return isConquered ? Color(red: 0.88, green: 0.74, blue: 0.44) : Color(red: 0.65, green: 0.55, blue: 0.38)
+        }
+    }
 
     // Waypoint Data Model
     private struct RouteStage: Identifiable {
@@ -104,15 +202,6 @@ struct ExpeditionPassportDocumentView: View {
                 RouteStage(code: "C4", name: "Outer Ridge", altitudeMeters: 6200, distKm: 13.5, terrain: "South Buttress"),
                 RouteStage(code: "▲", name: "Nanda Devi", altitudeMeters: 7816, distKm: 16.0, terrain: "Summit Cornice")
             ]
-        } else if nameLower.contains("annapurna") {
-            return [
-                RouteStage(code: "BC", name: "Annapurna BC", altitudeMeters: 4130, distKm: 0.0, terrain: "Glacial Basin"),
-                RouteStage(code: "C1", name: "North Moraine", altitudeMeters: 5100, distKm: 3.4, terrain: "Icefall Shelf"),
-                RouteStage(code: "C2", name: "Sickle Glacier", altitudeMeters: 5700, distKm: 6.8, terrain: "Serac Wall"),
-                RouteStage(code: "C3", name: "Ice Barrier", altitudeMeters: 6500, distKm: 9.6, terrain: "Steep Snowfield"),
-                RouteStage(code: "C4", name: "Upper Couloir", altitudeMeters: 7400, distKm: 12.1, terrain: "High Avalanche Col"),
-                RouteStage(code: "▲", name: "Annapurna I", altitudeMeters: 8091, distKm: 14.5, terrain: "Summit Ridge")
-            ]
         } else {
             let baseElev = Int(Double(elev) * 0.55)
             let c1Elev = Int(Double(elev) * 0.68)
@@ -138,7 +227,7 @@ struct ExpeditionPassportDocumentView: View {
                 // 1. Diplomatic Header & Sovereign Authority Insignia
                 officialHeaderSection
 
-                Divider().overlay(borderEngraved)
+                Divider().overlay(outerBorderColor.opacity(0.35))
 
                 // 2. Bearer & Summit Geodetic Dossier
                 climberDossierSection
@@ -157,7 +246,7 @@ struct ExpeditionPassportDocumentView: View {
 
                 Spacer(minLength: 2)
 
-                Divider().overlay(borderEngraved)
+                Divider().overlay(outerBorderColor.opacity(0.35))
 
                 // 7. Attestation & Digital Verification Signatures
                 attestationSection
@@ -172,7 +261,7 @@ struct ExpeditionPassportDocumentView: View {
             ZStack {
                 // High-End Archival Linen Parchment Gradient
                 LinearGradient(
-                    colors: [parchmentLight, parchmentDark],
+                    colors: bgGradient,
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
@@ -189,27 +278,27 @@ struct ExpeditionPassportDocumentView: View {
                             control2: CGPoint(x: size.width * 0.65, y: y + 14)
                         )
                     }
-                    context.stroke(path, with: .color(diplomaticGold.opacity(0.06)), lineWidth: 0.75)
+                    let alpha = theme == .obsidianGold ? 0.03 : 0.06
+                    context.stroke(path, with: .color(accentColor.opacity(alpha)), lineWidth: 0.75)
                 }
 
                 // Subtle Center Diplomatic Watermark Insignia
                 Image(systemName: "mountain.2.fill")
                     .font(.system(size: 230))
-                    .foregroundStyle(diplomaticGold.opacity(0.035))
+                    .foregroundStyle(accentColor.opacity(theme == .obsidianGold ? 0.02 : 0.035))
             }
         )
         .overlay(
             // Diplomatic Intaglio Dual Security Border
             ZStack {
                 RoundedRectangle(cornerRadius: 6)
-                    .stroke(diplomaticNavy, lineWidth: 1.4)
+                    .stroke(outerBorderColor, lineWidth: 1.4)
                     .padding(6)
 
                 RoundedRectangle(cornerRadius: 4)
-                    .stroke(borderEngraved, lineWidth: 0.8)
+                    .stroke(outerBorderColor.opacity(0.4), lineWidth: 0.8)
                     .padding(10)
 
-                // Precision Corner Registration Reticles
                 cornerReticle(alignment: .topLeading)
                 cornerReticle(alignment: .topTrailing)
                 cornerReticle(alignment: .bottomLeading)
@@ -224,7 +313,7 @@ struct ExpeditionPassportDocumentView: View {
             HStack {
                 if alignment == .topTrailing || alignment == .bottomTrailing { Spacer() }
                 Rectangle()
-                    .fill(diplomaticGold.opacity(0.6))
+                    .fill(accentColor.opacity(0.6))
                     .frame(width: 10, height: 1.5)
                 if alignment == .topLeading || alignment == .bottomLeading { Spacer() }
             }
@@ -236,48 +325,46 @@ struct ExpeditionPassportDocumentView: View {
     // MARK: - 1. Official Header Section
     private var officialHeaderSection: some View {
         HStack(alignment: .center) {
-            // Diplomatic Emblem & High Authority Title
             HStack(spacing: 10) {
                 ZStack {
                     Circle()
-                        .stroke(diplomaticGold, lineWidth: 1.2)
+                        .stroke(accentColor, lineWidth: 1.2)
                         .frame(width: 36, height: 36)
 
                     Circle()
-                        .fill(diplomaticNavy.opacity(0.06))
+                        .fill(accentColor.opacity(0.1))
                         .frame(width: 32, height: 32)
 
                     Image(systemName: "laurel.leading")
                         .font(.system(size: 16))
-                        .foregroundStyle(diplomaticGold)
+                        .foregroundStyle(accentColor)
                         .offset(x: -6)
 
                     Image(systemName: "laurel.trailing")
                         .font(.system(size: 16))
-                        .foregroundStyle(diplomaticGold)
+                        .foregroundStyle(accentColor)
                         .offset(x: 6)
 
                     Image(systemName: "compass.drawing")
                         .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(diplomaticNavy)
+                        .foregroundStyle(inkPrimary)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("REPUBLIC OF INDIA · HIMALAYAN EXPEDITION REGISTRY")
+                    Text(theme == .royalVellum ? "ROYAL GEOGRAPHICAL SOCIETY · HIMALAYAN SURVEY" : "REPUBLIC OF INDIA · HIMALAYAN EXPEDITION REGISTRY")
                         .font(.system(size: 10, weight: .black, design: .serif))
-                        .foregroundStyle(diplomaticNavy)
+                        .foregroundStyle(inkPrimary)
                         .tracking(1.4)
 
-                    Text("OFFICIAL DIPLOMATIC SUMMIT DOSSIER · ACTE OFFICIEL D'EXPÉDITION")
+                    Text(theme == .royalVellum ? "OFFICIAL EXPEDITION DISPATCH · HIGH-ALTITUDE RECORD" : "OFFICIAL DIPLOMATIC SUMMIT DOSSIER · ACTE OFFICIEL D'EXPÉDITION")
                         .font(.system(size: 6.5, weight: .bold, design: .monospaced))
-                        .foregroundStyle(diplomaticGold)
+                        .foregroundStyle(accentColor)
                         .tracking(0.8)
                 }
             }
 
             Spacer()
 
-            // State Tracking & Series
             VStack(alignment: .trailing, spacing: 2) {
                 HStack(spacing: 4) {
                     Text("SERIES:")
@@ -285,12 +372,12 @@ struct ExpeditionPassportDocumentView: View {
                         .foregroundStyle(inkTertiary)
                     Text("2026/IND-WGS84")
                         .font(.system(size: 7, weight: .black, design: .monospaced))
-                        .foregroundStyle(diplomaticGold)
+                        .foregroundStyle(accentColor)
                 }
 
                 Text("PERMIT NO: \(permitNumber)")
                     .font(.system(size: 11, weight: .black, design: .monospaced))
-                    .foregroundStyle(diplomaticNavy)
+                    .foregroundStyle(inkPrimary)
             }
         }
     }
@@ -302,11 +389,11 @@ struct ExpeditionPassportDocumentView: View {
             VStack(spacing: 3) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.white)
+                        .fill(theme == .obsidianGold ? Color.black.opacity(0.5) : Color.white)
                         .frame(width: 96, height: 102)
                         .overlay(
                             RoundedRectangle(cornerRadius: 3)
-                                .stroke(diplomaticNavy.opacity(0.3), lineWidth: 1)
+                                .stroke(outerBorderColor.opacity(0.3), lineWidth: 1)
                         )
 
                     if let firstPhoto = trek.photoFileNames.first,
@@ -320,7 +407,7 @@ struct ExpeditionPassportDocumentView: View {
                         VStack(spacing: 4) {
                             Image(systemName: "person.crop.artframe")
                                 .font(.system(size: 30))
-                                .foregroundStyle(diplomaticNavy.opacity(0.4))
+                                .foregroundStyle(accentColor.opacity(0.5))
                             Text("PASSPORT PHOTO")
                                 .font(.system(size: 6.5, weight: .bold, design: .monospaced))
                                 .foregroundStyle(inkTertiary)
@@ -333,7 +420,7 @@ struct ExpeditionPassportDocumentView: View {
                     .foregroundStyle(inkTertiary)
             }
 
-            // Official Data Fields
+            // Data Grid
             VStack(alignment: .leading, spacing: 5) {
                 HStack(spacing: 16) {
                     officialDataField(label: "SURNAME / NOM", value: "MARU")
@@ -358,24 +445,27 @@ struct ExpeditionPassportDocumentView: View {
             }
         }
         .padding(9)
-        .background(Color.white.opacity(0.55), in: RoundedRectangle(cornerRadius: 4))
-        .overlay(RoundedRectangle(cornerRadius: 4).stroke(borderEngraved, lineWidth: 0.8))
+        .background(cardFillColor, in: RoundedRectangle(cornerRadius: 4))
+        .overlay(RoundedRectangle(cornerRadius: 4).stroke(outerBorderColor.opacity(0.3), lineWidth: 0.8))
     }
 
     private func officialDataField(label: String, value: String, highlight: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(label)
                 .font(.system(size: 6.5, weight: .bold, design: .monospaced))
-                .foregroundStyle(diplomaticGold)
+                .foregroundStyle(accentColor)
                 .tracking(0.5)
 
             if highlight {
                 Text(value)
                     .font(.system(size: 9.5, weight: .black, design: .serif))
-                    .foregroundStyle(statusGreen)
+                    .foregroundStyle(theme == .obsidianGold ? Color(red: 0.45, green: 0.90, blue: 0.60) : Color(red: 0.11, green: 0.45, blue: 0.24))
                     .padding(.horizontal, 4)
                     .padding(.vertical, 1)
-                    .background(statusGreen.opacity(0.12), in: RoundedRectangle(cornerRadius: 2))
+                    .background(
+                        theme == .obsidianGold ? Color.green.opacity(0.15) : Color(red: 0.11, green: 0.45, blue: 0.24).opacity(0.12),
+                        in: RoundedRectangle(cornerRadius: 2)
+                    )
             } else {
                 Text(value)
                     .font(.system(size: 10, weight: .bold, design: .serif))
@@ -419,7 +509,7 @@ struct ExpeditionPassportDocumentView: View {
         VStack(spacing: 2) {
             Text(title)
                 .font(.system(size: 6.5, weight: .bold, design: .monospaced))
-                .foregroundStyle(diplomaticNavy.opacity(0.8))
+                .foregroundStyle(accentColor)
                 .tracking(0.6)
 
             Text(primary)
@@ -432,60 +522,59 @@ struct ExpeditionPassportDocumentView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 5)
-        .background(Color.white.opacity(0.65), in: RoundedRectangle(cornerRadius: 3))
-        .overlay(RoundedRectangle(cornerRadius: 3).stroke(borderEngraved, lineWidth: 0.7))
+        .background(cardFillColor, in: RoundedRectangle(cornerRadius: 3))
+        .overlay(RoundedRectangle(cornerRadius: 3).stroke(outerBorderColor.opacity(0.3), lineWidth: 0.7))
     }
 
     // MARK: - 4. Cartographic Topographic Map & State Seal Section
     private var topographicMapAndSealSection: some View {
         HStack(spacing: 12) {
-            // Left: Imperial Inked State Wax Registry Seal
+            // Left: State / Expedition Seal
             ZStack {
                 Circle()
-                    .strokeBorder(isConquered ? sealCrimson : diplomaticNavy, lineWidth: 1.6)
+                    .strokeBorder(sealColor, lineWidth: 1.6)
                     .frame(width: 84, height: 84)
 
                 Circle()
-                    .strokeBorder(isConquered ? sealCrimson.opacity(0.6) : diplomaticNavy.opacity(0.5), lineWidth: 0.8)
+                    .strokeBorder(sealColor.opacity(0.6), lineWidth: 0.8)
                     .frame(width: 74, height: 74)
 
                 VStack(spacing: 1) {
-                    Text("★ STATE SURVEY ★")
-                        .font(.system(size: 5, weight: .black, design: .monospaced))
-                        .foregroundStyle(isConquered ? sealCrimson : diplomaticNavy)
-                        .tracking(0.6)
+                    Text(theme == .royalVellum ? "★ ROYAL GEOGRAPHIC ★" : "★ STATE SURVEY ★")
+                        .font(.system(size: 4.8, weight: .black, design: .monospaced))
+                        .foregroundStyle(sealColor)
+                        .tracking(0.5)
 
                     Image(systemName: isConquered ? "seal.fill" : "mountain.2.fill")
                         .font(.system(size: 13))
-                        .foregroundStyle(isConquered ? sealCrimson : diplomaticNavy)
+                        .foregroundStyle(sealColor)
 
                     Text(isConquered ? "SUMMIT RATIFIED" : "PERMIT GRANTED")
                         .font(.system(size: 6.5, weight: .black, design: .serif))
-                        .foregroundStyle(isConquered ? sealCrimson : diplomaticNavy)
+                        .foregroundStyle(sealColor)
                         .tracking(0.4)
 
                     Text("EXP #\(String(permitNumber.suffix(6)))")
                         .font(.system(size: 5.5, weight: .bold, design: .monospaced))
-                        .foregroundStyle(isConquered ? sealCrimson : diplomaticNavy)
+                        .foregroundStyle(sealColor)
 
                     Text(recordYear)
                         .font(.system(size: 5.5, weight: .bold, design: .monospaced))
-                        .foregroundStyle(isConquered ? sealCrimson.opacity(0.8) : diplomaticNavy.opacity(0.8))
+                        .foregroundStyle(sealColor.opacity(0.8))
                 }
             }
 
-            // Right: Rich Cartographic Topographical Map (On Clean Cream Vellum)
+            // Right: Rich Cartographic Topographical Map
             VStack(alignment: .leading, spacing: 3) {
-                // Header with Coordinates & Datum
                 HStack {
                     HStack(spacing: 4) {
                         Image(systemName: "map.fill")
                             .font(.system(size: 7))
-                            .foregroundStyle(diplomaticNavy)
+                            .foregroundStyle(accentColor)
 
                         Text("CARTOGRAPHIC SURVEY & ASCENT TOPOGRAPHY")
                             .font(.system(size: 6.5, weight: .bold, design: .monospaced))
-                            .foregroundStyle(diplomaticNavy)
+                            .foregroundStyle(inkPrimary)
                     }
 
                     Spacer()
@@ -498,9 +587,9 @@ struct ExpeditionPassportDocumentView: View {
                 // Map Canvas with Topographic Contour Isohypses & Marked Route
                 ZStack {
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.white.opacity(0.75))
+                        .fill(theme == .obsidianGold ? Color.black.opacity(0.6) : Color.white.opacity(0.75))
                         .frame(height: 72)
-                        .overlay(RoundedRectangle(cornerRadius: 3).stroke(borderEngraved, lineWidth: 0.8))
+                        .overlay(RoundedRectangle(cornerRadius: 3).stroke(outerBorderColor.opacity(0.3), lineWidth: 0.8))
 
                     // Coordinate Grid Lines & Topographic Isohypses
                     Canvas { context, size in
@@ -521,9 +610,9 @@ struct ExpeditionPassportDocumentView: View {
                         grid.move(to: CGPoint(x: 0, y: h * 0.66))
                         grid.addLine(to: CGPoint(x: w, y: h * 0.66))
 
-                        context.stroke(grid, with: .color(diplomaticNavy.opacity(0.08)), lineWidth: 0.5)
+                        context.stroke(grid, with: .color(accentColor.opacity(0.12)), lineWidth: 0.5)
 
-                        // Topographical Elevation Contour Isohypses (5 nested concentric rings)
+                        // Topographical Elevation Contour Isohypses
                         let center = CGPoint(x: w * 0.82, y: h * 0.28)
                         let rings: [(rx: CGFloat, ry: CGFloat)] = [
                             (120, 48),
@@ -541,22 +630,23 @@ struct ExpeditionPassportDocumentView: View {
                                 width: ring.rx * 2,
                                 height: ring.ry * 2
                             ))
-                            let alpha = 0.15 + Double(i) * 0.08
-                            context.stroke(contour, with: .color(Color(red: 0.45, green: 0.52, blue: 0.62).opacity(alpha)), lineWidth: 0.75)
+                            let alpha = theme == .obsidianGold ? (0.12 + Double(i) * 0.06) : (0.15 + Double(i) * 0.08)
+                            let strokeColor = theme == .obsidianGold ? accentColor : (theme == .royalVellum ? Color(red: 0.45, green: 0.35, blue: 0.25) : Color(red: 0.45, green: 0.52, blue: 0.62))
+                            context.stroke(contour, with: .color(strokeColor.opacity(alpha)), lineWidth: 0.75)
                         }
 
-                        // Topo Ridge Lines (Subtle dashed ridges)
+                        // Topo Ridge Lines
                         var ridge1 = Path()
                         ridge1.move(to: center)
                         ridge1.addLine(to: CGPoint(x: w * 0.98, y: h * 0.8))
-                        context.stroke(ridge1, with: .color(diplomaticNavy.opacity(0.18)), style: StrokeStyle(lineWidth: 0.8, dash: [3, 2]))
+                        context.stroke(ridge1, with: .color(accentColor.opacity(0.2)), style: StrokeStyle(lineWidth: 0.8, dash: [3, 2]))
 
                         var ridge2 = Path()
                         ridge2.move(to: center)
                         ridge2.addLine(to: CGPoint(x: w * 0.6, y: h * 0.05))
-                        context.stroke(ridge2, with: .color(diplomaticNavy.opacity(0.18)), style: StrokeStyle(lineWidth: 0.8, dash: [3, 2]))
+                        context.stroke(ridge2, with: .color(accentColor.opacity(0.2)), style: StrokeStyle(lineWidth: 0.8, dash: [3, 2]))
 
-                        // Technical Ascent Route Line (from Basecamp to Summit)
+                        // Technical Ascent Route Line
                         var route = Path()
                         route.move(to: CGPoint(x: w * 0.08, y: h * 0.82))
                         route.addCurve(to: CGPoint(x: w * 0.28, y: h * 0.68), control1: CGPoint(x: w * 0.15, y: h * 0.80), control2: CGPoint(x: w * 0.22, y: h * 0.72))
@@ -564,27 +654,26 @@ struct ExpeditionPassportDocumentView: View {
                         route.addCurve(to: CGPoint(x: w * 0.65, y: h * 0.38), control1: CGPoint(x: w * 0.54, y: h * 0.48), control2: CGPoint(x: w * 0.60, y: h * 0.42))
                         route.addCurve(to: center, control1: CGPoint(x: w * 0.72, y: h * 0.32), control2: CGPoint(x: w * 0.78, y: h * 0.28))
 
-                        context.stroke(route, with: .color(diplomaticNavy), style: StrokeStyle(lineWidth: 1.5, dash: [4, 2]))
+                        let routeColor = theme == .obsidianGold ? accentColor : outerBorderColor
+                        context.stroke(route, with: .color(routeColor), style: StrokeStyle(lineWidth: 1.5, dash: [4, 2]))
                     }
                     .frame(height: 72)
 
-                    // Waypoint Pins & Geographical Labels Overlaid on Map
+                    // Waypoint Pins Overlaid on Map
                     GeometryReader { geo in
                         let w = geo.size.width
                         let h = geo.size.height
 
-                        // North Compass Arrow
                         HStack(spacing: 2) {
                             Image(systemName: "location.north.line.fill")
                                 .font(.system(size: 8))
-                                .foregroundStyle(diplomaticNavy)
+                                .foregroundStyle(accentColor)
                             Text("N")
                                 .font(.system(size: 7, weight: .black, design: .monospaced))
-                                .foregroundStyle(diplomaticNavy)
+                                .foregroundStyle(accentColor)
                         }
                         .position(x: 16, y: 12)
 
-                        // Contour Altitude Labels
                         Text("5,000m")
                             .font(.system(size: 5.5, weight: .bold, design: .monospaced))
                             .foregroundStyle(inkTertiary)
@@ -592,22 +681,18 @@ struct ExpeditionPassportDocumentView: View {
 
                         Text("7,500m (Death Zone)")
                             .font(.system(size: 5.5, weight: .heavy, design: .monospaced))
-                            .foregroundStyle(sealCrimson)
+                            .foregroundStyle(Color(red: 0.85, green: 0.25, blue: 0.25))
                             .position(x: w * 0.68, y: h * 0.16)
 
-                        // Waypoint Pin 1: Base Camp
                         mapWaypointPin(label: "BC (5.3k)", isApex: false)
                             .position(x: w * 0.08, y: h * 0.82)
 
-                        // Waypoint Pin 2: Camp II
                         mapWaypointPin(label: "C2 (6.4k)", isApex: false)
                             .position(x: w * 0.48, y: h * 0.52)
 
-                        // Waypoint Pin 3: South Col
                         mapWaypointPin(label: "C4 (7.9k)", isApex: false)
                             .position(x: w * 0.65, y: h * 0.38)
 
-                        // Waypoint Apex: Summit Peak
                         mapWaypointPin(label: "▲ SUMMIT (\(Int(trek.elevationMeters))m)", isApex: true)
                             .position(x: w * 0.82, y: h * 0.28)
                     }
@@ -615,8 +700,8 @@ struct ExpeditionPassportDocumentView: View {
                 }
             }
             .padding(6)
-            .background(Color.white.opacity(0.4), in: RoundedRectangle(cornerRadius: 4))
-            .overlay(RoundedRectangle(cornerRadius: 4).stroke(borderEngraved, lineWidth: 0.6))
+            .background(cardFillColor, in: RoundedRectangle(cornerRadius: 4))
+            .overlay(RoundedRectangle(cornerRadius: 4).stroke(outerBorderColor.opacity(0.3), lineWidth: 0.6))
         }
     }
 
@@ -625,24 +710,24 @@ struct ExpeditionPassportDocumentView: View {
             if isApex {
                 Image(systemName: "triangle.fill")
                     .font(.system(size: 7))
-                    .foregroundStyle(diplomaticGold)
+                    .foregroundStyle(accentColor)
                 Text(label)
                     .font(.system(size: 6, weight: .black, design: .monospaced))
-                    .foregroundStyle(Color.white)
+                    .foregroundStyle(theme == .obsidianGold ? Color.black : Color.white)
                     .padding(.horizontal, 3)
                     .padding(.vertical, 1)
-                    .background(diplomaticNavy, in: RoundedRectangle(cornerRadius: 2))
-                    .overlay(RoundedRectangle(cornerRadius: 2).stroke(diplomaticGold, lineWidth: 0.6))
+                    .background(theme == .obsidianGold ? accentColor : outerBorderColor, in: RoundedRectangle(cornerRadius: 2))
+                    .overlay(RoundedRectangle(cornerRadius: 2).stroke(accentColor, lineWidth: 0.6))
             } else {
                 Circle()
-                    .fill(diplomaticNavy)
+                    .fill(accentColor)
                     .frame(width: 4, height: 4)
                 Text(label)
                     .font(.system(size: 5, weight: .bold, design: .monospaced))
-                    .foregroundStyle(diplomaticNavy)
+                    .foregroundStyle(inkPrimary)
                     .padding(.horizontal, 2)
-                    .background(Color.white.opacity(0.85), in: RoundedRectangle(cornerRadius: 2))
-                    .overlay(RoundedRectangle(cornerRadius: 2).stroke(diplomaticNavy.opacity(0.4), lineWidth: 0.4))
+                    .background(cardFillColor, in: RoundedRectangle(cornerRadius: 2))
+                    .overlay(RoundedRectangle(cornerRadius: 2).stroke(accentColor.opacity(0.4), lineWidth: 0.4))
             }
         }
     }
@@ -653,7 +738,7 @@ struct ExpeditionPassportDocumentView: View {
             HStack {
                 Text("ASCENT WAYPOINTS & CORRIDOR PROFILE")
                     .font(.system(size: 6.5, weight: .bold, design: .monospaced))
-                    .foregroundStyle(diplomaticNavy)
+                    .foregroundStyle(accentColor)
                     .tracking(0.5)
 
                 Spacer()
@@ -663,14 +748,13 @@ struct ExpeditionPassportDocumentView: View {
                     .foregroundStyle(inkTertiary)
             }
 
-            // 6-Waypoint Step Grid
             HStack(spacing: 4) {
                 ForEach(routeWaypoints) { stage in
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 2) {
                             Text(stage.code)
                                 .font(.system(size: 6.5, weight: .black, design: .monospaced))
-                                .foregroundStyle(stage.code == "▲" ? statusGreen : diplomaticNavy)
+                                .foregroundStyle(stage.code == "▲" ? (theme == .obsidianGold ? Color.green : Color(red: 0.11, green: 0.45, blue: 0.24)) : accentColor)
                             Spacer()
                             Text("\(stage.altitudeMeters)m")
                                 .font(.system(size: 6.5, weight: .black, design: .monospaced))
@@ -689,14 +773,14 @@ struct ExpeditionPassportDocumentView: View {
                             Spacer()
                             Text(stage.terrain)
                                 .font(.system(size: 5, weight: .semibold))
-                                .foregroundStyle(diplomaticGold)
+                                .foregroundStyle(accentColor)
                                 .lineLimit(1)
                         }
                     }
                     .padding(4)
                     .frame(maxWidth: .infinity)
-                    .background(Color.white.opacity(0.65), in: RoundedRectangle(cornerRadius: 2))
-                    .overlay(RoundedRectangle(cornerRadius: 2).stroke(borderEngraved, lineWidth: 0.6))
+                    .background(cardFillColor, in: RoundedRectangle(cornerRadius: 2))
+                    .overlay(RoundedRectangle(cornerRadius: 2).stroke(outerBorderColor.opacity(0.3), lineWidth: 0.6))
                 }
             }
         }
@@ -708,7 +792,7 @@ struct ExpeditionPassportDocumentView: View {
             HStack {
                 Text("FIELD LOGBOOK OBSERVATIONS & GEOLOGICAL NARRATIVE")
                     .font(.system(size: 6.5, weight: .bold, design: .monospaced))
-                    .foregroundStyle(diplomaticNavy)
+                    .foregroundStyle(accentColor)
                     .tracking(0.5)
             }
 
@@ -719,8 +803,8 @@ struct ExpeditionPassportDocumentView: View {
                 .lineLimit(2)
                 .padding(6)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.white.opacity(0.55), in: RoundedRectangle(cornerRadius: 3))
-                .overlay(RoundedRectangle(cornerRadius: 3).stroke(borderEngraved, lineWidth: 0.6))
+                .background(cardFillColor, in: RoundedRectangle(cornerRadius: 3))
+                .overlay(RoundedRectangle(cornerRadius: 3).stroke(outerBorderColor.opacity(0.3), lineWidth: 0.6))
         }
     }
 
@@ -730,7 +814,7 @@ struct ExpeditionPassportDocumentView: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text("REGISTRY ATTESTATION & FINGERPRINT")
                     .font(.system(size: 6.5, weight: .bold, design: .monospaced))
-                    .foregroundStyle(diplomaticNavy)
+                    .foregroundStyle(accentColor)
                     .tracking(0.5)
 
                 Text("HASH: \(verificationHash)")
@@ -748,11 +832,11 @@ struct ExpeditionPassportDocumentView: View {
                 Text("Mihir Maru")
                     .font(.system(size: 13, weight: .bold, design: .serif))
                     .italic()
-                    .foregroundStyle(diplomaticNavy)
+                    .foregroundStyle(inkPrimary)
 
                 Text("EXPEDITION LEADER & CHIEF SURVEYOR")
                     .font(.system(size: 6, weight: .bold, design: .monospaced))
-                    .foregroundStyle(diplomaticGold)
+                    .foregroundStyle(accentColor)
                     .tracking(0.6)
             }
         }
@@ -774,7 +858,7 @@ struct ExpeditionPassportDocumentView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
-        .background(Color.white.opacity(0.85), in: RoundedRectangle(cornerRadius: 2))
-        .overlay(RoundedRectangle(cornerRadius: 2).stroke(diplomaticNavy.opacity(0.2), lineWidth: 0.6))
+        .background(cardFillColor, in: RoundedRectangle(cornerRadius: 2))
+        .overlay(RoundedRectangle(cornerRadius: 2).stroke(outerBorderColor.opacity(0.3), lineWidth: 0.6))
     }
 }

@@ -3,12 +3,14 @@ import SwiftUI
 // MARK: - ExpeditionPassportModal
 
 /// Interactive fullscreen inspection and export studio for Pluto's Expedition Passports.
-/// Provides live zooming preview and 1-click vector PDF, 4K PNG, and GPX export actions.
+/// Features a live 4-edition diplomatic theme switcher, interactive zooming canvas,
+/// and 1-click vector PDF, 4K PNG, and GPX exports.
 struct ExpeditionPassportModal: View {
 
     let trek: TrekRecord
     let onDismiss: () -> Void
 
+    @State private var selectedTheme: PassportEditionTheme = .diplomaticIvory
     @State private var zoomScale: CGFloat = 1.0
     @State private var exportToastMessage: String? = nil
 
@@ -18,21 +20,24 @@ struct ExpeditionPassportModal: View {
             // Top Action Toolbar
             toolbarHeader
 
+            // Edition Selection Bar (4 Distinct Diplomatic & Archival Document Styles)
+            editionSelectorBar
+
             Divider()
 
             // Main Preview Canvas with Zoom & Pan
             ScrollView([.horizontal, .vertical], showsIndicators: true) {
                 VStack {
-                    ExpeditionPassportDocumentView(trek: trek)
+                    ExpeditionPassportDocumentView(trek: trek, theme: selectedTheme)
                         .scaleEffect(zoomScale)
                         .padding(40)
-                        .shadow(color: Color.black.opacity(0.6), radius: 24, x: 0, y: 12)
+                        .shadow(color: Color.black.opacity(0.45), radius: 28, x: 0, y: 14)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .background(Color(red: 0.10, green: 0.12, blue: 0.16))
         }
-        .frame(minWidth: 860, idealWidth: 920, minHeight: 700, idealHeight: 800)
+        .frame(minWidth: 920, idealWidth: 980, minHeight: 740, idealHeight: 840)
         .overlay(alignment: .bottom) {
             if let msg = exportToastMessage {
                 HStack(spacing: 8) {
@@ -52,6 +57,72 @@ struct ExpeditionPassportModal: View {
         }
     }
 
+    // MARK: - 4-Edition Selector Bar
+
+    private var editionSelectorBar: some View {
+        HStack(spacing: 12) {
+            HStack(spacing: 5) {
+                Image(systemName: "paintpalette.fill")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color(red: 0.78, green: 0.66, blue: 0.48))
+                Text("DOCUMENT EDITION / AESTHETIC:")
+                    .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                    .foregroundStyle(DS.Color.textTertiary)
+            }
+
+            // 4 Distinct Document Edition Chips
+            HStack(spacing: 6) {
+                ForEach(PassportEditionTheme.allCases) { edition in
+                    Button {
+                        withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                            selectedTheme = edition
+                        }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: edition.icon)
+                                .font(.system(size: 10))
+
+                            VStack(alignment: .leading, spacing: 0) {
+                                Text(edition.rawValue)
+                                    .font(.system(size: 10.5, weight: selectedTheme == edition ? .bold : .medium))
+                            }
+
+                            Text(edition.shortTag)
+                                .font(.system(size: 7.5, weight: .bold, design: .monospaced))
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 1)
+                                .background(selectedTheme == edition ? Color.white.opacity(0.2) : Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 3))
+                        }
+                        .foregroundStyle(selectedTheme == edition ? Color.white : DS.Color.textSecondary)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(
+                            selectedTheme == edition
+                                ? Color(red: 0.22, green: 0.30, blue: 0.42)
+                                : Color.white.opacity(0.04),
+                            in: RoundedRectangle(cornerRadius: 6)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(
+                                    selectedTheme == edition
+                                        ? Color(red: 0.78, green: 0.66, blue: 0.48).opacity(0.8)
+                                        : Color.white.opacity(0.08),
+                                    lineWidth: 1
+                                )
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            Spacer()
+        }
+        .padding(.horizontal, DS.Space.lg)
+        .padding(.vertical, 7)
+        .background(Color(red: 0.12, green: 0.14, blue: 0.18))
+    }
+
     // MARK: - Toolbar Header
 
     private var toolbarHeader: some View {
@@ -66,7 +137,7 @@ struct ExpeditionPassportModal: View {
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(DS.Color.textPrimary)
 
-                    Text("Official Himalayan & Alpine Summit Registry")
+                    Text("Official Himalayan & Alpine Summit Registry · 4 Sovereign Editions Available")
                         .font(.system(size: 10))
                         .foregroundStyle(DS.Color.textTertiary)
                 }
@@ -127,9 +198,9 @@ struct ExpeditionPassportModal: View {
             HStack(spacing: 8) {
                 // Copy Image
                 Button {
-                    let success = ExpeditionPassportPDFGenerator.copyImageToPasteboard(for: trek)
+                    let success = ExpeditionPassportPDFGenerator.copyImageToPasteboard(for: trek, theme: selectedTheme)
                     if success {
-                        showToast("Copied Passport Image to Clipboard")
+                        showToast("Copied \(selectedTheme.rawValue) Image to Clipboard")
                     }
                 } label: {
                     HStack(spacing: 5) {
@@ -174,9 +245,9 @@ struct ExpeditionPassportModal: View {
 
                 // Export PNG
                 Button {
-                    ExpeditionPassportPDFGenerator.exportPNG(for: trek) { success in
+                    ExpeditionPassportPDFGenerator.exportPNG(for: trek, theme: selectedTheme) { success in
                         if success {
-                            showToast("4K Certificate Image Saved")
+                            showToast("4K \(selectedTheme.rawValue) Certificate Saved")
                         }
                     }
                 } label: {
@@ -198,9 +269,9 @@ struct ExpeditionPassportModal: View {
 
                 // Export Vector PDF (Primary)
                 Button {
-                    ExpeditionPassportPDFGenerator.exportPDF(for: trek) { success in
+                    ExpeditionPassportPDFGenerator.exportPDF(for: trek, theme: selectedTheme) { success in
                         if success {
-                            showToast("Vector PDF Document Exported")
+                            showToast("Vector PDF Document Exported (\(selectedTheme.rawValue))")
                         }
                     }
                 } label: {
