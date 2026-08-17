@@ -169,7 +169,7 @@ final class FocusTimerViewModel: ObservableObject {
         if !isMuted {
             PlutoSoundEngine.shared.play(.completePop)
         }
-        Haptics.impact(.heavy)
+        Haptics.notify(.success)
         advanceToNextPhase()
         resetToCurrentMode()
     }
