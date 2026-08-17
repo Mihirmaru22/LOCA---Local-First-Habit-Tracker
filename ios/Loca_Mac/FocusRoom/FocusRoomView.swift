@@ -26,6 +26,9 @@ struct FocusRoomView: View {
     @State private var showGoalsPanel: Bool = true
     @State private var showQuoteCard: Bool = true
     @State private var showTimerModal: Bool = false
+    @State private var showNavDrawer: Bool = false
+    @State private var hoveredCapsuleMode: String? = nil
+    @Namespace private var glassPillNamespace
     @AppStorage("mac_today_submode") private var todaySubmode: String = "Plan"
     @State private var isFullscreen: Bool = false
 
@@ -34,11 +37,15 @@ struct FocusRoomView: View {
     @State private var youtubeVideoID: String? = nil
     @State private var currentSession: FocusSession? = nil
 
-    // Queries for Telemetry
+    // Queries for Telemetry & Badges
     @Query private var allGoals: [FocusGoal]
+    @Query(sort: [SortDescriptor(\TodoItem.createdAt)])
+    private var allTodoItems: [TodoItem]
 
     private var openGoalsCount: Int { allGoals.filter { !$0.isCompleted }.count }
     private var totalGoalsCount: Int { allGoals.count }
+    private var openTodoCount: Int { allTodoItems.filter { !$0.isArchived && $0.parentID == nil && !$0.isCompleted }.count }
+    private var scheduledTodoCount: Int { allTodoItems.filter { !$0.isArchived && $0.parentID == nil && $0.startTime != nil }.count }
 
     var body: some View {
         GeometryReader { geo in
@@ -164,6 +171,7 @@ struct FocusRoomView: View {
                     HStack(spacing: 12) {
                         shortcutBadge(key: "Space", label: timerVM.isRunning ? "Pause" : "Resume")
                         shortcutBadge(key: "⌘T", label: "Timer")
+                        shortcutBadge(key: "⌘B", label: "Sidebar")
                         shortcutBadge(key: "⌘F", label: "Fullscreen")
                     }
                     .padding(.horizontal, 12)
@@ -175,9 +183,15 @@ struct FocusRoomView: View {
                 }
                 .frame(width: geo.size.width)
                 .zIndex(70)
+
+                // ===================================================================
+                // LAYER 5: LIQUID GLASS FLYOUT NAVIGATION DRAWER (Burger Menu Overlay)
+                // ===================================================================
+                liquidGlassNavDrawer(size: geo.size)
             }
             .frame(width: geo.size.width, height: geo.size.height)
         }
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: showNavDrawer)
         .animation(.spring(response: 0.35, dampingFraction: 0.8), value: activePanel)
         .animation(.spring(response: 0.35, dampingFraction: 0.8), value: showGoalsPanel)
         .animation(.spring(response: 0.35, dampingFraction: 0.8), value: showQuoteCard)
@@ -286,8 +300,45 @@ struct FocusRoomView: View {
     private var topFloatingBar: some View {
         HStack {
 
-            // Top-Left: Personal Timer Pill + Session Goals Pill
+            // Top-Left: Burger / Sidebar Menu Button + Personal Timer Pill + Session Goals Pill
             HStack(spacing: 8) {
+                // 0. Burger / Sidebar Toggle Button (matching macOS Sidebar toggle)
+                Button {
+                    withAnimation(.spring(response: 0.30, dampingFraction: 0.82)) {
+                        showNavDrawer.toggle()
+                    }
+                    PlutoSoundEngine.shared.play(.tabSwitch)
+                    Haptics.impact(.light)
+                } label: {
+                    Image(systemName: "sidebar.leading")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(Color.white)
+                        .frame(width: 32, height: 32)
+                        .background(
+                            ZStack {
+                                Circle()
+                                    .fill(showNavDrawer ? Color.white.opacity(0.28) : Color.black.opacity(0.65))
+                                    .background(.ultraThinMaterial, in: Circle())
+                                Circle()
+                                    .stroke(
+                                        LinearGradient(
+                                            colors: [
+                                                Color.white.opacity(showNavDrawer ? 0.50 : 0.22),
+                                                Color.white.opacity(0.06)
+                                            ],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        ),
+                                        lineWidth: 0.8
+                                    )
+                            }
+                        )
+                        .shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 1.5)
+                }
+                .buttonStyle(.plain)
+                .keyboardShortcut("b", modifiers: .command)
+                .help("Toggle Navigation Sidebar (⌘B)")
+
                 // 1. Personal Timer Pill
                 Button {
                     showTimerModal.toggle()
@@ -348,32 +399,119 @@ struct FocusRoomView: View {
 
             Spacer()
 
-            // Top-Center: Sub-pillar Mode Switcher [ Plan | List | Time ]
-            HStack(spacing: 4) {
-                ForEach(["Plan", "List", "Time"], id: \.self) { mode in
-                    let isSelected = todaySubmode == mode
+            // Top-Center: Apple Liquid Glass Capsule Switcher [ Plan | List | Time ]
+            HStack(spacing: 3) {
+                ForEach(["Plan", "List", "Time"], id: \.self) { m in
+                    let isSelected = todaySubmode == m
+                    let isHovered = hoveredCapsuleMode == m
+
                     Button {
-                        withAnimation(.spring(response: 0.35)) {
-                            todaySubmode = mode
+                        guard todaySubmode != m else { return }
+                        withAnimation(.spring(response: 0.28, dampingFraction: 0.78)) {
+                            todaySubmode = m
                         }
                         PlutoSoundEngine.shared.play(.tabSwitch)
                         Haptics.impact(.light)
                     } label: {
-                        Text(mode)
-                            .font(.system(size: 11, weight: isSelected ? .bold : .medium))
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 5)
-                            .background(isSelected ? Color.white.opacity(0.2) : Color.clear)
-                            .foregroundStyle(isSelected ? .white : .white.opacity(0.6))
-                            .clipShape(Capsule())
+                        HStack(spacing: 5) {
+                            Image(systemName: m == "Plan" ? "calendar.day.timeline.left" : (m == "List" ? "checklist.checked" : "timer.circle.fill"))
+                                .font(.system(size: 10.5, weight: isSelected ? .bold : .semibold))
+                                .foregroundStyle(isSelected ? Color.white : (isHovered ? Color.white : Color.white.opacity(0.65)))
+
+                            Text(m)
+                                .font(.system(size: 12, weight: isSelected ? .semibold : .medium))
+                                .foregroundStyle(isSelected ? Color.white : (isHovered ? Color.white : Color.white.opacity(0.65)))
+
+                            if m == "Plan" && scheduledTodoCount > 0 {
+                                Text("\(scheduledTodoCount)")
+                                    .font(.system(size: 8.5, weight: .bold, design: .monospaced))
+                                    .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.60))
+                                    .padding(.horizontal, 4)
+                                    .padding(.vertical, 1)
+                                    .background(
+                                        Capsule()
+                                            .fill(isSelected ? Color.white.opacity(0.22) : Color.white.opacity(0.08))
+                                    )
+                            } else if m == "List" && openTodoCount > 0 {
+                                Text("\(openTodoCount)")
+                                    .font(.system(size: 8.5, weight: .bold, design: .monospaced))
+                                    .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.60))
+                                    .padding(.horizontal, 4)
+                                    .padding(.vertical, 1)
+                                    .background(
+                                        Capsule()
+                                            .fill(isSelected ? Color.white.opacity(0.22) : Color.white.opacity(0.08))
+                                    )
+                            }
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .contentShape(Capsule())
+                        .background {
+                            if isSelected {
+                                ZStack {
+                                    Capsule()
+                                        .fill(
+                                            LinearGradient(
+                                                colors: [
+                                                    Color.white.opacity(0.32),
+                                                    Color.white.opacity(0.18)
+                                                ],
+                                                startPoint: .top,
+                                                endPoint: .bottom
+                                            )
+                                        )
+                                    Capsule()
+                                        .stroke(
+                                            LinearGradient(
+                                                stops: [
+                                                    .init(color: Color.white.opacity(0.65), location: 0.0),
+                                                    .init(color: Color.cyan.opacity(0.22), location: 0.3),
+                                                    .init(color: Color(red: 0.9, green: 0.4, blue: 0.9).opacity(0.18), location: 0.65),
+                                                    .init(color: Color.white.opacity(0.10), location: 1.0)
+                                                ],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ),
+                                            lineWidth: 0.85
+                                        )
+                                }
+                                .shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 1.5)
+                                .matchedGeometryEffect(id: "activeFocusGlassPill", in: glassPillNamespace)
+                            } else if isHovered {
+                                Capsule()
+                                    .fill(Color.white.opacity(0.08))
+                            }
+                        }
                     }
                     .buttonStyle(.plain)
+                    .onHover { hovering in
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            hoveredCapsuleMode = hovering ? m : nil
+                        }
+                        if hovering { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+                    }
+                    .keyboardShortcut(KeyEquivalent(Character(m == "Plan" ? "1" : (m == "List" ? "2" : "3"))), modifiers: .command)
+                    .help("\(m) ⌘\(m == "Plan" ? "1" : (m == "List" ? "2" : "3"))")
                 }
             }
             .padding(3)
-            .background(.ultraThinMaterial, in: Capsule())
-            .background(Color.black.opacity(0.65), in: Capsule())
-            .overlay(Capsule().stroke(Color.white.opacity(0.15), lineWidth: 1))
+            .background(
+                ZStack {
+                    Capsule()
+                        .fill(Color.black.opacity(0.65))
+                        .background(.ultraThinMaterial, in: Capsule())
+                    Capsule()
+                        .stroke(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.22), Color.white.opacity(0.04)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 0.75
+                        )
+                }
+            )
 
             Spacer()
 
@@ -575,5 +713,309 @@ struct FocusRoomView: View {
                 .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(Color.white.opacity(0.65))
         }
+    }
+
+    // MARK: - Layer 5: Liquid Glass Flyout Navigation Drawer (Burger Menu)
+
+    @ViewBuilder
+    private func liquidGlassNavDrawer(size: CGSize) -> some View {
+        if showNavDrawer {
+            ZStack(alignment: .leading) {
+                // Dimmed Backdrop Overlay (tap outside to dismiss)
+                Color.black.opacity(0.45)
+                    .background(.ultraThinMaterial.opacity(0.4))
+                    .ignoresSafeArea()
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        withAnimation(.spring(response: 0.30, dampingFraction: 0.82)) {
+                            showNavDrawer = false
+                        }
+                    }
+
+                // Slide-in Frosted Glass Drawer
+                VStack(alignment: .leading, spacing: 0) {
+                    // Drawer Header
+                    HStack {
+                        HStack(spacing: 8) {
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(Color.accentColor)
+
+                            Text("PLUTO STUDIO")
+                                .font(.system(size: 12, weight: .heavy, design: .monospaced))
+                                .foregroundStyle(Color.white)
+                        }
+
+                        Spacer()
+
+                        Button {
+                            withAnimation(.spring(response: 0.30, dampingFraction: 0.82)) {
+                                showNavDrawer = false
+                            }
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 15))
+                                .foregroundStyle(Color.white.opacity(0.6))
+                        }
+                        .buttonStyle(.plain)
+                        .keyboardShortcut(.escape, modifiers: [])
+                        .help("Close Menu (Esc)")
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 20)
+                    .padding(.bottom, 16)
+
+                    Divider().opacity(0.3)
+
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 18) {
+
+                            // SECTION 1: TODAY PILLARS (Plan ⌘1, List ⌘2, Time ⌘3)
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("TODAY PILLARS")
+                                    .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                                    .foregroundStyle(Color.white.opacity(0.45))
+                                    .padding(.horizontal, 12)
+
+                                drawerNavButton(
+                                    title: "Plan",
+                                    subtitle: "Day Timeline & Schedule",
+                                    icon: "calendar.day.timeline.left",
+                                    badge: "⌘1",
+                                    count: scheduledTodoCount,
+                                    isActive: todaySubmode == "Plan"
+                                ) {
+                                    withAnimation(.spring(response: 0.30, dampingFraction: 0.82)) {
+                                        showNavDrawer = false
+                                        todaySubmode = "Plan"
+                                    }
+                                    NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.today)
+                                    PlutoSoundEngine.shared.play(.tabSwitch)
+                                    Haptics.impact(.light)
+                                }
+
+                                drawerNavButton(
+                                    title: "List",
+                                    subtitle: "GTD Tasks & Queues",
+                                    icon: "checklist.checked",
+                                    badge: "⌘2",
+                                    count: openTodoCount,
+                                    isActive: todaySubmode == "List"
+                                ) {
+                                    withAnimation(.spring(response: 0.30, dampingFraction: 0.82)) {
+                                        showNavDrawer = false
+                                        todaySubmode = "List"
+                                    }
+                                    NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.today)
+                                    PlutoSoundEngine.shared.play(.tabSwitch)
+                                    Haptics.impact(.light)
+                                }
+
+                                drawerNavButton(
+                                    title: "Time",
+                                    subtitle: "Focus Room (Active)",
+                                    icon: "timer.circle.fill",
+                                    badge: "⌘3",
+                                    count: nil,
+                                    isActive: todaySubmode == "Time"
+                                ) {
+                                    withAnimation(.spring(response: 0.30, dampingFraction: 0.82)) {
+                                        showNavDrawer = false
+                                    }
+                                }
+                            }
+
+                            Divider().opacity(0.2)
+
+                            // SECTION 2: WORKSPACE PILLARS
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("WORKSPACE")
+                                    .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                                    .foregroundStyle(Color.white.opacity(0.45))
+                                    .padding(.horizontal, 12)
+
+                                drawerSectionButton(title: "Work", subtitle: "Habit Matrix & Audit", icon: "briefcase.fill", section: .work)
+                                drawerSectionButton(title: "Journal", subtitle: "Daily Log & Notes", icon: "book.fill", section: .journal)
+                                drawerSectionButton(title: "Life", subtitle: "Blueprint & Goals", icon: "mountain.2.fill", section: .life)
+                                drawerSectionButton(title: "Settings", subtitle: "Preferences & Backup", icon: "gearshape.fill", section: .settings)
+                            }
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 14)
+                    }
+
+                    Spacer()
+
+                    // Quick Return to Day Planner Action
+                    Button {
+                        withAnimation(.spring(response: 0.30, dampingFraction: 0.82)) {
+                            showNavDrawer = false
+                            todaySubmode = "Plan"
+                        }
+                        NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.today)
+                        PlutoSoundEngine.shared.play(.tabSwitch)
+                        Haptics.impact(.medium)
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "arrow.left.circle.fill")
+                                .font(.system(size: 13, weight: .bold))
+                            Text("Return to Day Planner")
+                                .font(.system(size: 12, weight: .semibold))
+                        }
+                        .foregroundStyle(Color.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 9)
+                        .background(
+                            LinearGradient(
+                                colors: [Color.accentColor.opacity(0.85), Color.blue.opacity(0.70)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            ),
+                            in: RoundedRectangle(cornerRadius: 10)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(Color.white.opacity(0.3), lineWidth: 0.8)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .padding(14)
+                }
+                .frame(width: 275)
+                .frame(maxHeight: .infinity)
+                .background(
+                    ZStack {
+                        Color.black.opacity(0.82)
+                        RoundedRectangle(cornerRadius: 0)
+                            .fill(.ultraThinMaterial)
+                    }
+                )
+                .overlay(
+                    Rectangle()
+                        .stroke(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.25), Color.white.opacity(0.04)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 0.8
+                        ),
+                    alignment: .trailing
+                )
+                .shadow(color: Color.black.opacity(0.55), radius: 24, x: 8, y: 0)
+                .transition(.move(edge: .leading).combined(with: .opacity))
+            }
+            .zIndex(250)
+        }
+    }
+
+    private func drawerNavButton(
+        title: String,
+        subtitle: String,
+        icon: String,
+        badge: String,
+        count: Int?,
+        isActive: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 11) {
+                Image(systemName: icon)
+                    .font(.system(size: 14, weight: isActive ? .bold : .medium))
+                    .foregroundStyle(isActive ? Color.white : Color.white.opacity(0.75))
+                    .frame(width: 22, height: 22)
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(title)
+                        .font(.system(size: 12.5, weight: isActive ? .bold : .semibold))
+                        .foregroundStyle(Color.white)
+
+                    Text(subtitle)
+                        .font(.system(size: 9.5))
+                        .foregroundStyle(Color.white.opacity(0.55))
+                }
+
+                Spacer()
+
+                if let c = count, c > 0 {
+                    Text("\(c)")
+                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .foregroundStyle(isActive ? Color.white : Color.white.opacity(0.75))
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1.5)
+                        .background(Color.white.opacity(isActive ? 0.22 : 0.10), in: Capsule())
+                }
+
+                Text(badge)
+                    .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                    .foregroundStyle(isActive ? Color.white : Color.white.opacity(0.50))
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 2)
+                    .background(Color.white.opacity(isActive ? 0.20 : 0.08), in: RoundedRectangle(cornerRadius: 4))
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(
+                isActive ? Color.white.opacity(0.14) : Color.white.opacity(0.04),
+                in: RoundedRectangle(cornerRadius: 9)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 9)
+                    .stroke(
+                        isActive ? Color.white.opacity(0.35) : Color.white.opacity(0.06),
+                        lineWidth: 0.8
+                    )
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func drawerSectionButton(
+        title: String,
+        subtitle: String,
+        icon: String,
+        section: MacSection
+    ) -> some View {
+        Button {
+            withAnimation(.spring(response: 0.30, dampingFraction: 0.82)) {
+                showNavDrawer = false
+            }
+            NotificationCenter.default.post(name: .locaJumpToSection, object: section)
+            PlutoSoundEngine.shared.play(.tabSwitch)
+            Haptics.impact(.light)
+        } label: {
+            HStack(spacing: 11) {
+                Image(systemName: icon)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Color.white.opacity(0.75))
+                    .frame(width: 22, height: 22)
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(title)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Color.white)
+
+                    Text(subtitle)
+                        .font(.system(size: 9.5))
+                        .foregroundStyle(Color.white.opacity(0.50))
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(Color.white.opacity(0.35))
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(Color.white.opacity(0.03), in: RoundedRectangle(cornerRadius: 8))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.white.opacity(0.05), lineWidth: 0.6)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }
