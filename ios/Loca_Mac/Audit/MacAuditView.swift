@@ -189,13 +189,40 @@ struct MacAuditView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Space.lg) {
                     if filteredGoals.isEmpty {
-                        VStack(spacing: 8) {
-                            Image(systemName: "flag.slash")
-                                .font(.system(size: 24))
+                        VStack(spacing: 12) {
+                            Image(systemName: "flag.badge.ellipsis")
+                                .font(.system(size: 28))
+                                .foregroundStyle(accentColor.opacity(0.8))
+                            Text("No Strategic Goals in \(selectedHorizon.rawValue)")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundStyle(DS.Color.textPrimary)
+                            Text("Define your key deliverables, checkpoints, and execution habits to track forward momentum.")
+                                .font(DS.Text.caption)
                                 .foregroundStyle(DS.Color.textTertiary)
-                            Text("No goals in \(selectedHorizon.rawValue)")
-                                .font(DS.Text.body)
-                                .foregroundStyle(DS.Color.textTertiary)
+                                .multilineTextAlignment(.center)
+                                .frame(maxWidth: 380)
+
+                            Button {
+                                newGoalTitle = ""
+                                newGoalCustomTag = "WORK"
+                                newGoalHorizon = selectedHorizon == .all ? .quarter : selectedHorizon
+                                showingAddGoalSheet = true
+                                PlutoSoundEngine.shared.play(.tabSwitch)
+                                Haptics.impact(.light)
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "plus")
+                                        .font(.system(size: 10, weight: .bold))
+                                    Text("Define First Objective")
+                                        .font(.system(size: 12, weight: .bold))
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(accentColor, in: RoundedRectangle(cornerRadius: 6))
+                                .foregroundStyle(.black)
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.top, 4)
                         }
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(DS.Space.xxl)
