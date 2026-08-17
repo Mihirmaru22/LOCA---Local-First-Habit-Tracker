@@ -757,7 +757,7 @@ private struct Life3LifeErasChronologyView: View {
 
     @AppStorage("user_current_age_v2") private var configuredAge: Int = 22
     @AppStorage("user_birth_year") private var birthYear: Int = 2004
-    private let targetLifespanYears: Int = 90
+    @AppStorage("user_target_lifespan_v3") private var targetLifespanYears: Int = 75
 
     private var currentAge: Int {
         max(1, configuredAge)
@@ -785,14 +785,43 @@ private struct Life3LifeErasChronologyView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.xl) {
 
-            // 90-Year Life Perspective Header Banner
+            // Life Perspective Header Banner
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("90-YEAR LIFE HORIZON (MEMENTO MORI)")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(DS.Color.textTertiary)
-                            .tracking(0.8)
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack(spacing: 8) {
+                            Text("\(targetLifespanYears)-YEAR LIFE HORIZON (MEMENTO MORI)")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(DS.Color.textTertiary)
+                                .tracking(0.8)
+
+                            // Horizon Preset Switcher Chips
+                            HStack(spacing: 4) {
+                                ForEach([70, 75, 80, 85, 90], id: \.self) { yrs in
+                                    let isSelected = targetLifespanYears == yrs
+                                    Button {
+                                        targetLifespanYears = yrs
+                                        PlutoSoundEngine.shared.play(.tabSwitch)
+                                        Haptics.impact(.light)
+                                    } label: {
+                                        Text(yrs == 75 ? "\(yrs)y 🇮🇳" : "\(yrs)y")
+                                            .font(.system(size: 9, weight: isSelected ? .bold : .medium))
+                                            .foregroundStyle(isSelected ? Color.white : DS.Color.textTertiary)
+                                            .padding(.horizontal, 5)
+                                            .padding(.vertical, 2)
+                                            .background(
+                                                isSelected ? Color.orange.opacity(0.3) : Color.white.opacity(0.04),
+                                                in: RoundedRectangle(cornerRadius: 4)
+                                            )
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 4)
+                                                    .stroke(isSelected ? Color.orange : Color.clear, lineWidth: 1)
+                                            )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
 
                         Text("Age \(currentAge) of \(targetLifespanYears) (\(String(format: "%.1f", lifeElapsedFraction * 100))% of Life Timeline)")
                             .font(.system(size: 22, weight: .bold))
@@ -818,7 +847,7 @@ private struct Life3LifeErasChronologyView: View {
                         .buttonStyle(.plain)
                         .help("Decrease Age")
 
-                        Text("\(targetLifespanYears - currentAge) years ahead")
+                        Text("\(max(0, targetLifespanYears - currentAge)) years ahead")
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(DS.Color.textSecondary)
                             .padding(.horizontal, 10)
@@ -843,7 +872,7 @@ private struct Life3LifeErasChronologyView: View {
                     }
                 }
 
-                // 90-Year Perspective Life Bar
+                // Perspective Life Bar
                 GeometryReader { p in
                     ZStack(alignment: .leading) {
                         RoundedRectangle(cornerRadius: 3)
@@ -865,21 +894,21 @@ private struct Life3LifeErasChronologyView: View {
             .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
             .overlay(RoundedRectangle(cornerRadius: DS.Radius.card).stroke(DS.Color.border.opacity(0.4), lineWidth: 1))
 
-            // 90 Years Life Matrix
+            // Life Matrix
             VStack(alignment: .leading, spacing: DS.Space.sm) {
                 HStack {
-                    Text("90-YEAR LIFE PERSPECTIVE MATRIX (1 BLOCK = 1 YEAR)")
+                    Text("\(targetLifespanYears)-YEAR LIFE PERSPECTIVE MATRIX (1 BLOCK = 1 YEAR)")
                         .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(DS.Color.textTertiary)
                         .tracking(0.8)
                     Spacer()
-                    Text("● Past · ○ Future")
+                    Text("● Past (\(currentAge)) · ○ Future (\(max(0, targetLifespanYears - currentAge)))")
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(DS.Color.textTertiary)
                 }
 
                 LazyVGrid(
-                    columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 18),
+                    columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 15),
                     spacing: 4
                 ) {
                     ForEach(1...targetLifespanYears, id: \.self) { yr in
