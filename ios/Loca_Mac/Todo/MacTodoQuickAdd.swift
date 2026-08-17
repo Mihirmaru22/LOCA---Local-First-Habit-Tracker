@@ -32,32 +32,63 @@ struct MacTodoQuickAdd: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.xs) {
-            // Input row
+        VStack(alignment: .leading, spacing: 8) {
+            // Liquid Glass Input Row
             HStack(spacing: DS.Space.sm) {
                 Image(systemName: "plus.circle.fill")
-                    .foregroundStyle(DS.Color.textTertiary)
-                    .font(.body)
+                    .foregroundStyle(focused ? Color.accentColor : DS.Color.textTertiary)
+                    .font(.system(size: 15))
+                    .animation(.spring(response: 0.25), value: focused)
 
-                TextField("Add a task (e.g. Gym tomorrow at 7am for 1h #health !!)…", text: $text)
+                TextField("Add a task (e.g. Design review tomorrow at 10am for 1h #work !!)…", text: $text)
                     .textFieldStyle(.plain)
+                    .font(.system(size: 13, weight: .regular))
                     .focused($focused)
                     .onSubmit(submit)
                     .onExitCommand { text = ""; focused = false }
+
+                if !text.isEmpty {
+                    Button {
+                        submit()
+                    } label: {
+                        HStack(spacing: 3) {
+                            Text("Add")
+                                .font(.system(size: 11, weight: .bold))
+                            Image(systemName: "return")
+                                .font(.system(size: 9, weight: .bold))
+                        }
+                        .foregroundStyle(Color.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.accentColor, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .transition(.scale.combined(with: .opacity))
+                }
             }
-            .padding(.horizontal, DS.Space.lg)
-            .padding(.vertical, DS.Space.md)
-            .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.control))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(
+                        focused
+                            ? LinearGradient(colors: [Color.accentColor.opacity(0.8), Color.accentColor.opacity(0.3)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                            : LinearGradient(colors: [.white.opacity(0.18), .white.opacity(0.04)], startPoint: .top, endPoint: .bottom),
+                        lineWidth: focused ? 1.2 : 0.8
+                    )
+            )
+            .shadow(color: focused ? Color.accentColor.opacity(0.15) : Color.black.opacity(0.06), radius: focused ? 8 : 4, x: 0, y: 2)
             .onTapGesture { focused = true }
 
-            // Live token preview
+            // Live token preview in frosted glass chips
             if hasTokens {
-                HStack(spacing: DS.Space.xs) {
+                HStack(spacing: 6) {
                     if let date = preview.dueDate {
                         TokenChip(icon: "calendar", label: relativeDateLabel(date), color: .accentColor)
                     }
                     if let time = preview.startTime {
-                        TokenChip(icon: "clock", label: time.formatted(.dateTime.hour(.defaultDigits(amPM: .abbreviated)).minute()), color: .teal)
+                        TokenChip(icon: "clock.fill", label: time.formatted(.dateTime.hour(.defaultDigits(amPM: .abbreviated)).minute()), color: .teal)
                     }
                     if preview.durationMinutes > 0 {
                         TokenChip(icon: "timer", label: durationLabel(preview.durationMinutes), color: .orange)
@@ -70,7 +101,7 @@ struct MacTodoQuickAdd: View {
                     }
                     Spacer()
                 }
-                .padding(.horizontal, DS.Space.lg)
+                .padding(.horizontal, 4)
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
@@ -133,16 +164,17 @@ private struct TokenChip: View {
     let color: Color
 
     var body: some View {
-        HStack(spacing: 3) {
+        HStack(spacing: 4) {
             Image(systemName: icon)
-                .font(.system(size: 9, weight: .semibold))
+                .font(.system(size: 9, weight: .bold))
             Text(label)
-                .font(.system(size: 10, weight: .medium))
+                .font(.system(size: 10, weight: .semibold))
         }
         .foregroundStyle(color)
-        .padding(.horizontal, 7)
-        .padding(.vertical, 3)
-        .background(color.opacity(0.1), in: Capsule())
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(color.opacity(0.12), in: Capsule())
+        .overlay(Capsule().stroke(color.opacity(0.3), lineWidth: 0.8))
     }
 }
 

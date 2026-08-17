@@ -229,44 +229,84 @@ struct MacDayPlannerColumn: View {
         HStack(spacing: DS.Space.sm) {
             Button { shiftDay(-1) } label: {
                 Image(systemName: "chevron.left")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(DS.Color.textSecondary)
+                    .frame(width: 26, height: 26)
+                    .background(Color.white.opacity(0.06), in: Circle())
             }
             .buttonStyle(.plain)
             .help("Previous day  ←")
 
-            Text(selectedDate, format: .dateTime.weekday(.wide).day().month(.wide))
-                .font(DS.Text.heading)
-                .lineLimit(1)
-                .frame(maxWidth: .infinity)
-                .contentShape(Rectangle())
-                .onTapGesture { selectedDate = cal.startOfDay(for: .now) }
-                .help("Jump to today  ⌘T")
+            HStack(spacing: 6) {
+                Text(selectedDate, format: .dateTime.weekday(.wide).day().month(.wide))
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(DS.Color.textPrimary)
+                    .lineLimit(1)
+
+                if !cal.isDateInToday(selectedDate) {
+                    Button {
+                        withAnimation(.spring(response: 0.25)) {
+                            selectedDate = cal.startOfDay(for: .now)
+                        }
+                    } label: {
+                        HStack(spacing: 3) {
+                            Circle()
+                                .fill(Color.accentColor)
+                                .frame(width: 5, height: 5)
+                            Text("Today")
+                                .font(.system(size: 10, weight: .bold))
+                        }
+                        .foregroundStyle(Color.accentColor)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(Color.accentColor.opacity(0.12), in: Capsule())
+                        .overlay(Capsule().stroke(Color.accentColor.opacity(0.3), lineWidth: 0.8))
+                    }
+                    .buttonStyle(.plain)
+                    .help("Jump to today  ⌘T")
+                    .transition(.scale.combined(with: .opacity))
+                }
+            }
+            .frame(maxWidth: .infinity)
 
             Button { shiftDay(1) } label: {
                 Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(DS.Color.textSecondary)
+                    .frame(width: 26, height: 26)
+                    .background(Color.white.opacity(0.06), in: Circle())
             }
             .buttonStyle(.plain)
             .help("Next day  →")
 
             Button(action: addBlock) {
-                Image(systemName: "plus.circle.fill")
+                HStack(spacing: 4) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 10, weight: .bold))
+                    Text("Block")
+                        .font(.system(size: 11, weight: .bold))
+                }
+                .foregroundStyle(Color.white)
+                .padding(.horizontal, 9)
+                .padding(.vertical, 5)
+                .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 7))
+                .shadow(color: Color.accentColor.opacity(0.3), radius: 4, x: 0, y: 2)
             }
             .buttonStyle(.plain)
-            .foregroundStyle(.tint)
             .help("Add a time block  ⌘N")
         }
-        .font(DS.Text.body)
         .padding(.horizontal, DS.Space.md)
-        .padding(.vertical, DS.Space.sm)
+        .padding(.vertical, 8)
     }
 
-    // MARK: - Week strip
+    // MARK: - Week strip (Liquid Glass Day Tiles)
 
     private var weekStrip: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: 5) {
             ForEach(weekDays, id: \.self) { dayCell($0) }
         }
-        .padding(.horizontal, DS.Space.sm)
-        .padding(.bottom, DS.Space.sm)
+        .padding(.horizontal, DS.Space.md)
+        .padding(.bottom, 8)
     }
 
     private func dayCell(_ day: Date) -> some View {
@@ -274,41 +314,58 @@ struct MacDayPlannerColumn: View {
         let isToday    = cal.isDateInToday(day)
         let count      = active.filter { $0.startTime.map { cal.isDate($0, inSameDayAs: day) } ?? false }.count
 
-        return VStack(spacing: 4) {
-            Text(day, format: .dateTime.weekday(.abbreviated))
-                .font(DS.Text.footnote)
-                .foregroundStyle(isSelected ? DS.Color.textPrimary : DS.Color.textTertiary)
-
-            Text(day, format: .dateTime.day())
-                .font(.system(size: 13, weight: isSelected ? .bold : (isToday ? .semibold : .medium)))
-                .foregroundStyle(isSelected ? Color.black : (isToday ? Color.accentColor : DS.Color.textPrimary))
-                .frame(width: 28, height: 28)
-                .background {
-                    if isSelected {
-                        Circle().fill(Color.white)
-                    } else if isToday {
-                        Circle().stroke(Color.accentColor, lineWidth: 1.5)
-                    }
-                }
-
-            Circle()
-                .fill(count > 0 ? (isSelected ? Color.white : Color.accentColor.opacity(0.8)) : Color.clear)
-                .frame(width: 4, height: 4)
-        }
-        .frame(maxWidth: .infinity)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            withAnimation(reduceMotion ? nil : DS.Motion.settle) {
+        return Button {
+            withAnimation(.spring(response: 0.28, dampingFraction: 0.8)) {
                 selectedDate = cal.startOfDay(for: day)
             }
-        }
-        .onHover { hovering in
-            if hovering {
-                NSCursor.pointingHand.push()
-            } else {
-                NSCursor.pop()
+        } label: {
+            VStack(spacing: 3) {
+                Text(day, format: .dateTime.weekday(.abbreviated))
+                    .font(.system(size: 10, weight: isSelected ? .bold : .medium))
+                    .foregroundStyle(isSelected ? Color.white : (isToday ? Color.accentColor : DS.Color.textTertiary))
+
+                Text(day, format: .dateTime.day())
+                    .font(.system(size: 13, weight: isSelected ? .black : (isToday ? .bold : .semibold)))
+                    .foregroundStyle(isSelected ? Color.white : (isToday ? Color.accentColor : DS.Color.textPrimary))
+
+                // Task count pip
+                HStack(spacing: 2) {
+                    if count > 0 {
+                        Circle()
+                            .fill(isSelected ? Color.white : Color.accentColor)
+                            .frame(width: 4, height: 4)
+                    } else {
+                        Circle()
+                            .fill(Color.clear)
+                            .frame(width: 4, height: 4)
+                    }
+                }
             }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 6)
+            .background(
+                ZStack {
+                    if isSelected {
+                        RoundedRectangle(cornerRadius: 9)
+                            .fill(Color.accentColor)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 9)
+                                    .stroke(LinearGradient(colors: [.white.opacity(0.35), .clear], startPoint: .top, endPoint: .bottom), lineWidth: 0.8)
+                            )
+                            .shadow(color: Color.accentColor.opacity(0.35), radius: 6, x: 0, y: 2)
+                    } else if isToday {
+                        RoundedRectangle(cornerRadius: 9)
+                            .fill(Color.accentColor.opacity(0.12))
+                            .overlay(RoundedRectangle(cornerRadius: 9).stroke(Color.accentColor.opacity(0.4), lineWidth: 1))
+                    } else {
+                        RoundedRectangle(cornerRadius: 9)
+                            .fill(Color.white.opacity(0.04))
+                            .overlay(RoundedRectangle(cornerRadius: 9).stroke(Color.white.opacity(0.06), lineWidth: 0.6))
+                    }
+                }
+            )
         }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Timeline shell
@@ -920,37 +977,103 @@ extension MacDayPlannerColumn {
                 }
 
                 Button {
-                    if task.isCompleted {
-                        task.completedAt = nil
-                    } else {
-                        task.completedAt = Date()
+    private func bentoTaskRow(task: TodoItem) -> some View {
+        let isSelected = selection?.id == task.id
+        let catColor = task.category.color
+
+        return Button {
+            selection = task
+            Haptics.impact(.light)
+        } label: {
+            HStack(spacing: 9) {
+                // Category/Task Bubble Indicator
+                Image(systemName: task.iconName ?? (task.isCompleted ? "checkmark.circle.fill" : "circle"))
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(task.isCompleted ? DS.Color.success : catColor)
+                    .frame(width: 22, height: 22)
+                    .background(task.isCompleted ? DS.Color.success.opacity(0.12) : catColor.opacity(0.12), in: Circle())
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(task.title.isEmpty ? "Untitled Task" : task.title)
+                        .font(.system(size: 12.5, weight: .semibold))
+                        .foregroundStyle(task.isCompleted ? DS.Color.textTertiary : DS.Color.textPrimary)
+                        .strikethrough(task.isCompleted, color: DS.Color.textTertiary)
+                        .lineLimit(1)
+
+                    HStack(spacing: 6) {
+                        if let start = task.startTime, let end = task.endTime {
+                            HStack(spacing: 3) {
+                                Image(systemName: "clock")
+                                    .font(.system(size: 8))
+                                Text("\(start.formatted(.dateTime.hour().minute())) – \(end.formatted(.dateTime.hour().minute()))")
+                                    .font(.system(size: 9.5, weight: .medium, design: .monospaced))
+                            }
+                            .foregroundStyle(DS.Color.textSecondary)
+                        }
+
+                        Text("•")
+                            .font(.system(size: 7))
+                            .foregroundStyle(DS.Color.textTertiary)
+
+                        Text("\(task.durationMinutes)m")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(catColor)
                     }
-                    try? modelContext.save()
+                }
+
+                Spacer()
+
+                // Checkmark toggle button
+                Button {
+                    withAnimation(.spring(response: 0.25)) {
+                        if task.isCompleted {
+                            task.completedAt = nil
+                        } else {
+                            task.completedAt = Date()
+                            PlutoSoundEngine.shared.play(.completePop)
+                        }
+                        try? modelContext.save()
+                    }
                     Haptics.impact(.light)
                 } label: {
                     Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
-                        .font(.system(size: 13))
-                        .foregroundStyle(task.isCompleted ? DS.Color.success : DS.Color.textSecondary)
+                        .font(.system(size: 15))
+                        .foregroundStyle(task.isCompleted ? DS.Color.success : DS.Color.textTertiary)
                 }
                 .buttonStyle(.plain)
             }
             .padding(.horizontal, 10)
-            .padding(.vertical, 7)
+            .padding(.vertical, 8)
             .background(
-                isSelected ? Color.accentColor.opacity(0.15) : DS.Color.surface,
-                in: RoundedRectangle(cornerRadius: 8)
+                ZStack {
+                    if isSelected {
+                        RoundedRectangle(cornerRadius: 9)
+                            .fill(Color.accentColor.opacity(0.14))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 9)
+                                    .stroke(Color.accentColor.opacity(0.4), lineWidth: 1)
+                            )
+                    } else {
+                        RoundedRectangle(cornerRadius: 9)
+                            .fill(Color.white.opacity(0.04))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 9)
+                                    .stroke(Color.white.opacity(0.06), lineWidth: 0.6)
+                            )
+                    }
+                }
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(isSelected ? Color.accentColor.opacity(0.5) : DS.Color.border.opacity(0.3), lineWidth: 1)
-            )
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
 
     var agendaStreamView: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.xl) {
+            VStack(alignment: .leading, spacing: 14) {
+
+                // Live Day Arc Glass Metrics Banner
+                liveDayArcHeader
 
                 // Morning Bucket (Box 1)
                 agendaPeriodSection(
@@ -998,15 +1121,88 @@ extension MacDayPlannerColumn {
                     unscheduledSection
                 }
             }
-            .padding(DS.Space.lg)
+            .padding(.horizontal, DS.Space.md)
+            .padding(.vertical, DS.Space.md)
         }
+    }
+
+    // MARK: - Live Day Arc Header Card
+
+    private var liveDayArcHeader: some View {
+        let totalMins = scheduled.reduce(0) { $0 + $1.durationMinutes }
+        let doneCount = scheduled.filter { $0.isCompleted }.count
+        let totalCount = scheduled.count
+
+        return VStack(spacing: 8) {
+            HStack {
+                HStack(spacing: 6) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.accentColor)
+
+                    Text("DAY HORIZON")
+                        .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                        .foregroundStyle(DS.Color.textTertiary)
+                }
+
+                Spacer()
+
+                HStack(spacing: 8) {
+                    if totalMins > 0 {
+                        HStack(spacing: 3) {
+                            Image(systemName: "hourglass")
+                                .font(.system(size: 8.5))
+                            Text("\(totalMins / 60)h \(totalMins % 60)m planned")
+                                .font(.system(size: 9.5, weight: .semibold))
+                        }
+                        .foregroundStyle(DS.Color.textSecondary)
+                    }
+
+                    if totalCount > 0 {
+                        Text("\(doneCount)/\(totalCount) Done")
+                            .font(.system(size: 9.5, weight: .bold))
+                            .foregroundStyle(doneCount == totalCount && totalCount > 0 ? Color.green : Color.accentColor)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.accentColor.opacity(0.12), in: Capsule())
+                    }
+                }
+            }
+
+            // Progress bar
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.white.opacity(0.08))
+                        .frame(height: 5)
+
+                    if totalCount > 0 {
+                        let ratio = CGFloat(doneCount) / CGFloat(max(1, totalCount))
+                        Capsule()
+                            .fill(LinearGradient(colors: [Color.accentColor, Color.teal], startPoint: .leading, endPoint: .trailing))
+                            .frame(width: max(8, geo.size.width * ratio), height: 5)
+                            .shadow(color: Color.accentColor.opacity(0.4), radius: 3, x: 0, y: 1)
+                    }
+                }
+            }
+            .frame(height: 5)
+        }
+        .padding(12)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(
+                    LinearGradient(colors: [.white.opacity(0.22), .white.opacity(0.04)], startPoint: .top, endPoint: .bottom),
+                    lineWidth: 0.8
+                )
+        )
     }
 
     private func agendaPeriodSection(title: String, timeRange: String, icon: String, color: Color, tasks: [TodoItem]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Image(systemName: icon)
-                    .font(.system(size: 11))
+                    .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(color)
 
                 Text(title)
@@ -1017,17 +1213,22 @@ extension MacDayPlannerColumn {
                 Spacer()
 
                 Text(timeRange)
-                    .font(.system(size: 9, weight: .medium))
+                    .font(.system(size: 9, weight: .semibold, design: .monospaced))
                     .foregroundStyle(DS.Color.textTertiary)
             }
-            .padding(.horizontal, 4)
+            .padding(.horizontal, 2)
 
             if tasks.isEmpty {
-                Text("No tasks scheduled for this period.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(DS.Color.textTertiary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 8)
+                HStack {
+                    Image(systemName: "circle.dashed")
+                        .font(.system(size: 10))
+                        .foregroundStyle(DS.Color.textTertiary.opacity(0.6))
+                    Text("No blocks scheduled")
+                        .font(.system(size: 10.5))
+                        .foregroundStyle(DS.Color.textTertiary.opacity(0.8))
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 8)
             } else {
                 VStack(spacing: 5) {
                     ForEach(tasks) { task in
@@ -1036,9 +1237,15 @@ extension MacDayPlannerColumn {
                 }
             }
         }
-        .padding(DS.Space.md)
-        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
-        .overlay(RoundedRectangle(cornerRadius: DS.Radius.card).stroke(DS.Color.border.opacity(0.4), lineWidth: 1))
+        .padding(10)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(
+                    LinearGradient(colors: [.white.opacity(0.18), .white.opacity(0.04)], startPoint: .top, endPoint: .bottom),
+                    lineWidth: 0.8
+                )
+        )
     }
 
     private func createBlock(at hourDate: Date) {

@@ -19,9 +19,9 @@ enum ListDesignVariant: String, CaseIterable, Identifiable {
     }
 }
 
-// MARK: - MacTodoListColumn (Task Inventory with Layout Menu)
+// MARK: - MacTodoListColumn (Task Inventory with Liquid Glass Layout Menu)
 
-/// The "List" sub-pillar with a polished Layout dropdown menu.
+/// The "List" sub-pillar styled with macOS 2027 Liquid Glassmorphism.
 struct MacTodoListColumn: View {
 
     @Binding var selection: TodoItem?
@@ -49,25 +49,21 @@ struct MacTodoListColumn: View {
     var body: some View {
         VStack(spacing: 0) {
 
-            // Top Header: Task Count
-            HStack(spacing: DS.Space.sm) {
-                Text("\(openItems.count) tasks")
-                    .font(DS.Text.caption)
-                    .foregroundStyle(DS.Color.textTertiary)
-
-                Spacer()
-            }
-            .padding(.horizontal, DS.Space.md)
-            .padding(.vertical, DS.Space.sm)
+            // Top Header: Liquid Glass Task Counter & Layout Switcher
+            topGlassHeader
+                .padding(.horizontal, DS.Space.md)
+                .padding(.vertical, 8)
 
             Divider()
+                .opacity(0.4)
 
-            // Quick Add Input
+            // Quick Add Input with Glass Container
             MacTodoQuickAdd()
                 .padding(.horizontal, DS.Space.md)
-                .padding(.vertical, DS.Space.sm)
+                .padding(.vertical, 8)
 
             Divider()
+                .opacity(0.4)
 
             // Main List Content
             ScrollView {
@@ -113,9 +109,64 @@ struct MacTodoListColumn: View {
             PlutoTelemetryEngine.shared.trackLayoutChanged(section: "TodoList", newLayout: newVar.rawValue)
         }
     }
+
+    // MARK: - Top Glass Header
+
+    private var topGlassHeader: some View {
+        HStack(spacing: DS.Space.sm) {
+            // Task count chip
+            HStack(spacing: 5) {
+                Circle()
+                    .fill(Color.accentColor)
+                    .frame(width: 6, height: 6)
+
+                Text("\(openItems.count) tasks open")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(DS.Color.textPrimary)
+
+                if !doneItems.isEmpty {
+                    Text("• \(doneItems.count) done")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(DS.Color.textTertiary)
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(.ultraThinMaterial, in: Capsule())
+            .overlay(Capsule().stroke(Color.white.opacity(0.12), lineWidth: 0.8))
+
+            Spacer()
+
+            // Layout Picker Pill
+            HStack(spacing: 3) {
+                ForEach(ListDesignVariant.allCases) { variant in
+                    let isSelected = selectedVariant == variant
+                    Button {
+                        withAnimation(.spring(response: 0.25)) {
+                            selectedVariant = variant
+                        }
+                    } label: {
+                        Image(systemName: variant.icon)
+                            .font(.system(size: 11, weight: isSelected ? .bold : .medium))
+                            .foregroundStyle(isSelected ? Color.white : DS.Color.textSecondary)
+                            .frame(width: 24, height: 22)
+                            .background(
+                                isSelected ? Color.accentColor : Color.clear,
+                                in: RoundedRectangle(cornerRadius: 5)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .help(variant.rawValue)
+                }
+            }
+            .padding(3)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 7))
+            .overlay(RoundedRectangle(cornerRadius: 7).stroke(Color.white.opacity(0.1), lineWidth: 0.8))
+        }
+    }
 }
 
-// MARK: - Design 1: List1BentoCardsView (Modern Minimalist Cards)
+// MARK: - Design 1: List1BentoCardsView (Liquid Glass Bento Cards)
 
 private struct List1BentoCardsView: View {
 
@@ -126,7 +177,7 @@ private struct List1BentoCardsView: View {
     @Binding var showCompleted: Bool
 
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 7) {
             ForEach(items, id: \.id) { item in
                 List1CardRow(item: item, isSelected: selection?.id == item.id) {
                     selection = item
@@ -193,6 +244,8 @@ private struct List1BentoCardsView: View {
     }
 }
 
+// MARK: - List1CardRow (Liquid Glass Card)
+
 private struct List1CardRow: View {
     @Bindable var item: TodoItem
     let isSelected: Bool
@@ -206,11 +259,12 @@ private struct List1CardRow: View {
         allItems.filter { $0.parentID == item.id && !$0.isArchived }
     }
     private var completedSubtaskCount: Int { subtasks.filter(\.isCompleted).count }
+    private var catColor: Color { item.category.color }
 
     var body: some View {
         HStack(spacing: 10) {
 
-            // Checkbox
+            // Checkbox with glass styling
             ZStack {
                 Circle()
                     .strokeBorder(item.isCompleted ? Color.accentColor : DS.Color.border, lineWidth: 1.5)
@@ -232,6 +286,7 @@ private struct List1CardRow: View {
                         item.completedAt = item.isCompleted ? nil : Date()
                         try? modelContext.save()
                         if item.isCompleted {
+                            PlutoSoundEngine.shared.play(.completePop)
                             PlutoTelemetryEngine.shared.trackTaskCompleted(task: item)
                         }
                     }
@@ -239,16 +294,23 @@ private struct List1CardRow: View {
                 }
             )
 
+            // Category Icon Bubble
+            Image(systemName: item.iconName ?? "checklist")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(item.isCompleted ? DS.Color.textTertiary : catColor)
+                .frame(width: 22, height: 22)
+                .background(catColor.opacity(0.12), in: Circle())
+
             // Title & Metadata
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(item.title)
-                    .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                    .font(.system(size: 12.5, weight: isSelected ? .bold : .medium))
                     .foregroundStyle(item.isCompleted ? DS.Color.textTertiary : DS.Color.textPrimary)
                     .strikethrough(item.isCompleted, color: DS.Color.textTertiary)
                     .lineLimit(1)
 
-                // Metadata Pill
-                if item.dueDate != nil || !subtasks.isEmpty {
+                // Metadata Pill Row
+                if item.dueDate != nil || !subtasks.isEmpty || item.startTime != nil {
                     HStack(spacing: 6) {
                         if let due = item.dueDate {
                             HStack(spacing: 3) {
@@ -256,21 +318,21 @@ private struct List1CardRow: View {
                                     .font(.system(size: 8))
                                 Text(due, style: .date)
                             }
-                            .font(.system(size: 10))
+                            .font(.system(size: 9.5))
                             .foregroundStyle(isOverdue(due) && !item.isCompleted ? Color.red : DS.Color.textTertiary)
                         }
 
                         if !subtasks.isEmpty {
                             HStack(spacing: 3) {
-                                Image(systemName: "list.bullet")
+                                Image(systemName: "checklist")
                                     .font(.system(size: 8))
                                 Text("\(completedSubtaskCount)/\(subtasks.count)")
                             }
-                            .font(.system(size: 10))
-                            .foregroundStyle(DS.Color.textTertiary)
-                            .padding(.horizontal, 4)
+                            .font(.system(size: 9.5, weight: .semibold))
+                            .foregroundStyle(catColor)
+                            .padding(.horizontal, 5)
                             .padding(.vertical, 1)
-                            .background(DS.Color.surfaceRecessed, in: Capsule())
+                            .background(catColor.opacity(0.1), in: Capsule())
                         }
                     }
                 }
@@ -278,7 +340,7 @@ private struct List1CardRow: View {
 
             Spacer()
 
-            // Delete Trash Button
+            // Delete Trash Button on Hover
             if item.isCompleted || isHovered {
                 Button {
                     item.archivedAt = Date()
@@ -292,6 +354,7 @@ private struct List1CardRow: View {
                 }
                 .buttonStyle(.plain)
                 .help("Delete task")
+                .transition(.scale.combined(with: .opacity))
             }
 
             // Priority Indicator Pill
@@ -299,16 +362,37 @@ private struct List1CardRow: View {
                 priorityPill(item.priority)
             }
         }
-        .padding(.horizontal, 10)
+        .padding(.horizontal, 11)
         .padding(.vertical, 8)
         .background(
-            isSelected ? Color.accentColor.opacity(0.12) : (isHovered ? DS.Color.surfaceRecessed.opacity(0.5) : DS.Color.surface),
-            in: RoundedRectangle(cornerRadius: 8)
+            ZStack {
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 11)
+                        .fill(Color.accentColor.opacity(0.14))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 11)
+                                .stroke(Color.accentColor.opacity(0.4), lineWidth: 1)
+                        )
+                } else {
+                    RoundedRectangle(cornerRadius: 11)
+                        .fill(.ultraThinMaterial)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 11)
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [isHovered ? catColor.opacity(0.35) : .white.opacity(0.18), .white.opacity(0.04)],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    ),
+                                    lineWidth: 0.8
+                                )
+                        )
+                }
+            }
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(isSelected ? Color.accentColor.opacity(0.4) : DS.Color.border.opacity(0.3), lineWidth: 1)
-        )
+        .offset(y: isHovered ? -1 : 0)
+        .shadow(color: isHovered ? Color.black.opacity(0.1) : Color.clear, radius: 4, x: 0, y: 2)
+        .animation(.spring(response: 0.25), value: isHovered)
         .contentShape(Rectangle())
         .onTapGesture { onSelect() }
         .onHover { isHovered = $0 }
@@ -322,6 +406,7 @@ private struct List1CardRow: View {
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(color.opacity(0.14), in: Capsule())
+            .overlay(Capsule().stroke(color.opacity(0.3), lineWidth: 0.6))
     }
 
     private func priorityInfo(_ p: Int) -> (String, Color) {
@@ -338,7 +423,7 @@ private struct List1CardRow: View {
     }
 }
 
-// MARK: - Design 2: List2GroupedSectionsView (Grouped by Priority & Status)
+// MARK: - Design 2: List2GroupedSectionsView (Liquid Glass Grouped Sections)
 
 private struct List2GroupedSectionsView: View {
 
@@ -348,149 +433,92 @@ private struct List2GroupedSectionsView: View {
     @Binding var showCompleted: Bool
 
     private var highPriority: [TodoItem] { items.filter { $0.priority == 3 } }
-    private var medPriority: [TodoItem]  { items.filter { $0.priority == 2 } }
-    private var normalItems: [TodoItem]  { items.filter { $0.priority < 2 } }
+    private var medPriority:  [TodoItem] { items.filter { $0.priority == 2 } }
+    private var lowPriority:  [TodoItem] { items.filter { $0.priority <= 1 } }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 14) {
 
-            // High Priority Group
             if !highPriority.isEmpty {
-                sectionBlock(title: "HIGH PRIORITY", icon: "flame.fill", color: Color.red, items: highPriority)
+                glassPriorityGroup(title: "HIGH PRIORITY", icon: "flame.fill", color: .red, tasks: highPriority)
             }
 
-            // Medium Priority Group
             if !medPriority.isEmpty {
-                sectionBlock(title: "MEDIUM PRIORITY", icon: "bolt.fill", color: Color.orange, items: medPriority)
+                glassPriorityGroup(title: "MEDIUM PRIORITY", icon: "bolt.fill", color: .orange, tasks: medPriority)
             }
 
-            // Normal / Other Group
-            if !normalItems.isEmpty {
-                sectionBlock(title: "TASKS & INBOX", icon: "tray.fill", color: Color.accentColor, items: normalItems)
+            if !lowPriority.isEmpty {
+                glassPriorityGroup(title: "STANDARD & INBOX", icon: "tray.full.fill", color: Color.accentColor, tasks: lowPriority)
             }
 
-            // Completed Toggle
             if !doneItems.isEmpty {
                 Button {
                     withAnimation(.easeInOut(duration: 0.15)) { showCompleted.toggle() }
                 } label: {
-                    Label(
-                        showCompleted ? "Hide completed" : "\(doneItems.count) completed tasks",
-                        systemImage: showCompleted ? "chevron.up" : "checkmark.circle.fill"
-                    )
-                    .font(DS.Text.caption)
+                    HStack(spacing: 6) {
+                        Image(systemName: showCompleted ? "chevron.up" : "chevron.down")
+                            .font(.system(size: 9, weight: .bold))
+                        Text(showCompleted ? "Hide completed" : "\(doneItems.count) completed tasks")
+                            .font(DS.Text.caption)
+                    }
                     .foregroundStyle(DS.Color.textTertiary)
+                    .padding(.vertical, 4)
                 }
                 .buttonStyle(.plain)
-                .padding(.top, 4)
 
                 if showCompleted {
-                    sectionBlock(title: "COMPLETED", icon: "checkmark.circle.fill", color: Color(red: 0.18, green: 0.80, blue: 0.44), items: doneItems)
+                    VStack(spacing: 6) {
+                        ForEach(doneItems, id: \.id) { item in
+                            List1CardRow(item: item, isSelected: selection?.id == item.id) {
+                                selection = item
+                            }
+                        }
+                    }
                 }
             }
         }
     }
 
-    private func sectionBlock(title: String, icon: String, color: Color, items: [TodoItem]) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
+    private func glassPriorityGroup(title: String, icon: String, color: Color, tasks: [TodoItem]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Image(systemName: icon)
-                    .font(.system(size: 9, weight: .bold))
+                    .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(color)
+
                 Text(title)
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(DS.Color.textTertiary)
-                    .tracking(0.6)
+                    .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                    .foregroundStyle(color)
+
                 Spacer()
-                Text("\(items.count)")
-                    .font(.system(size: 9, weight: .bold))
+
+                Text("\(tasks.count)")
+                    .font(.system(size: 9, weight: .bold, design: .monospaced))
                     .foregroundStyle(color)
                     .padding(.horizontal, 5)
                     .padding(.vertical, 1)
                     .background(color.opacity(0.12), in: Capsule())
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(DS.Color.surfaceRecessed)
+            .padding(.horizontal, 2)
 
-            VStack(spacing: 0) {
-                ForEach(items, id: \.id) { item in
-                    List2DenseRow(item: item, isSelected: selection?.id == item.id, color: color) {
+            VStack(spacing: 6) {
+                ForEach(tasks, id: \.id) { item in
+                    List1CardRow(item: item, isSelected: selection?.id == item.id) {
                         selection = item
-                    }
-                    if item.id != items.last?.id {
-                        Divider().padding(.leading, 32)
                     }
                 }
             }
         }
-        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: 8))
+        .padding(10)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 13))
         .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(DS.Color.border.opacity(0.4), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 13)
+                .stroke(LinearGradient(colors: [color.opacity(0.25), .white.opacity(0.04)], startPoint: .top, endPoint: .bottom), lineWidth: 0.8)
         )
     }
 }
 
-private struct List2DenseRow: View {
-    @Bindable var item: TodoItem
-    let isSelected: Bool
-    let color: Color
-    let onSelect: () -> Void
-
-    @Environment(\.modelContext) private var modelContext
-    @State private var isHovered = false
-
-    var body: some View {
-        HStack(spacing: 8) {
-            // Side Priority Ribbon
-            Rectangle()
-                .fill(color)
-                .frame(width: 3)
-
-            // Checkbox
-            Image(systemName: item.isCompleted ? "checkmark.square.fill" : "square")
-                .font(.system(size: 13))
-                .foregroundStyle(item.isCompleted ? Color.accentColor : DS.Color.textSecondary)
-                .contentShape(Rectangle())
-                .highPriorityGesture(
-                    TapGesture().onEnded {
-                        withAnimation(DS.Motion.settle) {
-                            item.completedAt = item.isCompleted ? nil : Date()
-                            try? modelContext.save()
-                            if item.isCompleted {
-                                PlutoTelemetryEngine.shared.trackTaskCompleted(task: item)
-                            }
-                        }
-                        Haptics.impact(.light)
-                    }
-                )
-
-            // Title
-            Text(item.title)
-                .font(.system(size: 12))
-                .foregroundStyle(item.isCompleted ? DS.Color.textTertiary : DS.Color.textPrimary)
-                .strikethrough(item.isCompleted, color: DS.Color.textTertiary)
-                .lineLimit(1)
-
-            Spacer()
-
-            if let due = item.dueDate {
-                Text(due, style: .date)
-                    .font(.system(size: 10))
-                    .foregroundStyle(DS.Color.textTertiary)
-            }
-        }
-        .padding(.vertical, 6)
-        .padding(.trailing, 8)
-        .background(isSelected ? Color.accentColor.opacity(0.12) : (isHovered ? DS.Color.surfaceRecessed.opacity(0.4) : Color.clear))
-        .contentShape(Rectangle())
-        .onTapGesture { onSelect() }
-        .onHover { isHovered = $0 }
-    }
-}
-
-// MARK: - Design 3: List3FocusCardsView (Interactive with Subtask Expander)
+// MARK: - Design 3: List3FocusCardsView (Liquid Glass Focus Horizon Cards)
 
 private struct List3FocusCardsView: View {
 
@@ -573,6 +601,7 @@ private struct List3FocusCard: View {
                                 item.completedAt = item.isCompleted ? nil : Date()
                                 try? modelContext.save()
                                 if item.isCompleted {
+                                    PlutoSoundEngine.shared.play(.completePop)
                                     PlutoTelemetryEngine.shared.trackTaskCompleted(task: item)
                                 }
                             }
@@ -656,13 +685,25 @@ private struct List3FocusCard: View {
             }
         }
         .background(
-            isSelected ? Color.accentColor.opacity(0.12) : (isHovered ? DS.Color.surfaceRecessed.opacity(0.4) : DS.Color.surface),
-            in: RoundedRectangle(cornerRadius: 8)
+            ZStack {
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 11)
+                        .fill(Color.accentColor.opacity(0.14))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 11)
+                                .stroke(Color.accentColor.opacity(0.5), lineWidth: 1)
+                        )
+                } else {
+                    RoundedRectangle(cornerRadius: 11)
+                        .fill(.ultraThinMaterial)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 11)
+                                .stroke(LinearGradient(colors: [.white.opacity(0.18), .white.opacity(0.04)], startPoint: .top, endPoint: .bottom), lineWidth: 0.8)
+                        )
+                }
+            }
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(isSelected ? Color.accentColor.opacity(0.5) : DS.Color.border.opacity(0.4), lineWidth: 1)
-        )
+        .offset(y: isHovered ? -1 : 0)
         .contentShape(Rectangle())
         .onTapGesture { onSelect() }
         .onHover { isHovered = $0 }
@@ -681,4 +722,3 @@ private struct List3FocusCard: View {
         Calendar.current.startOfDay(for: date) < Calendar.current.startOfDay(for: .now)
     }
 }
-
