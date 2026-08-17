@@ -4,7 +4,7 @@ import AppKit
 // MARK: - FocusWallpaperManager (High-Speed Local Disk & Memory Cache)
 
 @MainActor
-final class FocusWallpaperManager: ObservableObject {
+final class FocusWallpaperManager {
 
     static let shared = FocusWallpaperManager()
 
