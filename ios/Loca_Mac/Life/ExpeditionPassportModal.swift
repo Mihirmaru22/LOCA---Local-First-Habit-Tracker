@@ -30,7 +30,7 @@ struct ExpeditionPassportModal: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .background(Color(red: 0.05, green: 0.06, blue: 0.08))
+            .background(Color(red: 0.10, green: 0.12, blue: 0.16))
         }
         .frame(minWidth: 860, idealWidth: 920, minHeight: 700, idealHeight: 800)
         .overlay(alignment: .bottom) {
