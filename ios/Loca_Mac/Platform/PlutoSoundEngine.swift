@@ -16,6 +16,7 @@ public final class PlutoSoundEngine: ObservableObject {
 
     public enum AcousticSound {
         case checkmark
+        case completePop
         case timerStart
         case timerComplete
         case summitPassport

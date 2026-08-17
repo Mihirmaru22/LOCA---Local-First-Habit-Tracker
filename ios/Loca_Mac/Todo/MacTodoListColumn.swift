@@ -259,7 +259,7 @@ private struct List1CardRow: View {
         allItems.filter { $0.parentID == item.id && !$0.isArchived }
     }
     private var completedSubtaskCount: Int { subtasks.filter(\.isCompleted).count }
-    private var catColor: Color { item.category.color }
+    private var catColor: Color { item.categoryColor }
 
     var body: some View {
         HStack(spacing: 10) {

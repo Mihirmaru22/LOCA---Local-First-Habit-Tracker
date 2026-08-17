@@ -936,7 +936,7 @@ extension MacDayPlannerColumn {
 
     private func bentoTaskRow(task: TodoItem) -> some View {
         let isSelected = selection?.id == task.id
-        let catColor = task.category.color
+        let catColor = task.categoryColor
 
         return Button {
             selection = task

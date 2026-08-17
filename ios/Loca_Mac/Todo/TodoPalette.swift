@@ -55,3 +55,17 @@ extension View {
             }
     }
 }
+
+// MARK: - TodoItem Category Color Helper
+
+extension TodoItem {
+    var categoryColor: Color {
+        guard let cat = category?.lowercased(), !cat.isEmpty else { return Color.accentColor }
+        if cat.contains("work") || cat.contains("dev") || cat.contains("project") { return Color.purple }
+        if cat.contains("health") || cat.contains("fitness") || cat.contains("gym") { return Color.green }
+        if cat.contains("life") || cat.contains("personal") { return Color.orange }
+        if cat.contains("finance") || cat.contains("money") { return Color.mint }
+        if cat.contains("urgent") || cat.contains("high") { return Color.red }
+        return Color.accentColor
+    }
+}
