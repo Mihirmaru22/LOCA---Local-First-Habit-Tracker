@@ -41,12 +41,16 @@ struct MacTodoContentColumn: View {
     @Binding var selection: TodoItem?
     @AppStorage("mac_today_submode") private var modeString: String = "Plan"
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Query(sort: [SortDescriptor(\TodoItem.createdAt)], animation: .default)
+    private var allItems: [TodoItem]
 
-    @Query(filter: #Predicate<TodoItem> { !$0.isArchived && $0.parentID == nil && !$0.isCompleted })
-    private var openItems: [TodoItem]
+    private var openItems: [TodoItem] {
+        allItems.filter { !$0.isArchived && $0.parentID == nil && !$0.isCompleted }
+    }
 
-    @Query(filter: #Predicate<TodoItem> { !$0.isArchived && $0.parentID == nil && $0.startTime != nil })
-    private var scheduledItems: [TodoItem]
+    private var scheduledItems: [TodoItem] {
+        allItems.filter { !$0.isArchived && $0.parentID == nil && $0.startTime != nil }
+    }
 
     private var mode: Binding<TodoMode> {
         Binding(
