@@ -1,6 +1,7 @@
 import Foundation
 import AVFoundation
 import Combine
+import SwiftUI
 
 // MARK: - AmbientSoundTrack
 
@@ -13,7 +14,7 @@ struct AmbientSoundTrack: Identifiable {
     var previousVolume: Float = 0.5
 }
 
-// MARK: - FocusSoundViewModel (Multi-Channel Procedural Synthesis Engine)
+// MARK: - FocusSoundViewModel (Studio Multi-Stem Spatial Audio Engine)
 
 @MainActor
 final class FocusSoundViewModel: ObservableObject {
@@ -30,10 +31,8 @@ final class FocusSoundViewModel: ObservableObject {
     @Published var isAllPaused: Bool = false
     @Published var youtubeVolume: Double = 0.5
 
-    // Multi-Track Procedural Audio Engine
+    // Multi-Track Studio Audio Engine
     private var audioEngine = AVAudioEngine()
-    private var mixerNodes: [String: AVAudioMixerNode] = [:]
-    private var sourceNodes: [String: AVAudioSourceNode] = [:]
     private var isEngineStarted: Bool = false
 
     // Direct thread-safe atomic volumes for audio render thread
@@ -41,20 +40,67 @@ final class FocusSoundViewModel: ObservableObject {
         "lofi": 0.0, "nature": 0.0, "rain": 0.0, "fireplace": 0.0, "library": 0.0, "piano": 0.0
     ]
 
-    // Synthesis per-track phase trackers
-    private var lofiPhase: Float = 0.0
-    private var rainB0: Float = 0.0, rainB1: Float = 0.0, rainB2: Float = 0.0
-    private var natureLfo: Float = 0.0, naturePink: Float = 0.0
+    // Synthesis Sample Indexes & Oscillators
+    private var globalSampleIndex: UInt64 = 0
+
+    // LoFi Rhodes Chord Engine States (Dm9 -> G13 -> Cmaj9 -> A7#9)
+    private var lofiPhase1: Float = 0.0
+    private var lofiPhase2: Float = 0.0
+    private var lofiPhase3: Float = 0.0
+    private var lofiPhase4: Float = 0.0
+    private var lofiChordIndex: Int = 0
+
+    // Piano Jazz Engine States
+    private var pianoPhase1: Float = 0.0
+    private var pianoPhase2: Float = 0.0
+    private var pianoPhase3: Float = 0.0
+    private var pianoPhase4: Float = 0.0
+
+    // Rain Multi-Band States (Paul Kellet 5-pole filter)
+    private var rainB0: Float = 0.0
+    private var rainB1: Float = 0.0
+    private var rainB2: Float = 0.0
+    private var rainB3: Float = 0.0
+    private var rainB4: Float = 0.0
+
+    // Fireplace States
     private var fireHumPhase: Float = 0.0
-    private var libraryPhase: Float = 0.0
-    private var pianoPhase: Float = 0.0
+    private var firePink: Float = 0.0
+
+    // Nature States
+    private var natureLfo: Float = 0.0
+    private var naturePink: Float = 0.0
+
+    // Library States
+    private var libraryPink: Float = 0.0
+    private var libraryLfo: Float = 0.0
 
     private var cancellables = Set<AnyCancellable>()
 
     init() {
+        loadPersistedVolumes()
         setupMultiTrackEngine()
         setupAudioObservers()
     }
+
+    // MARK: - Persistence
+
+    private func loadPersistedVolumes() {
+        for i in 0..<tracks.count {
+            let id = tracks[i].id
+            let key = "focus_sound_vol_\(id)"
+            if let saved = UserDefaults.standard.value(forKey: key) as? Float {
+                tracks[i].volume = saved
+                trackVolumes[id] = saved
+            }
+        }
+    }
+
+    private func persistVolume(for trackID: String, volume: Float) {
+        UserDefaults.standard.set(volume, forKey: "focus_sound_vol_\(trackID)")
+    }
+
+    // MARK: - Audio Engine Lifecycle & Hardware Routing
 
     private func setupAudioObservers() {
         NotificationCenter.default.publisher(for: .AVAudioEngineConfigurationChange, object: audioEngine)
@@ -90,25 +136,7 @@ final class FocusSoundViewModel: ObservableObject {
         audioEngine.stop()
         isEngineStarted = false
 
-        // Detach old nodes cleanly
-        for (_, node) in sourceNodes {
-            audioEngine.detach(node)
-        }
-        for (_, node) in mixerNodes {
-            audioEngine.detach(node)
-        }
-        sourceNodes.removeAll()
-        mixerNodes.removeAll()
-
-        // Rebuild graph with new output route hardware sample rate
         setupMultiTrackEngine()
-
-        // Restore volumes
-        for track in tracks {
-            if !track.isMuted && !isAllPaused {
-                applyVolume(trackID: track.id, volume: track.volume)
-            }
-        }
 
         if wasRunning && !isAllPaused {
             checkEngineRunning()
@@ -127,162 +155,295 @@ final class FocusSoundViewModel: ObservableObject {
 
         let mainMixer = audioEngine.mainMixerNode
         let format = mainMixer.outputFormat(forBus: 0)
-        let sampleRate = Float(format.sampleRate > 0 ? format.sampleRate : 44100.0)
+        let sampleRate: Float = format.sampleRate > 0 ? Float(format.sampleRate) : 44100.0
 
-        for track in tracks {
-            let mixer = AVAudioMixerNode()
-            mixer.outputVolume = 0.0
-            audioEngine.attach(mixer)
-            audioEngine.connect(mixer, to: mainMixer, format: format)
-            mixerNodes[track.id] = mixer
+        // Dedicated High-Fidelity Stereo Synthesis Node
+        let source = AVAudioSourceNode { [weak self] _, _, frameCount, audioBufferList -> OSStatus in
+            guard let self = self else { return noErr }
+            let ablPointer = UnsafeMutableAudioBufferListPointer(audioBufferList)
 
-            // Dedicated procedural source node per channel
-            let trackID = track.id
-            let source = AVAudioSourceNode { [weak self] _, _, frameCount, audioBufferList -> OSStatus in
-                guard let self = self else { return noErr }
-                let ablPointer = UnsafeMutableAudioBufferListPointer(audioBufferList)
-                
-                // If this track's volume is 0 or all paused, output absolute silence (0.0)
-                let vol = self.trackVolumes[trackID] ?? 0.0
-                if vol <= 0.001 || self.isAllPaused {
-                    for buffer in ablPointer {
-                        memset(buffer.mData, 0, Int(buffer.mDataByteSize))
-                    }
-                    return noErr
-                }
-
-                for frame in 0..<Int(frameCount) {
-                    let sample = self.generateSample(for: trackID, sampleRate: sampleRate) * vol
-                    for buffer in ablPointer {
-                        let buf: UnsafeMutableBufferPointer<Float> = UnsafeMutableBufferPointer(buffer)
-                        if frame < buf.count {
-                            buf[frame] = sample
-                        }
-                    }
+            // If all paused or total master volume is 0, output silence
+            if self.isAllPaused {
+                for buffer in ablPointer {
+                    memset(buffer.mData, 0, Int(buffer.mDataByteSize))
                 }
                 return noErr
             }
 
-            audioEngine.attach(source)
-            audioEngine.connect(source, to: mixer, format: format)
-            sourceNodes[trackID] = source
+            let vLofi = self.logarithmicGain(self.trackVolumes["lofi"] ?? 0.0)
+            let vNature = self.logarithmicGain(self.trackVolumes["nature"] ?? 0.0)
+            let vRain = self.logarithmicGain(self.trackVolumes["rain"] ?? 0.0)
+            let vFire = self.logarithmicGain(self.trackVolumes["fireplace"] ?? 0.0)
+            let vLib = self.logarithmicGain(self.trackVolumes["library"] ?? 0.0)
+            let vPiano = self.logarithmicGain(self.trackVolumes["piano"] ?? 0.0)
+
+            let isAnyActive = (vLofi + vNature + vRain + vFire + vLib + vPiano) > 0.0001
+            if !isAnyActive {
+                for buffer in ablPointer {
+                    memset(buffer.mData, 0, Int(buffer.mDataByteSize))
+                }
+                return noErr
+            }
+
+            for frame in 0..<Int(frameCount) {
+                self.globalSampleIndex &+= 1
+                let t = Float(self.globalSampleIndex) / sampleRate
+
+                var sumL: Float = 0.0
+                var sumR: Float = 0.0
+
+                // 1. LOFI BEATS (Polyphonic Rhodes Chord Progression + Vinyl Flutter)
+                if vLofi > 0.0001 {
+                    let (lL, lR) = self.synthesizeLoFi(t: t, sampleRate: sampleRate)
+                    sumL += lL * vLofi
+                    sumR += lR * vLofi
+                }
+
+                // 2. PIANO & JAZZ (Harmonic Decay & Jazz Voicings)
+                if vPiano > 0.0001 {
+                    let (pL, pR) = self.synthesizePiano(t: t, sampleRate: sampleRate)
+                    sumL += pL * vPiano
+                    sumR += pR * vPiano
+                }
+
+                // 3. RAIN SOUNDS (5-Pole Binaural Paul Kellet Matrix)
+                if vRain > 0.0001 {
+                    let (rL, rR) = self.synthesizeRain(t: t)
+                    sumL += rL * vRain
+                    sumR += rR * vRain
+                }
+
+                // 4. FIREPLACE SOUNDS (Hearth Lows + Stereo Wood Crackle Spikes)
+                if vFire > 0.0001 {
+                    let (fL, fR) = self.synthesizeFireplace(sampleRate: sampleRate)
+                    sumL += fL * vFire
+                    sumR += fR * vFire
+                }
+
+                // 5. NATURE SOUNDS (Alpine Mountain Breeze + Birds)
+                if vNature > 0.0001 {
+                    let (nL, nR) = self.synthesizeNature(t: t, sampleRate: sampleRate)
+                    sumL += nL * vNature
+                    sumR += nR * vNature
+                }
+
+                // 6. LIBRARY AMBIENCE (Room Resonance & Page Rustles)
+                if vLib > 0.0001 {
+                    let (bL, bR) = self.synthesizeLibrary(t: t, sampleRate: sampleRate)
+                    sumL += bL * vLib
+                    sumR += bR * vLib
+                }
+
+                // Master Peak Limiting & Analogue Soft Clipping
+                let finalL = tanh(sumL * 1.1) * 0.95
+                let finalR = tanh(sumR * 1.1) * 0.95
+
+                if ablPointer.count >= 2 {
+                    // Stereo Buffers
+                    let bufL: UnsafeMutableBufferPointer<Float> = UnsafeMutableBufferPointer(ablPointer[0])
+                    let bufR: UnsafeMutableBufferPointer<Float> = UnsafeMutableBufferPointer(ablPointer[1])
+                    if frame < bufL.count { bufL[frame] = finalL }
+                    if frame < bufR.count { bufR[frame] = finalR }
+                } else if ablPointer.count == 1 {
+                    // Mono or Interleaved Buffer
+                    let buf: UnsafeMutableBufferPointer<Float> = UnsafeMutableBufferPointer(ablPointer[0])
+                    if frame < buf.count { buf[frame] = (finalL + finalR) * 0.5 }
+                }
+            }
+
+            return noErr
         }
 
+        audioEngine.attach(source)
+        audioEngine.connect(source, to: mainMixer, format: format)
         isEngineStarted = false
-    }
 
-    // MARK: - Procedural Audio Synthesizer per Channel
-
-    private func generateSample(for trackID: String, sampleRate: Float) -> Float {
-        let dt = 1.0 / sampleRate
-
-        switch trackID {
-        case "lofi":
-            lofiPhase += 2.0 * .pi * 174.61 * dt // F3 warm root note
-            if lofiPhase > 2.0 * .pi { lofiPhase -= 2.0 * .pi }
-            let base = sin(lofiPhase) * 0.4
-            let vinyl = Float.random(in: -1.0...1.0) * (Float.random(in: 0...1) > 0.985 ? 0.25 : 0.015)
-            return (base + vinyl) * 0.35
-
-        case "nature":
-            natureLfo += 2.0 * .pi * 0.2 * dt
-            if natureLfo > 2.0 * .pi { natureLfo -= 2.0 * .pi }
-            let white = Float.random(in: -1.0...1.0)
-            naturePink = 0.95 * naturePink + 0.05 * white
-            let rustle = naturePink * (0.5 + 0.5 * sin(natureLfo))
-            return rustle * 0.3
-
-        case "rain":
-            let white = Float.random(in: -1.0...1.0)
-            rainB0 = 0.99765 * rainB0 + white * 0.0990460
-            rainB1 = 0.96300 * rainB1 + white * 0.2965164
-            rainB2 = 0.57000 * rainB2 + white * 1.0526913
-            let pink = (rainB0 + rainB1 + rainB2 + white * 0.1848) * 0.05
-            let drop = Float.random(in: 0...1) > 0.998 ? Float.random(in: 0.2...0.6) : 0.0
-            return (pink + drop) * 0.35
-
-        case "fireplace":
-            fireHumPhase += 2.0 * .pi * 55.0 * dt
-            if fireHumPhase > 2.0 * .pi { fireHumPhase -= 2.0 * .pi }
-            let hum = sin(fireHumPhase) * 0.15
-            let crackle = Float.random(in: 0...1) > 0.996 ? Float.random(in: 0.4...0.8) : 0.0
-            return (hum + crackle) * 0.4
-
-        case "library":
-            libraryPhase += 2.0 * .pi * 0.05 * dt
-            if libraryPhase > 2.0 * .pi { libraryPhase -= 2.0 * .pi }
-            let white = Float.random(in: -1.0...1.0) * 0.08
-            return white * (0.6 + 0.4 * sin(libraryPhase)) * 0.25
-
-        case "piano":
-            pianoPhase += 2.0 * .pi * 261.63 * dt // Middle C harmonic
-            if pianoPhase > 2.0 * .pi { pianoPhase -= 2.0 * .pi }
-            let harmonic1 = sin(pianoPhase) * 0.3
-            let harmonic2 = sin(pianoPhase * 2.0) * 0.15
-            return (harmonic1 + harmonic2) * 0.3
-
-        default:
-            return 0.0
-        }
-    }
-
-    // MARK: - Public Control API
-
-    func setVolume(for trackID: String, volume: Float) {
-        guard let index = tracks.firstIndex(where: { $0.id == trackID }) else { return }
-        tracks[index].volume = volume
-        
-        if volume > 0.001 {
-            tracks[index].isMuted = false
-            tracks[index].previousVolume = volume
-            applyVolume(trackID: trackID, volume: volume)
-        } else {
-            applyVolume(trackID: trackID, volume: 0.0)
-        }
-    }
-
-    func toggleMute(for trackID: String) {
-        guard let index = tracks.firstIndex(where: { $0.id == trackID }) else { return }
-        
-        if tracks[index].isMuted {
-            tracks[index].isMuted = false
-            let restored = tracks[index].previousVolume > 0 ? tracks[index].previousVolume : 0.5
-            tracks[index].volume = restored
-            applyVolume(trackID: trackID, volume: restored)
-        } else {
-            tracks[index].isMuted = true
-            tracks[index].previousVolume = tracks[index].volume > 0 ? tracks[index].volume : 0.5
-            tracks[index].volume = 0.0
-            applyVolume(trackID: trackID, volume: 0.0)
-        }
-    }
-
-    func togglePauseAll() {
-        isAllPaused.toggle()
-        
-        if isAllPaused {
-            for track in tracks {
-                mixerNodes[track.id]?.outputVolume = 0.0
-                trackVolumes[track.id] = 0.0
-            }
-        } else {
-            for track in tracks where !track.isMuted {
-                mixerNodes[track.id]?.outputVolume = track.volume
-                trackVolumes[track.id] = track.volume
-            }
+        // Start engine if any track is active on launch
+        let hasActive = tracks.contains { $0.volume > 0.001 && !$0.isMuted }
+        if hasActive {
             checkEngineRunning()
         }
     }
 
-    private func applyVolume(trackID: String, volume: Float) {
-        trackVolumes[trackID] = volume
-        mixerNodes[trackID]?.outputVolume = volume
+    // MARK: - Psychoacoustic Decibel Scaling (True Perceived Loudness)
 
-        let hasActiveAudio = trackVolumes.values.contains(where: { $0 > 0.001 })
-        if hasActiveAudio && !isAllPaused {
+    private func logarithmicGain(_ sliderValue: Float) -> Float {
+        guard sliderValue > 0.001 else { return 0.0 }
+        // Power curve mapping (10% = soft texture, 50% = clear primary, 100% = full scale)
+        return pow(min(1.0, max(0.0, sliderValue)), 1.85) * 0.55
+    }
+
+    // MARK: - High-Fidelity Procedural Synthesis Engines
+
+    private func synthesizeLoFi(t: Float, sampleRate: Float) -> (Float, Float) {
+        // Chord cycle every 6 seconds: Dm9 -> G13 -> Cmaj9 -> A7#9
+        let chordCycle = Int(t / 6.0) % 4
+        let chords: [[Float]] = [
+            [146.83, 174.61, 220.00, 261.63, 329.63], // Dm9
+            [196.00, 246.94, 293.66, 329.63, 392.00], // G13
+            [130.81, 164.81, 196.00, 246.94, 293.66], // Cmaj9
+            [220.00, 277.18, 329.63, 370.00, 440.00]  // A7#9
+        ]
+        let currentNotes = chords[chordCycle]
+
+        // Vinyl tape flutter LFO
+        let flutter = 1.0 + 0.0025 * sin(2.0 * .pi * 0.35 * t)
+        let tremolo = 0.88 + 0.12 * sin(2.0 * .pi * 0.22 * t)
+
+        let twoPi = 2.0 * Float.pi
+        let dt = 1.0 / sampleRate
+
+        lofiPhase1 += twoPi * currentNotes[0] * flutter * dt
+        lofiPhase2 += twoPi * currentNotes[1] * flutter * dt
+        lofiPhase3 += twoPi * currentNotes[2] * flutter * dt
+        lofiPhase4 += twoPi * currentNotes[3] * flutter * dt
+
+        if lofiPhase1 > twoPi { lofiPhase1 -= twoPi }
+        if lofiPhase2 > twoPi { lofiPhase2 -= twoPi }
+        if lofiPhase3 > twoPi { lofiPhase3 -= twoPi }
+        if lofiPhase4 > twoPi { lofiPhase4 -= twoPi }
+
+        let s1 = sin(lofiPhase1) * 0.30
+        let s2 = sin(lofiPhase2) * 0.24
+        let s3 = sin(lofiPhase3) * 0.20
+        let s4 = sin(lofiPhase4) * 0.18
+
+        // Vinyl surface noise
+        let vinyl = Float.random(in: -1.0...1.0) * (Float.random(in: 0...1) > 0.992 ? 0.20 : 0.015)
+
+        let rawL = (s1 + s3 + vinyl) * tremolo
+        let rawR = (s2 + s4 + vinyl) * tremolo
+
+        return (tanh(rawL * 1.2) * 0.40, tanh(rawR * 1.2) * 0.40)
+    }
+
+    private func synthesizePiano(t: Float, sampleRate: Float) -> (Float, Float) {
+        // Melodic piano improvisation cycle (8-second arpeggiated voicings)
+        let noteCycle = Int(t / 2.0) % 4
+        let frequencies: [Float] = [261.63, 329.63, 392.00, 523.25] // C4, E4, G4, C5
+        let baseFreq = frequencies[noteCycle]
+
+        let dt = 1.0 / sampleRate
+        let twoPi = 2.0 * Float.pi
+
+        pianoPhase1 += twoPi * baseFreq * dt
+        pianoPhase2 += twoPi * (baseFreq * 2.0) * dt
+        pianoPhase3 += twoPi * (baseFreq * 3.0) * dt
+        pianoPhase4 += twoPi * (baseFreq * 4.0) * dt
+
+        if pianoPhase1 > twoPi { pianoPhase1 -= twoPi }
+        if pianoPhase2 > twoPi { pianoPhase2 -= twoPi }
+        if pianoPhase3 > twoPi { pianoPhase3 -= twoPi }
+        if pianoPhase4 > twoPi { pianoPhase4 -= twoPi }
+
+        // Exponential note strike & decay envelope
+        let noteTime = t.truncatingRemainder(dividingBy: 2.0)
+        let decayEnv = exp(-noteTime * 1.6)
+
+        let tone = (sin(pianoPhase1) * 0.45 +
+                    sin(pianoPhase2) * 0.25 +
+                    sin(pianoPhase3) * 0.15 +
+                    sin(pianoPhase4) * 0.08) * decayEnv
+
+        return (tone * 0.95 * 0.35, tone * 1.05 * 0.35)
+    }
+
+    private func synthesizeRain(t: Float) -> (Float, Float) {
+        // 5-pole Paul Kellet pink noise matrix
+        let white = Float.random(in: -1.0...1.0)
+        rainB0 = 0.99886 * rainB0 + white * 0.0555179
+        rainB1 = 0.99332 * rainB1 + white * 0.0750759
+        rainB2 = 0.96900 * rainB2 + white * 0.1538520
+        rainB3 = 0.86650 * rainB3 + white * 0.3104856
+        rainB4 = 0.55000 * rainB4 + white * 0.5329522
+        let pink = (rainB0 + rainB1 + rainB2 + rainB3 + rainB4 + white * 0.5362) * 0.075
+
+        // Natural droplet variation LFO
+        let rainMod = 0.70 + 0.30 * sin(2.0 * .pi * 0.08 * t)
+
+        // Random delicate droplet ping
+        let drop = Float.random(in: 0...1) > 0.997 ? Float.random(in: 0.15...0.35) : 0.0
+
+        let rL = (pink * rainMod + drop) * 0.38
+        let rR = (pink * rainMod * Float.random(in: 0.96...1.04)) * 0.38
+        return (rL, rR)
+    }
+
+    private func synthesizeFireplace(sampleRate: Float) -> (Float, Float) {
+        let dt = 1.0 / sampleRate
+        fireHumPhase += 2.0 * .pi * 68.0 * dt
+        if fireHumPhase > 2.0 * .pi { fireHumPhase -= 2.0 * .pi }
+
+        let white = Float.random(in: -1.0...1.0)
+        firePink = 0.985 * firePink + white * 0.04
+        let hearthHum = (sin(fireHumPhase) * 0.12 + firePink * 0.20)
+
+        // Wood crackle pop transients (randomized stereo sparks)
+        var popL: Float = 0.0
+        var popR: Float = 0.0
+        if Float.random(in: 0...1.0) < 0.0018 {
+            let amp = Float.random(in: 0.35...0.75)
+            if Float.random(in: 0...1.0) > 0.5 {
+                popL = amp
+            } else {
+                popR = amp
+            }
+        }
+
+        return ((hearthHum + popL) * 0.40, (hearthHum + popR) * 0.40)
+    }
+
+    private func synthesizeNature(t: Float, sampleRate: Float) -> (Float, Float) {
+        let dt = 1.0 / sampleRate
+        natureLfo += 2.0 * .pi * 0.12 * dt
+        if natureLfo > 2.0 * .pi { natureLfo -= 2.0 * .pi }
+
+        let white = Float.random(in: -1.0...1.0)
+        naturePink = 0.96 * naturePink + white * 0.04
+        let breeze = naturePink * (0.6 + 0.4 * sin(natureLfo)) * 0.25
+
+        // Mountain bird chirp envelope
+        let birdCycle = t.truncatingRemainder(dividingBy: 14.0)
+        var birdTone: Float = 0.0
+        if birdCycle < 0.6 {
+            let chirpPhase = 2.0 * .pi * 2800.0 * t
+            birdTone = sin(chirpPhase) * sin((birdCycle / 0.6) * .pi) * 0.12
+        }
+
+        return ((breeze + birdTone * 0.8) * 0.35, (breeze + birdTone * 1.2) * 0.35)
+    }
+
+    private func synthesizeLibrary(t: Float, sampleRate: Float) -> (Float, Float) {
+        let dt = 1.0 / sampleRate
+        libraryLfo += 2.0 * .pi * 0.06 * dt
+        if libraryLfo > 2.0 * .pi { libraryLfo -= 2.0 * .pi }
+
+        let white = Float.random(in: -1.0...1.0)
+        libraryPink = 0.94 * libraryPink + white * 0.06
+        let roomAcoustic = libraryPink * (0.65 + 0.35 * sin(libraryLfo)) * 0.15
+
+        // Periodic soft clock tick
+        let tickCycle = t.truncatingRemainder(dividingBy: 1.0)
+        var tick: Float = 0.0
+        if tickCycle < 0.02 {
+            tick = Float.random(in: 0.10...0.25)
+        }
+
+        return ((roomAcoustic + tick) * 0.30, roomAcoustic * 0.30)
+    }
+
+    // MARK: - Engine Controller
+
+    private func checkEngineRunning() {
+        let hasActiveTrack = tracks.contains { $0.volume > 0.001 && !$0.isMuted }
+        if hasActiveTrack && !isAllPaused {
             if !isEngineStarted {
-                try? audioEngine.start()
-                isEngineStarted = true
+                do {
+                    try audioEngine.start()
+                    isEngineStarted = true
+                } catch {
+                    print("FocusSoundEngine failed to start: \(error)")
+                }
             }
         } else {
             if isEngineStarted {
@@ -292,17 +453,60 @@ final class FocusSoundViewModel: ObservableObject {
         }
     }
 
-    private func checkEngineRunning() {
-        let hasActiveAudio = trackVolumes.values.contains(where: { $0 > 0.001 })
-        if hasActiveAudio && !isAllPaused {
-            if !isEngineStarted {
-                try? audioEngine.start()
-                isEngineStarted = true
-            }
+    // MARK: - Public Control API
+
+    func setVolume(for trackID: String, volume: Float) {
+        guard let index = tracks.firstIndex(where: { $0.id == trackID }) else { return }
+        let clamped = min(1.0, max(0.0, volume))
+        tracks[index].volume = clamped
+        trackVolumes[trackID] = clamped
+        persistVolume(for: trackID, volume: clamped)
+
+        if clamped > 0.001 {
+            tracks[index].isMuted = false
+            tracks[index].previousVolume = clamped
         }
+        checkEngineRunning()
     }
 
-    deinit {
-        audioEngine.stop()
+    func toggleMute(for trackID: String) {
+        guard let index = tracks.firstIndex(where: { $0.id == trackID }) else { return }
+
+        if tracks[index].isMuted {
+            tracks[index].isMuted = false
+            let restored = tracks[index].previousVolume > 0 ? tracks[index].previousVolume : 0.5
+            tracks[index].volume = restored
+            trackVolumes[trackID] = restored
+            persistVolume(for: trackID, volume: restored)
+        } else {
+            tracks[index].isMuted = true
+            tracks[index].previousVolume = tracks[index].volume > 0 ? tracks[index].volume : 0.5
+            tracks[index].volume = 0.0
+            trackVolumes[trackID] = 0.0
+            persistVolume(for: trackID, volume: 0.0)
+        }
+        checkEngineRunning()
+    }
+
+    func togglePauseAll() {
+        isAllPaused.toggle()
+        checkEngineRunning()
+        Haptics.impact(.medium)
+    }
+
+    // MARK: - Quick Mix Preset Shortcuts
+
+    func applyPreset(lofi: Float, nature: Float, rain: Float, fire: Float, library: Float, piano: Float) {
+        setVolume(for: "lofi", volume: lofi)
+        setVolume(for: "nature", volume: nature)
+        setVolume(for: "rain", volume: rain)
+        setVolume(for: "fireplace", volume: fire)
+        setVolume(for: "library", volume: library)
+        setVolume(for: "piano", volume: piano)
+        if isAllPaused {
+            isAllPaused = false
+        }
+        checkEngineRunning()
+        Haptics.impact(.medium)
     }
 }
