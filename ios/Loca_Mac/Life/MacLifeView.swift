@@ -699,15 +699,12 @@ private struct Life2MasterBucketListView: View {
 
 private struct Life3LifeErasChronologyView: View {
 
-    @AppStorage("user_birth_year") private var birthYear: Int = 2000
+    @AppStorage("user_current_age_v2") private var configuredAge: Int = 22
+    @AppStorage("user_birth_year") private var birthYear: Int = 2004
     private let targetLifespanYears: Int = 90
 
-    private var currentYear: Int {
-        Calendar.current.component(.year, from: Date())
-    }
-
     private var currentAge: Int {
-        max(1, currentYear - birthYear)
+        max(1, configuredAge)
     }
 
     private var lifeElapsedFraction: Double {
@@ -724,9 +721,9 @@ private struct Life3LifeErasChronologyView: View {
     }
 
     private static let sampleEras: [LifeEraItem] = [
-        LifeEraItem(id: "1", eraTitle: "The Foundation & Exploration Era", timeframe: "2018 – 2023", coreTheme: "Curiosity, university, foundational programming & philosophy.", keyMilestone: "Computer science degree & first production apps.", isActive: false),
-        LifeEraItem(id: "2", eraTitle: "The Builder & Sovereignty Era", timeframe: "2024 – 2027", coreTheme: "Deep focus on independent craft, local-first engineering, circadian health mastery.", keyMilestone: "Shipped LOCA local-first productivity powerhouse.", isActive: true),
-        LifeEraItem(id: "3", eraTitle: "The Global Impact & Legacy Era", timeframe: "2028 – 2035", coreTheme: "Scaling ventures, global expeditions, mentoring, and philanthropic investments.", keyMilestone: "Long-term freedom & enduring contributions.", isActive: false)
+        LifeEraItem(id: "1", eraTitle: "The Foundation & Exploration Era", timeframe: "2004 – 2022", coreTheme: "Curiosity, foundational schooling, early programming & philosophy.", keyMilestone: "First lines of code, core systems fascination & university entry.", isActive: false),
+        LifeEraItem(id: "2", eraTitle: "The Builder & Sovereignty Era", timeframe: "2023 – 2028", coreTheme: "Deep focus on independent craft, local-first engineering, circadian health mastery.", keyMilestone: "Shipped PLUTO Sovereign OS local-first productivity powerhouse.", isActive: true),
+        LifeEraItem(id: "3", eraTitle: "The Global Impact & Legacy Era", timeframe: "2029 – 2040", coreTheme: "Scaling ventures, global expeditions, mentoring, and enduring contributions.", keyMilestone: "Full geopolitical freedom & multi-generational impact.", isActive: false)
     ]
 
     var body: some View {
@@ -748,12 +745,46 @@ private struct Life3LifeErasChronologyView: View {
 
                     Spacer()
 
-                    Text("\(targetLifespanYears - currentAge) years ahead")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(DS.Color.textSecondary)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(DS.Color.surfaceRecessed, in: Capsule())
+                    HStack(spacing: 6) {
+                        Button {
+                            if configuredAge > 1 {
+                                configuredAge -= 1
+                                PlutoSoundEngine.shared.play(.tabSwitch)
+                                Haptics.impact(.light)
+                            }
+                        } label: {
+                            Image(systemName: "minus")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundStyle(DS.Color.textSecondary)
+                                .frame(width: 20, height: 20)
+                                .background(DS.Color.surfaceRecessed, in: Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .help("Decrease Age")
+
+                        Text("\(targetLifespanYears - currentAge) years ahead")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(DS.Color.textSecondary)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(DS.Color.surfaceRecessed, in: Capsule())
+
+                        Button {
+                            if configuredAge < targetLifespanYears {
+                                configuredAge += 1
+                                PlutoSoundEngine.shared.play(.tabSwitch)
+                                Haptics.impact(.light)
+                            }
+                        } label: {
+                            Image(systemName: "plus")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundStyle(DS.Color.textSecondary)
+                                .frame(width: 20, height: 20)
+                                .background(DS.Color.surfaceRecessed, in: Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .help("Increase Age")
+                    }
                 }
 
                 // 90-Year Perspective Life Bar

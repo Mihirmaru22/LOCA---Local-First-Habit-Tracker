@@ -210,9 +210,6 @@ struct MacAuditView: View {
                     )
                 }
                 .buttonStyle(.plain)
-                .sheet(isPresented: $showingAddGoalSheet) {
-                    newGoalStudioModal
-                }
             }
             .padding(.horizontal, DS.Space.xl)
             .padding(.vertical, DS.Space.md)
@@ -254,18 +251,21 @@ struct MacAuditView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(DS.Color.background)
+        .sheet(isPresented: $showingAddGoalSheet) {
+            newGoalStudioModal
+        }
     }
 
     // MARK: - New Goal Modal (Spacious Executive Custom Creator)
 
     private var newGoalStudioModal: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 18) {
 
             // Modal Header
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("New Work Objective")
-                        .font(.system(size: 18, weight: .bold))
+                        .font(.system(size: 17, weight: .bold))
                         .foregroundStyle(DS.Color.textPrimary)
                     Text("Define your strategic deliverable and execution habit.")
                         .font(.system(size: 12))
@@ -336,18 +336,43 @@ struct MacAuditView: View {
                 }
             }
 
-            // 3. Horizon Segmented Control
-            VStack(alignment: .leading, spacing: 6) {
+            // 3. Horizon Timeframe Selector (Standardized 28pt Chips)
+            VStack(alignment: .leading, spacing: 8) {
                 Text("HORIZON TIMEFRAME")
                     .font(.system(size: 10, weight: .heavy, design: .monospaced))
                     .foregroundStyle(DS.Color.textTertiary)
 
-                Picker("Horizon", selection: $newGoalHorizon) {
+                HStack(spacing: 6) {
                     ForEach(HorizonCategory.allCases.filter { $0 != .all }) { h in
-                        Text(h.rawValue).tag(h)
+                        let isSelected = newGoalHorizon == h
+                        Button {
+                            newGoalHorizon = h
+                            PlutoSoundEngine.shared.play(.tabSwitch)
+                            Haptics.impact(.light)
+                        } label: {
+                            HStack(spacing: 5) {
+                                Image(systemName: h.icon)
+                                    .font(.system(size: 10))
+                                Text(h.rawValue)
+                                    .font(.system(size: 11, weight: isSelected ? .bold : .medium))
+                            }
+                            .foregroundStyle(isSelected ? Color.white : DS.Color.textSecondary)
+                            .padding(.horizontal, 10)
+                            .frame(height: 28)
+                            .background(
+                                isSelected
+                                    ? LinearGradient(colors: [accentColor.opacity(0.35), accentColor.opacity(0.2)], startPoint: .top, endPoint: .bottom)
+                                    : LinearGradient(colors: [DS.Color.surfaceRecessed], startPoint: .top, endPoint: .bottom),
+                                in: RoundedRectangle(cornerRadius: 6)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(isSelected ? accentColor : DS.Color.border.opacity(0.4), lineWidth: 1)
+                            )
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
-                .pickerStyle(.segmented)
             }
 
             // 4. Target Deadline & Execution Habit
@@ -396,8 +421,8 @@ struct MacAuditView: View {
                 .keyboardShortcut(.return, modifiers: [])
             }
         }
-        .padding(28)
-        .frame(width: 520)
+        .padding(24)
+        .frame(width: 580)
         .background(DS.Color.surface)
     }
 

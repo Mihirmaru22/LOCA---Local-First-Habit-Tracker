@@ -54,7 +54,7 @@ struct MementoMoriProvider: TimelineProvider {
         let pct = (Double(daysDone) / Double(totalDays)) * 100.0
 
         let birthYear = UserDefaults.standard.integer(forKey: "user_birth_year")
-        let actualBirth = birthYear > 1900 ? birthYear : 2000
+        let actualBirth = birthYear > 1900 ? birthYear : 2004
         let age = max(1, currentYear - actualBirth)
 
         return MementoMoriEntry(
