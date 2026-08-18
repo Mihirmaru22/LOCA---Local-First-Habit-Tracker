@@ -27,10 +27,26 @@ struct BrainStormEditorView: View {
     @State private var showWordCountHUD: Bool = true
     @State private var isShowingAttachmentPicker: Bool = false
     @State private var isShowingExportSheet: Bool = false
-    @AppStorage("brainstorm_checklist_auto_bottom") private var autoMoveCheckedToBottom: Bool = false
+    @State private var isShowingLinkModal: Bool = false
+    @State private var linkURLString: String = ""
+    @State private var linkDisplayText: String = ""
+    
+    // In-Note Find Bar State (⌘F)
+    @State private var showFindBar: Bool = false
+    @State private var findQuery: String = ""
+    @State private var currentFindIndex: Int = 0
 
-    // Undo / Redo tracking
+    @AppStorage("brainstorm_checklist_auto_bottom") private var autoMoveCheckedToBottom: Bool = false
     @Environment(\.undoManager) private var undoManager
+
+    // Computed Find Matches
+    private var findMatchesCount: Int {
+        guard !findQuery.isEmpty else { return 0 }
+        let pattern = NSRegularExpression.escapedPattern(for: findQuery)
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else { return 0 }
+        let nsString = note.bodyText as NSString
+        return regex.numberOfMatches(in: note.bodyText, options: [], range: NSRange(location: 0, length: nsString.length))
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -41,7 +57,13 @@ struct BrainStormEditorView: View {
                 Divider().opacity(0.18)
             }
 
-            // 2. SCROLLABLE NOTES CANVAS
+            // 2. IN-NOTE FLOATING FIND BAR (⌘F)
+            if showFindBar {
+                findInNoteBar
+                Divider().opacity(0.18)
+            }
+
+            // 3. SCROLLABLE NOTES CANVAS
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
 
@@ -70,25 +92,25 @@ struct BrainStormEditorView: View {
                     .frame(minHeight: 220)
                     .padding(.horizontal, isZenMode ? 60 : 20)
 
-                    // 3. INTERACTIVE CHECKLIST SECTION (If enabled)
+                    // 4. INTERACTIVE CHECKLIST SECTION (If enabled)
                     if isChecklistActive || !checklistItems.isEmpty {
                         checklistSectionView
                             .padding(.horizontal, isZenMode ? 60 : 20)
                     }
 
-                    // 4. INTERACTIVE TABLE SECTION (If present)
+                    // 5. INTERACTIVE TABLE SECTION (If present)
                     if note.hasTable || isShowingTableEditor {
                         tableSectionView
                             .padding(.horizontal, isZenMode ? 60 : 20)
                     }
 
-                    // 5. ATTACHMENTS & MEDIA SECTION
+                    // 6. ATTACHMENTS & MEDIA SECTION
                     if !attachments.isEmpty {
                         attachmentsSectionView
                             .padding(.horizontal, isZenMode ? 60 : 20)
                     }
 
-                    // 6. BOTTOM TAG BAR
+                    // 7. BOTTOM TAG BAR
                     if !note.tags.isEmpty {
                         Divider().opacity(0.15)
                             .padding(.horizontal, isZenMode ? 60 : 20)
@@ -119,11 +141,14 @@ struct BrainStormEditorView: View {
                 Color(nsColor: NSColor(red: 0.11, green: 0.11, blue: 0.12, alpha: 1.0))
             )
 
-            // 7. BOTTOM METADATA STATUS BAR
+            // 8. BOTTOM METADATA STATUS BAR
             if showWordCountHUD && !isZenMode {
                 Divider().opacity(0.15)
                 bottomStatusBar
             }
+        }
+        .sheet(isPresented: $isShowingLinkModal) {
+            linkModalView
         }
         .onAppear {
             loadPayloads()
@@ -131,6 +156,43 @@ struct BrainStormEditorView: View {
         .onChange(of: note.id) { _, _ in
             loadPayloads()
         }
+    }
+
+    // MARK: - In-Note Find Bar (⌘F)
+
+    private var findInNoteBar: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 11))
+                .foregroundStyle(Color.white.opacity(0.4))
+
+            TextField("Find in note...", text: $findQuery)
+                .textFieldStyle(.plain)
+                .font(.system(size: 12))
+                .foregroundStyle(Color.white)
+                .frame(width: 160)
+
+            if !findQuery.isEmpty {
+                Text(findMatchesCount > 0 ? "\(findMatchesCount) match\(findMatchesCount > 1 ? "es" : "")" : "No matches")
+                    .font(.system(size: 10.5, design: .monospaced))
+                    .foregroundStyle(findMatchesCount > 0 ? Color.accentColor : Color.red.opacity(0.8))
+            }
+
+            Spacer()
+
+            Button {
+                showFindBar = false
+                findQuery = ""
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.white.opacity(0.5))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 6)
+        .background(Color.black.opacity(0.45))
     }
 
     // MARK: - Editor Toolbar
@@ -141,8 +203,13 @@ struct BrainStormEditorView: View {
             Menu {
                 ForEach(NoteParagraphStyle.allCases, id: \.self) { style in
                     Button {
-                        activeStyle = style
-                        applyParagraphStyle(style)
+                        if activeStyle == style && style != .body {
+                            activeStyle = .body
+                            applyParagraphStyle(.body)
+                        } else {
+                            activeStyle = style
+                            applyParagraphStyle(style)
+                        }
                     } label: {
                         HStack {
                             Text(style.rawValue)
@@ -214,6 +281,22 @@ struct BrainStormEditorView: View {
             .help("Table (⌘T)")
             .keyboardShortcut("t", modifiers: .command)
 
+            // Link Insertion Button (⌘K)
+            Button {
+                linkURLString = ""
+                linkDisplayText = ""
+                isShowingLinkModal = true
+            } label: {
+                Image(systemName: "link")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Color.white.opacity(0.8))
+                    .frame(width: 26, height: 26)
+                    .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 5))
+            }
+            .buttonStyle(.plain)
+            .help("Add Link (⌘K)")
+            .keyboardShortcut("k", modifiers: .command)
+
             // Attachment / Image Button
             Button {
                 insertAttachment()
@@ -226,6 +309,22 @@ struct BrainStormEditorView: View {
             }
             .buttonStyle(.plain)
             .help("Attach File or Image")
+
+            // Find in Note Button (⌘F)
+            Button {
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    showFindBar.toggle()
+                }
+            } label: {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 12))
+                    .foregroundStyle(showFindBar ? Color.accentColor : Color.white.opacity(0.7))
+                    .frame(width: 26, height: 26)
+                    .background(showFindBar ? Color.accentColor.opacity(0.18) : Color.white.opacity(0.06), in: Circle())
+            }
+            .buttonStyle(.plain)
+            .help("Find in Note (⌘F)")
+            .keyboardShortcut("f", modifiers: .command)
 
             Spacer()
 
@@ -436,25 +535,33 @@ struct BrainStormEditorView: View {
 
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 8)], spacing: 8) {
                 ForEach(attachments) { att in
-                    HStack(spacing: 8) {
-                        Image(systemName: att.fileType == "image" ? "photo" : "doc.fill")
-                            .font(.system(size: 16))
-                            .foregroundStyle(Color.accentColor)
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(att.fileName)
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundStyle(Color.white)
-                                .lineLimit(1)
-
-                            Text("\(att.fileSize / 1024) KB")
-                                .font(.system(size: 9, design: .monospaced))
-                                .foregroundStyle(Color.white.opacity(0.4))
+                    Button {
+                        if let path = att.localPath {
+                            NSWorkspace.shared.open(URL(fileURLWithPath: path))
                         }
-                        Spacer()
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: att.fileType == "image" ? "photo" : "doc.fill")
+                                .font(.system(size: 16))
+                                .foregroundStyle(Color.accentColor)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(att.fileName)
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundStyle(Color.white)
+                                    .lineLimit(1)
+
+                                Text("\(att.fileSize / 1024) KB")
+                                    .font(.system(size: 9, design: .monospaced))
+                                    .foregroundStyle(Color.white.opacity(0.4))
+                            }
+                            Spacer()
+                        }
+                        .padding(8)
+                        .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
                     }
-                    .padding(8)
-                    .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
+                    .buttonStyle(.plain)
+                    .help("Open Attachment")
                 }
             }
         }
@@ -480,6 +587,46 @@ struct BrainStormEditorView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 6)
         .background(Color.black.opacity(0.30))
+    }
+
+    // MARK: - Link Modal View
+
+    private var linkModalView: some View {
+        VStack(spacing: 14) {
+            Text("Add Link")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(Color.white)
+
+            TextField("Display Text", text: $linkDisplayText)
+                .textFieldStyle(.roundedBorder)
+
+            TextField("URL (e.g. https://apple.com)", text: $linkURLString)
+                .textFieldStyle(.roundedBorder)
+
+            HStack(spacing: 12) {
+                Button("Cancel") {
+                    isShowingLinkModal = false
+                }
+                .keyboardShortcut(.cancelAction)
+
+                Button("Insert") {
+                    var url = linkURLString.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !url.hasPrefix("http://") && !url.hasPrefix("https://") {
+                        url = "https://" + url
+                    }
+                    let display = linkDisplayText.isEmpty ? url : linkDisplayText
+                    note.bodyText += " [\(display)](\(url))"
+                    note.updateTitleFromContent()
+                    try? modelContext.save()
+                    isShowingLinkModal = false
+                }
+                .buttonStyle(.borderedProminent)
+                .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(18)
+        .frame(width: 300, height: 180)
+        .background(Color.black.opacity(0.85).background(.ultraThinMaterial))
     }
 
     // MARK: - Helpers & Data Binding
