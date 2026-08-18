@@ -69,6 +69,10 @@ struct BrainStormFolderSidebar: View {
         return Array(tagSet).sorted()
     }
 
+    private var rootFolders: [BrainStormFolder] {
+        customFolders.filter { $0.parentFolderID == nil }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // Header / Title
@@ -139,7 +143,20 @@ struct BrainStormFolderSidebar: View {
                         } else {
                             VStack(spacing: 2) {
                                 ForEach(rootFolders) { folder in
-                                    folderHierarchyView(folder: folder, depth: 0)
+                                    BrainStormFolderNodeView(
+                                        folder: folder,
+                                        depth: 0,
+                                        customFolders: customFolders,
+                                        liveNotes: liveNotes,
+                                        selectedFolderID: $selectedFolderID,
+                                        selectedSystemFolder: $selectedSystemFolder,
+                                        selectedTag: $selectedTag,
+                                        expandedFolders: $expandedFolders,
+                                        editingFolder: $editingFolder,
+                                        isShowingNewFolderSheet: $isShowingNewFolderSheet,
+                                        newFolderName: $newFolderName,
+                                        onDelete: { f in deleteFolder(f) }
+                                    )
                                 }
                             }
                         }
@@ -175,111 +192,8 @@ struct BrainStormFolderSidebar: View {
         .sheet(isPresented: $isShowingNewFolderSheet) {
             newFolderModal(parentID: nil)
         }
-    }
-
-    // MARK: - Root Folders & Nesting
-
-    private var rootFolders: [BrainStormFolder] {
-        customFolders.filter { $0.parentFolderID == nil }
-    }
-
-    private func subfolders(of parentID: UUID) -> [BrainStormFolder] {
-        customFolders.filter { $0.parentFolderID == parentID }
-    }
-
-    @ViewBuilder
-    private func folderHierarchyView(folder: BrainStormFolder, depth: Int) -> some View {
-        let isSelected = selectedFolderID == folder.id && selectedSystemFolder == nil
-        let isHovered = hoveredItem == folder.id.uuidString
-        let children = subfolders(of: folder.id)
-        let isExpanded = expandedFolders.contains(folder.id)
-        let count = liveNotes.filter { $0.folderID == folder.id }.count
-
-        VStack(spacing: 1) {
-            Button {
-                selectedSystemFolder = nil
-                selectedFolderID = folder.id
-                selectedTag = nil
-                Haptics.impact(.light)
-            } label: {
-                HStack(spacing: 6) {
-                    // Indentation spacing
-                    if depth > 0 {
-                        Spacer().frame(width: CGFloat(depth * 14))
-                    }
-
-                    // Expand / Collapse Chevron for nested folders
-                    if !children.isEmpty {
-                        Button {
-                            if isExpanded {
-                                expandedFolders.remove(folder.id)
-                            } else {
-                                expandedFolders.insert(folder.id)
-                            }
-                        } label: {
-                            Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                                .font(.system(size: 9, weight: .bold))
-                                .foregroundStyle(Color.white.opacity(0.5))
-                                .frame(width: 14, height: 14)
-                        }
-                        .buttonStyle(.plain)
-                    } else {
-                        Spacer().frame(width: 14)
-                    }
-
-                    Image(systemName: folder.icon)
-                        .font(.system(size: 13))
-                        .foregroundStyle(isSelected ? Color.accentColor : Color.yellow.opacity(0.85))
-                        .frame(width: 16)
-
-                    Text(folder.name)
-                        .font(.system(size: 12.5, weight: isSelected ? .semibold : .regular))
-                        .foregroundStyle(isSelected ? Color.white : (isHovered ? Color.white : Color.white.opacity(0.8)))
-                        .lineLimit(1)
-
-                    Spacer()
-
-                    if count > 0 {
-                        Text("\(count)")
-                            .font(.system(size: 11, weight: .medium, design: .monospaced))
-                            .foregroundStyle(Color.white.opacity(0.4))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 1)
-                            .background(Color.white.opacity(0.06), in: Capsule())
-                    }
-                }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .background(
-                    isSelected ? Color.white.opacity(0.12) : (isHovered ? Color.white.opacity(0.05) : Color.clear),
-                    in: RoundedRectangle(cornerRadius: 6)
-                )
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .contextMenu {
-                Button("Rename Folder") {
-                    editingFolder = folder
-                }
-                Button("New Subfolder") {
-                    newFolderName = ""
-                    isShowingNewFolderSheet = true
-                }
-                Divider()
-                Button("Delete Folder", role: .destructive) {
-                    deleteFolder(folder)
-                }
-            }
-            .onHover { h in
-                hoveredItem = h ? folder.id.uuidString : nil
-            }
-
-            // Render children if expanded
-            if isExpanded && !children.isEmpty {
-                ForEach(children) { child in
-                    folderHierarchyView(folder: child, depth: depth + 1)
-                }
-            }
+        .sheet(item: $editingFolder) { folder in
+            renameFolderModal(folder: folder)
         }
     }
 
@@ -334,9 +248,8 @@ struct BrainStormFolderSidebar: View {
 
     private func tagPill(tag: String) -> some View {
         let isSelected = selectedTag == tag
-
         return Button {
-            if selectedTag == tag {
+            if isSelected {
                 selectedTag = nil
             } else {
                 selectedTag = tag
@@ -345,35 +258,32 @@ struct BrainStormFolderSidebar: View {
             }
             Haptics.impact(.light)
         } label: {
-            HStack(spacing: 4) {
+            HStack(spacing: 3) {
                 Text("#\(tag)")
-                    .font(.system(size: 11, weight: isSelected ? .bold : .medium))
-                    .foregroundStyle(isSelected ? Color.white : Color.accentColor.opacity(0.9))
+                    .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
+                    .foregroundStyle(isSelected ? Color.black : Color.accentColor)
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
             .background(
-                isSelected ? Color.accentColor : Color.accentColor.opacity(0.12),
+                isSelected ? Color.accentColor : Color.accentColor.opacity(0.15),
                 in: Capsule()
-            )
-            .overlay(
-                Capsule().stroke(isSelected ? Color.clear : Color.accentColor.opacity(0.3), lineWidth: 0.6)
             )
         }
         .buttonStyle(.plain)
     }
 
-    // MARK: - New Folder Sheet
+    // MARK: - Modal Sheets
 
     private func newFolderModal(parentID: UUID?) -> some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 14) {
             Text("New Folder")
                 .font(.system(size: 14, weight: .bold))
                 .foregroundStyle(Color.white)
 
             TextField("Folder Name", text: $newFolderName)
                 .textFieldStyle(.roundedBorder)
-                .frame(width: 220)
+                .frame(width: 240)
 
             HStack(spacing: 12) {
                 Button("Cancel") {
@@ -383,43 +293,204 @@ struct BrainStormFolderSidebar: View {
 
                 Button("Create") {
                     let trimmed = newFolderName.trimmingCharacters(in: .whitespacesAndNewlines)
-                    let name = trimmed.isEmpty ? "New Folder" : trimmed
+                    guard !trimmed.isEmpty else { return }
                     let folder = BrainStormFolder(
-                        name: name,
+                        name: trimmed,
                         parentFolderID: parentID,
                         sortOrder: customFolders.count
                     )
                     modelContext.insert(folder)
                     try? modelContext.save()
-                    isShowingNewFolderSheet = false
                     selectedFolderID = folder.id
                     selectedSystemFolder = nil
+                    isShowingNewFolderSheet = false
+                    Haptics.impact(.medium)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(newFolderName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(18)
+        .frame(width: 280, height: 150)
+        .background(Color.black.opacity(0.85).background(.ultraThinMaterial))
+    }
+
+    private func renameFolderModal(folder: BrainStormFolder) -> some View {
+        VStack(spacing: 14) {
+            Text("Rename Folder")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(Color.white)
+
+            TextField("Folder Name", text: Binding(
+                get: { folder.name },
+                set: { folder.name = $0 }
+            ))
+            .textFieldStyle(.roundedBorder)
+            .frame(width: 240)
+
+            HStack(spacing: 12) {
+                Button("Done") {
+                    try? modelContext.save()
+                    editingFolder = nil
                 }
                 .buttonStyle(.borderedProminent)
                 .keyboardShortcut(.defaultAction)
             }
         }
-        .padding(20)
-        .frame(width: 280, height: 160)
+        .padding(18)
+        .frame(width: 280, height: 140)
         .background(Color.black.opacity(0.85).background(.ultraThinMaterial))
     }
 
     private func deleteFolder(_ folder: BrainStormFolder) {
-        // Move notes inside folder to unfiled
-        let notesInFolder = allNotes.filter { $0.folderID == folder.id }
-        for note in notesInFolder {
-            note.folderID = nil
-        }
-        modelContext.delete(folder)
-        try? modelContext.save()
         if selectedFolderID == folder.id {
             selectedFolderID = nil
             selectedSystemFolder = .allNotes
         }
+        modelContext.delete(folder)
+        try? modelContext.save()
+        Haptics.impact(.medium)
     }
 }
 
-// MARK: - FlowTagLayout (Wrapping Tag Cloud Helper)
+// MARK: - BrainStormFolderNodeView (Extracted Struct for Safe Recursive Tree Rendering)
+
+struct BrainStormFolderNodeView: View {
+
+    let folder: BrainStormFolder
+    let depth: Int
+    let customFolders: [BrainStormFolder]
+    let liveNotes: [BrainStormNote]
+
+    @Binding var selectedFolderID: UUID?
+    @Binding var selectedSystemFolder: SystemFolderType?
+    @Binding var selectedTag: String?
+    @Binding var expandedFolders: Set<UUID>
+    @Binding var editingFolder: BrainStormFolder?
+    @Binding var isShowingNewFolderSheet: Bool
+    @Binding var newFolderName: String
+    let onDelete: (BrainStormFolder) -> Void
+
+    @State private var isHovered: Bool = false
+
+    private var children: [BrainStormFolder] {
+        customFolders.filter { $0.parentFolderID == folder.id }
+    }
+
+    private var isExpanded: Bool {
+        expandedFolders.contains(folder.id)
+    }
+
+    private var isSelected: Bool {
+        selectedFolderID == folder.id && selectedSystemFolder == nil
+    }
+
+    private var noteCount: Int {
+        liveNotes.filter { $0.folderID == folder.id }.count
+    }
+
+    var body: some View {
+        VStack(spacing: 1) {
+            Button {
+                selectedSystemFolder = nil
+                selectedFolderID = folder.id
+                selectedTag = nil
+                Haptics.impact(.light)
+            } label: {
+                HStack(spacing: 6) {
+                    if depth > 0 {
+                        Spacer().frame(width: CGFloat(depth * 14))
+                    }
+
+                    if !children.isEmpty {
+                        Button {
+                            if isExpanded {
+                                expandedFolders.remove(folder.id)
+                            } else {
+                                expandedFolders.insert(folder.id)
+                            }
+                        } label: {
+                            Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundStyle(Color.white.opacity(0.5))
+                                .frame(width: 14, height: 14)
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        Spacer().frame(width: 14)
+                    }
+
+                    Image(systemName: folder.icon)
+                        .font(.system(size: 13))
+                        .foregroundStyle(isSelected ? Color.accentColor : Color.yellow.opacity(0.85))
+                        .frame(width: 16)
+
+                    Text(folder.name)
+                        .font(.system(size: 12.5, weight: isSelected ? .semibold : .regular))
+                        .foregroundStyle(isSelected ? Color.white : (isHovered ? Color.white : Color.white.opacity(0.8)))
+                        .lineLimit(1)
+
+                    Spacer()
+
+                    if noteCount > 0 {
+                        Text("\(noteCount)")
+                            .font(.system(size: 11, weight: .medium, design: .monospaced))
+                            .foregroundStyle(Color.white.opacity(0.4))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 1)
+                            .background(Color.white.opacity(0.06), in: Capsule())
+                    }
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 5)
+                .background(
+                    isSelected ? Color.white.opacity(0.12) : (isHovered ? Color.white.opacity(0.05) : Color.clear),
+                    in: RoundedRectangle(cornerRadius: 6)
+                )
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .contextMenu {
+                Button("Rename Folder") {
+                    editingFolder = folder
+                }
+                Button("New Subfolder") {
+                    newFolderName = ""
+                    isShowingNewFolderSheet = true
+                }
+                Divider()
+                Button("Delete Folder", role: .destructive) {
+                    onDelete(folder)
+                }
+            }
+            .onHover { h in
+                isHovered = h
+            }
+
+            if isExpanded && !children.isEmpty {
+                ForEach(children) { child in
+                    BrainStormFolderNodeView(
+                        folder: child,
+                        depth: depth + 1,
+                        customFolders: customFolders,
+                        liveNotes: liveNotes,
+                        selectedFolderID: $selectedFolderID,
+                        selectedSystemFolder: $selectedSystemFolder,
+                        selectedTag: $selectedTag,
+                        expandedFolders: $expandedFolders,
+                        editingFolder: $editingFolder,
+                        isShowingNewFolderSheet: $isShowingNewFolderSheet,
+                        newFolderName: $newFolderName,
+                        onDelete: onDelete
+                    )
+                }
+            }
+        }
+    }
+}
+
+// MARK: - FlowTagLayout for Wrapping Tags
 
 struct FlowTagLayout: Layout {
     var spacing: CGFloat = 6
@@ -427,39 +498,39 @@ struct FlowTagLayout: Layout {
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let width = proposal.width ?? 200
         var height: CGFloat = 0
-        var x: CGFloat = 0
-        var y: CGFloat = 0
+        var currentX: CGFloat = 0
+        var currentY: CGFloat = 0
         var maxHeightInRow: CGFloat = 0
 
         for subview in subviews {
             let size = subview.sizeThatFits(.unspecified)
-            if x + size.width > width && x > 0 {
-                x = 0
-                y += maxHeightInRow + spacing
+            if currentX + size.width > width && currentX > 0 {
+                currentX = 0
+                currentY += maxHeightInRow + spacing
                 maxHeightInRow = 0
             }
+            currentX += size.width + spacing
             maxHeightInRow = max(maxHeightInRow, size.height)
-            x += size.width + spacing
         }
-        height = y + maxHeightInRow
-        return CGSize(width: width, height: height)
+        height = currentY + maxHeightInRow
+        return CGSize(width: width, height: max(height, 20))
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        var x = bounds.minX
-        var y = bounds.minY
+        var currentX = bounds.minX
+        var currentY = bounds.minY
         var maxHeightInRow: CGFloat = 0
 
         for subview in subviews {
             let size = subview.sizeThatFits(.unspecified)
-            if x + size.width > bounds.maxX && x > bounds.minX {
-                x = bounds.minX
-                y += maxHeightInRow + spacing
+            if currentX + size.width > bounds.maxX && currentX > bounds.minX {
+                currentX = bounds.minX
+                currentY += maxHeightInRow + spacing
                 maxHeightInRow = 0
             }
-            subview.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
+            subview.place(at: CGPoint(x: currentX, y: currentY), proposal: ProposedViewSize(size))
+            currentX += size.width + spacing
             maxHeightInRow = max(maxHeightInRow, size.height)
-            x += size.width + spacing
         }
     }
 }
