@@ -257,7 +257,7 @@ private struct MacContentColumn: View {
             MacTodoContentColumn(selection: $selectedTodo)
         case .journal:
             MacJournalContentColumn(selectedRow: $selectedJournalRow, selectedNote: $selectedJournalNote)
-        case .work, .life, .settings:
+        case .work, .brainstorm, .life, .settings:
             EmptyView()
         case nil:
             MacEmptyContentView()
@@ -283,6 +283,8 @@ private struct MacDetailColumn: View {
             MacTodoDetailColumn(item: $selectedTodo)
         case .journal:
             MacJournalDetailColumn(selectedRow: $selectedJournalRow, selectedNote: $selectedJournalNote)
+        case .brainstorm:
+            MacBrainStormView()
         case .life:
             MacLifeDetailColumn(selectedRow: selectedLifeRow)
         case .work:
