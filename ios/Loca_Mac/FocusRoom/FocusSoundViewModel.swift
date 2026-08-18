@@ -155,6 +155,7 @@ final class FocusAudioDSPContext: @unchecked Sendable {
     }
 
     private func synthesizeLoFi(t: Float, sampleRate: Float) -> (Float, Float) {
+        // Lush Rhodes jazz chords (6s bar cycle: Dm9 -> G13 -> Cmaj9 -> A7#9)
         let chordCycle = Int(t / 6.0) % 4
         let chords: [[Float]] = [
             [146.83, 174.61, 220.00, 261.63], // Dm9
@@ -164,8 +165,9 @@ final class FocusAudioDSPContext: @unchecked Sendable {
         ]
         let currentNotes = chords[chordCycle]
 
-        let flutter = 1.0 + 0.0025 * sin(2.0 * .pi * 0.35 * t)
-        let tremolo = 0.88 + 0.12 * sin(2.0 * .pi * 0.22 * t)
+        // Silky smooth tape wow & flutter (zero digital noise spikes)
+        let flutter = 1.0 + 0.0018 * sin(2.0 * .pi * 0.30 * t)
+        let tremolo = 0.90 + 0.10 * sin(2.0 * .pi * 0.20 * t)
 
         let twoPi = 2.0 * Float.pi
         let dt = 1.0 / sampleRate
@@ -180,46 +182,56 @@ final class FocusAudioDSPContext: @unchecked Sendable {
         if lofiPhase3 > twoPi { lofiPhase3 -= twoPi }
         if lofiPhase4 > twoPi { lofiPhase4 -= twoPi }
 
-        let s1 = sin(lofiPhase1) * 0.30
-        let s2 = sin(lofiPhase2) * 0.24
-        let s3 = sin(lofiPhase3) * 0.20
+        // Warm analogue tone generators
+        let s1 = sin(lofiPhase1) * 0.28 + sin(lofiPhase1 * 2.0) * 0.08
+        let s2 = sin(lofiPhase2) * 0.24 + sin(lofiPhase2 * 2.0) * 0.06
+        let s3 = sin(lofiPhase3) * 0.20 + sin(lofiPhase3 * 2.0) * 0.05
         let s4 = sin(lofiPhase4) * 0.18
 
-        let vinyl = Float.random(in: -1.0...1.0) * (Float.random(in: 0...1) > 0.992 ? 0.20 : 0.015)
+        let rawL = (s1 + s3) * tremolo
+        let rawR = (s2 + s4) * tremolo
 
-        let rawL = (s1 + s3 + vinyl) * tremolo
-        let rawR = (s2 + s4 + vinyl) * tremolo
-
-        return (tanh(rawL * 1.2) * 0.40, tanh(rawR * 1.2) * 0.40)
+        return (tanh(rawL * 1.3) * 0.42, tanh(rawR * 1.3) * 0.42)
     }
 
     private func synthesizePiano(t: Float, sampleRate: Float) -> (Float, Float) {
-        let noteCycle = Int(t / 2.0) % 4
-        let frequencies: [Float] = [261.63, 329.63, 392.00, 523.25] // C4, E4, G4, C5
-        let baseFreq = frequencies[noteCycle]
+        // Rich Polyphonic Jazz Chord Progression (6s per chord measure: Ebmaj9 -> Cm9 -> Fm9 -> Bb13)
+        let chordCycle = Int(t / 6.0) % 4
+        let jazzChords: [[Float]] = [
+            [155.56, 196.00, 233.08, 293.66], // Ebmaj9
+            [130.81, 155.56, 196.00, 293.66], // Cm9
+            [174.61, 207.65, 261.63, 311.13], // Fm9
+            [116.54, 146.83, 207.65, 261.63]  // Bb13
+        ]
+        let notes = jazzChords[chordCycle]
 
         let dt = 1.0 / sampleRate
         let twoPi = 2.0 * Float.pi
 
-        pianoPhase1 += twoPi * baseFreq * dt
-        pianoPhase2 += twoPi * (baseFreq * 2.0) * dt
-        pianoPhase3 += twoPi * (baseFreq * 3.0) * dt
-        pianoPhase4 += twoPi * (baseFreq * 4.0) * dt
+        pianoPhase1 += twoPi * notes[0] * dt
+        pianoPhase2 += twoPi * notes[1] * dt
+        pianoPhase3 += twoPi * notes[2] * dt
+        pianoPhase4 += twoPi * notes[3] * dt
 
         if pianoPhase1 > twoPi { pianoPhase1 -= twoPi }
         if pianoPhase2 > twoPi { pianoPhase2 -= twoPi }
         if pianoPhase3 > twoPi { pianoPhase3 -= twoPi }
         if pianoPhase4 > twoPi { pianoPhase4 -= twoPi }
 
-        let noteTime = t.truncatingRemainder(dividingBy: 2.0)
-        let decayEnv = exp(-noteTime * 1.6)
+        // Natural piano hammer strike & acoustic damper decay envelope
+        let chordTime = t.truncatingRemainder(dividingBy: 6.0)
+        let decayEnv = exp(-chordTime * 0.65) // Smooth 6-second sustained decay
 
-        let tone = (sin(pianoPhase1) * 0.45 +
-                    sin(pianoPhase2) * 0.25 +
-                    sin(pianoPhase3) * 0.15 +
-                    sin(pianoPhase4) * 0.08) * decayEnv
+        let n1 = (sin(pianoPhase1) * 0.40 + sin(pianoPhase1 * 2.0) * 0.15) * decayEnv
+        let n2 = (sin(pianoPhase2) * 0.35 + sin(pianoPhase2 * 2.0) * 0.12) * decayEnv
+        let n3 = (sin(pianoPhase3) * 0.30 + sin(pianoPhase3 * 2.0) * 0.10) * decayEnv
+        let n4 = (sin(pianoPhase4) * 0.25 + sin(pianoPhase4 * 2.0) * 0.08) * decayEnv
 
-        return (tone * 0.95 * 0.35, tone * 1.05 * 0.35)
+        // Stereo acoustic soundstage spread
+        let pianoL = (n1 + n3 * 0.8) * 0.38
+        let pianoR = (n2 + n4 * 0.8) * 0.38
+
+        return (tanh(pianoL * 1.1), tanh(pianoR * 1.1))
     }
 
     private func synthesizeRain(t: Float) -> (Float, Float) {

@@ -8,21 +8,23 @@ import CoreSpotlight
 /// Ordered to match the natural daily workflow: check habits first,
 /// then review today's completions, then journal.
 enum MacSection: String, CaseIterable, Identifiable {
-    case today    = "Today"
-    case work     = "Work"
-    case journal  = "Journal"
-    case life     = "Life"
-    case settings = "Settings"
+    case today      = "Today"
+    case work       = "Work"
+    case journal    = "Journal"
+    case brainstorm = "BrainStorm"
+    case life       = "Life"
+    case settings   = "Settings"
 
     var id: String { rawValue }
 
     var systemImage: String {
         switch self {
-        case .today:    "sun.max.fill"
-        case .work:     "briefcase.fill"
-        case .journal:  "book.closed.fill"
-        case .life:     "mountain.2.fill"
-        case .settings: "gearshape"
+        case .today:      "sun.max.fill"
+        case .work:       "briefcase.fill"
+        case .journal:    "book.closed.fill"
+        case .brainstorm: "note.text"
+        case .life:       "mountain.2.fill"
+        case .settings:   "gearshape"
         }
     }
 }
@@ -32,7 +34,7 @@ enum MacSection: String, CaseIterable, Identifiable {
 /// Three-pane root for the macOS app.
 ///
 /// Column roles:
-/// - **Sidebar** (`MacSidebarView`): section picker (Habits, Today, Time, Journal, Life, Trek Atlas, Audit, Settings).
+/// - **Sidebar** (`MacSidebarView`): section picker (Habits, Today, Time, Journal, BrainStorm, Life, Trek Atlas, Audit, Settings).
 /// - **Content** (`MacHabitContentColumn` etc.): list for the active section.
 /// - **Detail** (`MacHabitDetailColumn` etc.): selected-item detail.
 ///
@@ -76,6 +78,17 @@ struct MacRootView: View {
             if selectedSection == .today && todaySubmode == "Time" {
                 FocusRoomView()
                     .transition(.opacity)
+            } else if selectedSection == .brainstorm {
+                NavigationSplitView {
+                    MacSidebarView(selection: $selectedSection)
+                        .navigationSplitViewColumnWidth(
+                            min:   DS.Mac.sidebarMinWidth,
+                            ideal: DS.Mac.sidebarIdealWidth,
+                            max:   DS.Mac.sidebarMaxWidth
+                        )
+                } detail: {
+                    MacBrainStormView()
+                }
             } else if selectedSection == .work || selectedSection == .life || selectedSection == .settings {
                 NavigationSplitView {
                     MacSidebarView(selection: $selectedSection)

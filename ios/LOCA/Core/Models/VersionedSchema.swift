@@ -69,6 +69,8 @@ enum RippleSchemaV1: VersionedSchema {
             TravelRecord.self,
             FocusSession.self,
             FocusGoal.self,
+            BrainStormNote.self,
+            BrainStormFolder.self,
         ]
     }
 }
