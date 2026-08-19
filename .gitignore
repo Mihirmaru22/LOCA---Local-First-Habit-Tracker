@@ -28,3 +28,11 @@ ios/Pods/
 .DS_Store
 *.swp
 *~
+node_modules/
+**/node_modules/
+build/
+**/build/
+dist/
+**/dist/
+.env
+.env*.local

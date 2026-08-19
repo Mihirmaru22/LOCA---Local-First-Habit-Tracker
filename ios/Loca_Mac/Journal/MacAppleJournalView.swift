@@ -915,6 +915,9 @@ struct AppleJournalEditorCanvas: View {
     @Bindable var note: JournalNote
 
     @Environment(\.modelContext) private var modelContext
+    @Query(filter: #Predicate<TodoItem> { $0.completedAt != nil && $0.archivedAt == nil })
+    private var completedTasks: [TodoItem]
+
     @StateObject private var richTextController = AppleJournalRichTextController()
 
     @State private var showAudioDrawer = false
@@ -1164,6 +1167,47 @@ struct AppleJournalEditorCanvas: View {
                                     }
                                 }
                             }
+                            .padding(.vertical, 4)
+                        }
+
+                        // Today's Work Accomplishments Ribbon
+                        let todayCompleted = completedTasks.filter { task in
+                            guard let completed = task.completedAt else { return false }
+                            return Calendar.current.isDate(completed, inSameDayAs: note.date)
+                        }
+                        if !todayCompleted.isEmpty {
+                            HStack(spacing: 10) {
+                                Image(systemName: "sparkles")
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(Color.yellow)
+
+                                Text("You completed \(todayCompleted.count) task\(todayCompleted.count > 1 ? "s" : "") on this day.")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundStyle(Color.white.opacity(0.85))
+
+                                Spacer()
+
+                                Button {
+                                    var appendStr = "\n\nAccomplishments:\n"
+                                    for t in todayCompleted {
+                                        appendStr += "• \(t.title)\n"
+                                    }
+                                    note.text += appendStr
+                                    saveNote()
+                                    Haptics.impact(.light)
+                                } label: {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "plus.circle.fill")
+                                        Text("Insert into Reflection")
+                                    }
+                                    .font(.system(size: 11, weight: .semibold))
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .controlSize(.small)
+                            }
+                            .padding(10)
+                            .background(Color.yellow.opacity(0.10), in: RoundedRectangle(cornerRadius: 8))
+                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.yellow.opacity(0.20), lineWidth: 1))
                             .padding(.vertical, 4)
                         }
 
@@ -2068,5 +2112,26 @@ struct AppleJournalTypographyPopover: View {
                 )
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - MacAppleJournalView (Studio Workspace Integrated Journal)
+
+struct MacAppleJournalView: View {
+    @State private var selectedRow: JournalRow? = .todaysLog
+    @State private var selectedNote: JournalNote? = nil
+
+    var body: some View {
+        HStack(spacing: 0) {
+            MacJournalContentColumn(selectedRow: $selectedRow, selectedNote: $selectedNote)
+                .frame(minWidth: 280, idealWidth: 320, maxWidth: 360)
+                .background(Color(nsColor: NSColor(red: 0.08, green: 0.08, blue: 0.10, alpha: 1.0)))
+
+            Divider().opacity(0.3)
+
+            MacJournalDetailColumn(selectedRow: $selectedRow, selectedNote: $selectedNote)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(DS.Color.background)
+        }
     }
 }

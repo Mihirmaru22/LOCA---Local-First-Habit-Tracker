@@ -25,13 +25,13 @@ extension DS {
         static let windowMinHeight: CGFloat = 560
 
         // MARK: Sidebar column
-
-        /// Minimum sidebar width. 150 pt — label + icon with breathing room.
-        static let sidebarMinWidth:   CGFloat = 150
-        /// Preferred sidebar width shown on first launch. 175 pt.
-        static let sidebarIdealWidth: CGFloat = 175
+        
+        /// Minimum sidebar width. 175 pt — label + icon with breathing room.
+        static let sidebarMinWidth:   CGFloat = 175
+        /// Preferred sidebar width shown on first launch. 195 pt.
+        static let sidebarIdealWidth: CGFloat = 195
         /// Maximum sidebar width before it crowds the content column.
-        static let sidebarMaxWidth:   CGFloat = 220
+        static let sidebarMaxWidth:   CGFloat = 240
 
         // MARK: Content (middle) column
 

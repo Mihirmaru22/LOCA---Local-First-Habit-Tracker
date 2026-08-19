@@ -4,34 +4,19 @@ import SwiftData
 // MARK: - LifeDesignVariant
 
 enum LifeDesignVariant: String, CaseIterable, Identifiable {
-    case life1 = "Life 1 · Blueprint & Principles"
-    case life2 = "Life 2 · Master Bucket List"
-    case life3 = "Life 3 · Life Eras & Chronology"
-    case life4 = "Life 4 · Self-Mastery & Audits"
-    case life5 = "Life 5 · Trek & Mountain Atlas"
-    case life6 = "Life 6 · Travel & State Atlas"
+    case mountainAtlas = "Mountain Atlas"
+    case travelAtlas   = "Travel Atlas"
+    case bucketList    = "Bucket List"
 
     var id: String { rawValue }
 
-    var shortTitle: String {
-        switch self {
-        case .life1: return "Blueprint & Principles"
-        case .life2: return "Master Bucket List"
-        case .life3: return "Life Eras & Chronology"
-        case .life4: return "Self-Mastery & Audits"
-        case .life5: return "Trek & Mountain Atlas"
-        case .life6: return "Travel & State Atlas"
-        }
-    }
+    var shortTitle: String { rawValue }
 
     var icon: String {
         switch self {
-        case .life1: return "compass.drawing"
-        case .life2: return "trophy.fill"
-        case .life3: return "timeline.selection"
-        case .life4: return "sparkles.rectangle.stack.fill"
-        case .life5: return "mountain.2.fill"
-        case .life6: return "globe.asia.australia.fill"
+        case .mountainAtlas: return "mountain.2.fill"
+        case .travelAtlas:   return "globe.asia.australia.fill"
+        case .bucketList:    return "trophy.fill"
         }
     }
 }
@@ -41,88 +26,80 @@ enum LifeDesignVariant: String, CaseIterable, Identifiable {
 /// Dedicated Standalone Life Section for macOS following LOCA's sleek, unified minimalist dark aesthetic.
 struct MacLifeView: View {
 
-    @AppStorage("mac_life_layout_v3") private var selectedVariant: LifeDesignVariant = .life1
+    @AppStorage("mac_life_layout_v4") private var selectedVariant: LifeDesignVariant = .mountainAtlas
 
     var body: some View {
         VStack(spacing: 0) {
 
-            // Top Header
-            HStack(alignment: .center, spacing: DS.Space.md) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Life Management")
-                        .font(DS.Text.title)
-                        .fontWeight(.bold)
-                        .foregroundStyle(DS.Color.textPrimary)
+            // Top Header: Sleek, Minimalist Apple Glass Bar
+            HStack(alignment: .center, spacing: 14) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Life")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(Color.white)
 
                     Text(selectedVariant.shortTitle)
-                        .font(DS.Text.caption)
-                        .foregroundStyle(DS.Color.textSecondary)
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.white.opacity(0.5))
                 }
 
                 Spacer()
 
-                // Top Tab Switcher for the Life Sections
-                HStack(spacing: 4) {
+                // Sleek Segmented Glass Switcher
+                HStack(spacing: 2) {
                     ForEach(LifeDesignVariant.allCases) { variant in
                         let isSelected = selectedVariant == variant
                         Button {
-                            selectedVariant = variant
+                            withAnimation(.easeInOut(duration: 0.12)) {
+                                selectedVariant = variant
+                            }
                             Haptics.impact(.light)
                         } label: {
                             HStack(spacing: 5) {
                                 Image(systemName: variant.icon)
-                                    .font(.system(size: 11))
-                                Text(variant.shortTitle)
                                     .font(.system(size: 11, weight: isSelected ? .bold : .medium))
+                                Text(variant.shortTitle)
+                                    .font(.system(size: 11.5, weight: isSelected ? .semibold : .medium))
                             }
-                            .foregroundStyle(isSelected ? DS.Color.textPrimary : DS.Color.textSecondary)
+                            .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.6))
                             .padding(.horizontal, 10)
                             .padding(.vertical, 5)
                             .background(
-                                isSelected ? DS.Color.surfaceRecessed : Color.clear,
+                                isSelected ? Color.white.opacity(0.12) : Color.clear,
                                 in: RoundedRectangle(cornerRadius: 6)
                             )
+                            .contentShape(Rectangle())
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(PlutoFastButtonStyle())
                     }
                 }
                 .padding(3)
-                .background(DS.Color.surfaceRecessed.opacity(0.6), in: RoundedRectangle(cornerRadius: 8))
+                .background(Color.black.opacity(0.35), in: RoundedRectangle(cornerRadius: 8))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.10), lineWidth: 1))
             }
-            .padding(.horizontal, DS.Space.xl)
-            .padding(.vertical, DS.Space.md)
-            .background(DS.Color.surface)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(Color(nsColor: NSColor(red: 0.09, green: 0.09, blue: 0.10, alpha: 1.0)))
 
-            Divider()
+            Divider().opacity(0.20)
 
-            // Main Body: Full Canvas for Trek Atlas / Travel Atlas, Scrollable Body for Life 1-4
-            if selectedVariant == .life5 {
-                MacTrekAtlasCanvas()
-            } else if selectedVariant == .life6 {
-                MacTravelAtlasCanvas()
-            } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: DS.Space.xl) {
-                        switch selectedVariant {
-                        case .life1:
-                            Life1BlueprintPrinciplesView()
-                        case .life2:
-                            Life2MasterBucketListView()
-                        case .life3:
-                            Life3LifeErasChronologyView()
-                        case .life4:
-                            Life4SelfMasteryAuditsView()
-                        case .life5, .life6:
-                            EmptyView()
-                        }
-
-                        Spacer(minLength: DS.Space.xxxl)
+            // Main Body: Full Canvas for Mountain & Travel Atlas, Scrollable Body for Bucket List
+            Group {
+                switch selectedVariant {
+                case .mountainAtlas:
+                    MacTrekAtlasCanvas()
+                case .travelAtlas:
+                    MacTravelAtlasCanvas()
+                case .bucketList:
+                    ScrollView {
+                        Life2MasterBucketListView()
+                            .padding(.horizontal, DS.Space.xl)
+                            .padding(.vertical, DS.Space.lg)
+                            .frame(maxWidth: 1040, alignment: .leading)
                     }
-                    .padding(.horizontal, DS.Space.xl)
-                    .padding(.vertical, DS.Space.lg)
-                    .frame(maxWidth: 1040, alignment: .leading)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(DS.Color.background)
     }

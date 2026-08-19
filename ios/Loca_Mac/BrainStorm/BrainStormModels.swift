@@ -36,11 +36,14 @@ final class BrainStormNote {
     var tableDataJSON: String? = nil
     var checklistItemsJSON: String? = nil
     var attachmentsJSON: String? = nil
+    // Rich Text Storage
+    var bodyRTFData: Data? = nil
 
     init(
         id: UUID = UUID(),
         title: String = "New Note",
         bodyText: String = "",
+        bodyRTFData: Data? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
         isPinned: Bool = false,
@@ -62,6 +65,7 @@ final class BrainStormNote {
         self.id = id
         self.title = title
         self.bodyText = bodyText
+        self.bodyRTFData = bodyRTFData
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.isPinned = isPinned
@@ -79,6 +83,24 @@ final class BrainStormNote {
         self.tableDataJSON = tableDataJSON
         self.checklistItemsJSON = checklistItemsJSON
         self.attachmentsJSON = attachmentsJSON
+    }
+
+    /// Read/Write attributed string backed by bodyRTFData
+    var attributedBody: NSAttributedString {
+        get {
+            if let data = bodyRTFData, let attr = RichTextTypography.deserializeFromRTFD(data: data) {
+                return attr
+            }
+            if !bodyText.isEmpty {
+                return RichTextTypography.convertMarkdownToAttributedString(markdown: bodyText)
+            }
+            return NSAttributedString(string: "")
+        }
+        set {
+            self.bodyRTFData = RichTextTypography.serializeToRTFD(attributedString: newValue)
+            self.bodyText = newValue.string
+            self.updateTitleFromContent()
+        }
     }
 
     /// Automatically extracts and updates note title from the first non-empty line
@@ -118,14 +140,23 @@ final class BrainStormNote {
         }
     }
 
-    /// Snippet preview for List and Gallery views (2-3 preview lines)
+    /// Snippet preview for List and Gallery views (generous preview of note contents)
     var previewSnippet: String {
         let lines = bodyText.components(separatedBy: .newlines)
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
         
         if lines.count > 1 {
-            return lines.dropFirst().prefix(2).joined(separator: " ")
+            // Join up to 4 preview lines
+            let contentLines = lines.dropFirst().prefix(4)
+            let joined = contentLines.joined(separator: " · ")
+            return joined.isEmpty ? "No additional text" : joined
+        } else if let first = lines.first {
+            // If only 1 line, show remaining portion after title
+            if first.count > title.count {
+                let remainder = String(first.dropFirst(title.count)).trimmingCharacters(in: .whitespacesAndNewlines)
+                if !remainder.isEmpty { return remainder }
+            }
         }
         return "No additional text"
     }

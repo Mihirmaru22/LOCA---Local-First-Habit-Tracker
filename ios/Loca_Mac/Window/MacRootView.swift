@@ -5,26 +5,20 @@ import CoreSpotlight
 // MARK: - MacSection
 
 /// Top-level navigation sections shown in the Mac sidebar.
-/// Ordered to match the natural daily workflow: check habits first,
-/// then review today's completions, then journal.
 enum MacSection: String, CaseIterable, Identifiable {
-    case today      = "Today"
-    case work       = "Work"
-    case journal    = "Journal"
-    case brainstorm = "BrainStorm"
-    case life       = "Life"
-    case settings   = "Settings"
+    case today    = "Today"
+    case studio   = "Studio"
+    case life     = "Life"
+    case settings = "Settings"
 
     var id: String { rawValue }
 
     var systemImage: String {
         switch self {
-        case .today:      "sun.max.fill"
-        case .work:       "briefcase.fill"
-        case .journal:    "book.closed.fill"
-        case .brainstorm: "note.text"
-        case .life:       "mountain.2.fill"
-        case .settings:   "gearshape"
+        case .today:    "sun.max.fill"
+        case .studio:   "sparkles.rectangle.stack.fill"
+        case .life:     "mountain.2.fill"
+        case .settings: "gearshape"
         }
     }
 }
@@ -32,15 +26,6 @@ enum MacSection: String, CaseIterable, Identifiable {
 // MARK: - MacRootView
 
 /// Three-pane root for the macOS app.
-///
-/// Column roles:
-/// - **Sidebar** (`MacSidebarView`): section picker (Habits, Today, Time, Journal, BrainStorm, Life, Trek Atlas, Audit, Settings).
-/// - **Content** (`MacHabitContentColumn` etc.): list for the active section.
-/// - **Detail** (`MacHabitDetailColumn` etc.): selected-item detail.
-///
-/// `selectedHabit` is owned here so it spans both the content and detail columns
-/// without either column owning the other. The content column writes it via a
-/// `@Binding`; the detail column reads it as a plain `let`.
 struct MacRootView: View {
 
     @State private var selectedSection:     MacSection?      = .today
@@ -48,7 +33,7 @@ struct MacRootView: View {
     @State private var selectedTodo:        TodoItem?        = nil
     @State private var selectedJournalRow:  JournalRow?      = .todaysLog
     @State private var selectedJournalNote: JournalNote?     = nil
-    @State private var selectedLifeRow:     LifeRow?         = .blueprint
+    @State private var selectedLifeRow:     LifeRow?         = .trekAtlas
     @State private var columnVisibility:    NavigationSplitViewVisibility = .all
     @AppStorage("has_completed_onboarding_v3") private var hasCompletedOnboarding: Bool = false
     @State private var showOnboarding:      Bool             = false
@@ -68,9 +53,17 @@ struct MacRootView: View {
     @AppStorage("mac_weekly_digest_enabled") private var weeklyDigestEnabled: Bool = true
     @AppStorage("mac_default_habit_reminder_time") private var defaultHabitTime: String = "09:00"
     @AppStorage("mac_today_submode") private var todaySubmode: String = "Plan"
+    @ObservedObject private var guideManager = PlutoAppGuideManager.shared
 
     var body: some View {
-        splitView
+        ZStack {
+            splitView
+
+            // Real-App In-Situ Spotlight Guide Overlay
+            if guideManager.isTourActive {
+                PlutoAppGuideOverlay(selectedSection: $selectedSection)
+            }
+        }
     }
 
     private var splitView: some View {
@@ -78,7 +71,7 @@ struct MacRootView: View {
             if selectedSection == .today && todaySubmode == "Time" {
                 FocusRoomView()
                     .transition(.opacity)
-            } else if selectedSection == .brainstorm {
+            } else if selectedSection == .studio {
                 NavigationSplitView {
                     MacSidebarView(selection: $selectedSection)
                         .navigationSplitViewColumnWidth(
@@ -87,9 +80,9 @@ struct MacRootView: View {
                             max:   DS.Mac.sidebarMaxWidth
                         )
                 } detail: {
-                    MacBrainStormView()
+                    MacStudioWorkspaceView()
                 }
-            } else if selectedSection == .work || selectedSection == .life || selectedSection == .settings {
+            } else if selectedSection == .life {
                 NavigationSplitView {
                     MacSidebarView(selection: $selectedSection)
                         .navigationSplitViewColumnWidth(
@@ -98,17 +91,18 @@ struct MacRootView: View {
                             max:   DS.Mac.sidebarMaxWidth
                         )
                 } detail: {
-                    if selectedSection == .work {
-                        MacAuditView()
-                    } else if selectedSection == .life {
-                        if vaultManager.isVaultSecurityEnabled && !vaultManager.isLifeUnlocked {
-                            MacVaultLockView(sectionTitle: "Life Blueprint & Strategy")
-                        } else {
-                            MacLifeView()
-                        }
-                    } else {
-                        MacSettingsView()
-                    }
+                    MacLifeView()
+                }
+            } else if selectedSection == .settings {
+                NavigationSplitView {
+                    MacSidebarView(selection: $selectedSection)
+                        .navigationSplitViewColumnWidth(
+                            min:   DS.Mac.sidebarMinWidth,
+                            ideal: DS.Mac.sidebarIdealWidth,
+                            max:   DS.Mac.sidebarMaxWidth
+                        )
+                } detail: {
+                    MacSettingsView()
                 }
             } else {
                 NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -131,24 +125,16 @@ struct MacRootView: View {
                             max:   DS.Mac.contentMaxWidth
                         )
                 } detail: {
-                    if selectedSection == .journal && vaultManager.isVaultSecurityEnabled && !vaultManager.isJournalUnlocked {
-                        MacVaultLockView(sectionTitle: "Private Journal")
-                            .navigationSplitViewColumnWidth(
-                                min:   DS.Mac.detailMinWidth,
-                                ideal: DS.Mac.detailIdealWidth
-                            )
-                    } else {
-                        MacDetailColumn(section: selectedSection,
-                                         selectedHabit:       $selectedHabit,
-                                         selectedTodo:        $selectedTodo,
-                                         selectedJournalRow:  $selectedJournalRow,
-                                         selectedJournalNote: $selectedJournalNote,
-                                         selectedLifeRow:     $selectedLifeRow)
-                            .navigationSplitViewColumnWidth(
-                                min:   DS.Mac.detailMinWidth,
-                                ideal: DS.Mac.detailIdealWidth
-                            )
-                    }
+                    MacDetailColumn(section: selectedSection,
+                                     selectedHabit:       $selectedHabit,
+                                     selectedTodo:        $selectedTodo,
+                                     selectedJournalRow:  $selectedJournalRow,
+                                     selectedJournalNote: $selectedJournalNote,
+                                     selectedLifeRow:     $selectedLifeRow)
+                        .navigationSplitViewColumnWidth(
+                            min:   DS.Mac.detailMinWidth,
+                            ideal: DS.Mac.detailIdealWidth
+                        )
                 }
             }
         }
@@ -181,15 +167,15 @@ struct MacRootView: View {
                let (type, _) = LocaSpotlightIndexer.ItemType.parseIdentifier(identifier) {
                 switch type {
                 case .habit:
-                    selectedSection = .journal
+                    selectedSection = .today
                 case .task:
                     selectedSection = .today
                 case .journal:
-                    selectedSection = .journal
+                    selectedSection = .today
                 case .principle, .bucket:
                     selectedSection = .life
                 case .goal:
-                    selectedSection = .work
+                    selectedSection = .studio
                 }
             }
         }
@@ -197,7 +183,7 @@ struct MacRootView: View {
             selectedHabit      = nil
             selectedTodo       = nil
             selectedJournalRow = .todaysLog
-            selectedLifeRow    = .blueprint
+            selectedLifeRow    = .trekAtlas
         }
         .onReceive(NotificationCenter.default.publisher(for: .locaJumpToSection)) { note in
             if let section = note.object as? MacSection {
@@ -255,9 +241,7 @@ private struct MacContentColumn: View {
         switch section {
         case .today:
             MacTodoContentColumn(selection: $selectedTodo)
-        case .journal:
-            MacJournalContentColumn(selectedRow: $selectedJournalRow, selectedNote: $selectedJournalNote)
-        case .work, .brainstorm, .life, .settings:
+        case .studio, .life, .settings:
             EmptyView()
         case nil:
             MacEmptyContentView()
@@ -281,14 +265,10 @@ private struct MacDetailColumn: View {
         switch section {
         case .today:
             MacTodoDetailColumn(item: $selectedTodo)
-        case .journal:
-            MacJournalDetailColumn(selectedRow: $selectedJournalRow, selectedNote: $selectedJournalNote)
-        case .brainstorm:
-            MacBrainStormView()
+        case .studio:
+            MacStudioWorkspaceView()
         case .life:
-            MacLifeDetailColumn(selectedRow: selectedLifeRow)
-        case .work:
-            MacAuditDetailColumn()
+            MacLifeView()
         case .settings:
             MacSettingsView()
         case nil:

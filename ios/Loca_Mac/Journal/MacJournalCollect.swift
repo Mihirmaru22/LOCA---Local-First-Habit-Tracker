@@ -202,7 +202,7 @@ struct MacJournalCollect: View {
 
 // MARK: - DailyWeeklyMatrixContainer (7-Day Horizon Matrix with Red X for Missed Past Days)
 
-private struct DailyWeeklyMatrixContainer: View {
+struct DailyWeeklyMatrixContainer: View {
 
     let routines: [HabitBoard]
     let selectedDate: Date
@@ -319,7 +319,7 @@ private struct DailyWeeklyMatrixContainer: View {
 
 // MARK: - WeeklyMatrixRow (Productivity-focused: Subtle – for missed, Crisp ✓ for done)
 
-private struct WeeklyMatrixRow: View {
+struct WeeklyMatrixRow: View {
 
     @Bindable var routine: HabitBoard
     let selectedDate: Date
@@ -446,7 +446,7 @@ private struct WeeklyMatrixRow: View {
 
 // MARK: - DailyZenHeatmapContainer
 
-private struct DailyZenHeatmapContainer: View {
+struct DailyZenHeatmapContainer: View {
 
     let routines: [HabitBoard]
     let selectedDate: Date
@@ -545,7 +545,7 @@ private struct DailyZenHeatmapContainer: View {
     }
 }
 
-private struct ZenHeatmapRow: View {
+struct ZenHeatmapRow: View {
     @Bindable var routine: HabitBoard
     let selectedDate: Date
     @Environment(\.modelContext) private var modelContext
@@ -631,7 +631,7 @@ private struct ZenHeatmapRow: View {
 
 // MARK: - DailyDaylightFlowContainer
 
-private struct DailyDaylightFlowContainer: View {
+struct DailyDaylightFlowContainer: View {
 
     let routines: [HabitBoard]
     let selectedDate: Date
@@ -746,7 +746,7 @@ private struct DailyDaylightFlowContainer: View {
 
 // MARK: - SleepCard Section (Hero Timeline Horizon)
 
-private struct SleepCard: View {
+struct SleepCard: View {
 
     let selectedDate: Date
 

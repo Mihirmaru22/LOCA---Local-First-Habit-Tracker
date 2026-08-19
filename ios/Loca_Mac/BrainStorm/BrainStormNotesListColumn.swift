@@ -20,10 +20,12 @@ struct BrainStormNotesListColumn: View {
     @Query private var allNotes: [BrainStormNote]
     @Query private var allFolders: [BrainStormFolder]
 
+    var showFolders: Binding<Bool>? = nil
     var selectedSystemFolder: SystemFolderType?
     var selectedFolderID: UUID?
     var selectedTag: String?
     @Binding var selectedNote: BrainStormNote?
+    var onOpenTour: (() -> Void)? = nil
 
     @State private var searchText: String = ""
     @AppStorage("brainstorm_view_mode") private var viewModeRaw: String = BrainStormViewMode.list.rawValue
@@ -108,6 +110,24 @@ struct BrainStormNotesListColumn: View {
             // Top Header: Title, Search, View Mode Toggle, New Note Button
             VStack(spacing: 8) {
                 HStack(spacing: 8) {
+                    if let showFolders = showFolders {
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.15)) {
+                                showFolders.wrappedValue.toggle()
+                            }
+                            Haptics.impact(.light)
+                        } label: {
+                            Image(systemName: "sidebar.leading")
+                                .font(.system(size: 12.5, weight: .medium))
+                                .foregroundStyle(showFolders.wrappedValue ? Color.white : Color.white.opacity(0.5))
+                                .frame(width: 24, height: 22)
+                                .background(showFolders.wrappedValue ? Color.white.opacity(0.12) : Color.clear, in: RoundedRectangle(cornerRadius: 4))
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(PlutoFastButtonStyle())
+                        .help("Toggle Folders Sidebar")
+                    }
+
                     // Header title based on selection
                     Text(columnTitle)
                         .font(.system(size: 15, weight: .bold))
@@ -145,6 +165,27 @@ struct BrainStormNotesListColumn: View {
                     }
                     .padding(2)
                     .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
+
+                    // Interactive Feature Guide Button
+                    if let onOpenTour = onOpenTour {
+                        Button {
+                            onOpenTour()
+                        } label: {
+                            HStack(spacing: 3.5) {
+                                Image(systemName: "sparkles")
+                                    .font(.system(size: 10, weight: .bold))
+                                Text("Guide")
+                                    .font(.system(size: 10.5, weight: .semibold))
+                            }
+                            .foregroundStyle(Color(red: 0.95, green: 0.75, blue: 0.25))
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3.5)
+                            .background(Color(red: 0.95, green: 0.75, blue: 0.25).opacity(0.12), in: RoundedRectangle(cornerRadius: 5))
+                            .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color(red: 0.95, green: 0.75, blue: 0.25).opacity(0.35), lineWidth: 1))
+                        }
+                        .buttonStyle(PlutoFastButtonStyle())
+                        .help("Interactive Feature Guide & Studio Tour")
+                    }
 
                     // Sort Order Menu
                     Menu {
@@ -316,66 +357,72 @@ struct BrainStormNotesListColumn: View {
             selectedNote = note
             Haptics.impact(.light)
         } label: {
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 4) {
+                // Subtle Title Header Row
                 HStack(spacing: 6) {
                     if note.isPinned {
                         Image(systemName: "pin.fill")
-                            .font(.system(size: 9))
+                            .font(.system(size: 8.5))
                             .foregroundStyle(Color.yellow)
                     }
                     if note.isLocked {
                         Image(systemName: "lock.fill")
-                            .font(.system(size: 9))
+                            .font(.system(size: 8.5))
                             .foregroundStyle(Color.indigo)
                     }
 
                     Text(note.title.isEmpty ? "New Note" : note.title)
-                        .font(.system(size: 13, weight: isSelected ? .bold : .semibold))
-                        .foregroundStyle(Color.white)
+                        .font(.system(size: 12, weight: isSelected ? .semibold : .medium))
+                        .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.85))
                         .lineLimit(1)
 
                     Spacer()
 
                     Text(formatDate(note.updatedAt))
-                        .font(.system(size: 10, design: .monospaced))
-                        .foregroundStyle(Color.white.opacity(0.4))
+                        .font(.system(size: 9.5, design: .monospaced))
+                        .foregroundStyle(Color.white.opacity(0.35))
                 }
 
-                HStack(spacing: 6) {
+                // Generous Note Content Preview (Extended length)
+                HStack(alignment: .top, spacing: 6) {
                     Text(note.previewSnippet)
-                        .font(.system(size: 11.5))
-                        .foregroundStyle(Color.white.opacity(0.6))
-                        .lineLimit(2)
+                        .font(.system(size: 11, weight: .regular))
+                        .foregroundStyle(isSelected ? Color.white.opacity(0.75) : Color.white.opacity(0.55))
+                        .lineLimit(3)
+                        .lineSpacing(2)
                         .multilineTextAlignment(.leading)
 
-                    Spacer()
+                    Spacer(minLength: 4)
 
-                    if note.hasChecklist {
-                        Image(systemName: "checkmark.circle")
-                            .font(.system(size: 10))
-                            .foregroundStyle(Color.white.opacity(0.35))
-                    }
-                    if note.hasAttachments {
-                        Image(systemName: "paperclip")
-                            .font(.system(size: 10))
-                            .foregroundStyle(Color.white.opacity(0.35))
-                    }
-                    if note.hasTable {
-                        Image(systemName: "tablecells")
-                            .font(.system(size: 10))
-                            .foregroundStyle(Color.white.opacity(0.35))
+                    // Indicator Icons
+                    VStack(alignment: .trailing, spacing: 3) {
+                        if note.hasChecklist {
+                            Image(systemName: "checkmark.circle")
+                                .font(.system(size: 9.5))
+                                .foregroundStyle(Color.white.opacity(0.40))
+                        }
+                        if note.hasAttachments {
+                            Image(systemName: "paperclip")
+                                .font(.system(size: 9.5))
+                                .foregroundStyle(Color.white.opacity(0.40))
+                        }
+                        if note.hasTable {
+                            Image(systemName: "tablecells")
+                                .font(.system(size: 9.5))
+                                .foregroundStyle(Color.white.opacity(0.40))
+                        }
                     }
                 }
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 11)
+            .padding(.vertical, 9)
             .background(
-                isSelected ? Color.accentColor.opacity(0.25) : (isHovered ? Color.white.opacity(0.06) : Color.white.opacity(0.02)),
+                isSelected ? Color.accentColor.opacity(0.24) : (isHovered ? Color.white.opacity(0.06) : Color.white.opacity(0.02)),
                 in: RoundedRectangle(cornerRadius: 8)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
-                    .stroke(isSelected ? Color.accentColor.opacity(0.6) : Color.white.opacity(0.04), lineWidth: 1)
+                    .stroke(isSelected ? Color.accentColor.opacity(0.55) : Color.white.opacity(0.04), lineWidth: 1)
             )
             .contentShape(Rectangle())
         }
@@ -399,31 +446,32 @@ struct BrainStormNotesListColumn: View {
             Haptics.impact(.light)
         } label: {
             VStack(alignment: .leading, spacing: 6) {
-                // Top Paper Header
+                // Top Header
                 HStack(spacing: 4) {
                     if note.isPinned {
                         Image(systemName: "pin.fill")
-                            .font(.system(size: 9))
+                            .font(.system(size: 8.5))
                             .foregroundStyle(Color.yellow)
                     }
                     if note.isLocked {
                         Image(systemName: "lock.fill")
-                            .font(.system(size: 9))
+                            .font(.system(size: 8.5))
                             .foregroundStyle(Color.indigo)
                     }
                     Text(note.title.isEmpty ? "New Note" : note.title)
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.system(size: 11.5, weight: isSelected ? .semibold : .medium))
                         .foregroundStyle(Color.white)
                         .lineLimit(1)
                     Spacer()
                 }
 
-                // Paper Content Preview
+                // Paper Content Preview (Extended length)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(note.bodyText.isEmpty ? "Empty note..." : note.bodyText)
-                        .font(.system(size: 10.5))
+                    Text(note.bodyText.isEmpty ? "Empty note..." : note.previewSnippet)
+                        .font(.system(size: 10))
                         .foregroundStyle(Color.white.opacity(0.65))
                         .lineLimit(5)
+                        .lineSpacing(1.5)
                         .multilineTextAlignment(.leading)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

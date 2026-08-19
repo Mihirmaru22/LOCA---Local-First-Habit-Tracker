@@ -107,15 +107,17 @@ struct MacTrekMapView: NSViewRepresentable {
     let onSelectTrek: (TrekRecord) -> Void
 
     func makeNSView(context: Context) -> MKMapView {
-        let mapView = MKMapView()
+        let mapView = MKMapView(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
+        mapView.wantsLayer = true
+        mapView.layer?.masksToBounds = true
         mapView.delegate = context.coordinator
         mapView.showsCompass = true
         mapView.showsScale = true
         mapView.showsPitchControl = true
         mapView.showsZoomControls = true
 
-        // Configure realistic topo terrain on macOS 14+
-        let config = MKStandardMapConfiguration(elevationStyle: .realistic)
+        // Configure 3D realistic satellite imagery on macOS 14+
+        let config = MKHybridMapConfiguration(elevationStyle: .realistic)
         config.pointOfInterestFilter = .excludingAll
         config.showsTraffic = false
         mapView.preferredConfiguration = config
@@ -438,23 +440,23 @@ struct MacTrekMapView: NSViewRepresentable {
             } else if let massif = overlay as? MountainRangeOverlayPolygon {
                 let renderer = MKPolygonRenderer(polygon: massif)
                 if massif.isSelected {
-                    renderer.fillColor = NSColor(red: 1.0, green: 0.75, blue: 0.0, alpha: 0.32) // Amber Massif Glow
+                    renderer.fillColor = NSColor(red: 1.0, green: 0.75, blue: 0.0, alpha: 0.18) // Subtle Amber Massif Glow
                     renderer.strokeColor = NSColor(red: 1.0, green: 0.85, blue: 0.2, alpha: 1.0)
-                    renderer.lineWidth = 3.0
+                    renderer.lineWidth = 2.5
                 } else if massif.isConquered {
-                    renderer.fillColor = NSColor(red: 0.0, green: 0.85, blue: 0.45, alpha: 0.22) // Conquered Emerald
+                    renderer.fillColor = NSColor(red: 0.0, green: 0.85, blue: 0.45, alpha: 0.12) // Subtle Conquered Emerald
                     renderer.strokeColor = NSColor(red: 0.2, green: 0.9, blue: 0.5, alpha: 0.85)
-                    renderer.lineWidth = 2.0
+                    renderer.lineWidth = 1.8
                 } else {
-                    renderer.fillColor = NSColor(white: 0.15, alpha: 0.08) // Unconquered Fog Massif
-                    renderer.strokeColor = NSColor(white: 0.5, alpha: 0.35)
+                    renderer.fillColor = NSColor.clear // Clear to showcase satellite photography
+                    renderer.strokeColor = NSColor(white: 1.0, alpha: 0.28)
                     renderer.lineWidth = 1.0
                     renderer.lineDashPattern = [5, 4]
                 }
                 return renderer
             } else if let fog = overlay as? FogOfWarPolygon {
                 let renderer = MKPolygonRenderer(polygon: fog)
-                renderer.fillColor = NSColor(red: 0.05, green: 0.07, blue: 0.11, alpha: 0.72) // Obsidian Fog
+                renderer.fillColor = NSColor(red: 0.05, green: 0.07, blue: 0.11, alpha: 0.20) // Light Cinematic Satellite Fog
                 return renderer
             } else if let circle = overlay as? MKCircle {
                 let renderer = MKCircleRenderer(circle: circle)

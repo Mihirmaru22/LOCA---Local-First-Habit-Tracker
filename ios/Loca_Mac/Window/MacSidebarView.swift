@@ -8,7 +8,7 @@ struct MacSidebarView: View {
     @Binding var selection: MacSection?
     @State private var hoveredSection: MacSection? = nil
 
-    private let mainSections: [MacSection] = [.today, .work, .journal, .brainstorm, .life]
+    private let mainSections: [MacSection] = [.today, .studio, .life]
 
     var body: some View {
         VStack(spacing: 0) {
@@ -55,6 +55,8 @@ struct MacSidebarView: View {
                 Text(section.rawValue)
                     .font(.system(size: 13, weight: isSelected ? .semibold : .medium))
                     .foregroundStyle(isSelected ? Color.white : (isHovered ? Color.white : DS.Color.textSecondary))
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
 
                 Spacer()
 

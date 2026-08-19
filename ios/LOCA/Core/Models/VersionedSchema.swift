@@ -71,6 +71,8 @@ enum RippleSchemaV1: VersionedSchema {
             FocusGoal.self,
             BrainStormNote.self,
             BrainStormFolder.self,
+            WorkProject.self,
+            WorkSection.self,
         ]
     }
 }

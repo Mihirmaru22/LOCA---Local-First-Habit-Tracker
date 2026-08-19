@@ -464,7 +464,7 @@ final class PlutoNotificationManager: NSObject, ObservableObject {
         let host = url.host ?? url.path.replacingOccurrences(of: "/", with: "")
 
         switch host.lowercased() {
-        case "habits", "habit":
+        case "habit", "habits":
             var habitUUID: UUID? = nil
             if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
                let idStr = components.queryItems?.first(where: { $0.name == "id" })?.value,
@@ -473,7 +473,7 @@ final class PlutoNotificationManager: NSObject, ObservableObject {
             }
             NotificationCenter.default.post(
                 name: .locaDeepLink,
-                object: DeepLinkPayload(section: .journal, habitID: habitUUID, taskID: nil, date: nil)
+                object: DeepLinkPayload(section: .today, habitID: habitUUID, taskID: nil, date: nil)
             )
 
         case "today", "task", "tasks":
@@ -488,10 +488,10 @@ final class PlutoNotificationManager: NSObject, ObservableObject {
                 object: DeepLinkPayload(section: .today, habitID: nil, taskID: taskUUID, date: nil)
             )
 
-        case "journal", "notes":
+        case "journal", "notes", "studio", "brainstorm":
             NotificationCenter.default.post(
                 name: .locaDeepLink,
-                object: DeepLinkPayload(section: .journal, habitID: nil, taskID: nil, date: nil)
+                object: DeepLinkPayload(section: .studio, habitID: nil, taskID: nil, date: nil)
             )
 
         case "time", "focus", "pomodoro":
@@ -500,13 +500,13 @@ final class PlutoNotificationManager: NSObject, ObservableObject {
                 object: DeepLinkPayload(section: .today, habitID: nil, taskID: nil, date: nil)
             )
 
-        case "audit", "work", "digest", "weekly":
+        case "audit", "work", "digest", "weekly", "projects":
             NotificationCenter.default.post(
                 name: .locaDeepLink,
-                object: DeepLinkPayload(section: .work, habitID: nil, taskID: nil, date: nil)
+                object: DeepLinkPayload(section: .studio, habitID: nil, taskID: nil, date: nil)
             )
 
-        case "life":
+        case "life", "mountain", "trek":
             NotificationCenter.default.post(
                 name: .locaDeepLink,
                 object: DeepLinkPayload(section: .life, habitID: nil, taskID: nil, date: nil)
@@ -677,7 +677,7 @@ extension PlutoNotificationManager: UNUserNotificationCenterDelegate {
             case Action.captureReflection:
                 NotificationCenter.default.post(
                     name: .locaDeepLink,
-                    object: DeepLinkPayload(section: .journal, habitID: nil, taskID: nil, date: nil)
+                    object: DeepLinkPayload(section: .today, habitID: nil, taskID: nil, date: nil)
                 )
 
             // A5: Focus actions
@@ -691,50 +691,49 @@ extension PlutoNotificationManager: UNUserNotificationCenterDelegate {
             case Action.viewAudit:
                 NotificationCenter.default.post(
                     name: .locaDeepLink,
-                    object: DeepLinkPayload(section: .work, habitID: nil, taskID: nil, date: nil)
+                    object: DeepLinkPayload(section: .studio, habitID: nil, taskID: nil, date: nil)
                 )
 
             // Default click or "View Habit" (A7 Deep Linking)
             case UNNotificationDefaultActionIdentifier, Action.openHabit:
                 if let targetStr = userInfo["target"] as? String {
                     switch targetStr {
-                    case "journal":
-                        NotificationCenter.default.post(
-                            name: .locaDeepLink,
-                            object: DeepLinkPayload(section: .journal, habitID: nil, taskID: nil, date: nil)
-                        )
-                    case "time", "today":
+                    case "journal", "today", "reflection":
                         NotificationCenter.default.post(
                             name: .locaDeepLink,
                             object: DeepLinkPayload(section: .today, habitID: nil, taskID: nil, date: nil)
                         )
-                    case "audit", "work":
+                    case "time", "focus":
                         NotificationCenter.default.post(
                             name: .locaDeepLink,
-                            object: DeepLinkPayload(section: .work, habitID: nil, taskID: nil, date: nil)
+                            object: DeepLinkPayload(section: .today, habitID: nil, taskID: nil, date: nil)
                         )
-                    case "today":
-                        let taskUUID = (userInfo["taskID"] as? String).flatMap(UUID.init)
+                    case "audit", "work", "projects", "notes", "studio":
                         NotificationCenter.default.post(
                             name: .locaDeepLink,
-                            object: DeepLinkPayload(section: .today, habitID: nil, taskID: taskUUID, date: nil)
+                            object: DeepLinkPayload(section: .studio, habitID: nil, taskID: nil, date: nil)
+                        )
+                    case "life", "mountain":
+                        NotificationCenter.default.post(
+                            name: .locaDeepLink,
+                            object: DeepLinkPayload(section: .life, habitID: nil, taskID: nil, date: nil)
                         )
                     default:
                         let habitUUID = (userInfo["habitID"] as? String).flatMap(UUID.init)
                         NotificationCenter.default.post(
                             name: .locaDeepLink,
-                            object: DeepLinkPayload(section: .journal, habitID: habitUUID, taskID: nil, date: nil)
+                            object: DeepLinkPayload(section: .today, habitID: habitUUID, taskID: nil, date: nil)
                         )
                     }
                 } else if let type = userInfo["type"] as? String, type == "evening_reflection" {
                     NotificationCenter.default.post(
                         name: .locaDeepLink,
-                        object: DeepLinkPayload(section: .journal, habitID: nil, taskID: nil, date: nil)
+                        object: DeepLinkPayload(section: .today, habitID: nil, taskID: nil, date: nil)
                     )
                 } else {
                     NotificationCenter.default.post(
                         name: .locaDeepLink,
-                        object: DeepLinkPayload(section: .journal, habitID: nil, taskID: nil, date: nil)
+                        object: DeepLinkPayload(section: .today, habitID: nil, taskID: nil, date: nil)
                     )
                 }
 

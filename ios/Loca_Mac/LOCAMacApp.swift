@@ -55,6 +55,9 @@ struct LOCAMacApp: App {
                     .modelContainer(container)
                     .frame(minWidth: DS.Mac.windowMinWidth, minHeight: DS.Mac.windowMinHeight)
                     .onAppear {
+                        // Seed calm initial workspace notes & projects if first launch
+                        EmptyStateSeeder.shared.seedInitialDataIfNeeded(context: container.mainContext)
+
                         // Start invisible alpha telemetry engine
                         PlutoTelemetryEngine.shared.start()
 

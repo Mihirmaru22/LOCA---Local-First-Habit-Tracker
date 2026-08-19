@@ -192,14 +192,14 @@ struct PlutoQuickActionHUD: View {
                 Button {
                     NotificationCenter.default.post(
                         name: .locaDeepLink,
-                        object: PlutoNotificationManager.DeepLinkPayload(section: .journal, habitID: nil, taskID: nil, date: nil)
+                        object: PlutoNotificationManager.DeepLinkPayload(section: .today, habitID: nil, taskID: nil, date: nil)
                     )
                     NSApp.activate(ignoringOtherApps: true)
                     onClose()
                 } label: {
                     HStack(spacing: 6) {
-                        Image(systemName: "book.closed.fill")
-                        Text("Open Journal")
+                        Image(systemName: "sun.max.fill")
+                        Text("Open Today")
                     }
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(DS.Color.textSecondary)

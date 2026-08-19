@@ -1,0 +1,45 @@
+{
+  "name": "loca-mcp-server",
+  "version": "1.0.0",
+  "description": "Model Context Protocol (MCP) Server for LOCA / Pluto - Local-First Habit, Task, Notes, & Life OS",
+  "type": "module",
+  "main": "build/index.js",
+  "bin": {
+    "loca-mcp": "./build/index.js",
+    "loca-mcp-server": "./build/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "start": "node build/index.js",
+    "start:sse": "node build/sse.js",
+    "dev:sse": "tsx src/sse.ts",
+    "dev": "tsx src/index.ts",
+    "inspector": "npx @modelcontextprotocol/inspector node build/index.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "cursor",
+    "antigravity",
+    "habits",
+    "tasks",
+    "notes",
+    "loca",
+    "pluto"
+  ],
+  "author": "Mihir Maru",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.6.1",
+    "better-sqlite3": "^11.8.1",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.13.5",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  }
+}

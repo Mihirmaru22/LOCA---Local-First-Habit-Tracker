@@ -64,6 +64,11 @@ final class TodoItem {
     /// default glyph. Lets a planned block read at a glance (alarm, envelope…).
     var iconName: String? = nil
 
+    // MARK: Project & Section Hierarchy
+    var projectID: UUID? = nil
+    var sectionID: UUID? = nil
+    var noteRTFData: Data? = nil
+
     // MARK: Subtasks (parent link — CloudKit-safe, optional)
 
     /// `id` of this task's parent, or `nil` for a top-level task.
@@ -160,6 +165,9 @@ final class TodoItem {
         durationMinutes: Int     = 0,
         iconName:        String? = nil,
         parentID:        UUID?   = nil,
+        projectID:       UUID?   = nil,
+        sectionID:       UUID?   = nil,
+        noteRTFData:     Data?   = nil,
         category:        String? = nil,
         commentsData:    Data?   = nil,
         completedAt:     Date?   = nil,
@@ -175,6 +183,9 @@ final class TodoItem {
         self.durationMinutes = durationMinutes
         self.iconName        = iconName
         self.parentID        = parentID
+        self.projectID       = projectID
+        self.sectionID       = sectionID
+        self.noteRTFData     = noteRTFData
         self.category        = category
         self.commentsData    = commentsData
         self.completedAt     = completedAt

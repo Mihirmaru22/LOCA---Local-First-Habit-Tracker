@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "loca": {
+      "command": "node",
+      "args": [
+        "/Users/mihirmaru/Downloads/LOCA---Local-First-Habit-Tracker/mcp-server/build/index.js"
+      ]
+    }
+  }
+}

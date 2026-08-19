@@ -39,14 +39,11 @@ struct LOCACommands: Commands {
             Button("Today") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.today) }
                 .keyboardShortcut("1", modifiers: [.command])
 
-            Button("Work") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.work) }
+            Button("Studio") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.studio) }
                 .keyboardShortcut("2", modifiers: [.command])
 
-            Button("Journal") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.journal) }
-                .keyboardShortcut("3", modifiers: [.command])
-
             Button("Life") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.life) }
-                .keyboardShortcut("4", modifiers: [.command])
+                .keyboardShortcut("3", modifiers: [.command])
 
             Button("Settings") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.settings) }
                 .keyboardShortcut(",", modifiers: [.command])
@@ -117,6 +114,13 @@ struct LOCACommands: Commands {
 
         // MARK: Help menu
         CommandGroup(replacing: .help) {
+            Button("Interactive App Guide & Spotlight Tour") {
+                PlutoAppGuideManager.shared.startTour()
+            }
+            .keyboardShortcut("/", modifiers: [.command])
+
+            Divider()
+
             Button("Welcome & Feature Tour…") {
                 NotificationCenter.default.post(name: .locaShowOnboarding, object: nil)
             }

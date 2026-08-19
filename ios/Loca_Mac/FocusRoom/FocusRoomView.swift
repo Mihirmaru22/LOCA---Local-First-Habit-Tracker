@@ -968,10 +968,8 @@ struct FocusRoomView: View {
                                     .foregroundStyle(Color.white.opacity(0.45))
                                     .padding(.horizontal, 12)
 
-                                drawerSectionButton(title: "Work", subtitle: "Habit Matrix & Audit", icon: "briefcase.fill", section: .work)
-                                drawerSectionButton(title: "Journal", subtitle: "Daily Log & Notes", icon: "book.fill", section: .journal)
-                                drawerSectionButton(title: "BrainStorm", subtitle: "Apple Notes & Ideas", icon: "note.text", section: .brainstorm)
-                                drawerSectionButton(title: "Life", subtitle: "Blueprint & Goals", icon: "mountain.2.fill", section: .life)
+                                drawerSectionButton(title: "Studio", subtitle: "Notes & Projects", icon: "sparkles.rectangle.stack.fill", section: .studio)
+                                drawerSectionButton(title: "Life", subtitle: "Mountain & Trek Atlas", icon: "mountain.2.fill", section: .life)
                                 drawerSectionButton(title: "Settings", subtitle: "Preferences & Backup", icon: "gearshape.fill", section: .settings)
                             }
                         }
