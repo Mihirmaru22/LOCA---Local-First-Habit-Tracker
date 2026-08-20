@@ -104,6 +104,11 @@ struct MacSettingsView: View {
                     }
                 }
 
+                // Workspace Complexity & Mode Tile (Full Width)
+                bentoTile(title: "Workspace Complexity & Mode", icon: "arrow.left.and.right.square", accent: Color(red: 0.55, green: 0.65, blue: 0.95)) {
+                    workspaceModeControlBlock
+                }
+
                 // 5. Notifications Bento Tile (Full Width)
                 bentoTile(title: "Notifications & Smart Schedule", icon: "bell.badge.fill", accent: Color(red: 0.85, green: 0.40, blue: 0.40)) {
                     notificationsControlBlock
@@ -339,6 +344,44 @@ struct MacSettingsView: View {
                     .font(.system(size: 12))
                 Spacer()
                 Text("⌥ + Space")
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(DS.Color.background)
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
+            }
+        }
+    }
+
+    // Workspace Mode (Simplified vs Pro)
+    private var workspaceModeControlBlock: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Picker("Mode", selection: Binding(
+                get: { SimplifiedModeManager.shared.isSimplifiedModeActive ? 0 : 1 },
+                set: { val in
+                    if val == 0 {
+                        SimplifiedModeManager.shared.enableSimplifiedMode()
+                    } else {
+                        SimplifiedModeManager.shared.enableProMode()
+                    }
+                }
+            )) {
+                Text("Simplified Mode (Focus Tunnel)").tag(0)
+                Text("Pro Mode (3-Column Canvas)").tag(1)
+            }
+            .pickerStyle(.segmented)
+
+            Text(SimplifiedModeManager.shared.isSimplifiedModeActive
+                 ? "Simplified Mode displays a calm single-column feed with guided prompts, ideal for staying focused on immediate priorities."
+                 : "Pro Mode unlocks the full 3-column split view with Day Planner timeline, BrainStorm notes, and Trek elevation atlases.")
+                .font(.system(size: 11))
+                .foregroundStyle(DS.Color.textSecondary)
+
+            HStack {
+                Text("Quick Mode Switch Shortcut")
+                    .font(.system(size: 12))
+                Spacer()
+                Text("⌘ + ⇧ + P")
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)

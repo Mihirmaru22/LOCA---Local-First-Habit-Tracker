@@ -54,16 +54,24 @@ struct MacRootView: View {
     @AppStorage("mac_default_habit_reminder_time") private var defaultHabitTime: String = "09:00"
     @AppStorage("mac_today_submode") private var todaySubmode: String = "Plan"
     @ObservedObject private var guideManager = PlutoAppGuideManager.shared
+    @ObservedObject private var modeManager = SimplifiedModeManager.shared
 
     var body: some View {
         ZStack {
-            splitView
+            if modeManager.isSimplifiedModeActive {
+                MacSimplifiedModeView()
+                    .transition(.opacity)
+            } else {
+                splitView
+                    .transition(.opacity)
+            }
 
             // Real-App In-Situ Spotlight Guide Overlay
             if guideManager.isTourActive {
                 PlutoAppGuideOverlay(selectedSection: $selectedSection)
             }
         }
+        .animation(reduceMotion ? nil : DS.Motion.settle, value: modeManager.isSimplifiedModeActive)
     }
 
     private var splitView: some View {
@@ -222,6 +230,9 @@ struct MacRootView: View {
         .onOpenURL { url in
             PlutoNotificationManager.shared.handleDeepLinkURL(url)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .locaToggleProMode)) { _ in
+            modeManager.toggleMode()
+        }
     }
 }
 
@@ -283,15 +294,123 @@ private struct MacEmptyContentView: View {
     }
 }
 
-// MARK: - MacDetailPlaceholder
+// MARK: - MacDetailPlaceholder (Contextual Action & Guidance Hub)
 
 struct MacDetailPlaceholder: View {
+
+    @Environment(\.modelContext) private var modelContext
+    @ObservedObject private var modeManager = SimplifiedModeManager.shared
+
+    @Query(filter: #Predicate<HabitBoard> { $0.archivedAt == nil })
+    private var habits: [HabitBoard]
+
+    @Query(filter: #Predicate<TodoItem> { $0.archivedAt == nil && $0.completedAt == nil })
+    private var openTodos: [TodoItem]
+
     var body: some View {
-        ContentUnavailableView(
-            "Select an Item",
-            systemImage: "arrow.left.to.line",
-            description: Text("Choose a habit from the list to see its detail.")
-        )
+        ScrollView {
+            VStack(spacing: 20) {
+                // Header
+                VStack(spacing: 6) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 28, weight: .semibold))
+                        .foregroundStyle(Color(red: 0.95, green: 0.77, blue: 0.25))
+
+                    Text("Executive Workspace")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(Color.white)
+
+                    Text("Select a task or habit from the middle column to inspect details, or use the quick actions below.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.white.opacity(0.6))
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: 420)
+                }
+                .padding(.top, 24)
+
+                // Quick Status Bento Grid
+                HStack(spacing: 12) {
+                    statusCard(icon: "checkmark.circle.fill", count: "\(openTodos.count)", label: "Open Tasks", tint: Color(red: 0.35, green: 0.65, blue: 0.95))
+                    statusCard(icon: "flame.fill", count: "\(habits.count)", label: "Active Habits", tint: Color(red: 0.95, green: 0.55, blue: 0.35))
+                }
+                .frame(maxWidth: 420)
+
+                // Guided Actions
+                VStack(spacing: 8) {
+                    Text("SHORTCUTS & COMMANDS")
+                        .font(.system(size: 10, weight: .bold))
+                        .tracking(0.6)
+                        .foregroundStyle(Color.white.opacity(0.45))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    guidedActionRow(icon: "plus.circle", title: "New Task / Block", shortcut: "⌘N")
+                    guidedActionRow(icon: "calendar.day.timeline.left", title: "Day Planner Timeline", shortcut: "⌘1")
+                    guidedActionRow(icon: "note.text", title: "BrainStorm Notes Studio", shortcut: "⌘2")
+                    guidedActionRow(icon: "mountain.2.fill", title: "Trek & Travel Atlas", shortcut: "⌘3")
+                    guidedActionRow(icon: "arrow.left.and.right.square", title: "Switch to Simplified Mode", shortcut: "⌘⇧P") {
+                        modeManager.enableSimplifiedMode()
+                    }
+                }
+                .padding(16)
+                .frame(maxWidth: 420)
+                .background(Color.white.opacity(0.03), in: RoundedRectangle(cornerRadius: 12))
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.06), lineWidth: 1))
+            }
+            .padding(24)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(nsColor: NSColor(red: 0.08, green: 0.08, blue: 0.09, alpha: 1.0)))
+    }
+
+    private func statusCard(icon: String, count: String, label: String, tint: Color) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 20))
+                .foregroundStyle(tint)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(count)
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.white)
+                Text(label)
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color.white.opacity(0.5))
+            }
+            Spacer()
+        }
+        .padding(14)
+        .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.06), lineWidth: 1))
+    }
+
+    private func guidedActionRow(icon: String, title: String, shortcut: String, action: (() -> Void)? = nil) -> some View {
+        Button {
+            action?()
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: icon)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.white.opacity(0.7))
+                    .frame(width: 18)
+
+                Text(title)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Color.white.opacity(0.85))
+
+                Spacer()
+
+                Text(shortcut)
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .foregroundStyle(Color.white.opacity(0.45))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 4))
+            }
+            .padding(.vertical, 6)
+            .padding(.horizontal, 8)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }
 
