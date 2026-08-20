@@ -1,175 +1,236 @@
-# 🪐 PLUTO (formerly LOCA) — Local-First Habit Tracker & Life OS
+# 🪐 PLUTO for macOS — Local-First Habit Tracker & Life Operating System
 
 > **"Does it let me *see* my life, or does it just *show me data* about my life?"**  
 > — *The Central Question, PLUTO Engineering Manifesto*
 
-PLUTO is a **local-first personal habit tracker, day planner, and life operating system** with two fully independent, native platform implementations:
-1. **macOS & iOS**: Built with Swift 6, SwiftUI, SwiftData, AppKit/UIKit, and CloudKit.
-2. **Android**: Built with Kotlin Multiplatform (KMP), Jetpack Compose, Material 3, and Room SQLite.
+[![Platform: macOS](https://img.shields.io/badge/Platform-macOS%2014.0%2B%20(Sonoma%20%2F%20Sequoia)-000000?style=for-the-badge&logo=apple&logoColor=white)](https://apple.com/macos)
+[![Swift: 6.0](https://img.shields.io/badge/Swift-6.0%20Strict%20Concurrency-F05138?style=for-the-badge&logo=swift&logoColor=white)](https://swift.org)
+[![Storage: SwiftData](https://img.shields.io/badge/Storage-Local--First%20SwiftData%20%2B%20SQLite-4A90E2?style=for-the-badge)](https://developer.apple.com/xcode/swiftdata/)
+[![MCP: Enabled](https://img.shields.io/badge/AI%20Protocol-Model%20Context%20Protocol%20(MCP)-8A2BE2?style=for-the-badge)](https://modelcontextprotocol.io)
 
-All personal user data lives strictly on-device — no mandatory backend, no cloud lock-in, zero network dependency for core functionality. In V3.5, PLUTO introduces an **invisible, privacy-first Alpha Telemetry engine** paired with a real-time **Creator Analytics Web Dossier**.
+**PLUTO** is a sovereign, local-first personal operating system for macOS engineered to unify daily time execution, task inventories, keystone habits, rich-text note synthesis, deep focus sessions, and long-term life horizons into a single fluid, Apple-native desktop canvas.
 
----
-
-## 🌟 The 6 Core Pillars Architecture
-
-PLUTO unifies all personal productivity and intentional living into 6 core pillars, organized to match the natural rhythm of human focus:
-
-```
-                  ┌──────────────────────────────────────────────┐
-                  │              🪐 PLUTO LIFE OS                │
-                  └──────┬───────┬───────┬───────┬───────┬───────┘
-                         │       │       │       │       │       │
-       ┌─────────────────┘       │       │       │       │       └─────────────────┐
-       ▼                         ▼       ▼       ▼       ▼                         ▼
-┌──────────────┐         ┌──────────────┐┌──────────────┐┌──────────────┐   ┌──────────────┐
-│  1. HABITS   │         │  2. TODAY    ││  3. TIME     ││  4. JOURNAL  │   │  5. LIFE     │
-│  Keystone    │         │  Plan & List ││  Focus/Pomo  ││  Daylight    │   │  Bucket List │
-│  Heatmaps    │         │  Timeline    ││  3D Audio    ││  Sleep/Refl. │   │  Benchmarks  │
-└──────────────┘         └──────────────┘└──────────────┘└──────────────┘   └──────────────┘
-                                                │
-                                                ▼
-                                         ┌──────────────┐
-                                         │  6. AUDIT    │
-                                         │  Milestones  │
-                                         │  Horizons    │
-                                         └──────────────┘
-```
-
-### 1. Habits (`checkmark.circle`)
-* **Keystone Habit Boards**: Configurable habits with custom icons, color indices, and daily targets.
-* **Metric Modes**: Binary check-off (`MetricType.binary`) vs quantitative cumulative amounts (`MetricType.quantitative`, e.g. miles, minutes, pages).
-* **365-Day Heatmap Matrix**: GitHub-style historical completion grids with O(1) palette lookup and DST grace-window aggregation.
-* **Streak Dynamics**: Real-time streak accumulation, longest streak caching, and flame badges (`🔥 1d`).
-
-### 2. Today (`sun.max`)
-* **Plan (Time-Blocking Timeline)**: Chronological vertical timeline rendering scheduled blocks with duration bubbles, free-gap duration labels, and an unscheduled backlog tray.
-* **List (GTD Backlog Inventory)**: Categorized task inventory (Today / Upcoming / Anytime) with priorities (`High`, `Med`, `Low`), due dates, and rich interactive subtasks with progress rings.
-* **Notion-Style Block Editor**: Slash-command (`/`) rich text workspace supporting headings, checklist blocks, dividers, quotes, and child tasks.
-
-### 3. Time (`timer`)
-* **Pomodoro Studio**: Dedicated focus sprints with configurable work/break intervals and smooth circular progress animations.
-* **3D Spatial Soundscapes**: High-fidelity procedural audio engine (Rain & Thunder, Forest Birds, Deep Space White Noise).
-* **Stopwatch & Countdown**: Flexible precision timers for deep work blocks.
-
-### 4. Journal (`book.closed`)
-* **Today's Log (Daylight Flow Routines)**: Morning and evening intentional rituals (Cold Shower, Magnesium, Sleep Skin Care, 10k Steps, Dinner).
-* **Sleep Tracker**: Wake/bedtime log, duration tracking, quality metrics, and overnight sleep debt estimation.
-* **Daily Reflection**: Structured prompt notes, clarity ratings (`Calm`, `Clear`, `Scattered`), and gratitude logging.
-* **Analyse**: 30-day consistency indices, monthly heatmaps, and habit correlation matrices.
-
-### 5. Life (`binoculars`)
-* **Personal Life Model**: Multi-tier inference engine deriving States (energy, stress, focus, mood) from signals, detecting Life Events, segmenting Chapters, and constructing a personal Relationship Graph.
-* **Bucket List & Benchmarks**: Multi-horizon dreams, milestone goals, and achievement badges (`🏆 Achieved` / `⏳ Target`).
-
-### 6. Audit (`slider.horizontal.3`)
-* **Strategic Life Audits**: Quarterly and annual review horizons for long-term calibration.
-* **Milestone Checkpoints**: Quantitative progress bars and horizon goal adjustment.
+> [!NOTE]
+> **Mobile Status Notice:** The iOS and Android platform targets are currently **on hold**. Engineering and product development are 100% focused on perfecting the flagship **macOS** experience.
 
 ---
 
-## 🛰️ Private Alpha Telemetry & Creator Analytics Dossier
+## 🏛 The 3-Domain Desktop Architecture
 
-For private alpha distribution, PLUTO includes an invisible background telemetry pipeline that streams tester interactions directly to a real-time Creator Web Dossier:
+PLUTO organizes all intentional living and productivity into 3 primary desktop domains, seamlessly navigated via a native macOS `NavigationSplitView` with Liquid Glass interactive controls:
+
+```
+                      ┌────────────────────────────────────────────────────────┐
+                      │                 🪐 PLUTO FOR macOS                     │
+                      └──────────────┬─────────────────┬───────────────────────┘
+                                     │                 │
+                ┌────────────────────┘                 └────────────────────┐
+                ▼                                                           ▼
+    ┌─────────────────────────┐                                 ┌─────────────────────────┐
+    │       1. TODAY          │                                 │       2. STUDIO         │
+    │  Living Day Execution   │                                 │ Knowledge & Synthesis  │
+    ├─────────────────────────┤                                 ├─────────────────────────┤
+    │ • Plan: Day Timeline    │                                 │ • Notes: BrainStorm     │
+    │ • List: GTD Tasks       │                                 │ • Journal: Apple Canvas │
+    │ • Time: Focus Studio    │                                 │ • Projects: PM Briefs   │
+    └─────────────────────────┘                                 └─────────────────────────┘
+                                             │
+                                             ▼
+                                ┌─────────────────────────┐
+                                │        3. LIFE          │
+                                │   Horizons & Atlases    │
+                                ├─────────────────────────┤
+                                │ • Mountain Trek Atlas   │
+                                │ • GeoJSON Travel Atlas  │
+                                │ • Bucket List / Badges  │
+                                └─────────────────────────┘
+```
+
+---
+
+## ☀️ 1. TODAY: The Living Day Execution Engine
+
+The `Today` workspace (`⌘1`) governs immediate diurnal execution through three specialized sub-modes:
+
+### ⏱ Plan Mode (Proportional Day Planner Timeline)
+* **Visual Time Blocking**: Chronological vertical timeline mapping scheduled tasks, meetings, and routines with proportional block heights and duration bubbles.
+* **Smart Adaptive Start**: Dynamically anchors the viewport to the current hour or earliest scheduled item with intelligent morning/evening lookaheads.
+* **Unscheduled Backlog Tray**: Slide-out tray holding unscheduled tasks due today for drag-to-time-block assignment.
+* **Natural Language Scheduler**: Fast-entry input field that infers start times and durations directly from human input (e.g., `"Deep work 2pm for 90m"`).
+
+### 📋 List Mode (High-Velocity GTD Task Inventory)
+* **Flat Continuous Inventory**: Fast, friction-free task management with 0–3 priority dot scales and custom category badges.
+* **Subtasks & Progress Rings**: Nested child tasks (`TodoItem.parentID`) with real-time radial completion meters.
+* **Document Detail Panel**: Calm document side-panel replacing bulky form controls with grouped cards, date/time chips, and recurrence selectors.
+* **MacBlockEditor (Rich Notion-Style Blocks)**: Slash-command enabled block editor embedded into task notes supporting Paragraphs, Headings (`H1`/`H2`/`H3`), Bullet lists, Numbered lists, Checklists with strikethrough, Quotes, and Dividers.
+
+### 🎧 Time Mode (Focus Room & Spatial Audio Studio)
+* **Pomodoro Focus Engine**: Interactive round-based focus sprint timer with configurable intervals, phase switches, and countdowns.
+* **Multi-Stem Spatial Audio Engine**: Procedural binaural soundscapes (5-Pole Rain & Thunder Matrix, Forest Birds, Deep Space White Noise, Polyphonic Chords) with logarithmic volume mixers.
+* **Curated Wallpaper Canvas**: Zero-latency local disk/RAM cached focus backgrounds with StudyStream aesthetics, inspiring quotes, and session duration tracking.
+
+---
+
+## ✨ 2. STUDIO: Sovereign Knowledge & Synthesis
+
+The `Studio` workspace (`⌘2`) unites document drafting, daily reflection, and project management:
+
+### 📝 Notes (BrainStorm — Apple Notes Surface)
+* **3-Column Split View**: Nested folder tree hierarchy, tag browser, and instant-search notes list.
+* **True Native Rich Text**: Full AppKit `NSTextView` integration supporting Bold, Italic, Underline, Strikethrough, Headings, Interactive Checklists, and Tables.
+* **Attachments & Quick Look**: Drag-and-drop file attachments with native macOS Quick Look previews (`Space`), In-Note Find (`⌘F`), and Link insertion (`⌘K`).
+* **Sovereign Storage**: RTF data persisted directly into SwiftData/SQLite without external sync dependencies.
+
+### 📖 Journal (Apple Journal Canvas)
+* **Daylight Flow Routines**: Morning & evening keystone rituals with completion tracking.
+* **Sleep Tracker**: Wake/bedtime log, duration analytics, and overnight sleep debt estimation.
+* **Rich Reflection Canvas**: Floating capsule toolbar with live audio recording drawer, typography popovers, photo picker, location tagging, and mood clarity ratings.
+* **Analyse Dashboard**: 30-day consistency indices, monthly heatmaps, and correlation matrices.
+
+### 💼 Projects (Command Center)
+* **Project Briefs**: Sovereign markdown/rich text briefs with phase segmentation.
+* **Phased Task Breakdown**: Sectional grouping (`WorkSection`) with milestone progress bars and task delegation.
+
+---
+
+## 🏔️ 3. LIFE: Horizons & Adventure Atlases
+
+The `Life` workspace (`⌘3`) provides high-altitude perspective across long-term goals and physical explorations:
+
+### 🗺 Mountain Atlas (Trek & Expedition Canvas)
+* **GPX Trail Engine**: Native parser and interactive elevation profile chart for mountaineering routes.
+* **Interactive Mapbox / MapKit Canvas**: Trail rendering with Indian mountain range and state boundary GeoJSON data.
+* **Expedition Passports**: High-res PDF document generation for completed expeditions, summit photo galleries, and mountaineer rank progression (`Bronze` ➔ `Silver` ➔ `Gold` ➔ `Summit Master`).
+* **Apple Watch Sync**: HealthKit and workout sync bridge for altitude, heart rate, and distance stats.
+
+### 🌏 Travel Atlas & Sovereign Bucket List
+* **State & District Boundary Visualizer**: Interactive travel atlas tracking visited regions across India and worldwide.
+* **Multi-Horizon Bucket List**: Multi-year life goals categorized by horizon, benchmark metrics, and trophy cabinet achievements (`🏆 Achieved` / `⏳ In Progress`).
+
+---
+
+## ⚡️ Model Context Protocol (MCP) Server
+
+PLUTO ships with a built-in **Model Context Protocol (MCP)** server (`mcp-server/`), allowing local AI agents (**Claude Desktop, Cursor, Antigravity IDE, Windsurf**) to read and write to your local Pluto operating system:
+
+```bash
+# Build the MCP server
+cd mcp-server
+npm install
+npm run build
+```
+
+### Connect to Claude Desktop
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+```json
+{
+  "mcpServers": {
+    "pluto": {
+      "command": "node",
+      "args": [
+        "/absolute/path/to/Plut0-main/mcp-server/build/index.js"
+      ]
+    }
+  }
+}
+```
+
+### Supported MCP Tool Capabilities (16 Tools)
+- **`get_daily_briefing`**: Summarizes today's scheduled blocks, open tasks, habits, and focus metrics.
+- **`manage_habits`**: Check-in, fetch streak heatmaps, and retrieve consistency stats.
+- **`manage_tasks`**: Create, time-block, reschedule, and complete tasks on the day planner.
+- **`query_journal`**: Search journal notes, sleep logs, and reflections.
+- **`brainstorm_notes`**: Create and search rich-text notes and folders in BrainStorm.
+
+---
+
+## 🛰 Private Alpha Telemetry & Live Web Dossier
+
+For private alpha testing, Pluto includes an invisible background telemetry pipeline that streams tester interactions to a real-time Creator Web Dossier:
 
 * **Live Web Dashboard**: [https://mihirmaru22.github.io/Plut0/](https://mihirmaru22.github.io/Plut0/)
-* **Direct PostgREST Supabase Ingestion**: Outbound HTTPS calls to `/rest/v1/alpha_testers`, `/rest/v1/alpha_events`, and `/rest/v1/alpha_state_snapshots`.
-* **Invisible Background Pipeline**: Operates asynchronously in background threads (`Task.detached`) with zero UI blocking, zero popups, and zero user-facing performance overhead.
-* **Local-First Disk Queue**: Queues events to sandboxed storage with automatic backpressure management (5,000 events / 25 MB disk cap) and offline exponential backoff retries.
-* **Dynamic Tester Switching**: The creator dashboard automatically identifies unique testers and renders their live 6-pillar dossier in real time.
+* **Direct PostgREST Supabase Ingestion**: Outbound HTTPS sync to `/rest/v1/alpha_testers`, `/rest/v1/alpha_events`, `/rest/v1/alpha_state_snapshots`, and `/rest/v1/alpha_crashes`.
+* **Zero-Observer Footprint**: Asynchronous execution via `Task.detached` with zero UI lag and no tester popups.
+* **Bounded Local Disk Queue**: 5,000-event / 25 MB FIFO disk limit with offline exponential backoff.
 
 ---
 
 ## 📁 Repository Structure
 
 ```
-LOCA---Local-First-Habit-Tracker/
-├── dashboard/                     # Creator Analytics Web Dossier (HTML5 / CSS / Vanilla JS)
-├── docs/                          # GitHub Pages live deployment mirror
-├── ios/                           # Native Swift / SwiftUI macOS + iOS Project
-│   ├── LOCA/                     # Shared SwiftData Models & iOS Views
-│   │   ├── Core/Models/          # HabitBoard, TodoItem, JournalNote, SleepEntry, UserProfile
-│   │   └── Persistence/          # ModelContainerFactory, PlutoDataResetManager, DebugSeeder
-│   ├── Loca_Mac/                 # Native macOS 14+ Sonoma NavigationSplitView Application
-│   │   ├── Habits/               # 3 Layouts: Bento Rings, Horizon Strips, Progress Matrix
-│   │   ├── Todo/                 # Day Planner Timeline + GTD List Backlog + Block Editor
-│   │   ├── Time/                 # Pomodoro Timer View + Spatial Soundscape Studio
-│   │   ├── Journal/              # Daylight Flow Routines + Sleep Card + Reflections
-│   │   ├── Life/                 # Life Horizon Matrix & Bucket List Detail Column
-│   │   ├── Audit/                # Strategic Life Audit Horizon Detail & Goal Editor
-│   │   ├── Settings/             # Mac Settings Studio & Notification Router
-│   │   ├── Platform/             # TelemetryEngine, TelemetryStorage, TelemetrySyncEngine
-│   │   ├── Menus/                # LOCACommands (macOS Menu Bar Commands & Keyboard Shortcuts)
-│   │   └── Loca_Mac.entitlements # Outbound network client permissions
-│   ├── Docs/                     # Architectural Decision Records, Manifesto & Specifications
+Plut0-main/
+├── ios/
+│   ├── Loca_Mac/                 # Native macOS 14+ Application Target (Pluto for Mac)
+│   │   ├── Window/               # MacRootView, MacSidebarView, Onboarding & Guides
+│   │   ├── Today/ & Todo/        # Day Planner, GTD List, MacBlockEditor, Projects
+│   │   ├── Studio/               # Unified Studio Workspace (Notes, Journal, Projects)
+│   │   ├── BrainStorm/           # Apple Notes Canvas, NSTextView, Folders, Tags
+│   │   ├── Journal/              # Apple Journal, Sleep Track, Daylight Routines
+│   │   ├── Time/ & FocusRoom/    # Pomodoro Timer, Spatial Audio DSP, Wallpapers
+│   │   ├── Life/                 # Mountain Atlas, GPX Engine, Travel Atlas, Passport PDF
+│   │   ├── Habits/               # Heatmaps, Progress Bars, Quantitative Habit Loggers
+│   │   ├── Audit/                # Milestone Horizons & Strategic Life Audits
+│   │   ├── Platform/             # Spotlight, Hotkeys, Telemetry, Diagnostics, Notifications
+│   │   ├── Settings/             # Mission Control, Chrono-Tunnel, Museum Gallery
+│   │   └── Menus/                # LOCACommands (macOS Menu Bar & Shortcuts)
+│   ├── LOCA/                     # Shared Core Models & SwiftData Schemas
+│   │   ├── Core/Models/          # HabitBoard, TodoItem, JournalNote, SleepEntry, BrainStorm
+│   │   └── Core/DesignSystem/    # DS Spacing, Typography, Color, and Motion Tokens
 │   └── LOCA.xcodeproj           # Xcode Project Configuration
-├── android/                       # Kotlin Multiplatform (KMP) Android Project
-│   ├── androidApp/                # Jetpack Compose UI
-│   └── shared/                    # Pure Kotlin domain logic & Room SQLite persistence
-├── build_android.sh               # One-command Android APK build script
-└── README.md
+├── mcp-server/                   # Model Context Protocol (MCP) Server for Local AI Integration
+├── supabase/                     # Schema SQL and Alpha Ingest Edge Functions
+├── dashboard/ & docs/            # Creator Analytics Web Dossier (GitHub Pages)
+└── create_dmg.sh                 # Production macOS DMG Packaging Script
 ```
 
 ---
 
-## 💻 macOS Application (Pluto for Mac)
+## 💻 Building & Running Pluto for Mac
 
-### Requirements
-* **macOS 14.0+ (Sonoma / Sequoia)**
-* **Xcode 16.0+**
+### System Requirements
+* **macOS 14.0+** (Sonoma / Sequoia)
+* **Xcode 16.0+** (with Swift 6 compiler toolchain)
+* **Apple Silicon (M1–M4) or Intel Mac**
 
-### Quick Start (Build & Run)
-1. Open `ios/LOCA.xcodeproj` in Xcode 16+.
-2. In the top scheme dropdown, select **`Loca_Mac`** and destination **`My Mac`**.
-3. Press **`⌘ + R`** to compile and run **Pluto**.
-
-### Distributing as a `.dmg`
-1. In Xcode: Select target **`Loca_Mac`** ➔ **Product ➔ Archive**.
-2. In the Organizer window: Click **Distribute App ➔ Direct Distribution / Copy App**.
-3. Package the exported `Pluto.app` into `Pluto.dmg`:
+### Build in Xcode
+1. Clone or open the project folder in Xcode:
    ```bash
-   hdiutil create -volname "Pluto" -srcfolder "path/to/Pluto.app" -ov -format UDZO "Pluto.dmg"
+   open ios/LOCA.xcodeproj
    ```
+2. Select the **`Loca_Mac`** target and destination **`My Mac`**.
+3. Press **`⌘ + R`** to compile and launch **Pluto**.
+
+### Build a Standalone `.dmg` Installer
+Run the bundled release script to package a signed distribution DMG:
+```bash
+./create_dmg.sh
+```
 
 ---
 
-## 📱 Android Application
+## ⌨️ Essential Keyboard Shortcuts
 
-### Quick Start (Build APK)
-```bash
-# Build Debug APK
-./build_android.sh
-
-# Build Release APK
-./build_android.sh release
-```
-
-The compiled APK lands at:
-```
-android/androidApp/build/outputs/apk/debug/androidApp-debug.apk
-```
-
-Install to a connected Android device:
-```bash
-adb install -r android/androidApp/build/outputs/apk/debug/androidApp-debug.apk
-```
-
-### Tech Stack
-* **Language**: Kotlin Multiplatform (KMP)
-* **UI**: Jetpack Compose + Material 3
-* **Persistence**: Room (SQLite)
-* **Health Data**: Health Connect API
-* **Min SDK**: Android 8.0 (API 26) / Target SDK: API 35
+| Shortcut | Action |
+| :--- | :--- |
+| **`⌘ + 1`** | Navigate to **Today** (Plan / List / Time) |
+| **`⌘ + 2`** | Navigate to **Studio** (Notes / Journal / Projects) |
+| **`⌘ + 3`** | Navigate to **Life** (Mountain Atlas / Travel / Bucket List) |
+| **`⌘ + 4`** | Navigate to **Settings & Mission Control** |
+| **`⌘ + N`** | Quick Add new Task / Note / Habit |
+| **`⌘ + F`** | Search across active workspace / In-Note Find |
+| **`⌘ + K`** | Insert Link in Rich Text Editor |
+| **`⌥ + Space`**| Open System-Wide **Pluto Quick Action HUD** |
+| **`Space`** | Quick Look preview for selected document or attachment |
 
 ---
 
-## 🏛️ Engineering Principles & Invariants
+## 🏛️ Engineering Invariants
 
-* **Local-First Ground Truth**: SwiftData (macOS/iOS) and Room (Android) serve as the authoritative single source of truth. The app functions 100% offline with zero network dependency.
-* **Strict Concurrency**: Built with Swift 6 strict concurrency (`@MainActor`, `Sendable`, isolated background tasks).
-* **Zero Unique Attributes for CloudKit**: Avoids `@Attribute(.unique)` to allow conflict-free multi-device peer synchronization.
-* **Append-Only Completion Pattern**: Task and habit completions mutate timestamps (`completedAt = Date()` / `completedAt = nil`) without destructive deletes.
-* **Soft Delete Architecture**: Entity deletions set `archivedAt = Date()`, preserving historical referential integrity.
+* **Local-First Ground Truth**: SwiftData backed by SQLite is the single authoritative source of truth. All features function 100% offline.
+* **Strict Concurrency**: Fully compliant with Swift 6 strict concurrency (`@MainActor`, `Sendable`, nonisolated DSP contexts).
+* **Zero Unique Attributes for CloudKit**: Avoids `@Attribute(.unique)` to allow conflict-free peer synchronization.
+* **Soft Delete Architecture**: Entity deletion sets `archivedAt = Date()` or `deletedAt = Date()`, ensuring zero data loss and historical referential integrity.
+* **Append-Only Completions**: Task completions mutate timestamp records (`completedAt = Date()` / `completedAt = nil`) without destructive row deletes.
 
 ---
 
