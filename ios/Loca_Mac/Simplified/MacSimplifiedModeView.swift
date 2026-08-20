@@ -57,6 +57,26 @@ struct MacSimplifiedModeView: View {
         totalDailyItems == 0 ? 0 : Double(completedDailyItems) / Double(totalDailyItems)
     }
 
+    private var maxStreak: Int {
+        habits.map(\.currentStreak).max() ?? 0
+    }
+
+    private var nextBreakTime: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        if hour < 12 { return "12:30" }
+        if hour < 17 { return "17:00" }
+        return "21:00"
+    }
+
+    private var autoDetectedType: QuickAddType {
+        let lower = quickAddText.lowercased()
+        let habitKeywords = ["daily", "every day", "habit", "streak", "drink", "water", "meditate", "read", "steps", "workout", "gym", "sleep"]
+        if habitKeywords.contains(where: { lower.contains($0) }) {
+            return .habit
+        }
+        return quickAddType
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
@@ -72,8 +92,8 @@ struct MacSimplifiedModeView: View {
                     graduationCard
                 }
 
-                // Card 1: Fast Frictionless Quick Add
-                quickAddCard
+                // Command Center Cockpit Strip (Focus Goal, Smart Input, Live Dials)
+                commandCenterCockpitStrip
 
                 // Card 2: Starter Keystone Habit Launcher (if 0 habits)
                 if habits.isEmpty {
@@ -271,68 +291,126 @@ struct MacSimplifiedModeView: View {
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.08), lineWidth: 1))
     }
 
-    // MARK: - Card 1: Fast Frictionless Quick Add
+    // MARK: - Command Center Cockpit Strip (Focus Goal · Omni Input · Live Telemetry)
 
-    private var quickAddCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                // Type Selector Pill (Task vs Habit)
-                Picker("", selection: $quickAddType) {
-                    Text("Task").tag(QuickAddType.task)
-                    Text("Keystone Habit").tag(QuickAddType.habit)
-                }
-                .pickerStyle(.segmented)
-                .frame(width: 170)
+    private var commandCenterCockpitStrip: some View {
+        VStack(spacing: 10) {
+            // Main Cockpit Control Strip
+            HStack(spacing: 12) {
 
-                if quickAddType == .task {
-                    // Priority Selector
-                    Picker("", selection: $quickAddPriority) {
-                        Text("Low").tag(0)
-                        Text("Med").tag(1)
-                        Text("High").tag(2)
+                // LEFT: Current Focus Goal Indicator
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(Color(red: 0.45, green: 0.85, blue: 0.55))
+                        .frame(width: 8, height: 8)
+                        .overlay(Circle().stroke(Color.white.opacity(0.3), lineWidth: 1))
+
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("FOCUS GOAL")
+                            .font(.system(size: 8.5, weight: .bold))
+                            .tracking(0.5)
+                            .foregroundStyle(Color.white.opacity(0.45))
+
+                        Text("Deep Work: 25m")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundStyle(Color.white)
                     }
-                    .pickerStyle(.segmented)
-                    .frame(width: 140)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+
+                Divider()
+                    .frame(height: 24)
+                    .opacity(0.2)
+
+                // CENTER: Smart Omni-Input Line
+                HStack(spacing: 8) {
+                    Image(systemName: autoDetectedType == .habit ? "sparkles" : "plus.circle.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(autoDetectedType == .habit ? Color(red: 0.95, green: 0.77, blue: 0.25) : Color(red: 0.35, green: 0.65, blue: 0.95))
+
+                    TextField("Pilot your day: type a task or habit… (↵ to save)", text: $quickAddText)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(Color.white)
+                        .onSubmit {
+                            submitQuickAdd()
+                        }
+
+                    if !quickAddText.isEmpty {
+                        // Smart Auto-detected Intent Tag
+                        Text(autoDetectedType == .habit ? "HABIT" : "TASK")
+                            .font(.system(size: 9, weight: .bold, design: .monospaced))
+                            .foregroundStyle(Color.white.opacity(0.7))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.white.opacity(0.12), in: Capsule())
+
+                        Button(action: submitQuickAdd) {
+                            Image(systemName: "arrow.up.circle.fill")
+                                .font(.system(size: 16))
+                                .foregroundStyle(Color(red: 0.95, green: 0.77, blue: 0.25))
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
 
-                Spacer()
-            }
+                Divider()
+                    .frame(height: 24)
+                    .opacity(0.2)
 
-            HStack(spacing: 10) {
-                Image(systemName: quickAddType == .task ? "plus.circle.fill" : "sparkles")
-                    .font(.system(size: 15))
-                    .foregroundStyle(Color.white.opacity(0.4))
+                // RIGHT: Live Telemetry Vitual Dials
+                HStack(spacing: 12) {
+                    // 1. Streak 🔥
+                    HStack(spacing: 4) {
+                        Image(systemName: "flame.fill")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color(red: 0.95, green: 0.55, blue: 0.25))
+                        Text("\(maxStreak)d")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundStyle(Color.white)
+                    }
+                    .help("Current best active streak")
 
-                TextField(
-                    quickAddType == .task
-                        ? "What needs to get done today? (Press Enter)"
-                        : "Name a daily keystone habit… (Press Enter)",
-                    text: $quickAddText
-                )
-                .textFieldStyle(.plain)
-                .font(.system(size: 14))
-                .foregroundStyle(Color.white)
-                .onSubmit {
-                    submitQuickAdd()
-                }
-
-                if !quickAddText.isEmpty {
-                    Button(action: submitQuickAdd) {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .font(.system(size: 18))
+                    // 2. Energy / Momentum ⚡️
+                    HStack(spacing: 3) {
+                        Image(systemName: "bolt.fill")
+                            .font(.system(size: 11))
                             .foregroundStyle(Color(red: 0.95, green: 0.77, blue: 0.25))
+                        Text("\(Int(dailyProgress * 100))%")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundStyle(Color.white)
                     }
-                    .buttonStyle(.plain)
+                    .help("Daily momentum & completion score")
+
+                    // 3. Next Break 🕒
+                    HStack(spacing: 4) {
+                        Image(systemName: "clock.fill")
+                            .font(.system(size: 10))
+                            .foregroundStyle(Color(red: 0.55, green: 0.65, blue: 0.95))
+                        Text(nextBreakTime)
+                            .font(.system(size: 10.5, weight: .medium, design: .monospaced))
+                            .foregroundStyle(Color.white.opacity(0.7))
+                    }
+                    .help("Next diurnal focus break target")
                 }
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .background(Color.black.opacity(0.3), in: RoundedRectangle(cornerRadius: 8))
-            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.12), lineWidth: 1))
+            .background(Color.black.opacity(0.40), in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.12), lineWidth: 1))
         }
-        .padding(16)
-        .background(Color.white.opacity(0.03), in: RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.06), lineWidth: 1))
+        .padding(14)
+        .background(
+            LinearGradient(
+                colors: [Color.white.opacity(0.06), Color.white.opacity(0.02)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ),
+            in: RoundedRectangle(cornerRadius: 14)
+        )
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.08), lineWidth: 1))
     }
 
     // MARK: - Card 2: Starter Habit Setup (when 0 habits exist)
@@ -719,7 +797,7 @@ struct MacSimplifiedModeView: View {
         let text = quickAddText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
 
-        if quickAddType == .task {
+        if autoDetectedType == .task {
             let task = TodoItem(title: text, priority: quickAddPriority)
             modelContext.insert(task)
         } else {
