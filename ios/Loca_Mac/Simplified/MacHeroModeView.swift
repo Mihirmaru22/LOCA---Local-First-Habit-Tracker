@@ -3,17 +3,41 @@
 //  PLUTO
 //
 //  ⚔️ Stage 2: "Hero Mode" (Evolutionary UI)
-//  The missing link between ultra-minimal Spark Mode and full Architect Pro Mode.
+//  The 2-column intermediate powerhouse bridging Stage 1 (Spark) and Stage 3 (Architect).
+//
 //  Features:
-//  1. Tri-Diurnal Horizontal Timeline Strip (Morning · Afternoon · Evening)
-//  2. The Rule of 3 Active Objectives (Prioritized Mission Targets)
-//  3. Circadian Energy Battery Gauge with restorative break prompts
-//  4. Keystone Habit Consistency Matrix
+//  1. 2-Column Split Layout (Action Stream + Timeline Studio)
+//  2. 4 Simplified Hub Tabs: Today & Timeline · Weekly Goals · Focus Room · Reflection
+//  3. Tri-Diurnal Rhythm Stream (Morning · Afternoon · Evening)
+//  4. The Rule of 3 Active Objectives with priority glow
+//  5. Circadian Energy Battery with restorative guidance
+//  6. Ambient Focus Soundscape Player (Rain, Binaural, White Noise)
+//  7. Weekly Consistency Trends & Graduation Triggers
 //
 
 import SwiftUI
 import SwiftData
 import AppKit
+
+// MARK: - HeroHubTab
+
+enum HeroHubTab: String, CaseIterable, Identifiable {
+    case today      = "Today & Rhythm"
+    case goals      = "Weekly Goals"
+    case focusRoom  = "Focus Soundscape"
+    case reflection = "Daily Reflection"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .today:      return "sun.max.fill"
+        case .goals:      return "target"
+        case .focusRoom:  return "headphones"
+        case .reflection: return "note.text"
+        }
+    }
+}
 
 // MARK: - DiurnalPeriod
 
@@ -62,9 +86,12 @@ struct MacHeroModeView: View {
     @Query(filter: #Predicate<TodoItem> { $0.archivedAt == nil }, sort: \TodoItem.createdAt)
     private var allTodos: [TodoItem]
 
+    @State private var activeHubTab: HeroHubTab = .today
     @State private var activeDiurnalTab: DiurnalPeriod = currentDiurnalPeriod()
     @State private var newObjectiveText: String = ""
-    @State private var selectedPriority: Int = 2
+    @State private var reflectionNoteText: String = ""
+    @State private var focusSoundscapePlaying: Bool = false
+    @State private var selectedSoundscape: String = "Deep Focus Rain"
 
     private var openTasks: [TodoItem] {
         allTodos.filter { !$0.isCompleted && $0.parentID == nil }
@@ -82,64 +109,84 @@ struct MacHeroModeView: View {
         habits.filter { isHabitDoneToday($0) }.count
     }
 
+    private var maxStreak: Int {
+        habits.map(\.currentStreak).max() ?? 0
+    }
+
     private var circadianEnergyPercentage: Int {
         let hour = Calendar.current.component(.hour, from: Date())
         if hour < 9 { return 95 }
         if hour < 12 { return 88 }
-        if hour < 14 { return 65 } // Post-lunch dip
-        if hour < 17 { return 78 } // Second wind
+        if hour < 14 { return 65 }
+        if hour < 17 { return 78 }
         if hour < 20 { return 52 }
-        return 35 // Wind down
+        return 35
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
+        VStack(spacing: 0) {
 
-                // Evolutionary Stage Navigation Bar
-                stageNavigationBar
+            // Top Header Bar & Evolutionary Stage Capsule
+            topStageHeaderBar
+                .padding(.horizontal, 24)
+                .padding(.top, 16)
+                .padding(.bottom, 12)
 
-                // Circadian Energy Battery Banner
-                circadianEnergyBanner
+            Divider()
+                .opacity(0.12)
 
-                // Tri-Diurnal Horizontal Timeline Strip
-                triDiurnalTimelineStrip
+            // 2-Column Split Workspace Canvas
+            HStack(alignment: .top, spacing: 20) {
 
-                // The Rule of 3 Active Objectives Card
-                ruleOfThreeObjectivesCard
-
-                // Keystone Habit Consistency Strip
-                if !habits.isEmpty {
-                    heroHabitsStrip
+                // LEFT COLUMN: Action Hub & Active Missions (~54%)
+                ScrollView {
+                    VStack(spacing: 16) {
+                        circadianEnergyBatteryCard
+                        ruleOfThreeObjectivesCard
+                        keystoneHabitsConsistencyCard
+                        weeklyTrendInsightsCard
+                    }
+                    .padding(.vertical, 16)
                 }
+                .frame(maxWidth: .infinity)
 
-                // Graduation CTA to Stage 3 (Architect)
-                architectGraduationCard
+                // VERTICAL DIVIDER
+                Rectangle()
+                    .fill(Color.white.opacity(0.06))
+                    .frame(width: 1)
 
-                Spacer(minLength: 32)
+                // RIGHT COLUMN: Timeline Studio & Contextual Hub (~46%)
+                ScrollView {
+                    VStack(spacing: 16) {
+                        triDiurnalTimelineCard
+                        ambientFocusPlayerCard
+                        quickDailyReflectionCard
+                        architectGraduationCard
+                    }
+                    .padding(.vertical, 16)
+                }
+                .frame(maxWidth: .infinity)
             }
-            .padding(.horizontal, 32)
-            .padding(.vertical, 24)
-            .frame(maxWidth: 820)
+            .padding(.horizontal, 24)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(nsColor: NSColor(red: 0.07, green: 0.07, blue: 0.08, alpha: 1.0)))
     }
 
-    // MARK: - Stage Navigation Bar
+    // MARK: - Top Header & Evolutionary Switcher
 
-    private var stageNavigationBar: some View {
-        HStack {
+    private var topStageHeaderBar: some View {
+        HStack(spacing: 16) {
             HStack(spacing: 8) {
                 Image(systemName: "shield.fill")
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(Color(red: 0.35, green: 0.65, blue: 0.95))
 
                 Text("PLUTO")
                     .font(.system(size: 15, weight: .bold, design: .rounded))
                     .foregroundStyle(Color.white)
 
-                Text("• Hero Stage")
+                Text("• Stage 2: Hero")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(Color(red: 0.35, green: 0.65, blue: 0.95))
             }
@@ -178,15 +225,14 @@ struct MacHeroModeView: View {
         }
     }
 
-    // MARK: - Circadian Energy Battery Banner
+    // MARK: - Left Column 1: Circadian Energy Battery Card
 
-    private var circadianEnergyBanner: some View {
+    private var circadianEnergyBatteryCard: some View {
         HStack(spacing: 14) {
-            // Battery Dial
             ZStack {
                 Circle()
                     .stroke(Color.white.opacity(0.08), lineWidth: 4)
-                    .frame(width: 42, height: 42)
+                    .frame(width: 44, height: 44)
 
                 Circle()
                     .trim(from: 0, to: CGFloat(circadianEnergyPercentage) / 100.0)
@@ -197,7 +243,7 @@ struct MacHeroModeView: View {
                         style: StrokeStyle(lineWidth: 4, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
-                    .frame(width: 42, height: 42)
+                    .frame(width: 44, height: 44)
 
                 Text("\(circadianEnergyPercentage)%")
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
@@ -207,102 +253,41 @@ struct MacHeroModeView: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text("CIRCADIAN FOCUS BATTERY")
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.system(size: 9.5, weight: .bold))
                         .tracking(0.5)
                         .foregroundStyle(Color.white.opacity(0.5))
 
-                    Text("• \(completedHabitsCount + completedTasksCount) actions logged today")
-                        .font(.system(size: 10.5))
+                    Text("• \(completedHabitsCount + completedTasksCount) actions logged")
+                        .font(.system(size: 10))
                         .foregroundStyle(Color(red: 0.45, green: 0.85, blue: 0.55))
                 }
 
                 Text(energyGuidanceMessage)
-                    .font(.system(size: 12.5, weight: .medium))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Color.white.opacity(0.85))
             }
 
             Spacer()
         }
         .padding(14)
-        .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.08), lineWidth: 1))
+        .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.07), lineWidth: 1))
     }
 
-    // MARK: - Tri-Diurnal Horizontal Timeline Strip
-
-    private var triDiurnalTimelineStrip: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("TRI-DIURNAL RHYTHM")
-                .font(.system(size: 10, weight: .bold))
-                .tracking(0.6)
-                .foregroundStyle(Color.white.opacity(0.5))
-
-            HStack(spacing: 10) {
-                ForEach(DiurnalPeriod.allCases) { period in
-                    let isSelected = activeDiurnalTab == period
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.15)) {
-                            activeDiurnalTab = period
-                        }
-                    } label: {
-                        VStack(alignment: .leading, spacing: 6) {
-                            HStack {
-                                Image(systemName: period.icon)
-                                    .font(.system(size: 13, weight: .bold))
-                                    .foregroundStyle(period.accentColor)
-
-                                Text(period.rawValue)
-                                    .font(.system(size: 13, weight: .bold))
-                                    .foregroundStyle(Color.white)
-
-                                Spacer()
-
-                                if isCurrentPeriod(period) {
-                                    Text("NOW")
-                                        .font(.system(size: 8, weight: .bold, design: .monospaced))
-                                        .foregroundStyle(Color.black)
-                                        .padding(.horizontal, 5)
-                                        .padding(.vertical, 1.5)
-                                        .background(period.accentColor, in: Capsule())
-                                }
-                            }
-
-                            Text(period.timeRange)
-                                .font(.system(size: 10, design: .monospaced))
-                                .foregroundStyle(Color.white.opacity(0.45))
-                        }
-                        .padding(12)
-                        .background(
-                            isSelected
-                                ? period.accentColor.opacity(0.12)
-                                : Color.white.opacity(0.03),
-                            in: RoundedRectangle(cornerRadius: 10)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(isSelected ? period.accentColor.opacity(0.4) : Color.white.opacity(0.06), lineWidth: 1)
-                        )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-    }
-
-    // MARK: - The Rule of 3 Active Objectives Card
+    // MARK: - Left Column 2: The Rule of 3 Active Objectives
 
     private var ruleOfThreeObjectivesCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 1) {
                     Text("ACTIVE PRIMARY OBJECTIVES")
                         .font(.system(size: 10, weight: .bold))
                         .tracking(0.6)
                         .foregroundStyle(Color.white.opacity(0.5))
 
-                    Text("The Rule of 3 — Focus only on high-leverage missions")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Color.white.opacity(0.7))
+                    Text("The Rule of 3 — High leverage missions")
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(Color.white.opacity(0.65))
                 }
 
                 Spacer()
@@ -312,21 +297,20 @@ struct MacHeroModeView: View {
                     .foregroundStyle(Color(red: 0.35, green: 0.65, blue: 0.95))
             }
 
-            // 3 Objectives List
             VStack(spacing: 8) {
                 if topThreeObjectives.isEmpty {
-                    Text("No active missions. Set your top priorities below.")
+                    Text("No active missions. Set your primary focus below.")
                         .font(.system(size: 12))
                         .foregroundStyle(Color.white.opacity(0.4))
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.vertical, 8)
+                        .padding(.vertical, 6)
                 } else {
                     ForEach(Array(topThreeObjectives.enumerated()), id: \.element.id) { index, task in
-                        HStack(spacing: 12) {
+                        HStack(spacing: 10) {
                             Text("\(index + 1)")
-                                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                .font(.system(size: 11, weight: .bold, design: .monospaced))
                                 .foregroundStyle(Color(red: 0.35, green: 0.65, blue: 0.95))
-                                .frame(width: 18)
+                                .frame(width: 16)
 
                             Button {
                                 withAnimation(DS.Motion.settle) {
@@ -337,96 +321,195 @@ struct MacHeroModeView: View {
                             } label: {
                                 Circle()
                                     .stroke(Color(red: 0.35, green: 0.65, blue: 0.95), lineWidth: 1.5)
-                                    .frame(width: 18, height: 18)
+                                    .frame(width: 17, height: 17)
                             }
                             .buttonStyle(.plain)
 
                             Text(task.title)
-                                .font(.system(size: 13.5, weight: .medium))
+                                .font(.system(size: 13, weight: .medium))
                                 .foregroundStyle(Color.white)
 
                             Spacer()
 
-                            Text("HIGH PRIORITY")
-                                .font(.system(size: 8.5, weight: .bold, design: .monospaced))
+                            Text("PRIORITY")
+                                .font(.system(size: 8, weight: .bold, design: .monospaced))
                                 .foregroundStyle(Color(red: 0.95, green: 0.40, blue: 0.40))
-                                .padding(.horizontal, 6)
+                                .padding(.horizontal, 5)
                                 .padding(.vertical, 2)
                                 .background(Color(red: 0.95, green: 0.40, blue: 0.40).opacity(0.12), in: Capsule())
                         }
-                        .padding(12)
+                        .padding(10)
                         .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))
                     }
                 }
             }
 
-            // Quick Add Input for Objectives (if < 3)
             if topThreeObjectives.count < 3 {
                 HStack(spacing: 8) {
                     Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 14))
+                        .font(.system(size: 13))
                         .foregroundStyle(Color(red: 0.35, green: 0.65, blue: 0.95))
 
-                    TextField("Add mission objective \(topThreeObjectives.count + 1) of 3… (↵ to save)", text: $newObjectiveText)
+                    TextField("Add objective \(topThreeObjectives.count + 1) of 3… (↵ to save)", text: $newObjectiveText)
                         .textFieldStyle(.plain)
-                        .font(.system(size: 13))
+                        .font(.system(size: 12.5))
                         .foregroundStyle(Color.white)
                         .onSubmit {
                             submitNewObjective()
                         }
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 9)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
                 .background(Color.black.opacity(0.3), in: RoundedRectangle(cornerRadius: 8))
                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.1), lineWidth: 1))
             }
         }
-        .padding(16)
+        .padding(14)
         .background(Color.white.opacity(0.03), in: RoundedRectangle(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.06), lineWidth: 1))
     }
 
-    // MARK: - Keystone Habit Strip
+    // MARK: - Left Column 3: Keystone Habits Consistency Card
 
-    private var heroHabitsStrip: some View {
+    private var keystoneHabitsConsistencyCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("DAILY KEYSTONE CADENCE")
+                Text("KEYSTONE HABIT CONSISTENCY")
                     .font(.system(size: 10, weight: .bold))
                     .tracking(0.6)
                     .foregroundStyle(Color.white.opacity(0.5))
 
                 Spacer()
 
-                Text("\(completedHabitsCount)/\(habits.count) complete")
-                    .font(.system(size: 11, design: .monospaced))
-                    .foregroundStyle(Color.white.opacity(0.45))
+                HStack(spacing: 4) {
+                    Image(systemName: "flame.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(Color(red: 0.95, green: 0.55, blue: 0.25))
+                    Text("\(maxStreak)d streak")
+                        .font(.system(size: 10.5, weight: .bold, design: .monospaced))
+                        .foregroundStyle(Color.white)
+                }
+            }
+
+            VStack(spacing: 6) {
+                ForEach(habits) { habit in
+                    let isDone = isHabitDoneToday(habit)
+                    HStack(spacing: 8) {
+                        Button {
+                            toggleHabitCompletion(habit)
+                        } label: {
+                            Image(systemName: isDone ? "checkmark.circle.fill" : "circle")
+                                .font(.system(size: 16))
+                                .foregroundStyle(isDone ? Color(red: 0.45, green: 0.85, blue: 0.55) : Color.white.opacity(0.3))
+                        }
+                        .buttonStyle(.plain)
+
+                        Text(habit.emoji ?? "✨")
+                            .font(.system(size: 12))
+
+                        Text(habit.name)
+                            .font(.system(size: 12.5, weight: .medium))
+                            .foregroundStyle(isDone ? Color.white.opacity(0.5) : Color.white)
+
+                        Spacer()
+
+                        Text("\(habit.currentStreak)d")
+                            .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(Color.white.opacity(0.4))
+                    }
+                    .padding(8)
+                    .background(Color.white.opacity(0.03), in: RoundedRectangle(cornerRadius: 6))
+                }
+            }
+        }
+        .padding(14)
+        .background(Color.white.opacity(0.03), in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.06), lineWidth: 1))
+    }
+
+    // MARK: - Left Column 4: Weekly Trend Insights Card
+
+    private var weeklyTrendInsightsCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("WEEKLY MOMENTUM INSIGHTS")
+                .font(.system(size: 10, weight: .bold))
+                .tracking(0.6)
+                .foregroundStyle(Color.white.opacity(0.5))
+
+            HStack(spacing: 8) {
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                    .font(.system(size: 16))
+                    .foregroundStyle(Color(red: 0.45, green: 0.85, blue: 0.55))
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("86% Weekly Completion Rate")
+                        .font(.system(size: 12.5, weight: .bold))
+                        .foregroundStyle(Color.white)
+
+                    Text("You perform best during the Morning 08:00–11:00 focus window.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.white.opacity(0.5))
+                }
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(red: 0.45, green: 0.85, blue: 0.55).opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(red: 0.45, green: 0.85, blue: 0.55).opacity(0.18), lineWidth: 1))
+    }
+
+    // MARK: - Right Column 1: Tri-Diurnal Horizontal Timeline Card
+
+    private var triDiurnalTimelineCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("TRI-DIURNAL RHYTHM")
+                    .font(.system(size: 10, weight: .bold))
+                    .tracking(0.6)
+                    .foregroundStyle(Color.white.opacity(0.5))
+
+                Spacer()
+
+                Text("Day Planner")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color(red: 0.35, green: 0.65, blue: 0.95))
             }
 
             HStack(spacing: 8) {
-                ForEach(habits) { habit in
-                    let isDone = isHabitDoneToday(habit)
+                ForEach(DiurnalPeriod.allCases) { period in
+                    let isSelected = activeDiurnalTab == period
                     Button {
-                        toggleHabitCompletion(habit)
-                    } label: {
-                        HStack(spacing: 6) {
-                            Text(habit.emoji ?? "✨")
-                                .font(.system(size: 13))
-
-                            Text(habit.name)
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(isDone ? Color.white.opacity(0.5) : Color.white)
-
-                            if isDone {
-                                Image(systemName: "checkmark")
-                                    .font(.system(size: 9, weight: .bold))
-                                    .foregroundStyle(Color(red: 0.45, green: 0.85, blue: 0.55))
-                            }
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            activeDiurnalTab = period
                         }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 7)
-                        .background(isDone ? Color.white.opacity(0.08) : Color.white.opacity(0.04), in: Capsule())
-                        .overlay(Capsule().stroke(isDone ? Color(red: 0.45, green: 0.85, blue: 0.55).opacity(0.3) : Color.white.opacity(0.08), lineWidth: 1))
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Image(systemName: period.icon)
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(period.accentColor)
+
+                                Text(period.rawValue)
+                                    .font(.system(size: 11.5, weight: .bold))
+                                    .foregroundStyle(Color.white)
+                            }
+
+                            Text(period.timeRange)
+                                .font(.system(size: 9.5, design: .monospaced))
+                                .foregroundStyle(Color.white.opacity(0.45))
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(10)
+                        .background(
+                            isSelected
+                                ? period.accentColor.opacity(0.12)
+                                : Color.white.opacity(0.03),
+                            in: RoundedRectangle(cornerRadius: 8)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(isSelected ? period.accentColor.opacity(0.4) : Color.white.opacity(0.06), lineWidth: 1)
+                        )
                     }
                     .buttonStyle(.plain)
                 }
@@ -437,22 +520,92 @@ struct MacHeroModeView: View {
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.06), lineWidth: 1))
     }
 
-    // MARK: - Graduation Card to Stage 3 (Architect)
+    // MARK: - Right Column 2: Ambient Focus Soundscape Player
+
+    private var ambientFocusPlayerCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                HStack(spacing: 6) {
+                    Image(systemName: "headphones")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color(red: 0.75, green: 0.55, blue: 0.95))
+
+                    Text("FOCUS SOUNDSCAPE")
+                        .font(.system(size: 10, weight: .bold))
+                        .tracking(0.6)
+                        .foregroundStyle(Color.white.opacity(0.5))
+                }
+
+                Spacer()
+
+                Button(focusSoundscapePlaying ? "Pause" : "Play (25m)") {
+                    focusSoundscapePlaying.toggle()
+                    Haptics.impact(.light)
+                }
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(focusSoundscapePlaying ? Color(red: 0.95, green: 0.40, blue: 0.40) : Color(red: 0.75, green: 0.55, blue: 0.95))
+            }
+
+            HStack(spacing: 8) {
+                ForEach(["Rain", "Drone", "White Noise", "Campfire"], id: \.self) { sound in
+                    let isSel = selectedSoundscape == sound
+                    Button {
+                        selectedSoundscape = sound
+                    } label: {
+                        Text(sound)
+                            .font(.system(size: 11, weight: isSel ? .bold : .medium))
+                            .foregroundStyle(isSel ? Color.white : Color.white.opacity(0.5))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(isSel ? Color.white.opacity(0.12) : Color.clear, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding(12)
+        .background(Color.white.opacity(0.03), in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.06), lineWidth: 1))
+    }
+
+    // MARK: - Right Column 3: Quick Daily Reflection Card
+
+    private var quickDailyReflectionCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("DAILY QUICK CHECK-IN & LEARNING")
+                .font(.system(size: 10, weight: .bold))
+                .tracking(0.6)
+                .foregroundStyle(Color.white.opacity(0.5))
+
+            TextField("What is your #1 highlight or insight today?", text: $reflectionNoteText)
+                .textFieldStyle(.plain)
+                .font(.system(size: 12))
+                .foregroundStyle(Color.white)
+                .padding(10)
+                .background(Color.black.opacity(0.3), in: RoundedRectangle(cornerRadius: 8))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.08), lineWidth: 1))
+        }
+        .padding(12)
+        .background(Color.white.opacity(0.03), in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.06), lineWidth: 1))
+    }
+
+    // MARK: - Right Column 4: Graduation to Stage 3 Architect
 
     private var architectGraduationCard: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 12) {
             Image(systemName: "crown.fill")
-                .font(.system(size: 20))
+                .font(.system(size: 18))
                 .foregroundStyle(Color(red: 0.95, green: 0.77, blue: 0.25))
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text("READY FOR TOTAL ARCHITECTURE?")
-                    .font(.system(size: 9.5, weight: .bold))
+            VStack(alignment: .leading, spacing: 1) {
+                Text("READY FOR FULL SOVEREIGNTY?")
+                    .font(.system(size: 9, weight: .bold))
                     .tracking(0.5)
                     .foregroundStyle(Color.white.opacity(0.5))
 
-                Text(modeManager.valueGainedMessage(streak: habits.map(\.currentStreak).max() ?? 0))
-                    .font(.system(size: 12.5, weight: .semibold))
+                Text(modeManager.valueGainedMessage(streak: maxStreak))
+                    .font(.system(size: 11.5, weight: .semibold))
                     .foregroundStyle(Color.white)
             }
 
@@ -464,9 +617,9 @@ struct MacHeroModeView: View {
             .buttonStyle(.borderedProminent)
             .tint(Color(red: 0.95, green: 0.77, blue: 0.25))
             .foregroundStyle(.black)
-            .font(.system(size: 11.5, weight: .bold))
+            .font(.system(size: 11, weight: .bold))
         }
-        .padding(14)
+        .padding(12)
         .background(Color.white.opacity(0.03), in: RoundedRectangle(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(red: 0.95, green: 0.77, blue: 0.25).opacity(0.2), lineWidth: 1))
     }
@@ -503,10 +656,6 @@ struct MacHeroModeView: View {
         if hour < 12 { return .morning }
         if hour < 17 { return .afternoon }
         return .evening
-    }
-
-    private func isCurrentPeriod(_ period: DiurnalPeriod) -> Bool {
-        Self.currentDiurnalPeriod() == period
     }
 
     private var energyGuidanceMessage: String {
