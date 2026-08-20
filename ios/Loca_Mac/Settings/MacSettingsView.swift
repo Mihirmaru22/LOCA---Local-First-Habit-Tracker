@@ -356,32 +356,27 @@ struct MacSettingsView: View {
         }
     }
 
-    // Workspace Mode (Simplified vs Pro)
+    // Evolutionary UI Stage (Spark vs Hero vs Architect)
     private var workspaceModeControlBlock: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Picker("Mode", selection: Binding(
-                get: { SimplifiedModeManager.shared.isSimplifiedModeActive ? 0 : 1 },
-                set: { val in
-                    if val == 0 {
-                        SimplifiedModeManager.shared.enableSimplifiedMode()
-                    } else {
-                        SimplifiedModeManager.shared.enableProMode()
-                    }
+            Picker("Evolutionary Stage", selection: Binding(
+                get: { SimplifiedModeManager.shared.activeStage },
+                set: { newStage in
+                    SimplifiedModeManager.shared.setStage(newStage, celebrate: false)
                 }
             )) {
-                Text("Simplified Mode (Focus Tunnel)").tag(0)
-                Text("Pro Mode (3-Column Canvas)").tag(1)
+                ForEach(PlutoUserStage.allCases) { stage in
+                    Label(stage.title, systemImage: stage.icon).tag(stage)
+                }
             }
             .pickerStyle(.segmented)
 
-            Text(SimplifiedModeManager.shared.isSimplifiedModeActive
-                 ? "Simplified Mode displays a calm single-column feed with guided prompts, ideal for staying focused on immediate priorities."
-                 : "Pro Mode unlocks the full 3-column split view with Day Planner timeline, BrainStorm notes, and Trek elevation atlases.")
+            Text(SimplifiedModeManager.shared.activeStage.tagline)
                 .font(.system(size: 11))
                 .foregroundStyle(DS.Color.textSecondary)
 
             HStack {
-                Text("Quick Mode Switch Shortcut")
+                Text("Evolutionary Stage Cycle Shortcut")
                     .font(.system(size: 12))
                 Spacer()
                 Text("⌘ + ⇧ + P")

@@ -2,7 +2,7 @@
 //  SimplifiedModeManagerTests.swift
 //  Loca_MacTests
 //
-//  Unit Tests for SimplifiedModeManager state transitions and persistence.
+//  Unit Tests for Evolutionary UI Stages (Spark, Hero, Architect) state transitions.
 //
 
 import Testing
@@ -11,28 +11,39 @@ import Foundation
 
 struct SimplifiedModeManagerTests {
 
-    @Test func testSimplifiedModeStateTransitions() {
+    @Test func testEvolutionaryStageTransitions() {
         let manager = SimplifiedModeManager.shared
 
-        // Initial state or state change test
-        let initialMode = manager.isSimplifiedModeActive
+        // Test Spark
+        manager.setStage(.spark)
+        #expect(manager.activeStage == .spark)
+        #expect(manager.isSimplifiedModeActive == true)
 
-        // Toggle
-        manager.toggleMode()
-        #expect(manager.isSimplifiedModeActive == !initialMode)
-        #expect(manager.hasManuallySwitched == true)
+        // Advance to Hero
+        manager.advanceToHero()
+        #expect(manager.activeStage == .hero)
+        #expect(manager.isSimplifiedModeActive == true)
 
-        // Enable Pro Mode explicitly
-        manager.enableProMode()
+        // Advance to Architect
+        manager.advanceToArchitect()
+        #expect(manager.activeStage == .architect)
         #expect(manager.isSimplifiedModeActive == false)
 
-        // Enable Simplified Mode explicitly
-        manager.enableSimplifiedMode()
-        #expect(manager.isSimplifiedModeActive == true)
+        // Cycle toggle: Architect -> Spark
+        manager.toggleMode()
+        #expect(manager.activeStage == .spark)
 
-        // Restore to desired test baseline
-        manager.enableSimplifiedMode()
-        #expect(manager.isSimplifiedModeActive == true)
+        // Spark -> Hero
+        manager.toggleMode()
+        #expect(manager.activeStage == .hero)
+
+        // Hero -> Architect
+        manager.toggleMode()
+        #expect(manager.activeStage == .architect)
+
+        // Reset to Spark for clean baseline
+        manager.setStage(.spark)
+        #expect(manager.activeStage == .spark)
     }
 
     @Test func testLaunchCountTracking() {

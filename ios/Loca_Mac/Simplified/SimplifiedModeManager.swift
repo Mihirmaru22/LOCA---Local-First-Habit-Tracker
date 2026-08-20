@@ -1,30 +1,68 @@
 //
-//  SimplifiedModeManager.swift
+//  PlutoEvolutionaryUIManager.swift
 //  PLUTO
 //
-//  Smart Mode Detection & Progressive Disclosure Manager for macOS.
-//  Determines whether the user starts in Simplified Mode (Single-Column Focus Tunnel)
-//  or Pro Mode (Full 3-Column NavigationSplitView).
+//  3-Stage Evolutionary UI Architecture:
+//  🌱 Stage 1: "Spark" (Zero Friction Cockpit · Single Input + Live Vitual Dials)
+//  ⚔️ Stage 2: "Hero" (Tri-Diurnal Horizontal Timeline · 3 Active Objectives · Energy Meter)
+//  👑 Stage 3: "Architect" (Full 3-Column Sovereign Desktop Operating System)
 //
 
 import SwiftUI
 import Combine
 
-// MARK: - SimplifiedModeManager
+// MARK: - PlutoUserStage
+
+enum PlutoUserStage: String, CaseIterable, Identifiable, Codable {
+    case spark     = "Spark"
+    case hero      = "Hero"
+    case architect = "Architect"
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .spark:     return "Spark"
+        case .hero:      return "Hero"
+        case .architect: return "Architect"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .spark:     return "sparkle"
+        case .hero:      return "shield.fill"
+        case .architect: return "crown.fill"
+        }
+    }
+
+    var tagline: String {
+        switch self {
+        case .spark:     return "Single-Action Cockpit · Zero Friction"
+        case .hero:      return "Tri-Diurnal Timeline · 3 Focus Missions · Energy Meter"
+        case .architect: return "Full 3-Column Sovereign Operating System"
+        }
+    }
+}
+
+// MARK: - SimplifiedModeManager (Evolutionary UI Manager)
 
 final class SimplifiedModeManager: ObservableObject {
 
     static let shared = SimplifiedModeManager()
 
-    private let simplifiedKey = "mac_is_simplified_mode_active"
+    private let stageKey = "mac_pluto_user_stage_v1"
     private let launchCountKey = "mac_launch_count_v2"
     private let manualSwitchKey = "mac_has_manually_switched_mode"
 
-    @Published var isSimplifiedModeActive: Bool {
+    @Published var activeStage: PlutoUserStage {
         didSet {
-            UserDefaults.standard.set(isSimplifiedModeActive, forKey: simplifiedKey)
+            UserDefaults.standard.set(activeStage.rawValue, forKey: stageKey)
         }
     }
+
+    @Published var showLevelUpCelebration: Bool = false
+    @Published var celebrationTargetStage: PlutoUserStage = .hero
 
     @Published var launchCount: Int {
         didSet {
@@ -38,46 +76,80 @@ final class SimplifiedModeManager: ObservableObject {
         }
     }
 
+    /// Backward compatibility for simple boolean checks
+    var isSimplifiedModeActive: Bool {
+        get { activeStage != .architect }
+        set {
+            if newValue {
+                if activeStage == .architect {
+                    activeStage = .spark
+                }
+            } else {
+                activeStage = .architect
+            }
+        }
+    }
+
     private init() {
         let defaults = UserDefaults.standard
-        let savedMode = defaults.object(forKey: simplifiedKey) as? Bool ?? true
+        let savedStageRaw = defaults.string(forKey: stageKey) ?? PlutoUserStage.spark.rawValue
+        let stage = PlutoUserStage(rawValue: savedStageRaw) ?? .spark
         let count = defaults.integer(forKey: launchCountKey) + 1
         let switched = defaults.bool(forKey: manualSwitchKey)
 
-        self.isSimplifiedModeActive = savedMode
+        self.activeStage = stage
         self.launchCount = count
         self.hasManuallySwitched = switched
 
         defaults.set(count, forKey: launchCountKey)
     }
 
-    /// Toggles between Simplified Mode and Full Pro Mode with smooth motion.
+    /// Transition to a specific evolutionary stage with animation and haptics.
+    func setStage(_ newStage: PlutoUserStage, celebrate: Bool = false) {
+        hasManuallySwitched = true
+        if celebrate && newStage != activeStage {
+            celebrationTargetStage = newStage
+            showLevelUpCelebration = true
+        }
+
+        withAnimation(DS.Motion.settle) {
+            activeStage = newStage
+        }
+
+        PlutoTelemetryEngine.shared.track(event: "evolutionary_stage_changed", properties: [
+            "stage": AnyCodable(newStage.rawValue),
+            "celebrated": AnyCodable(celebrate)
+        ])
+        Haptics.impact(.medium)
+    }
+
+    /// Advances to Hero Mode with level-up celebration.
+    func advanceToHero() {
+        setStage(.hero, celebrate: true)
+    }
+
+    /// Advances to Architect Pro Mode with level-up celebration.
+    func advanceToArchitect() {
+        setStage(.architect, celebrate: true)
+    }
+
+    /// Legacy toggling for keyboard shortcuts (⌘⇧P cycles Spark ➔ Hero ➔ Architect).
     func toggleMode() {
-        hasManuallySwitched = true
-        withAnimation(DS.Motion.settle) {
-            isSimplifiedModeActive.toggle()
+        switch activeStage {
+        case .spark:
+            setStage(.hero, celebrate: true)
+        case .hero:
+            setStage(.architect, celebrate: true)
+        case .architect:
+            setStage(.spark, celebrate: false)
         }
-        PlutoTelemetryEngine.shared.trackModeSwitched(isSimplified: isSimplifiedModeActive, reason: "toggle")
-        Haptics.impact(.medium)
     }
 
-    /// Switches explicitly to Pro Mode.
     func enableProMode() {
-        hasManuallySwitched = true
-        withAnimation(DS.Motion.settle) {
-            isSimplifiedModeActive = false
-        }
-        PlutoTelemetryEngine.shared.trackModeSwitched(isSimplified: false, reason: "pro_button")
-        Haptics.impact(.medium)
+        setStage(.architect, celebrate: false)
     }
 
-    /// Switches explicitly to Simplified Mode.
     func enableSimplifiedMode() {
-        hasManuallySwitched = true
-        withAnimation(DS.Motion.settle) {
-            isSimplifiedModeActive = true
-        }
-        PlutoTelemetryEngine.shared.trackModeSwitched(isSimplified: true, reason: "simplified_button")
-        Haptics.impact(.light)
+        setStage(.spark, celebrate: false)
     }
 }

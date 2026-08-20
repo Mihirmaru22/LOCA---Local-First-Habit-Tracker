@@ -146,14 +146,44 @@ struct MacSimplifiedModeView: View {
                     .font(.system(size: 15, weight: .bold, design: .rounded))
                     .foregroundStyle(Color.white)
 
-                Text("• Simplified")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Color.white.opacity(0.4))
+                Text("• Spark Stage")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color(red: 0.95, green: 0.77, blue: 0.25))
             }
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Pluto Simplified Mode")
+            .accessibilityLabel("Pluto Spark Mode")
 
             Spacer()
+
+            // 3-Stage Evolutionary Switcher Capsule
+            HStack(spacing: 3) {
+                ForEach(PlutoUserStage.allCases) { stage in
+                    let isCurrent = modeManager.activeStage == stage
+                    Button {
+                        modeManager.setStage(stage, celebrate: false)
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: stage.icon)
+                                .font(.system(size: 10, weight: isCurrent ? .bold : .medium))
+                            Text(stage.title)
+                                .font(.system(size: 11, weight: isCurrent ? .bold : .medium))
+                        }
+                        .foregroundStyle(isCurrent ? Color.white : Color.white.opacity(0.5))
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 4)
+                        .background(
+                            isCurrent
+                                ? Color.white.opacity(0.15)
+                                : Color.clear,
+                            in: Capsule()
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(2)
+            .background(Color.black.opacity(0.4), in: Capsule())
+            .overlay(Capsule().stroke(Color.white.opacity(0.1), lineWidth: 1))
 
             // Feature Guide Tour Button
             Button {
@@ -167,39 +197,6 @@ struct MacSimplifiedModeView: View {
             .buttonStyle(.plain)
             .help("Start Spotlight Feature Tour (⌘/)")
             .accessibilityLabel("Start Feature Tour")
-
-            // Pro Mode Toggle CTA
-            Button {
-                modeManager.enableProMode()
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "sparkles.rectangle.stack.fill")
-                        .font(.system(size: 12, weight: .bold))
-                    Text("Pro Mode")
-                        .font(.system(size: 12, weight: .semibold))
-                    Text("⌘⇧P")
-                        .font(.system(size: 10, weight: .medium, design: .monospaced))
-                        .padding(.horizontal, 4)
-                        .padding(.vertical, 1)
-                        .background(Color.white.opacity(0.15), in: RoundedRectangle(cornerRadius: 3))
-                }
-                .foregroundStyle(Color.white)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(
-                    LinearGradient(
-                        colors: [Color(red: 0.25, green: 0.45, blue: 0.85), Color(red: 0.45, green: 0.35, blue: 0.85)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    in: Capsule()
-                )
-                .overlay(Capsule().stroke(Color.white.opacity(0.25), lineWidth: 1))
-            }
-            .buttonStyle(.plain)
-            .help("Switch to the multi-column Pro workspace with Day Planner timeline, BrainStorm, and Trek Atlas (⌘⇧P)")
-            .accessibilityLabel("Switch to Pro Mode")
-            .accessibilityHint("Opens multi-column workspace with day planner and notes")
         }
         .padding(.bottom, 4)
     }
@@ -209,31 +206,31 @@ struct MacSimplifiedModeView: View {
     private var graduationCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                Image(systemName: "star.fill")
+                Image(systemName: "shield.fill")
                     .font(.system(size: 13))
-                    .foregroundStyle(Color(red: 0.95, green: 0.77, blue: 0.25))
+                    .foregroundStyle(Color(red: 0.35, green: 0.65, blue: 0.95))
 
-                Text("GRADUATION MILESTONE")
+                Text("LEVEL UP MILESTONE")
                     .font(.system(size: 11, weight: .bold))
                     .tracking(0.6)
-                    .foregroundStyle(Color(red: 0.95, green: 0.77, blue: 0.25))
+                    .foregroundStyle(Color(red: 0.35, green: 0.65, blue: 0.95))
             }
 
-            Text("You've completed \(completedHabitCount) keystone habits today! Ready to schedule tasks on the proportional Day Planner timeline?")
+            Text("You've completed \(completedHabitCount) keystone habits today! You have momentum — ready to advance to Stage 2: Hero?")
                 .font(.system(size: 13))
                 .foregroundStyle(Color.white.opacity(0.85))
 
-            Button("Open Pro Day Planner (⌘⇧P)") {
-                modeManager.enableProMode()
+            Button("Level Up to Hero Stage (⚔️)") {
+                modeManager.advanceToHero()
             }
             .buttonStyle(.borderedProminent)
-            .tint(Color(red: 0.25, green: 0.45, blue: 0.85))
+            .tint(Color(red: 0.35, green: 0.65, blue: 0.95))
             .font(.system(size: 12, weight: .semibold))
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(red: 0.95, green: 0.77, blue: 0.25).opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(red: 0.95, green: 0.77, blue: 0.25).opacity(0.25), lineWidth: 1))
+        .background(Color(red: 0.35, green: 0.65, blue: 0.95).opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(red: 0.35, green: 0.65, blue: 0.95).opacity(0.25), lineWidth: 1))
     }
 
     // MARK: - Welcome & Daily Progress Card

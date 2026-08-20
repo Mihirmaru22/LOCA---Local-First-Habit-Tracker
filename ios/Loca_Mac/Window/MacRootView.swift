@@ -58,10 +58,14 @@ struct MacRootView: View {
 
     var body: some View {
         ZStack {
-            if modeManager.isSimplifiedModeActive {
+            switch modeManager.activeStage {
+            case .spark:
                 MacSimplifiedModeView()
                     .transition(.opacity)
-            } else {
+            case .hero:
+                MacHeroModeView()
+                    .transition(.opacity)
+            case .architect:
                 splitView
                     .transition(.opacity)
             }
@@ -71,7 +75,7 @@ struct MacRootView: View {
                 PlutoAppGuideOverlay(selectedSection: $selectedSection)
             }
         }
-        .animation(reduceMotion ? nil : DS.Motion.settle, value: modeManager.isSimplifiedModeActive)
+        .animation(reduceMotion ? nil : DS.Motion.settle, value: modeManager.activeStage)
     }
 
     private var splitView: some View {
