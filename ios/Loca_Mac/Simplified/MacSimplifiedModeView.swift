@@ -313,7 +313,7 @@ struct MacSimplifiedModeView: View {
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(red: 0.95, green: 0.77, blue: 0.25).opacity(0.25), lineWidth: 1))
     }
 
-    private func starterHabitButton(emoji: String, name: String, metric: MetricType, target: Double, unit: String?) -> some View {
+    private func starterHabitButton(emoji: String, name: String, metric: HabitBoard.MetricType, target: Double, unit: String?) -> some View {
         Button {
             let board = HabitBoard(name: name, metricType: metric.rawValue, colorIndex: Int.random(in: 0...7))
             board.emoji = emoji
@@ -669,7 +669,7 @@ struct MacSimplifiedModeView: View {
             let task = TodoItem(title: text, priority: quickAddPriority)
             modelContext.insert(task)
         } else {
-            let habit = HabitBoard(name: text, metricType: MetricType.binary.rawValue, colorIndex: Int.random(in: 0...7))
+            let habit = HabitBoard(name: text, metricType: HabitBoard.MetricType.binary.rawValue, colorIndex: Int.random(in: 0...7))
             habit.emoji = "✨"
             modelContext.insert(habit)
         }
