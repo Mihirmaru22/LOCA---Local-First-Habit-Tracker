@@ -57,6 +57,7 @@ final class SimplifiedModeManager: ObservableObject {
         withAnimation(DS.Motion.settle) {
             isSimplifiedModeActive.toggle()
         }
+        PlutoTelemetryEngine.shared.trackModeSwitched(isSimplified: isSimplifiedModeActive, reason: "toggle")
         Haptics.impact(.medium)
     }
 
@@ -66,6 +67,7 @@ final class SimplifiedModeManager: ObservableObject {
         withAnimation(DS.Motion.settle) {
             isSimplifiedModeActive = false
         }
+        PlutoTelemetryEngine.shared.trackModeSwitched(isSimplified: false, reason: "pro_button")
         Haptics.impact(.medium)
     }
 
@@ -75,6 +77,7 @@ final class SimplifiedModeManager: ObservableObject {
         withAnimation(DS.Motion.settle) {
             isSimplifiedModeActive = true
         }
+        PlutoTelemetryEngine.shared.trackModeSwitched(isSimplified: true, reason: "simplified_button")
         Haptics.impact(.light)
     }
 }

@@ -67,6 +67,11 @@ struct MacSimplifiedModeView: View {
                 // Contextual Welcome & Day Progress Card
                 welcomeProgressCard
 
+                // Smart Graduation Card (when 3+ habits done or user on momentum)
+                if completedHabitCount >= 3 {
+                    graduationCard
+                }
+
                 // Card 1: Fast Frictionless Quick Add
                 quickAddCard
 
@@ -125,8 +130,23 @@ struct MacSimplifiedModeView: View {
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Color.white.opacity(0.4))
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Pluto Simplified Mode")
 
             Spacer()
+
+            // Feature Guide Tour Button
+            Button {
+                PlutoAppGuideManager.shared.startTour()
+            } label: {
+                Image(systemName: "questionmark.circle")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Color.white.opacity(0.6))
+                    .padding(6)
+            }
+            .buttonStyle(.plain)
+            .help("Start Spotlight Feature Tour (⌘/)")
+            .accessibilityLabel("Start Feature Tour")
 
             // Pro Mode Toggle CTA
             Button {
@@ -158,8 +178,42 @@ struct MacSimplifiedModeView: View {
             }
             .buttonStyle(.plain)
             .help("Switch to the multi-column Pro workspace with Day Planner timeline, BrainStorm, and Trek Atlas (⌘⇧P)")
+            .accessibilityLabel("Switch to Pro Mode")
+            .accessibilityHint("Opens multi-column workspace with day planner and notes")
         }
         .padding(.bottom, 4)
+    }
+
+    // MARK: - Smart Graduation Card
+
+    private var graduationCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "star.fill")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color(red: 0.95, green: 0.77, blue: 0.25))
+
+                Text("GRADUATION MILESTONE")
+                    .font(.system(size: 11, weight: .bold))
+                    .tracking(0.6)
+                    .foregroundStyle(Color(red: 0.95, green: 0.77, blue: 0.25))
+            }
+
+            Text("You've completed \(completedHabitCount) keystone habits today! Ready to schedule tasks on the proportional Day Planner timeline?")
+                .font(.system(size: 13))
+                .foregroundStyle(Color.white.opacity(0.85))
+
+            Button("Open Pro Day Planner (⌘⇧P)") {
+                modeManager.enableProMode()
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Color(red: 0.25, green: 0.45, blue: 0.85))
+            .font(.system(size: 12, weight: .semibold))
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(red: 0.95, green: 0.77, blue: 0.25).opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(red: 0.95, green: 0.77, blue: 0.25).opacity(0.25), lineWidth: 1))
     }
 
     // MARK: - Welcome & Daily Progress Card

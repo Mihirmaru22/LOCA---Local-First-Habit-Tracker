@@ -101,6 +101,11 @@ final class PlutoTelemetryEngine: @unchecked Sendable {
     // MARK: - Core Event Tracking
 
     func track(event: String, properties: [String: AnyCodable] = [:]) {
+        // Privacy Opt-In Check
+        if let optIn = UserDefaults.standard.object(forKey: "mac_telemetry_opt_in") as? Bool, !optIn {
+            return
+        }
+
         let timestampMs = Int(Date().timeIntervalSince1970 * 1000)
         let eventID = "evt_\(testerID)_\(timestampMs)_\(UUID().uuidString.prefix(8))"
         let timestampIso = ISO8601DateFormatter().string(from: Date())
@@ -135,6 +140,13 @@ final class PlutoTelemetryEngine: @unchecked Sendable {
     }
 
     // MARK: - Domain Specific Action Trackers (Unredacted)
+
+    func trackModeSwitched(isSimplified: Bool, reason: String = "user_toggle") {
+        track(event: "workspace_mode_switched", properties: [
+            "target_mode": AnyCodable(isSimplified ? "simplified" : "pro"),
+            "reason": AnyCodable(reason)
+        ])
+    }
 
     // 1. Habits
     func trackHabitCreated(board: HabitBoard) {
@@ -241,6 +253,10 @@ final class PlutoTelemetryEngine: @unchecked Sendable {
     // MARK: - State Snapshot Capture
 
     func captureFullStateSnapshot(context: ModelContext) {
+        if let optIn = UserDefaults.standard.object(forKey: "mac_telemetry_opt_in") as? Bool, !optIn {
+            return
+        }
+
         let habits = (try? context.fetch(FetchDescriptor<HabitBoard>())) ?? []
         let tasks = (try? context.fetch(FetchDescriptor<TodoItem>())) ?? []
 

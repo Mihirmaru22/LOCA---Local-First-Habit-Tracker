@@ -37,6 +37,9 @@ struct MacSettingsView: View {
     // Vault Security Storage
     @AppStorage("mac_vault_biometrics_enabled") private var isVaultSecurityEnabled: Bool = false
 
+    // Telemetry & Privacy
+    @AppStorage("mac_telemetry_opt_in") private var telemetryOptIn: Bool = true
+
     // Local UI State
     @State private var showExportSuccess = false
     @State private var exportMessage = ""
@@ -496,6 +499,21 @@ struct MacSettingsView: View {
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.green)
             }
+
+            Divider()
+                .opacity(0.3)
+
+            Toggle(isOn: $telemetryOptIn) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Anonymous Alpha Diagnostic Telemetry")
+                        .font(.system(size: 12, weight: .semibold))
+                    Text("Helps improve Pluto performance and crash reporting. Never transmits note text or private content.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(DS.Color.textSecondary)
+                }
+            }
+            .toggleStyle(.switch)
+            .tint(accentColor)
         }
     }
 
