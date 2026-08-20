@@ -135,16 +135,14 @@ struct MacHeroModeView: View {
             Divider()
                 .opacity(0.12)
 
-            // 2-Column Split Workspace Canvas
+            // 2-Column Split Workspace Canvas (Hero Bridge)
             HStack(alignment: .top, spacing: 20) {
 
-                // LEFT COLUMN: Action Hub & Active Missions (~54%)
+                // LEFT COLUMN: Today's Timeline + Priority Tasks (~50%)
                 ScrollView {
                     VStack(spacing: 16) {
-                        circadianEnergyBatteryCard
+                        triDiurnalTimelineCard
                         ruleOfThreeObjectivesCard
-                        keystoneHabitsConsistencyCard
-                        weeklyTrendInsightsCard
                     }
                     .padding(.vertical, 16)
                 }
@@ -155,10 +153,12 @@ struct MacHeroModeView: View {
                     .fill(Color.white.opacity(0.06))
                     .frame(width: 1)
 
-                // RIGHT COLUMN: Timeline Studio & Contextual Hub (~46%)
+                // RIGHT COLUMN: Weekly Goals + Streak Tracking + Energy Monitor (~50%)
                 ScrollView {
                     VStack(spacing: 16) {
-                        triDiurnalTimelineCard
+                        circadianEnergyBatteryCard
+                        keystoneHabitsConsistencyCard
+                        weeklyTrendInsightsCard
                         ambientFocusPlayerCard
                         quickDailyReflectionCard
                         architectGraduationCard

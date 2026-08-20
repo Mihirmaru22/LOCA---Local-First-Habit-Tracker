@@ -48,6 +48,20 @@ PLUTO organizes all intentional living and productivity into 3 primary desktop d
 
 ---
 
+## 🧬 3-Stage Evolutionary UI Architecture
+
+PLUTO adapts its workspace density to the user's maturity and cognitive state:
+
+| Stage | Mode Name | Visual Architecture | Target & Capability |
+|---|---|---|---|
+| **🌱 Stage 1** | **Spark** | **Single-Column Cockpit** | Ultra-minimal HUD, Omni-input (Tasks vs Keystone Habits), Live vitual telemetry dials (Streak, Energy %, Next Break). Zero cognitive load. |
+| **⚔️ Stage 2** | **Hero** | **2-Column Split Bridge** | **Left**: Tri-Diurnal Horizontal Timeline (Morning, Afternoon, Evening) + Rule of 3 Active Objectives.<br>**Right**: Weekly Goals, Circadian Energy Battery, Ambient Focus Soundscapes, Daily Reflection. |
+| **👑 Stage 3** | **Architect** | **3-Column Canvas** | Full 3-column `NavigationSplitView` with Day Planner timeline, BrainStorm canvas, Trek Atlas, Life Audit, and local MCP agent integration. |
+
+> **Evolutionary Shortcut**: Press **`⌘ + ⇧ + P`** from anywhere in the app to cycle through Spark ➔ Hero ➔ Architect stages.
+
+---
+
 ## ☀️ 1. TODAY: The Living Day Execution Engine
 
 The `Today` workspace (`⌘1`) governs immediate diurnal execution through three specialized sub-modes:
