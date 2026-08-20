@@ -87,8 +87,8 @@ struct MacSimplifiedModeView: View {
                 // Contextual Welcome & Day Progress Card
                 welcomeProgressCard
 
-                // Smart Graduation Card (when 3+ habits done or user on momentum)
-                if completedHabitCount >= 3 {
+                // Smart Graduation Card (when 3-day streak or 3 habits done)
+                if modeManager.isReadyForHero(habits: habits) {
                     graduationCard
                 }
 
@@ -282,6 +282,18 @@ struct MacSimplifiedModeView: View {
                 }
             }
             .frame(height: 6)
+
+            // Value Gained Visibility Message
+            HStack(spacing: 6) {
+                Image(systemName: "sparkle")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color(red: 0.95, green: 0.77, blue: 0.25))
+
+                Text(modeManager.valueGainedMessage(streak: maxStreak))
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Color.white.opacity(0.85))
+            }
+            .padding(.top, 2)
         }
         .padding(18)
         .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 12))

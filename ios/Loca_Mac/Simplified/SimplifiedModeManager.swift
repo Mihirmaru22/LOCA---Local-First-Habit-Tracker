@@ -133,6 +133,41 @@ final class SimplifiedModeManager: ObservableObject {
         setStage(.architect, celebrate: true)
     }
 
+    /// Evaluates user behavior to determine if they are ready to level up from Spark -> Hero
+    func isReadyForHero(habits: [HabitBoard]) -> Bool {
+        guard activeStage == .spark else { return false }
+        let maxStreak = habits.map(\.currentStreak).max() ?? 0
+        let completedToday = habits.filter { habit in
+            let logs = (habit.logs ?? []).filter { $0.timestamp.isToday() && $0.archivedAt == nil }
+            return !logs.isEmpty
+        }.count
+
+        // Trigger: 3-day streak OR 3 habits completed today
+        return maxStreak >= 3 || completedToday >= 3
+    }
+
+    /// Evaluates user behavior to determine if they are ready for Architect stage
+    func isReadyForArchitect(habits: [HabitBoard], openTasksCount: Int) -> Bool {
+        guard activeStage == .hero else { return false }
+        let maxStreak = habits.map(\.currentStreak).max() ?? 0
+        // Trigger: 7+ day streak OR 5+ tasks created in one day
+        return maxStreak >= 7 || openTasksCount >= 5
+    }
+
+    /// Value visibility gain message for the current stage
+    func valueGainedMessage(streak: Int) -> String {
+        switch activeStage {
+        case .spark:
+            return streak > 0
+                ? "Perfect start! You've built a \(streak)-day streak 🔥"
+                : "Zero friction • Just get today's first keystone done 🌱"
+        case .hero:
+            return "You're leveling up! Timeline strip helps you see your day's rhythm 🌅"
+        case .architect:
+            return "Full command unlocked • AI agents & deep workspace now available 👑"
+        }
+    }
+
     /// Legacy toggling for keyboard shortcuts (⌘⇧P cycles Spark ➔ Hero ➔ Architect).
     func toggleMode() {
         switch activeStage {

@@ -451,8 +451,8 @@ struct MacHeroModeView: View {
                     .tracking(0.5)
                     .foregroundStyle(Color.white.opacity(0.5))
 
-                Text("Unlock Stage 3: Architect (Full 3-Column OS & Notes)")
-                    .font(.system(size: 13, weight: .bold))
+                Text(modeManager.valueGainedMessage(streak: habits.map(\.currentStreak).max() ?? 0))
+                    .font(.system(size: 12.5, weight: .semibold))
                     .foregroundStyle(Color.white)
             }
 
