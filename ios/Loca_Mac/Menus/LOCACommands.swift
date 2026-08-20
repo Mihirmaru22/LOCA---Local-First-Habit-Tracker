@@ -125,6 +125,14 @@ struct LOCACommands: Commands {
                 NotificationCenter.default.post(name: .locaShowOnboarding, object: nil)
             }
         }
+
+        // MARK: View menu
+        CommandMenu("View") {
+            Button("Toggle Simplified / Pro Mode") {
+                NotificationCenter.default.post(name: .locaToggleProMode, object: nil)
+            }
+            .keyboardShortcut("p", modifiers: [.command, .shift])
+        }
     }
 }
 
@@ -175,4 +183,6 @@ extension Notification.Name {
     static let locaOpenTask        = Notification.Name("com.mihirmaru.loca.mac.openTask")
     static let locaShowOnboarding  = Notification.Name("com.mihirmaru.loca.mac.showOnboarding")
     static let locaDeepLink        = Notification.Name("com.mihirmaru.loca.mac.deepLink")
+    static let locaToggleProMode   = Notification.Name("com.mihirmaru.loca.mac.toggleProMode")
 }
+
