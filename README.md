@@ -28,7 +28,7 @@ PLUTO organizes all intentional living and productivity into 3 primary desktop d
                 ▼                                                           ▼
     ┌─────────────────────────┐                                 ┌─────────────────────────┐
     │       1. TODAY          │                                 │       2. STUDIO         │
-    │  Living Day Execution   │                                 │ Knowledge & Synthesis  │
+    │  Living Day Execution   │                                 │ Knowledge & Synthesis   │
     ├─────────────────────────┤                                 ├─────────────────────────┤
     │ • Plan: Day Timeline    │                                 │ • Notes: BrainStorm     │
     │ • List: GTD Tasks       │                                 │ • Journal: Apple Canvas │
