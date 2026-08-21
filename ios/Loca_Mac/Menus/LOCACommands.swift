@@ -5,33 +5,26 @@ import SwiftUI
 /// LOCA's native macOS menu bar commands.
 ///
 /// Registered on the `WindowGroup` scene via `.commands { LOCACommands() }`.
-/// Each `CommandMenu` appears in the menu bar between the built-in Edit and
-/// Window menus. Keyboard shortcuts follow macOS conventions:
-/// - ⌘N  New Habit / New Block (context-sensitive via FocusedValue)
-/// - ⌘L  Log Today (L for Log)
-/// - ⌘1–4 Jump to sidebar section
+/// Keyboard shortcuts:
+/// - ⌘N   New Task / Block
+/// - ⌘⇧H  New Habit
+/// - ⌘L   Log Today
+/// - ⌘1–4 Jump to sidebar section (Today, Notes, Studio, Life)
+/// - ⌘,   Settings & Preferences
 struct LOCACommands: Commands {
-
-    // MARK: - Focus values
-
-    @FocusedValue(\.newHabitAction)    private var newHabitAction
-    @FocusedValue(\.logTodayAction)    private var logTodayAction
-    @FocusedValue(\.todayNewItemAction) private var todayNewItemAction
 
     var body: some Commands {
         // MARK: Habit menu
         CommandMenu("Habit") {
             Button("New Habit") {
-                newHabitAction?()
+                NotificationCenter.default.post(name: .locaNewHabit, object: nil)
             }
-            .keyboardShortcut("n", modifiers: [.command])
-            .disabled(newHabitAction == nil)
+            .keyboardShortcut("h", modifiers: [.command, .shift])
 
             Button("Log Today") {
-                logTodayAction?()
+                NotificationCenter.default.post(name: .locaLogToday, object: nil)
             }
             .keyboardShortcut("l", modifiers: [.command])
-            .disabled(logTodayAction == nil)
 
             Divider()
 
@@ -39,11 +32,14 @@ struct LOCACommands: Commands {
             Button("Today") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.today) }
                 .keyboardShortcut("1", modifiers: [.command])
 
-            Button("Studio") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.studio) }
+            Button("Notes") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.notes) }
                 .keyboardShortcut("2", modifiers: [.command])
 
-            Button("Life") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.life) }
+            Button("Studio") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.studio) }
                 .keyboardShortcut("3", modifiers: [.command])
+
+            Button("Life") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.life) }
+                .keyboardShortcut("4", modifiers: [.command])
 
             Button("Settings") { NotificationCenter.default.post(name: .locaJumpToSection, object: MacSection.settings) }
                 .keyboardShortcut(",", modifiers: [.command])
@@ -51,11 +47,10 @@ struct LOCACommands: Commands {
 
         // MARK: Today menu
         CommandMenu("Today") {
-            Button("New Block") {
-                todayNewItemAction?()
+            Button("New Task / Block") {
+                NotificationCenter.default.post(name: .locaAddBlock, object: nil)
             }
             .keyboardShortcut("n", modifiers: [.command])
-            .disabled(todayNewItemAction == nil)
 
             Button("Jump to Today") {
                 NotificationCenter.default.post(name: .locaJumpToToday, object: nil)
@@ -67,12 +62,12 @@ struct LOCACommands: Commands {
             Button("Previous Day") {
                 NotificationCenter.default.post(name: .locaShiftDay, object: -1)
             }
-            .keyboardShortcut(.leftArrow, modifiers: [])
+            .keyboardShortcut(.leftArrow, modifiers: [.option])
 
             Button("Next Day") {
                 NotificationCenter.default.post(name: .locaShiftDay, object: 1)
             }
-            .keyboardShortcut(.rightArrow, modifiers: [])
+            .keyboardShortcut(.rightArrow, modifiers: [.option])
 
             Divider()
 
@@ -114,75 +109,29 @@ struct LOCACommands: Commands {
 
         // MARK: Help menu
         CommandGroup(replacing: .help) {
-            Button("Interactive App Guide & Spotlight Tour") {
-                PlutoAppGuideManager.shared.startTour()
-            }
-            .keyboardShortcut("/", modifiers: [.command])
-
-            Divider()
-
             Button("Welcome & Feature Tour…") {
                 NotificationCenter.default.post(name: .locaShowOnboarding, object: nil)
             }
         }
-
-        // MARK: View menu
-        CommandMenu("View") {
-            Button("Toggle Hero / Architect Mode") {
-                NotificationCenter.default.post(name: .locaToggleProMode, object: nil)
-            }
-            .keyboardShortcut("p", modifiers: [.command, .shift])
-        }
     }
-}
-
-// MARK: - FocusedValues extensions
-
-extension FocusedValues {
-    var newHabitAction: (() -> Void)? {
-        get { self[NewHabitActionKey.self] }
-        set { self[NewHabitActionKey.self] = newValue }
-    }
-
-    var logTodayAction: (() -> Void)? {
-        get { self[LogTodayActionKey.self] }
-        set { self[LogTodayActionKey.self] = newValue }
-    }
-
-    /// Vended by the active Today sub-pillar: creates a new block (Plan) or
-    /// focuses the quick-add field (List). Drives the ⌘N shortcut context-sensitively.
-    var todayNewItemAction: (() -> Void)? {
-        get { self[TodayNewItemActionKey.self] }
-        set { self[TodayNewItemActionKey.self] = newValue }
-    }
-}
-
-private struct NewHabitActionKey: FocusedValueKey {
-    typealias Value = () -> Void
-}
-
-private struct LogTodayActionKey: FocusedValueKey {
-    typealias Value = () -> Void
-}
-
-private struct TodayNewItemActionKey: FocusedValueKey {
-    typealias Value = () -> Void
 }
 
 // MARK: - Notification names
 
 extension Notification.Name {
-    static let locaJumpToSection   = Notification.Name("com.mihirmaru.loca.mac.jumpToSection")
-    static let locaJumpToToday     = Notification.Name("com.mihirmaru.loca.mac.jumpToToday")
-    static let locaShiftDay        = Notification.Name("com.mihirmaru.loca.mac.shiftDay")
-    static let locaNudgeBlock      = Notification.Name("com.mihirmaru.loca.mac.nudgeBlock")
-    static let locaAddBlock        = Notification.Name("com.mihirmaru.loca.mac.addBlock")
+    static let locaNewHabit         = Notification.Name("com.mihirmaru.loca.mac.newHabit")
+    static let locaLogToday         = Notification.Name("com.mihirmaru.loca.mac.logToday")
+    static let locaJumpToSection    = Notification.Name("com.mihirmaru.loca.mac.jumpToSection")
+    static let locaJumpToToday      = Notification.Name("com.mihirmaru.loca.mac.jumpToToday")
+    static let locaShiftDay         = Notification.Name("com.mihirmaru.loca.mac.shiftDay")
+    static let locaNudgeBlock       = Notification.Name("com.mihirmaru.loca.mac.nudgeBlock")
+    static let locaAddBlock         = Notification.Name("com.mihirmaru.loca.mac.addBlock")
     static let locaCompleteSelected = Notification.Name("com.mihirmaru.loca.mac.completeSelected")
     static let locaArchiveSelected  = Notification.Name("com.mihirmaru.loca.mac.archiveSelected")
-    static let locaFocusQuickAdd   = Notification.Name("com.mihirmaru.loca.mac.focusQuickAdd")
-    static let locaOpenTask        = Notification.Name("com.mihirmaru.loca.mac.openTask")
-    static let locaShowOnboarding  = Notification.Name("com.mihirmaru.loca.mac.showOnboarding")
-    static let locaDeepLink        = Notification.Name("com.mihirmaru.loca.mac.deepLink")
-    static let locaToggleProMode   = Notification.Name("com.mihirmaru.loca.mac.toggleProMode")
+    static let locaFocusQuickAdd    = Notification.Name("com.mihirmaru.loca.mac.focusQuickAdd")
+    static let locaOpenTask         = Notification.Name("com.mihirmaru.loca.mac.openTask")
+    static let locaShowOnboarding   = Notification.Name("com.mihirmaru.loca.mac.showOnboarding")
+    static let locaDeepLink         = Notification.Name("com.mihirmaru.loca.mac.deepLink")
+    static let locaOpenNoteById     = Notification.Name("com.mihirmaru.loca.mac.openNoteById")
+    static let locaLockVault        = Notification.Name("com.mihirmaru.loca.mac.lockVault")
 }
-
