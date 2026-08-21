@@ -112,7 +112,7 @@ struct MacRootView: View {
             showOnboarding = true
         }
         .onReceive(NotificationCenter.default.publisher(for: .locaLockVault)) { _ in
-            vaultManager.lockVault()
+            vaultManager.lockAll()
         }
     }
 
