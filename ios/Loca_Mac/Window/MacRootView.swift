@@ -62,9 +62,9 @@ struct MacRootView: View {
             splitView
 
             // Real-App In-Situ Spotlight Guide Overlay
-            if guideManager.isTourActive {
-                PlutoAppGuideOverlay()
-            }
+            // if guideManager.isTourActive {
+            //     PlutoAppGuideOverlay()
+            // }
         }
         .sheet(isPresented: $showOnboarding) {
             MacOnboardingView(isPresented: $showOnboarding)
