@@ -32,10 +32,10 @@ struct MacTravelAtlasCanvas: View {
     @State private var searchText: String = ""
     @State private var isSearchOpen: Bool = false
 
-    // Electric Tangerine Signature Palette for Travel Atlas
-    private let travelAccent = Color(red: 1.0, green: 0.43, blue: 0.0) // Electric Tangerine
-    private let visitedAccent = Color(red: 0.98, green: 0.72, blue: 0.15) // Golden Sun
-    private let wishlistAccent = Color(red: 0.55, green: 0.65, blue: 0.98) // Laser Iris
+    // Cartographic Color Hierarchy (Laser Cyan Selected · Saffron Visited · Polar Wishlist)
+    private let selectedAccent = Color(red: 0.05, green: 0.78, blue: 0.98) // Laser Cyan (#0EC7FA)
+    private let visitedAccent  = Color(red: 0.98, green: 0.65, blue: 0.12) // Saffron Gold (#FAA61E)
+    private let wishlistAccent = Color(red: 0.85, green: 0.90, blue: 0.95) // Polar Silver-White (#D9E6F2)
 
     // MapKit Camera Position
     @State private var mapCameraPosition: MapCameraPosition = .camera(
@@ -125,7 +125,7 @@ struct MacTravelAtlasCanvas: View {
         HStack(spacing: 12) {
             Image(systemName: "tram.fill.tunnel")
                 .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(travelAccent)
+                .foregroundStyle(selectedAccent)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text("Travel Atlas & Transit Odyssey")
@@ -152,11 +152,11 @@ struct MacTravelAtlasCanvas: View {
                     Text(isSearchOpen ? "Close List" : "Search & Filter")
                         .font(.system(size: 11.5, weight: .semibold))
                 }
-                .foregroundStyle(isSearchOpen ? travelAccent : Color.white.opacity(0.85))
+                .foregroundStyle(isSearchOpen ? selectedAccent : Color.white.opacity(0.85))
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
-                .background(isSearchOpen ? travelAccent.opacity(0.15) : Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
-                .overlay(RoundedRectangle(cornerRadius: 6).stroke(isSearchOpen ? travelAccent.opacity(0.4) : Color.white.opacity(0.08), lineWidth: 1))
+                .background(isSearchOpen ? selectedAccent.opacity(0.15) : Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
+                .overlay(RoundedRectangle(cornerRadius: 6).stroke(isSearchOpen ? selectedAccent.opacity(0.4) : Color.white.opacity(0.08), lineWidth: 1))
             }
             .buttonStyle(.plain)
         }
@@ -165,7 +165,7 @@ struct MacTravelAtlasCanvas: View {
         .background(DS.Theme.surface)
     }
 
-    // MARK: - Apple Maps Public Transport View
+    // MARK: - Apple Maps Public Transport View (Muted Base for High-Contrast Overlays)
 
     private var mapView: some View {
         Map(position: $mapCameraPosition) {
@@ -174,11 +174,11 @@ struct MacTravelAtlasCanvas: View {
                 let rings = GeoJSONBoundaryLoader.shared.outerRings(for: selected.stateCode)
                 ForEach(rings.indices, id: \.self) { ringIdx in
                     MapPolygon(coordinates: rings[ringIdx])
-                        .foregroundStyle(travelAccent.opacity(0.24))
+                        .foregroundStyle(selectedAccent.opacity(0.22))
 
                     MapPolygon(coordinates: rings[ringIdx])
                         .foregroundStyle(Color.clear)
-                        .stroke(travelAccent, lineWidth: 3.0)
+                        .stroke(selectedAccent, lineWidth: 3.0)
                 }
             }
 
@@ -201,6 +201,7 @@ struct MacTravelAtlasCanvas: View {
         .mapStyle(
             .standard(
                 elevation: .flat,
+                emphasis: .muted,
                 pointsOfInterest: .including([.publicTransport, .airport, .marina]),
                 showsTraffic: false
             )
@@ -208,13 +209,13 @@ struct MacTravelAtlasCanvas: View {
         .edgesIgnoringSafeArea(.all)
     }
 
-    // MARK: - High-Contrast Map Pin (Electric Tangerine / Golden Sun / Laser Iris)
+    // MARK: - High-Contrast Map Pin (Laser Cyan / Saffron Gold / Polar White)
 
     private func highContrastPin(state: TravelRecord, isSelected: Bool) -> some View {
-        let pinColor = isSelected ? travelAccent : (state.isVisited ? visitedAccent : wishlistAccent)
+        let pinColor = isSelected ? selectedAccent : (state.isVisited ? visitedAccent : wishlistAccent)
         let bgFill = isSelected
-            ? Color(red: 0.16, green: 0.08, blue: 0.02)
-            : (state.isVisited ? Color(red: 0.15, green: 0.11, blue: 0.02) : Color(red: 0.08, green: 0.09, blue: 0.14))
+            ? Color(red: 0.02, green: 0.12, blue: 0.18)
+            : (state.isVisited ? Color(red: 0.16, green: 0.10, blue: 0.02) : Color(red: 0.08, green: 0.09, blue: 0.12))
 
         return HStack(spacing: 4) {
             Circle()
@@ -223,7 +224,7 @@ struct MacTravelAtlasCanvas: View {
 
             Text(state.stateCode)
                 .font(.system(size: 9.5, weight: .bold, design: .monospaced))
-                .foregroundStyle(isSelected ? travelAccent : (state.isVisited ? Color.white : Color.white.opacity(0.85)))
+                .foregroundStyle(isSelected ? selectedAccent : (state.isVisited ? Color.white : Color.white.opacity(0.85)))
         }
         .padding(.horizontal, 6)
         .padding(.vertical, 3)
@@ -236,7 +237,7 @@ struct MacTravelAtlasCanvas: View {
                 .stroke(pinColor, lineWidth: isSelected ? 2.0 : 1.0)
         )
         .shadow(
-            color: isSelected ? travelAccent.opacity(0.75) : (state.isVisited ? visitedAccent.opacity(0.4) : Color.black.opacity(0.6)),
+            color: isSelected ? selectedAccent.opacity(0.80) : (state.isVisited ? visitedAccent.opacity(0.4) : Color.black.opacity(0.6)),
             radius: isSelected ? 8 : 4
         )
     }
@@ -324,7 +325,7 @@ struct MacTravelAtlasCanvas: View {
                             .padding(.horizontal, 8)
                             .padding(.vertical, 5.5)
                             .background(
-                                isSelected ? travelAccent.opacity(0.18) : Color.clear,
+                                isSelected ? selectedAccent.opacity(0.18) : Color.clear,
                                 in: RoundedRectangle(cornerRadius: 5)
                             )
                         }
@@ -336,7 +337,7 @@ struct MacTravelAtlasCanvas: View {
         }
         .padding(10)
         .frame(width: 270)
-        .machinedCard(cornerRadius: 10, accent: travelAccent)
+        .machinedCard(cornerRadius: 10, accent: selectedAccent)
     }
 
     // MARK: - Clean Floating State Inspector Card
@@ -353,7 +354,7 @@ struct MacTravelAtlasCanvas: View {
 
                         Text("(\(state.stateCode))")
                             .font(.system(size: 11, weight: .bold, design: .monospaced))
-                            .foregroundStyle(travelAccent)
+                            .foregroundStyle(selectedAccent)
 
                         if state.isVisited {
                             Image(systemName: "checkmark.seal.fill")
@@ -386,7 +387,7 @@ struct MacTravelAtlasCanvas: View {
             // Best Season & Language
             HStack(spacing: 6) {
                 if !state.bestSeason.isEmpty {
-                    infoBox(label: "BEST SEASON", value: state.bestSeason, accent: travelAccent)
+                    infoBox(label: "BEST SEASON", value: state.bestSeason, accent: selectedAccent)
                 }
                 if !state.officialLanguage.isEmpty {
                     infoBox(label: "LANGUAGE", value: state.officialLanguage, accent: wishlistAccent)
@@ -423,7 +424,7 @@ struct MacTravelAtlasCanvas: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 6)
                 .background(
-                    state.isVisited ? Color.white.opacity(0.10) : travelAccent,
+                    state.isVisited ? Color.white.opacity(0.10) : selectedAccent,
                     in: RoundedRectangle(cornerRadius: 6)
                 )
             }
@@ -437,7 +438,7 @@ struct MacTravelAtlasCanvas: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(travelAccent.opacity(0.40), lineWidth: 1)
+                .stroke(selectedAccent.opacity(0.40), lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(0.45), radius: 12, x: 0, y: 6)
     }
