@@ -201,7 +201,7 @@ struct MacTravelAtlasCanvas: View {
         .mapStyle(
             .standard(
                 elevation: .flat,
-                pointsOfInterest: .including([.publicTransport, .airport, .railwayStation, .marina]),
+                pointsOfInterest: .including([.publicTransport, .airport, .marina]),
                 showsTraffic: false
             )
         )
