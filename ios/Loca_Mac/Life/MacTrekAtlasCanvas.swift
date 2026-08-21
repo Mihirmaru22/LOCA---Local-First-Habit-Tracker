@@ -134,11 +134,11 @@ struct MacTrekAtlasCanvas: View {
             }
         }
         .sheet(item: $passportTrek) { trek in
-            ExpeditionPassportModal(trek: trek)
+            ExpeditionPassportModal(trek: trek, onDismiss: { passportTrek = nil })
                 .frame(minWidth: 700, minHeight: 600)
         }
         .sheet(isPresented: $isTrophyCabinetPresented) {
-            MountaineerTrophyCabinetModal(conqueredTreks: conqueredTreks)
+            MountaineerTrophyCabinetModal(conqueredTreks: conqueredTreks, allTreks: activeTreks, onDismiss: { isTrophyCabinetPresented = false })
                 .frame(minWidth: 640, minHeight: 520)
         }
         .onAppear {
@@ -457,10 +457,10 @@ struct MacTrekAtlasCanvas: View {
         withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
             if trek.status == .conquered {
                 trek.status = .wishlist
-                trek.conqueredAt = nil
+                trek.dateConquered = nil
             } else {
                 trek.status = .conquered
-                trek.conqueredAt = Date.now
+                trek.dateConquered = Date.now
                 Haptics.notify(.success)
             }
             try? modelContext.save()
@@ -472,11 +472,11 @@ struct MacTrekAtlasCanvas: View {
             name: "New Peak",
             region: "Himalayas",
             country: "India",
-            elevationMeters: 4500,
-            difficulty: .moderate,
-            status: .wishlist,
             latitude: 30.5,
-            longitude: 79.5
+            longitude: 79.5,
+            elevationMeters: 4500,
+            status: .wishlist,
+            difficulty: .moderate
         )
         modelContext.insert(newPeak)
         try? modelContext.save()
