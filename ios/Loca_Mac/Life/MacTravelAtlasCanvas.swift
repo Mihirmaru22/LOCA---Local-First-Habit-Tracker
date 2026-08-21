@@ -17,7 +17,15 @@ enum TravelFilter: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
-// MARK: - MacTravelAtlasCanvas (Apple Maps Public Transport & High-Contrast Odyssey)
+// MARK: - MapPolygonRing (Stable Identifiable Boundary for 100% Guaranteed Persistence)
+
+private struct MapPolygonRing: Identifiable {
+    let id: String
+    let coordinates: [CLLocationCoordinate2D]
+    let isSelected: Bool
+}
+
+// MARK: - MacTravelAtlasCanvas (Fast, Persistent High-Contrast Travel Atlas)
 
 struct MacTravelAtlasCanvas: View {
 
@@ -26,8 +34,8 @@ struct MacTravelAtlasCanvas: View {
     @Query(filter: #Predicate<TravelRecord> { $0.archivedAt == nil }, sort: \TravelRecord.name)
     private var activeStates: [TravelRecord]
 
-    // Navigation & Selection States
-    @State private var selectedState: TravelRecord? = nil
+    // Persistent Selection (Stored in UserDefaults so color & selection never get lost)
+    @AppStorage("mac_travel_selected_state_code_v5") private var savedSelectedStateCode: String = "RJ"
     @State private var selectedFilter: TravelFilter = .all
     @State private var searchText: String = ""
     @State private var isSearchOpen: Bool = false
@@ -47,7 +55,19 @@ struct MacTravelAtlasCanvas: View {
         )
     )
 
-    // Filtered States
+    // Computed Active Selection
+    private var selectedState: TravelRecord? {
+        get {
+            activeStates.first(where: { $0.stateCode == savedSelectedStateCode }) ?? activeStates.first
+        }
+        set {
+            if let code = newValue?.stateCode {
+                savedSelectedStateCode = code
+            }
+        }
+    }
+
+    // Filtered States for List
     private var filteredStates: [TravelRecord] {
         activeStates.filter { state in
             let matchesSearch = searchText.isEmpty ||
@@ -70,12 +90,41 @@ struct MacTravelAtlasCanvas: View {
         }
     }
 
+    private var visitedStates: [TravelRecord] {
+        activeStates.filter { $0.isVisited }
+    }
+
     private var visitedStatesCount: Int {
-        activeStates.filter { $0.isVisited }.count
+        visitedStates.count
     }
 
     private var explorationPercentage: Double {
         activeStates.isEmpty ? 0 : (Double(visitedStatesCount) / Double(activeStates.count)) * 100.0
+    }
+
+    // Stable Polygon Rings for Active Boundaries
+    private var boundaryRings: [MapPolygonRing] {
+        var result: [MapPolygonRing] = []
+
+        // 1. Persistent Visited State Boundaries (Golden Sun)
+        for state in visitedStates {
+            if state.stateCode != selectedState?.stateCode {
+                let rings = GeoJSONBoundaryLoader.shared.outerRings(for: state.stateCode)
+                for (idx, coords) in rings.enumerated() {
+                    result.append(MapPolygonRing(id: "\(state.stateCode)_v_\(idx)", coordinates: coords, isSelected: false))
+                }
+            }
+        }
+
+        // 2. Selected State Boundary (Laser Cyan - Top Layer)
+        if let selected = selectedState {
+            let rings = GeoJSONBoundaryLoader.shared.outerRings(for: selected.stateCode)
+            for (idx, coords) in rings.enumerated() {
+                result.append(MapPolygonRing(id: "\(selected.stateCode)_sel_\(idx)", coordinates: coords, isSelected: true))
+            }
+        }
+
+        return result
     }
 
     var body: some View {
@@ -113,9 +162,6 @@ struct MacTravelAtlasCanvas: View {
         }
         .onAppear {
             TravelSeeder.seedIfNeeded(context: modelContext)
-            if selectedState == nil {
-                selectedState = activeStates.first(where: { $0.name == "Rajasthan" }) ?? activeStates.first
-            }
         }
     }
 
@@ -169,17 +215,14 @@ struct MacTravelAtlasCanvas: View {
 
     private var mapView: some View {
         Map(position: $mapCameraPosition) {
-            // Selected State High-Contrast Highlight Boundary (Fast single polygon)
-            if let selected = selectedState {
-                let rings = GeoJSONBoundaryLoader.shared.outerRings(for: selected.stateCode)
-                ForEach(rings.indices, id: \.self) { ringIdx in
-                    MapPolygon(coordinates: rings[ringIdx])
-                        .foregroundStyle(selectedAccent.opacity(0.22))
+            // Persistent State Highlight Boundaries (Visited & Selected)
+            ForEach(boundaryRings) { ring in
+                MapPolygon(coordinates: ring.coordinates)
+                    .foregroundStyle(ring.isSelected ? selectedAccent.opacity(0.24) : visitedAccent.opacity(0.14))
 
-                    MapPolygon(coordinates: rings[ringIdx])
-                        .foregroundStyle(Color.clear)
-                        .stroke(selectedAccent, lineWidth: 3.0)
-                }
+                MapPolygon(coordinates: ring.coordinates)
+                    .foregroundStyle(Color.clear)
+                    .stroke(ring.isSelected ? selectedAccent : visitedAccent.opacity(0.70), lineWidth: ring.isSelected ? 3.5 : 1.4)
             }
 
             // High-Contrast Pins (High-visibility stand-out colors over transit maps)
@@ -372,7 +415,7 @@ struct MacTravelAtlasCanvas: View {
 
                 Button {
                     withAnimation(.easeOut(duration: 0.12)) {
-                        selectedState = nil
+                        savedSelectedStateCode = ""
                     }
                 } label: {
                     Image(systemName: "xmark.circle.fill")
