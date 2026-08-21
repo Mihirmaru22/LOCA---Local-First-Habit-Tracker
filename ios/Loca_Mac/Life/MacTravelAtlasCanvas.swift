@@ -17,7 +17,7 @@ enum TravelFilter: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
-// MARK: - MacTravelAtlasCanvas (Fast, High-Contrast Sovereign Travel Atlas)
+// MARK: - MacTravelAtlasCanvas (Apple Maps Public Transport & High-Contrast Odyssey)
 
 struct MacTravelAtlasCanvas: View {
 
@@ -31,6 +31,11 @@ struct MacTravelAtlasCanvas: View {
     @State private var selectedFilter: TravelFilter = .all
     @State private var searchText: String = ""
     @State private var isSearchOpen: Bool = false
+
+    // Electric Tangerine Signature Palette for Travel Atlas
+    private let travelAccent = Color(red: 1.0, green: 0.43, blue: 0.0) // Electric Tangerine
+    private let visitedAccent = Color(red: 0.98, green: 0.72, blue: 0.15) // Golden Sun
+    private let wishlistAccent = Color(red: 0.55, green: 0.65, blue: 0.98) // Laser Iris
 
     // MapKit Camera Position
     @State private var mapCameraPosition: MapCameraPosition = .camera(
@@ -118,16 +123,16 @@ struct MacTravelAtlasCanvas: View {
 
     private var topBar: some View {
         HStack(spacing: 12) {
-            Image(systemName: "globe.asia.australia.fill")
+            Image(systemName: "tram.fill.tunnel")
                 .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(DS.Theme.cyan)
+                .foregroundStyle(travelAccent)
 
             VStack(alignment: .leading, spacing: 1) {
-                Text("Travel Atlas")
+                Text("Travel Atlas & Transit Odyssey")
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(Color.white)
 
-                Text("\(visitedStatesCount) / \(activeStates.count) Explored · \(Int(explorationPercentage))% Complete")
+                Text("\(visitedStatesCount) / \(activeStates.count) Explored · \(Int(explorationPercentage))% Complete · Public Transit View")
                     .font(.system(size: 10.5, design: .monospaced))
                     .foregroundStyle(DS.Theme.textSecondary)
             }
@@ -147,11 +152,11 @@ struct MacTravelAtlasCanvas: View {
                     Text(isSearchOpen ? "Close List" : "Search & Filter")
                         .font(.system(size: 11.5, weight: .semibold))
                 }
-                .foregroundStyle(isSearchOpen ? DS.Theme.cyan : Color.white.opacity(0.85))
+                .foregroundStyle(isSearchOpen ? travelAccent : Color.white.opacity(0.85))
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
-                .background(isSearchOpen ? DS.Theme.cyan.opacity(0.15) : Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
-                .overlay(RoundedRectangle(cornerRadius: 6).stroke(isSearchOpen ? DS.Theme.cyan.opacity(0.4) : Color.white.opacity(0.08), lineWidth: 1))
+                .background(isSearchOpen ? travelAccent.opacity(0.15) : Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
+                .overlay(RoundedRectangle(cornerRadius: 6).stroke(isSearchOpen ? travelAccent.opacity(0.4) : Color.white.opacity(0.08), lineWidth: 1))
             }
             .buttonStyle(.plain)
         }
@@ -160,7 +165,7 @@ struct MacTravelAtlasCanvas: View {
         .background(DS.Theme.surface)
     }
 
-    // MARK: - High-Performance Map View
+    // MARK: - Apple Maps Public Transport View
 
     private var mapView: some View {
         Map(position: $mapCameraPosition) {
@@ -169,15 +174,15 @@ struct MacTravelAtlasCanvas: View {
                 let rings = GeoJSONBoundaryLoader.shared.outerRings(for: selected.stateCode)
                 ForEach(rings.indices, id: \.self) { ringIdx in
                     MapPolygon(coordinates: rings[ringIdx])
-                        .foregroundStyle(DS.Theme.cyan.opacity(0.25))
+                        .foregroundStyle(travelAccent.opacity(0.24))
 
                     MapPolygon(coordinates: rings[ringIdx])
                         .foregroundStyle(Color.clear)
-                        .stroke(DS.Theme.cyan, lineWidth: 2.5)
+                        .stroke(travelAccent, lineWidth: 3.0)
                 }
             }
 
-            // High-Contrast Pins (Distinct colors that stand out from any map terrain)
+            // High-Contrast Pins (High-visibility stand-out colors over transit maps)
             ForEach(activeStates) { state in
                 let isSelected = selectedState?.id == state.id
                 Annotation("", coordinate: state.coordinate) {
@@ -193,51 +198,45 @@ struct MacTravelAtlasCanvas: View {
                 }
             }
         }
-        .mapStyle(.standard(elevation: .flat))
+        .mapStyle(
+            .standard(
+                elevation: .flat,
+                pointsOfInterest: .including([.publicTransport, .airport, .railwayStation, .marina]),
+                showsTraffic: false
+            )
+        )
         .edgesIgnoringSafeArea(.all)
     }
 
-    // MARK: - High-Contrast Map Pin (Laser Cyan / Vivid Coral / Solid White)
+    // MARK: - High-Contrast Map Pin (Electric Tangerine / Golden Sun / Laser Iris)
 
     private func highContrastPin(state: TravelRecord, isSelected: Bool) -> some View {
-        HStack(spacing: 3.5) {
+        let pinColor = isSelected ? travelAccent : (state.isVisited ? visitedAccent : wishlistAccent)
+        let bgFill = isSelected
+            ? Color(red: 0.16, green: 0.08, blue: 0.02)
+            : (state.isVisited ? Color(red: 0.15, green: 0.11, blue: 0.02) : Color(red: 0.08, green: 0.09, blue: 0.14))
+
+        return HStack(spacing: 4) {
             Circle()
-                .fill(
-                    isSelected
-                        ? DS.Theme.cyan
-                        : (state.isVisited ? DS.Theme.amber : Color.white.opacity(0.6))
-                )
+                .fill(pinColor)
                 .frame(width: 6, height: 6)
 
             Text(state.stateCode)
                 .font(.system(size: 9.5, weight: .bold, design: .monospaced))
-                .foregroundStyle(
-                    isSelected
-                        ? DS.Theme.cyan
-                        : (state.isVisited ? Color.white : Color.white.opacity(0.8))
-                )
+                .foregroundStyle(isSelected ? travelAccent : (state.isVisited ? Color.white : Color.white.opacity(0.85)))
         }
         .padding(.horizontal, 6)
         .padding(.vertical, 3)
         .background(
             RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .fill(
-                    isSelected
-                        ? Color(red: 0.04, green: 0.16, blue: 0.22)
-                        : (state.isVisited ? Color(red: 0.18, green: 0.12, blue: 0.04) : Color(red: 0.08, green: 0.09, blue: 0.10))
-                )
+                .fill(bgFill)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .stroke(
-                    isSelected
-                        ? DS.Theme.cyan
-                        : (state.isVisited ? DS.Theme.amber.opacity(0.8) : Color.white.opacity(0.20)),
-                    lineWidth: isSelected ? 1.8 : 1.0
-                )
+                .stroke(pinColor, lineWidth: isSelected ? 2.0 : 1.0)
         )
         .shadow(
-            color: isSelected ? DS.Theme.cyan.opacity(0.6) : (state.isVisited ? DS.Theme.amber.opacity(0.3) : Color.black.opacity(0.5)),
+            color: isSelected ? travelAccent.opacity(0.75) : (state.isVisited ? visitedAccent.opacity(0.4) : Color.black.opacity(0.6)),
             radius: isSelected ? 8 : 4
         )
     }
@@ -285,7 +284,7 @@ struct MacTravelAtlasCanvas: View {
                                 .padding(.horizontal, 7)
                                 .padding(.vertical, 3)
                                 .background(
-                                    isSelected ? DS.Theme.cyan : Color.white.opacity(0.04),
+                                    isSelected ? travelAccent : Color.white.opacity(0.04),
                                     in: RoundedRectangle(cornerRadius: 4)
                                 )
                         }
@@ -309,7 +308,7 @@ struct MacTravelAtlasCanvas: View {
                         } label: {
                             HStack(spacing: 8) {
                                 Circle()
-                                    .fill(state.isVisited ? DS.Theme.amber : Color.white.opacity(0.2))
+                                    .fill(state.isVisited ? visitedAccent : wishlistAccent.opacity(0.6))
                                     .frame(width: 6, height: 6)
 
                                 Text(state.name)
@@ -325,7 +324,7 @@ struct MacTravelAtlasCanvas: View {
                             .padding(.horizontal, 8)
                             .padding(.vertical, 5.5)
                             .background(
-                                isSelected ? DS.Theme.cyan.opacity(0.15) : Color.clear,
+                                isSelected ? travelAccent.opacity(0.18) : Color.clear,
                                 in: RoundedRectangle(cornerRadius: 5)
                             )
                         }
@@ -337,7 +336,7 @@ struct MacTravelAtlasCanvas: View {
         }
         .padding(10)
         .frame(width: 270)
-        .machinedCard(cornerRadius: 10)
+        .machinedCard(cornerRadius: 10, accent: travelAccent)
     }
 
     // MARK: - Clean Floating State Inspector Card
@@ -354,12 +353,12 @@ struct MacTravelAtlasCanvas: View {
 
                         Text("(\(state.stateCode))")
                             .font(.system(size: 11, weight: .bold, design: .monospaced))
-                            .foregroundStyle(DS.Theme.cyan)
+                            .foregroundStyle(travelAccent)
 
                         if state.isVisited {
                             Image(systemName: "checkmark.seal.fill")
                                 .font(.system(size: 12))
-                                .foregroundStyle(DS.Theme.amber)
+                                .foregroundStyle(visitedAccent)
                         }
                     }
 
@@ -387,10 +386,10 @@ struct MacTravelAtlasCanvas: View {
             // Best Season & Language
             HStack(spacing: 6) {
                 if !state.bestSeason.isEmpty {
-                    infoBox(label: "BEST SEASON", value: state.bestSeason, accent: DS.Theme.amber)
+                    infoBox(label: "BEST SEASON", value: state.bestSeason, accent: travelAccent)
                 }
                 if !state.officialLanguage.isEmpty {
-                    infoBox(label: "LANGUAGE", value: state.officialLanguage, accent: DS.Theme.cyan)
+                    infoBox(label: "LANGUAGE", value: state.officialLanguage, accent: wishlistAccent)
                 }
             }
 
@@ -424,7 +423,7 @@ struct MacTravelAtlasCanvas: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 6)
                 .background(
-                    state.isVisited ? Color.white.opacity(0.10) : DS.Theme.amber,
+                    state.isVisited ? Color.white.opacity(0.10) : travelAccent,
                     in: RoundedRectangle(cornerRadius: 6)
                 )
             }
@@ -438,7 +437,7 @@ struct MacTravelAtlasCanvas: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(DS.Theme.border, lineWidth: 1)
+                .stroke(travelAccent.opacity(0.40), lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(0.45), radius: 12, x: 0, y: 6)
     }
