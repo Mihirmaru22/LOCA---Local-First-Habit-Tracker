@@ -141,6 +141,14 @@ struct MacTrekAtlasCanvas: View {
             MountaineerTrophyCabinetModal(conqueredTreks: conqueredTreks, allTreks: activeTreks, onDismiss: { isTrophyCabinetPresented = false })
                 .frame(minWidth: 640, minHeight: 520)
         }
+        .sheet(isPresented: $isLogModalPresented) {
+            MacLogPeakModal(
+                onDismiss: { isLogModalPresented = false },
+                onPeakCreated: { newPeak in
+                    selectedTrek = newPeak
+                }
+            )
+        }
         .onAppear {
             TrekSeeder.seedIfNeeded(context: modelContext)
             if selectedTrek == nil {
@@ -190,7 +198,8 @@ struct MacTrekAtlasCanvas: View {
 
             // Log Peak Action
             Button {
-                createNewPeak()
+                isLogModalPresented = true
+                Haptics.impact(.light)
             } label: {
                 HStack(spacing: 5) {
                     Image(systemName: "plus.circle.fill")
