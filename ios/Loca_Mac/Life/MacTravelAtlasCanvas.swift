@@ -60,9 +60,11 @@ struct MacTravelAtlasCanvas: View {
         get {
             activeStates.first(where: { $0.stateCode == savedSelectedStateCode }) ?? activeStates.first
         }
-        set {
+        nonmutating set {
             if let code = newValue?.stateCode {
                 savedSelectedStateCode = code
+            } else {
+                savedSelectedStateCode = ""
             }
         }
     }
