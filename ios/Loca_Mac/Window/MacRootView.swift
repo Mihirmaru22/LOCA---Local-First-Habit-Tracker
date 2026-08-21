@@ -59,9 +59,6 @@ struct MacRootView: View {
     var body: some View {
         ZStack {
             switch modeManager.activeStage {
-            case .spark:
-                MacSimplifiedModeView()
-                    .transition(.opacity)
             case .hero:
                 MacHeroModeView()
                     .transition(.opacity)

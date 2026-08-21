@@ -356,10 +356,10 @@ struct MacSettingsView: View {
         }
     }
 
-    // Evolutionary UI Stage (Spark vs Hero vs Architect)
+    // Workspace Mode (Hero vs Architect)
     private var workspaceModeControlBlock: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Picker("Evolutionary Stage", selection: Binding(
+            Picker("Workspace Mode", selection: Binding(
                 get: { SimplifiedModeManager.shared.activeStage },
                 set: { newStage in
                     SimplifiedModeManager.shared.setStage(newStage, celebrate: false)
@@ -376,7 +376,7 @@ struct MacSettingsView: View {
                 .foregroundStyle(DS.Color.textSecondary)
 
             HStack {
-                Text("Evolutionary Stage Cycle Shortcut")
+                Text("Quick Mode Switch Shortcut")
                     .font(.system(size: 12))
                 Spacer()
                 Text("⌘ + ⇧ + P")

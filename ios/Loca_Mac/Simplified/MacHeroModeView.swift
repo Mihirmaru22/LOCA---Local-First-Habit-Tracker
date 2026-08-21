@@ -173,7 +173,7 @@ struct MacHeroModeView: View {
         .background(Color(nsColor: NSColor(red: 0.07, green: 0.07, blue: 0.08, alpha: 1.0)))
     }
 
-    // MARK: - Top Header & Evolutionary Switcher
+    // MARK: - Top Header & Workspace Mode Switcher
 
     private var topStageHeaderBar: some View {
         HStack(spacing: 16) {
@@ -186,14 +186,14 @@ struct MacHeroModeView: View {
                     .font(.system(size: 15, weight: .bold, design: .rounded))
                     .foregroundStyle(Color.white)
 
-                Text("• Stage 2: Hero")
+                Text("• Hero Mode")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(Color(red: 0.35, green: 0.65, blue: 0.95))
             }
 
             Spacer()
 
-            // 3-Stage Evolutionary Switcher Capsule
+            // Workspace Mode Switcher Capsule (Hero vs Architect)
             HStack(spacing: 3) {
                 ForEach(PlutoUserStage.allCases) { stage in
                     let isCurrent = modeManager.activeStage == stage
@@ -222,6 +222,19 @@ struct MacHeroModeView: View {
             .padding(3)
             .background(Color.black.opacity(0.4), in: Capsule())
             .overlay(Capsule().stroke(Color.white.opacity(0.1), lineWidth: 1))
+
+            // Feature Guide Tour Button
+            Button {
+                PlutoAppGuideManager.shared.startTour()
+            } label: {
+                Image(systemName: "questionmark.circle")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Color.white.opacity(0.6))
+                    .padding(6)
+            }
+            .buttonStyle(.plain)
+            .help("Start Spotlight Feature Tour (⌘/)")
+            .accessibilityLabel("Start Feature Tour")
         }
     }
 

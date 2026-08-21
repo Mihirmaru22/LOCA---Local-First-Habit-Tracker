@@ -2,7 +2,7 @@
 //  SimplifiedModeManagerTests.swift
 //  Loca_MacTests
 //
-//  Unit Tests for Evolutionary UI Stages (Spark, Hero, Architect) state transitions.
+//  Unit Tests for Hero vs Architect Workspace Mode state transitions.
 //
 
 import Testing
@@ -11,39 +11,32 @@ import Foundation
 
 struct SimplifiedModeManagerTests {
 
-    @Test func testEvolutionaryStageTransitions() {
+    @Test func testHeroAndArchitectTransitions() {
         let manager = SimplifiedModeManager.shared
 
-        // Test Spark
-        manager.setStage(.spark)
-        #expect(manager.activeStage == .spark)
-        #expect(manager.isSimplifiedModeActive == true)
-
-        // Advance to Hero
-        manager.advanceToHero()
+        // Test Hero default
+        manager.setStage(.hero)
         #expect(manager.activeStage == .hero)
-        #expect(manager.isSimplifiedModeActive == true)
+        #expect(manager.isHeroModeActive == true)
 
         // Advance to Architect
         manager.advanceToArchitect()
         #expect(manager.activeStage == .architect)
-        #expect(manager.isSimplifiedModeActive == false)
+        #expect(manager.isHeroModeActive == false)
 
-        // Cycle toggle: Architect -> Spark
-        manager.toggleMode()
-        #expect(manager.activeStage == .spark)
-
-        // Spark -> Hero
+        // Toggle back to Hero
         manager.toggleMode()
         #expect(manager.activeStage == .hero)
+        #expect(manager.isHeroModeActive == true)
 
-        // Hero -> Architect
+        // Toggle to Architect
         manager.toggleMode()
         #expect(manager.activeStage == .architect)
+        #expect(manager.isHeroModeActive == false)
 
-        // Reset to Spark for clean baseline
-        manager.setStage(.spark)
-        #expect(manager.activeStage == .spark)
+        // Reset to Hero for clean baseline
+        manager.setStage(.hero)
+        #expect(manager.activeStage == .hero)
     }
 
     @Test func testLaunchCountTracking() {

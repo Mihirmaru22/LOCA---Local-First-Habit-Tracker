@@ -128,7 +128,7 @@ struct LOCACommands: Commands {
 
         // MARK: View menu
         CommandMenu("View") {
-            Button("Toggle Simplified / Pro Mode") {
+            Button("Toggle Hero / Architect Mode") {
                 NotificationCenter.default.post(name: .locaToggleProMode, object: nil)
             }
             .keyboardShortcut("p", modifiers: [.command, .shift])

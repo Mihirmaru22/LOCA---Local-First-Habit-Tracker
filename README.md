@@ -48,17 +48,16 @@ PLUTO organizes all intentional living and productivity into 3 primary desktop d
 
 ---
 
-## 🧬 3-Stage Evolutionary UI Architecture
+## ⚔️ Dual-Tier Workspace Architecture: Hero Mode & Architect Mode
 
-PLUTO adapts its workspace density to the user's maturity and cognitive state:
+PLUTO provides two distinct workspace environments tailored to cognitive flow and depth:
 
-| Stage | Mode Name | Visual Architecture | Target & Capability |
+| Workspace | Mode Name | Layout | Capabilities & Focus |
 |---|---|---|---|
-| **🌱 Stage 1** | **Spark** | **Single-Column Cockpit** | Ultra-minimal HUD, Omni-input (Tasks vs Keystone Habits), Live vitual telemetry dials (Streak, Energy %, Next Break). Zero cognitive load. |
-| **⚔️ Stage 2** | **Hero** | **2-Column Split Bridge** | **Left**: Tri-Diurnal Horizontal Timeline (Morning, Afternoon, Evening) + Rule of 3 Active Objectives.<br>**Right**: Weekly Goals, Circadian Energy Battery, Ambient Focus Soundscapes, Daily Reflection. |
-| **👑 Stage 3** | **Architect** | **3-Column Canvas** | Full 3-column `NavigationSplitView` with Day Planner timeline, BrainStorm canvas, Trek Atlas, Life Audit, and local MCP agent integration. |
+| **⚔️ Tier 1** | **Hero Mode** | **2-Column Focus Engine** | **Left Column**: Tri-Diurnal Horizontal Timeline (Morning 🌅, Afternoon ☀️, Evening 🌙) + Rule of 3 Active Mission Objectives.<br>**Right Column**: Circadian Energy Battery dial, Keystone Habit consistency list & flame streaks, Weekly Momentum trends, Ambient Focus Soundscape player (Rain, Drone, White Noise, Campfire), Daily Reflection check-in. |
+| **👑 Tier 2** | **Architect Mode** | **3-Column Sovereign OS** | Full 3-column `NavigationSplitView` with proportional Day Planner timeline, BrainStorm canvas, Projects management, Mountain Trek Atlas, GeoJSON Travel Atlas, Life Audit matrix, and local Model Context Protocol (MCP) AI agent integration. |
 
-> **Evolutionary Shortcut**: Press **`⌘ + ⇧ + P`** from anywhere in the app to cycle through Spark ➔ Hero ➔ Architect stages.
+> **Mode Switch Shortcut**: Press **`⌘ + ⇧ + P`** from anywhere in the app to toggle between **Hero Mode** and **Architect Mode**.
 
 ---
 
