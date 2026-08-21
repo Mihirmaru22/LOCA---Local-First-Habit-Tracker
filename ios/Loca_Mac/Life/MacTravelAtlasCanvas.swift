@@ -22,10 +22,9 @@ enum TravelFilter: String, CaseIterable, Identifiable {
 private struct MapPolygonRing: Identifiable {
     let id: String
     let coordinates: [CLLocationCoordinate2D]
-    let isSelected: Bool
 }
 
-// MARK: - MacTravelAtlasCanvas (Fast, Persistent High-Contrast Travel Atlas)
+// MARK: - MacTravelAtlasCanvas (High-Contrast Cartographic Sovereign Travel Atlas)
 
 struct MacTravelAtlasCanvas: View {
 
@@ -40,9 +39,9 @@ struct MacTravelAtlasCanvas: View {
     @State private var searchText: String = ""
     @State private var isSearchOpen: Bool = false
 
-    // Cartographic Color Hierarchy (Laser Cyan Selected · Saffron Visited · Polar Wishlist)
-    private let selectedAccent = Color(red: 0.05, green: 0.78, blue: 0.98) // Laser Cyan (#0EC7FA)
-    private let visitedAccent  = Color(red: 0.98, green: 0.65, blue: 0.12) // Saffron Gold (#FAA61E)
+    // High-Contrast Cartographic Color Palette
+    private let selectedAccent = Color(red: 0.0, green: 0.88, blue: 1.0) // True Laser Neon Cyan (#00E0FF)
+    private let visitedAccent  = Color(red: 1.0, green: 0.72, blue: 0.0) // Solid Saffron Gold (#FFB800)
     private let wishlistAccent = Color(red: 0.85, green: 0.90, blue: 0.95) // Polar Silver-White (#D9E6F2)
 
     // MapKit Camera Position
@@ -55,7 +54,7 @@ struct MacTravelAtlasCanvas: View {
         )
     )
 
-    // Computed Active Selection
+    // Computed Active Selection (Non-mutating via @AppStorage)
     private var selectedState: TravelRecord? {
         get {
             activeStates.first(where: { $0.stateCode == savedSelectedStateCode }) ?? activeStates.first
@@ -104,29 +103,13 @@ struct MacTravelAtlasCanvas: View {
         activeStates.isEmpty ? 0 : (Double(visitedStatesCount) / Double(activeStates.count)) * 100.0
     }
 
-    // Stable Polygon Rings for Active Boundaries
-    private var boundaryRings: [MapPolygonRing] {
-        var result: [MapPolygonRing] = []
-
-        // 1. Persistent Visited State Boundaries (Golden Sun)
-        for state in visitedStates {
-            if state.stateCode != selectedState?.stateCode {
-                let rings = GeoJSONBoundaryLoader.shared.outerRings(for: state.stateCode)
-                for (idx, coords) in rings.enumerated() {
-                    result.append(MapPolygonRing(id: "\(state.stateCode)_v_\(idx)", coordinates: coords, isSelected: false))
-                }
-            }
+    // High-Precision Selected State Boundary Only (Maximum contrast & performance)
+    private var selectedBoundaryRings: [MapPolygonRing] {
+        guard let selected = selectedState else { return [] }
+        let rings = GeoJSONBoundaryLoader.shared.outerRings(for: selected.stateCode)
+        return rings.enumerated().map { idx, coords in
+            MapPolygonRing(id: "\(selected.stateCode)_sel_\(idx)", coordinates: coords)
         }
-
-        // 2. Selected State Boundary (Laser Cyan - Top Layer)
-        if let selected = selectedState {
-            let rings = GeoJSONBoundaryLoader.shared.outerRings(for: selected.stateCode)
-            for (idx, coords) in rings.enumerated() {
-                result.append(MapPolygonRing(id: "\(selected.stateCode)_sel_\(idx)", coordinates: coords, isSelected: true))
-            }
-        }
-
-        return result
     }
 
     var body: some View {
@@ -217,17 +200,17 @@ struct MacTravelAtlasCanvas: View {
 
     private var mapView: some View {
         Map(position: $mapCameraPosition) {
-            // Persistent State Highlight Boundaries (Visited & Selected)
-            ForEach(boundaryRings) { ring in
+            // Selected State Laser Cyan Highlight Boundary (High-contrast glowing territory)
+            ForEach(selectedBoundaryRings) { ring in
                 MapPolygon(coordinates: ring.coordinates)
-                    .foregroundStyle(ring.isSelected ? selectedAccent.opacity(0.24) : visitedAccent.opacity(0.14))
+                    .foregroundStyle(selectedAccent.opacity(0.28))
 
                 MapPolygon(coordinates: ring.coordinates)
                     .foregroundStyle(Color.clear)
-                    .stroke(ring.isSelected ? selectedAccent : visitedAccent.opacity(0.70), lineWidth: ring.isSelected ? 3.5 : 1.4)
+                    .stroke(selectedAccent, lineWidth: 4.0)
             }
 
-            // High-Contrast Pins (High-visibility stand-out colors over transit maps)
+            // High-Contrast Pins (High-visibility solid badges over transit maps)
             ForEach(activeStates) { state in
                 let isSelected = selectedState?.id == state.id
                 Annotation("", coordinate: state.coordinate) {
@@ -254,37 +237,62 @@ struct MacTravelAtlasCanvas: View {
         .edgesIgnoringSafeArea(.all)
     }
 
-    // MARK: - High-Contrast Map Pin (Laser Cyan / Saffron Gold / Polar White)
+    // MARK: - High-Contrast Map Pin (Solid Luminous Badges)
 
     private func highContrastPin(state: TravelRecord, isSelected: Bool) -> some View {
-        let pinColor = isSelected ? selectedAccent : (state.isVisited ? visitedAccent : wishlistAccent)
-        let bgFill = isSelected
-            ? Color(red: 0.02, green: 0.12, blue: 0.18)
-            : (state.isVisited ? Color(red: 0.16, green: 0.10, blue: 0.02) : Color(red: 0.08, green: 0.09, blue: 0.12))
+        HStack(spacing: 4) {
+            if isSelected {
+                Circle()
+                    .fill(Color.black)
+                    .frame(width: 5, height: 5)
 
-        return HStack(spacing: 4) {
-            Circle()
-                .fill(pinColor)
-                .frame(width: 6, height: 6)
+                Text(state.stateCode)
+                    .font(.system(size: 10.5, weight: .heavy, design: .monospaced))
+                    .foregroundStyle(Color.black)
+            } else if state.isVisited {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 8, weight: .heavy))
+                    .foregroundStyle(Color.black)
 
-            Text(state.stateCode)
-                .font(.system(size: 9.5, weight: .bold, design: .monospaced))
-                .foregroundStyle(isSelected ? selectedAccent : (state.isVisited ? Color.white : Color.white.opacity(0.85)))
+                Text(state.stateCode)
+                    .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
+                    .foregroundStyle(Color.black)
+            } else {
+                Circle()
+                    .fill(Color.white.opacity(0.5))
+                    .frame(width: 4, height: 4)
+
+                Text(state.stateCode)
+                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+                    .foregroundStyle(Color.white.opacity(0.85))
+            }
         }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 3)
+        .padding(.horizontal, isSelected ? 7 : 5.5)
+        .padding(.vertical, isSelected ? 3.5 : 2.5)
         .background(
-            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .fill(bgFill)
+            Capsule()
+                .fill(
+                    isSelected
+                        ? selectedAccent
+                        : (state.isVisited ? visitedAccent : Color(red: 0.10, green: 0.11, blue: 0.14))
+                )
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .stroke(pinColor, lineWidth: isSelected ? 2.0 : 1.0)
+            Capsule()
+                .stroke(
+                    isSelected
+                        ? Color.white
+                        : (state.isVisited ? Color.white.opacity(0.55) : Color.white.opacity(0.20)),
+                    lineWidth: isSelected ? 2.0 : 1.0
+                )
         )
         .shadow(
-            color: isSelected ? selectedAccent.opacity(0.80) : (state.isVisited ? visitedAccent.opacity(0.4) : Color.black.opacity(0.6)),
-            radius: isSelected ? 8 : 4
+            color: isSelected ? selectedAccent.opacity(0.85) : (state.isVisited ? visitedAccent.opacity(0.45) : Color.black.opacity(0.5)),
+            radius: isSelected ? 8 : 4,
+            x: 0,
+            y: isSelected ? 2 : 1
         )
+        .scaleEffect(isSelected ? 1.15 : 1.0)
     }
 
     // MARK: - Floating Search & Filter Drawer
