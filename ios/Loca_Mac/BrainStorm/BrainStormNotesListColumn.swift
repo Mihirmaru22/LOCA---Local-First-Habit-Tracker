@@ -416,14 +416,7 @@ struct BrainStormNotesListColumn: View {
             }
             .padding(.horizontal, 11)
             .padding(.vertical, 9)
-            .background(
-                isSelected ? Color.accentColor.opacity(0.24) : (isHovered ? Color.white.opacity(0.06) : Color.white.opacity(0.02)),
-                in: RoundedRectangle(cornerRadius: 8)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(isSelected ? Color.accentColor.opacity(0.55) : Color.white.opacity(0.04), lineWidth: 1)
-            )
+            .machinedCard(isHovered: isHovered, isSelected: isSelected, cornerRadius: 7, accent: DS.Theme.cyan)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -445,9 +438,9 @@ struct BrainStormNotesListColumn: View {
             selectedNote = note
             Haptics.impact(.light)
         } label: {
-            VStack(alignment: .leading, spacing: 6) {
-                // Top Header
-                HStack(spacing: 4) {
+            VStack(alignment: .leading, spacing: 8) {
+                // Header (Title + Pin/Lock)
+                HStack(spacing: 5) {
                     if note.isPinned {
                         Image(systemName: "pin.fill")
                             .font(.system(size: 8.5))
@@ -458,48 +451,38 @@ struct BrainStormNotesListColumn: View {
                             .font(.system(size: 8.5))
                             .foregroundStyle(Color.indigo)
                     }
+
                     Text(note.title.isEmpty ? "New Note" : note.title)
-                        .font(.system(size: 11.5, weight: isSelected ? .semibold : .medium))
-                        .foregroundStyle(Color.white)
+                        .font(.system(size: 12.5, weight: .bold))
+                        .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.90))
                         .lineLimit(1)
+
                     Spacer()
                 }
 
-                // Paper Content Preview (Extended length)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(note.bodyText.isEmpty ? "Empty note..." : note.previewSnippet)
-                        .font(.system(size: 10))
-                        .foregroundStyle(Color.white.opacity(0.65))
-                        .lineLimit(5)
-                        .lineSpacing(1.5)
-                        .multilineTextAlignment(.leading)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                // Snippet Body
+                Text(note.previewSnippet)
+                    .font(.system(size: 11))
+                    .foregroundStyle(isSelected ? Color.white.opacity(0.80) : Color.white.opacity(0.55))
+                    .lineLimit(4)
+                    .lineSpacing(2)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxHeight: .infinity, alignment: .topLeading)
 
-                // Bottom Metadata Pill
+                Spacer(minLength: 4)
+
+                // Date Footer
                 HStack {
                     Text(formatDate(note.updatedAt))
                         .font(.system(size: 9, design: .monospaced))
-                        .foregroundStyle(Color.white.opacity(0.4))
+                        .foregroundStyle(Color.white.opacity(0.35))
                     Spacer()
-
-                    if note.hasChecklist {
-                        Image(systemName: "checkmark.circle")
-                            .font(.system(size: 9))
-                            .foregroundStyle(Color.white.opacity(0.35))
-                    }
                 }
             }
-            .padding(10)
-            .frame(height: 130)
-            .background(
-                isSelected ? Color.accentColor.opacity(0.20) : (isHovered ? Color.white.opacity(0.08) : Color.white.opacity(0.04)),
-                in: RoundedRectangle(cornerRadius: 10)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(isSelected ? Color.accentColor.opacity(0.7) : Color.white.opacity(0.08), lineWidth: 1)
-            )
+            .padding(12)
+            .frame(height: 125)
+            .machinedCard(isHovered: isHovered, isSelected: isSelected, cornerRadius: 8, accent: DS.Theme.cyan)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .contextMenu {
