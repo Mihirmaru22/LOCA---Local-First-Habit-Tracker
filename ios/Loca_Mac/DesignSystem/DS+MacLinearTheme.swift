@@ -43,6 +43,9 @@ extension DS {
         /// Primary Executive Gold / Amber (Linear style).
         public static let amber = SwiftUI.Color(red: 0.96, green: 0.65, blue: 0.18)
 
+        /// Universal Accent Token
+        public static let accent = amber
+
         /// Raycast-style Electric Cyan.
         public static let cyan = SwiftUI.Color(red: 0.08, green: 0.72, blue: 0.88)
 
