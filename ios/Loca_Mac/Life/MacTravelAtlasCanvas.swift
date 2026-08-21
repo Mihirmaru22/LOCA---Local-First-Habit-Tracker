@@ -389,8 +389,8 @@ struct MacTravelAtlasCanvas: View {
                 if !state.bestSeason.isEmpty {
                     infoBox(label: "BEST SEASON", value: state.bestSeason, accent: DS.Theme.amber)
                 }
-                if !state.primaryLanguage.isEmpty {
-                    infoBox(label: "LANGUAGE", value: state.primaryLanguage, accent: DS.Theme.cyan)
+                if !state.officialLanguage.isEmpty {
+                    infoBox(label: "LANGUAGE", value: state.officialLanguage, accent: DS.Theme.cyan)
                 }
             }
 
@@ -460,9 +460,12 @@ struct MacTravelAtlasCanvas: View {
 
     private func toggleVisited(_ state: TravelRecord) {
         withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
-            state.isVisited.toggle()
-            state.visitedAt = state.isVisited ? Date.now : nil
             if state.isVisited {
+                state.status = .wishlist
+                state.dateVisited = nil
+            } else {
+                state.status = .visited
+                state.dateVisited = Date.now
                 Haptics.notify(.success)
             }
             try? modelContext.save()
