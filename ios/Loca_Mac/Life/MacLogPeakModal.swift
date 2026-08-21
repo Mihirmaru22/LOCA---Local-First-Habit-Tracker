@@ -121,11 +121,9 @@ struct MacLogPeakModal: View {
                                     .foregroundStyle(DS.Theme.textSecondary)
 
                                 Picker("", selection: $difficulty) {
-                                    Text("Easy").tag(TrekDifficulty.easy)
-                                    Text("Moderate").tag(TrekDifficulty.moderate)
-                                    Text("Challenging").tag(TrekDifficulty.challenging)
-                                    Text("Strenuous").tag(TrekDifficulty.strenuous)
-                                    Text("Technical").tag(TrekDifficulty.technical)
+                                    ForEach(TrekDifficulty.allCases, id: \.self) { diff in
+                                        Text(diff.title).tag(diff)
+                                    }
                                 }
                                 .pickerStyle(.menu)
                             }
