@@ -285,7 +285,7 @@ struct MacTravelAtlasCanvas: View {
                                 .padding(.horizontal, 7)
                                 .padding(.vertical, 3)
                                 .background(
-                                    isSelected ? travelAccent : Color.white.opacity(0.04),
+                                    isSelected ? selectedAccent : Color.white.opacity(0.04),
                                     in: RoundedRectangle(cornerRadius: 4)
                                 )
                         }
