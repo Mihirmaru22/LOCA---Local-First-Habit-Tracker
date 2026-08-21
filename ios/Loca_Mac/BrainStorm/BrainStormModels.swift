@@ -135,7 +135,11 @@ final class BrainStormNote {
         if let regex = try? NSRegularExpression(pattern: pattern) {
             let nsString = bodyText as NSString
             let results = regex.matches(in: bodyText, range: NSRange(location: 0, length: nsString.length))
-            let extracted = results.map { nsString.substring(with: $0.range(at: 1)).lowercased() }
+            let extracted = results.compactMap { match -> String? in
+                let r = match.range(at: 1)
+                guard r.location != NSNotFound && r.location + r.length <= nsString.length else { return nil }
+                return nsString.substring(with: r).lowercased()
+            }
             self.tags = Array(Set(extracted)).sorted()
         }
     }

@@ -50,23 +50,43 @@ struct MacJournalContentColumn: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Top Sub-Category Segmented Switcher (Matching Today Plan/List)
-            VStack(spacing: 8) {
-                Picker("Journal Mode", selection: Binding(
-                    get: { selectedRow ?? .todaysLog },
-                    set: { selectedRow = $0 }
-                )) {
-                    ForEach(JournalRow.allCases) { row in
-                        Text(row.rawValue).tag(row)
+            // Top Sub-Category Segmented Switcher (Liquid Glass Capsule)
+            HStack(spacing: 3) {
+                ForEach(JournalRow.allCases) { row in
+                    let isSelected = (selectedRow ?? .todaysLog) == row
+                    Button {
+                        withAnimation(.spring(response: 0.25, dampingFraction: 0.82)) {
+                            selectedRow = row
+                        }
+                        Haptics.impact(.light)
+                    } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: row.icon)
+                                .font(.system(size: 11, weight: isSelected ? .bold : .medium))
+                            Text(row.rawValue)
+                                .font(.system(size: 12, weight: isSelected ? .semibold : .medium))
+                        }
+                        .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.65))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(
+                            isSelected
+                                ? Color.white.opacity(0.14)
+                                : Color.clear,
+                            in: RoundedRectangle(cornerRadius: 6)
+                        )
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(PlutoFastButtonStyle())
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
             }
+            .padding(3)
+            .background(Color.black.opacity(0.35), in: RoundedRectangle(cornerRadius: 8))
+            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.10), lineWidth: 1))
             .padding(.horizontal, DS.Space.md)
             .padding(.vertical, DS.Space.sm)
 
-            Divider()
+            Divider().opacity(0.15)
 
             // Dynamic Content Based on Selected Sub-Category
             switch selectedRow ?? .todaysLog {
@@ -180,7 +200,6 @@ private struct JournalRoutinesMiddleList: View {
     private func toggleRoutine(_ routine: HabitBoard) {
         do {
             try CheckInWriter.toggleBinary(board: routine, context: modelContext)
-            PlutoTelemetryEngine.shared.trackHabitCheckIn(board: routine, value: routine.effectiveTarget, isDone: isRoutineDoneToday(routine))
             Haptics.impact(.rigid)
         } catch {}
     }

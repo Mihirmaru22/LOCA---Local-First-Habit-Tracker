@@ -422,7 +422,7 @@ private struct SignalRow: View {
 // MARK: - Preview
 
 #Preview {
-    @State var showAsk = false
-    @State var askPrefill = ""
-    return ReachView(scene: .empty, showAsk: $showAsk, askPrefill: $askPrefill)
+    @Previewable @State var showAsk = false
+    @Previewable @State var askPrefill = ""
+    ReachView(scene: .empty, showAsk: $showAsk, askPrefill: $askPrefill)
 }

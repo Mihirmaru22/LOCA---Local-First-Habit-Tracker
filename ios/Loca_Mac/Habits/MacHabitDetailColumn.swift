@@ -359,7 +359,6 @@ struct MacHabitDetailColumn: View {
         do {
             if habit.metric == .binary {
                 try CheckInWriter.toggleBinary(board: habit, context: modelContext)
-                PlutoTelemetryEngine.shared.trackHabitCheckIn(board: habit, value: habit.effectiveTarget, isDone: isDone)
             } else {
                 if isDone {
                     // Reset today's entries
@@ -370,7 +369,6 @@ struct MacHabitDetailColumn: View {
                     // Fill the remaining amount to reach target
                     let remaining = max(1.0, habit.effectiveTarget - todaysTotal)
                     try CheckInWriter.insert(value: remaining, board: habit, context: modelContext)
-                    PlutoTelemetryEngine.shared.trackHabitCheckIn(board: habit, value: remaining, isDone: true)
                 }
             }
             Haptics.impact(.rigid)
@@ -383,7 +381,6 @@ struct MacHabitDetailColumn: View {
         guard amount > 0 else { return }
         do {
             try CheckInWriter.insert(value: amount, board: habit, context: modelContext)
-            PlutoTelemetryEngine.shared.trackHabitCheckIn(board: habit, value: amount, isDone: (todaysTotal + amount) >= habit.effectiveTarget)
             Haptics.impact(.light)
         } catch {
             showCheckInError = true

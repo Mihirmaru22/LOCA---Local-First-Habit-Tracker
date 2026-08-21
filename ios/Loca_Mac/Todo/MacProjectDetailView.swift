@@ -81,7 +81,12 @@ struct MacProjectDetailView: View {
             projectHeroHeader
                 .padding(.horizontal, 20)
                 .padding(.vertical, 14)
-                .background(Color(nsColor: NSColor(red: 0.11, green: 0.11, blue: 0.13, alpha: 1.0)))
+                .background(
+                    ZStack {
+                        Rectangle().fill(.ultraThinMaterial)
+                        Color.black.opacity(0.30)
+                    }
+                )
             
             Divider().opacity(0.25)
             
@@ -98,7 +103,19 @@ struct MacProjectDetailView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .background(Color(nsColor: NSColor(red: 0.08, green: 0.08, blue: 0.09, alpha: 1.0)))
+        .background(
+            ZStack {
+                Rectangle().fill(.ultraThinMaterial)
+                LinearGradient(
+                    colors: [
+                        Color.black.opacity(0.28),
+                        Color(nsColor: NSColor(red: 0.08, green: 0.08, blue: 0.10, alpha: 0.80))
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+        )
         .onAppear {
             loadBrief()
         }
@@ -291,7 +308,7 @@ struct MacProjectDetailView: View {
                 tasksScrollView
             }
             .frame(minWidth: 320, idealWidth: 420, maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color(nsColor: NSColor(red: 0.09, green: 0.09, blue: 0.10, alpha: 1.0)))
+            .background(Color.black.opacity(0.18))
         }
     }
     

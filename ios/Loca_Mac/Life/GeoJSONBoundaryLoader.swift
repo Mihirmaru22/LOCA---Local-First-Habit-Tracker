@@ -15,19 +15,31 @@ final class GeoJSONBoundaryLoader {
     static let shared = GeoJSONBoundaryLoader()
 
     // Each stateCode → array of polygons, where each polygon is an array of coordinate rings
-    // Outer ring is first, any holes follow
     private var cache: [String: [[[CLLocationCoordinate2D]]]] = [:]
     private var loaded = false
+    private let lock = NSLock()
 
     private init() {
-        loadGeoJSON()
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            self?.loadGeoJSON()
+        }
+    }
+
+    private func ensureLoaded() {
+        lock.lock()
+        defer { lock.unlock() }
+        if !loaded {
+            loadGeoJSONInternal()
+        }
     }
 
     // MARK: - Public API
 
     /// Returns all polygon coordinate rings for the given state code.
-    /// Each element is a polygon with its outer ring (index 0) and optional interior rings (holes).
     func polygons(for stateCode: String) -> [[[CLLocationCoordinate2D]]] {
+        ensureLoaded()
+        lock.lock()
+        defer { lock.unlock() }
         return cache[stateCode.uppercased()] ?? []
     }
 
@@ -38,6 +50,9 @@ final class GeoJSONBoundaryLoader {
 
     /// Returns true if boundaries are available for the given state code.
     func hasBoundary(for stateCode: String) -> Bool {
+        ensureLoaded()
+        lock.lock()
+        defer { lock.unlock() }
         return !(cache[stateCode.uppercased()]?.isEmpty ?? true)
     }
 
@@ -112,6 +127,12 @@ final class GeoJSONBoundaryLoader {
     // MARK: - Loading
 
     private func loadGeoJSON() {
+        lock.lock()
+        defer { lock.unlock() }
+        loadGeoJSONInternal()
+    }
+
+    private func loadGeoJSONInternal() {
         guard !loaded else { return }
         loaded = true
 

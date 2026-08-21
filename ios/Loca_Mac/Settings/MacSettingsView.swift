@@ -107,11 +107,6 @@ struct MacSettingsView: View {
                     }
                 }
 
-                // Workspace Complexity & Mode Tile (Full Width)
-                bentoTile(title: "Workspace Complexity & Mode", icon: "arrow.left.and.right.square", accent: Color(red: 0.55, green: 0.65, blue: 0.95)) {
-                    workspaceModeControlBlock
-                }
-
                 // 5. Notifications Bento Tile (Full Width)
                 bentoTile(title: "Notifications & Smart Schedule", icon: "bell.badge.fill", accent: Color(red: 0.85, green: 0.40, blue: 0.40)) {
                     notificationsControlBlock
@@ -142,7 +137,19 @@ struct MacSettingsView: View {
             .padding(28)
             .frame(maxWidth: 960)
         }
-        .background(DS.Color.background)
+        .background(
+            ZStack {
+                Rectangle().fill(.ultraThinMaterial)
+                LinearGradient(
+                    colors: [
+                        Color.black.opacity(0.32),
+                        Color(nsColor: NSColor(red: 0.08, green: 0.08, blue: 0.10, alpha: 0.82))
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+        )
         .overlay {
             if showStudioFeatureTour {
                 BrainStormFeatureTourOverlay(isPresented: $showStudioFeatureTour)
@@ -185,8 +192,26 @@ struct MacSettingsView: View {
             content()
         }
         .padding(18)
-        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(DS.Color.border.opacity(0.6), lineWidth: 1))
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(.ultraThinMaterial)
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Color.white.opacity(0.04))
+            }
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.18), Color.white.opacity(0.05)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
+        )
+        .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 2)
     }
 
     // MARK: - Control Blocks
@@ -221,7 +246,8 @@ struct MacSettingsView: View {
                     }
                 }
                 .padding(10)
-                .background(DS.Color.background, in: RoundedRectangle(cornerRadius: 8))
+                .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.08), lineWidth: 1))
             }
         }
     }
@@ -239,10 +265,10 @@ struct MacSettingsView: View {
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 5)
-            .background(DS.Color.surface)
-            .foregroundStyle(DS.Color.textPrimary)
+            .background(Color.white.opacity(0.06))
+            .foregroundStyle(Color.white)
             .clipShape(RoundedRectangle(cornerRadius: 6))
-            .overlay(RoundedRectangle(cornerRadius: 6).stroke(DS.Color.border, lineWidth: 1))
+            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(0.12), lineWidth: 1))
         }
         .buttonStyle(.plain)
     }
@@ -356,39 +382,6 @@ struct MacSettingsView: View {
         }
     }
 
-    // Workspace Mode (Hero vs Architect)
-    private var workspaceModeControlBlock: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Picker("Workspace Mode", selection: Binding(
-                get: { SimplifiedModeManager.shared.activeStage },
-                set: { newStage in
-                    SimplifiedModeManager.shared.setStage(newStage, celebrate: false)
-                }
-            )) {
-                ForEach(PlutoUserStage.allCases) { stage in
-                    Label(stage.title, systemImage: stage.icon).tag(stage)
-                }
-            }
-            .pickerStyle(.segmented)
-
-            Text(SimplifiedModeManager.shared.activeStage.tagline)
-                .font(.system(size: 11))
-                .foregroundStyle(DS.Color.textSecondary)
-
-            HStack {
-                Text("Quick Mode Switch Shortcut")
-                    .font(.system(size: 12))
-                Spacer()
-                Text("⌘ + ⇧ + P")
-                    .font(.system(size: 11, weight: .bold, design: .monospaced))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(DS.Color.background)
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
-            }
-        }
-    }
-
     // 5. Notifications
     private var notificationsControlBlock: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -435,10 +428,10 @@ struct MacSettingsView: View {
                     .font(.system(size: 11, weight: .semibold))
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(DS.Color.background)
-                    .foregroundStyle(DS.Color.textPrimary)
+                    .background(Color.white.opacity(0.06))
+                    .foregroundStyle(Color.white)
                     .clipShape(RoundedRectangle(cornerRadius: 6))
-                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(DS.Color.border, lineWidth: 1))
+                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(0.12), lineWidth: 1))
             }
             .buttonStyle(.plain)
         }
@@ -482,9 +475,10 @@ struct MacSettingsView: View {
                         .font(.system(size: 11, weight: .semibold))
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(DS.Color.background)
-                        .foregroundStyle(DS.Color.textPrimary)
+                        .background(Color.white.opacity(0.06))
+                        .foregroundStyle(Color.white)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(0.12), lineWidth: 1))
                 }
                 .buttonStyle(.plain)
             }
@@ -523,7 +517,8 @@ struct MacSettingsView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(8)
-        .background(DS.Color.background, in: RoundedRectangle(cornerRadius: 6))
+        .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 6))
+        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(0.08), lineWidth: 1))
     }
 
     // 7. Danger Zone & Factory Data Reset

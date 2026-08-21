@@ -326,7 +326,7 @@ struct BrainStormNotesListColumn: View {
                 }
             }
         }
-        .background(Color.black.opacity(0.40))
+        .background(Color.clear)
         .onAppear {
             if selectedNote == nil, let first = filteredNotes.first {
                 selectedNote = first
@@ -417,12 +417,34 @@ struct BrainStormNotesListColumn: View {
             .padding(.horizontal, 11)
             .padding(.vertical, 9)
             .background(
-                isSelected ? Color.accentColor.opacity(0.24) : (isHovered ? Color.white.opacity(0.06) : Color.white.opacity(0.02)),
-                in: RoundedRectangle(cornerRadius: 8)
+                isSelected
+                    ? AnyView(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color.accentColor.opacity(0.24), Color.accentColor.opacity(0.10)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                    )
+                    : AnyView(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(isHovered ? Color.white.opacity(0.07) : Color.white.opacity(0.03))
+                    )
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
-                    .stroke(isSelected ? Color.accentColor.opacity(0.55) : Color.white.opacity(0.04), lineWidth: 1)
+                    .stroke(
+                        isSelected
+                            ? LinearGradient(
+                                colors: [Color.accentColor.opacity(0.65), Color.accentColor.opacity(0.20)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                            : (isHovered ? LinearGradient(colors: [Color.white.opacity(0.14), Color.clear], startPoint: .top, endPoint: .bottom) : LinearGradient(colors: [Color.white.opacity(0.06), Color.clear], startPoint: .top, endPoint: .bottom)),
+                        lineWidth: 1
+                    )
             )
             .contentShape(Rectangle())
         }

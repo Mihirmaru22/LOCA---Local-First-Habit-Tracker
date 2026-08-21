@@ -55,7 +55,7 @@ final class FocusTimerViewModel: ObservableObject {
     @Published var totalSecondsFocused: Int = 0
 
     private var cancellables = Set<AnyCancellable>()
-    private var timerPublisher = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
+    private var timerCancellable: AnyCancellable? = nil
 
     // Wall-clock delta anchors
     private var lastResumeDate: Date? = nil
@@ -63,7 +63,6 @@ final class FocusTimerViewModel: ObservableObject {
 
     init() {
         resetToCurrentMode()
-        setupTimer()
     }
 
     var totalDurationSeconds: Int {
@@ -84,18 +83,26 @@ final class FocusTimerViewModel: ObservableObject {
         totalDurationSeconds - secondsRemaining
     }
 
-    private func setupTimer() {
-        timerPublisher
+    private func startTimerLoop() {
+        stopTimerLoop()
+        timerCancellable = Timer.publish(every: 1.0, on: .main, in: .common)
+            .autoconnect()
             .sink { [weak self] _ in
                 guard let self = self, self.isRunning, let target = self.targetEndDate else { return }
                 let remaining = max(0, Int(ceil(target.timeIntervalSince(Date()))))
-                self.secondsRemaining = remaining
+                if self.secondsRemaining != remaining {
+                    self.secondsRemaining = remaining
+                }
 
                 if remaining <= 0 {
                     self.handleSessionCompleted()
                 }
             }
-            .store(in: &cancellables)
+    }
+
+    private func stopTimerLoop() {
+        timerCancellable?.cancel()
+        timerCancellable = nil
     }
 
     func setMode(_ newMode: PomodoroMode) {
@@ -123,15 +130,20 @@ final class FocusTimerViewModel: ObservableObject {
         lastResumeDate = Date()
         targetEndDate = Date().addingTimeInterval(TimeInterval(secondsRemaining))
         isRunning = true
+        startTimerLoop()
     }
 
     func pause() {
         if let target = targetEndDate {
-            secondsRemaining = max(0, Int(ceil(target.timeIntervalSince(Date()))))
+            let remaining = max(0, Int(ceil(target.timeIntervalSince(Date()))))
+            if secondsRemaining != remaining {
+                secondsRemaining = remaining
+            }
         }
         lastResumeDate = nil
         targetEndDate = nil
         isRunning = false
+        stopTimerLoop()
     }
 
     func resetTimer() {

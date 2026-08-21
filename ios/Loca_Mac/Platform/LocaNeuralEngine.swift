@@ -350,14 +350,19 @@ enum LocaNeuralEngine {
         let prefixes = ["• ", "○ ", "● ", "☐ ", "☑ ", "“ ", "> ", "- ", "* "]
         for p in prefixes {
             if clean.hasPrefix(p) {
-                clean.removeFirst(p.count)
+                clean = String(clean.dropFirst(p.count))
                 break
             }
         }
 
+        let nsClean = clean as NSString
         if let regex = try? NSRegularExpression(pattern: "^[0-9]+\\.\\s*"),
-           let match = regex.firstMatch(in: clean, range: NSRange(location: 0, length: clean.utf16.count)) {
-            clean = (clean as NSString).substring(from: match.range.length)
+           let match = regex.firstMatch(in: clean, range: NSRange(location: 0, length: nsClean.length)) {
+            if match.range.length < nsClean.length {
+                clean = nsClean.substring(from: match.range.length)
+            } else {
+                clean = ""
+            }
         }
 
         clean = clean.replacingOccurrences(of: "\\", with: "")

@@ -116,18 +116,12 @@ struct BrainStormEditorView: View {
                     .padding(.vertical, 8)
                 }
             }
-            .background(
-                Color(nsColor: NSColor(red: 0.11, green: 0.11, blue: 0.12, alpha: 1.0))
-            )
+            .background(Color.clear)
 
-            // 4. BOTTOM METADATA HUD
             if showWordCountHUD {
                 Divider().opacity(0.15)
                 bottomStatusBar
             }
-        }
-        .sheet(isPresented: $isShowingLinkModal) {
-            linkModalView
         }
         .onAppear {
             loadNoteContent()
@@ -230,25 +224,29 @@ struct BrainStormEditorView: View {
                     attachmentPopover
                 }
 
-                Divider().frame(height: 14).opacity(0.25)
-
                 // 5. Link Insert (⌘K)
                 Button {
-                    linkURLString = ""
-                    linkDisplayText = ""
-                    isShowingLinkModal = true
+                    prepareAndOpenLinkPopover()
                 } label: {
                     Image(systemName: "link")
                         .font(.system(size: 11.5, weight: .medium))
-                        .foregroundStyle(Color.white.opacity(0.85))
+                        .foregroundStyle(isShowingLinkModal ? Color.black : Color.white.opacity(0.85))
                         .frame(width: 32, height: 26)
-                        .background(hoveredTool == "link" ? Color.white.opacity(0.12) : Color.clear, in: RoundedRectangle(cornerRadius: 5))
+                        .background(
+                            isShowingLinkModal
+                                ? Color(red: 0.95, green: 0.75, blue: 0.25)
+                                : (hoveredTool == "link" ? Color.white.opacity(0.12) : Color.clear),
+                            in: RoundedRectangle(cornerRadius: 5)
+                        )
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(PlutoFastButtonStyle())
                 .onHover { h in hoveredTool = h ? "link" : nil }
                 .help("Add Link (⌘K)")
                 .keyboardShortcut("k", modifiers: .command)
+                .popover(isPresented: $isShowingLinkModal, arrowEdge: .bottom) {
+                    linkPopoverView
+                }
             }
             .padding(2)
             .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 7))
@@ -422,7 +420,12 @@ struct BrainStormEditorView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
-        .background(Color.black.opacity(0.35))
+        .background(
+            ZStack {
+                Rectangle().fill(.ultraThinMaterial)
+                Color.black.opacity(0.28)
+            }
+        )
     }
 
     // MARK: - The Signature "Aa" Typography Popover (Exact Apple Notes UI)
@@ -681,43 +684,93 @@ struct BrainStormEditorView: View {
         .background(Color.black.opacity(0.30))
     }
 
-    // MARK: - Link Modal View
+    // MARK: - Link Popover View (Apple Notes Style)
 
-    private var linkModalView: some View {
-        VStack(spacing: 14) {
+    private var linkPopoverView: some View {
+        VStack(alignment: .leading, spacing: 10) {
             Text("Add Link")
-                .font(.system(size: 14, weight: .bold))
+                .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(Color.white)
 
-            TextField("Display Text", text: $linkDisplayText)
-                .textFieldStyle(.roundedBorder)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Link to:")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(Color.white.opacity(0.6))
+                TextField("https://apple.com", text: $linkURLString)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 12))
+            }
 
-            TextField("URL (e.g. https://apple.com)", text: $linkURLString)
-                .textFieldStyle(.roundedBorder)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Display Text:")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(Color.white.opacity(0.6))
+                TextField("Label (optional)", text: $linkDisplayText)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 12))
+            }
 
-            HStack(spacing: 12) {
+            HStack(spacing: 8) {
+                Spacer()
+
                 Button("Cancel") {
                     isShowingLinkModal = false
                 }
-                .keyboardShortcut(.cancelAction)
+                .buttonStyle(.plain)
+                .font(.system(size: 12))
+                .foregroundStyle(Color.white.opacity(0.7))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
 
-                Button("Insert") {
-                    var urlString = linkURLString.trimmingCharacters(in: .whitespacesAndNewlines)
-                    if !urlString.hasPrefix("http://") && !urlString.hasPrefix("https://") {
-                        urlString = "https://" + urlString
-                    }
-                    if let url = URL(string: urlString) {
-                        editorController.insertLink(url: url, title: linkDisplayText, preset: typographyPreset)
-                    }
-                    isShowingLinkModal = false
+                Button("Done") {
+                    commitLinkInsert()
                 }
                 .buttonStyle(.borderedProminent)
+                .controlSize(.small)
                 .keyboardShortcut(.defaultAction)
             }
         }
-        .padding(18)
-        .frame(width: 300, height: 180)
-        .background(Color.black.opacity(0.85).background(.ultraThinMaterial))
+        .padding(14)
+        .frame(width: 280)
+        .background(Color(nsColor: NSColor(red: 0.12, green: 0.12, blue: 0.14, alpha: 1.0)))
+    }
+
+    private func prepareAndOpenLinkPopover() {
+        if let tv = editorController.textView, let textStorage = tv.textStorage {
+            let sel = tv.selectedRange()
+            let nsStr = textStorage.string as NSString
+            if sel.length > 0 && sel.location + sel.length <= nsStr.length {
+                linkDisplayText = nsStr.substring(with: sel)
+            } else {
+                linkDisplayText = ""
+            }
+        } else {
+            linkDisplayText = ""
+        }
+        
+        // Auto-check pasteboard for URL
+        if let pasteString = NSPasteboard.general.string(forType: .string)?.trimmingCharacters(in: .whitespacesAndNewlines),
+           pasteString.hasPrefix("http://") || pasteString.hasPrefix("https://") || pasteString.contains(".com") || pasteString.contains(".org") || pasteString.contains(".io") {
+            linkURLString = pasteString
+        } else {
+            linkURLString = ""
+        }
+        isShowingLinkModal = true
+    }
+
+    private func commitLinkInsert() {
+        var urlString = linkURLString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !urlString.isEmpty else {
+            isShowingLinkModal = false
+            return
+        }
+        if !urlString.hasPrefix("http://") && !urlString.hasPrefix("https://") {
+            urlString = "https://" + urlString
+        }
+        if let url = URL(string: urlString) {
+            editorController.insertLink(url: url, title: linkDisplayText, preset: typographyPreset)
+        }
+        isShowingLinkModal = false
     }
 
     // MARK: - Auto-Save & Debounce Pipeline

@@ -79,7 +79,12 @@ struct MacLifeView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
-            .background(Color(nsColor: NSColor(red: 0.09, green: 0.09, blue: 0.10, alpha: 1.0)))
+            .background(
+                ZStack {
+                    Rectangle().fill(.ultraThinMaterial)
+                    Color.black.opacity(0.35)
+                }
+            )
 
             Divider().opacity(0.20)
 
@@ -101,7 +106,19 @@ struct MacLifeView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .background(DS.Color.background)
+        .background(
+            ZStack {
+                Rectangle().fill(.ultraThinMaterial)
+                LinearGradient(
+                    colors: [
+                        Color.black.opacity(0.32),
+                        Color(nsColor: NSColor(red: 0.08, green: 0.08, blue: 0.10, alpha: 0.82))
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+        )
     }
 }
 
@@ -214,8 +231,24 @@ private struct Life1BlueprintPrinciplesView: View {
                 }
             }
             .padding(DS.Space.xl)
-            .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
-            .overlay(RoundedRectangle(cornerRadius: DS.Radius.card).stroke(DS.Color.border.opacity(0.4), lineWidth: 1))
+            .background(
+                ZStack {
+                    RoundedRectangle(cornerRadius: DS.Radius.card).fill(.ultraThinMaterial)
+                    RoundedRectangle(cornerRadius: DS.Radius.card).fill(Color.white.opacity(0.04))
+                }
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: DS.Radius.card)
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.18), Color.white.opacity(0.05)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            )
+            .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 2)
 
             // 6 Core Principles Bento Grid
             VStack(alignment: .leading, spacing: DS.Space.md) {
@@ -269,8 +302,24 @@ private struct Life1BlueprintPrinciplesView: View {
                         }
                     }
                 }
-                .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
-                .overlay(RoundedRectangle(cornerRadius: DS.Radius.card).stroke(DS.Color.border.opacity(0.4), lineWidth: 1))
+                .background(
+                    ZStack {
+                        RoundedRectangle(cornerRadius: DS.Radius.card).fill(.ultraThinMaterial)
+                        RoundedRectangle(cornerRadius: DS.Radius.card).fill(Color.white.opacity(0.04))
+                    }
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: DS.Radius.card)
+                        .stroke(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.18), Color.white.opacity(0.05)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                )
+                .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 2)
             }
         }
     }
@@ -300,11 +349,24 @@ private struct Life1BlueprintPrinciplesView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(DS.Space.lg)
-        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: DS.Radius.card).fill(.ultraThinMaterial)
+                RoundedRectangle(cornerRadius: DS.Radius.card).fill(Color.white.opacity(0.04))
+            }
+        )
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.card)
-                .stroke(DS.Color.border.opacity(0.4), lineWidth: 1)
+                .stroke(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.18), Color.white.opacity(0.05)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
         )
+        .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 2)
     }
 }
 
@@ -444,8 +506,24 @@ private struct Life2MasterBucketListView: View {
                 }
             }
             .padding(DS.Space.xl)
-            .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
-            .overlay(RoundedRectangle(cornerRadius: DS.Radius.card).stroke(DS.Color.border.opacity(0.4), lineWidth: 1))
+            .background(
+                ZStack {
+                    RoundedRectangle(cornerRadius: DS.Radius.card).fill(.ultraThinMaterial)
+                    RoundedRectangle(cornerRadius: DS.Radius.card).fill(Color.white.opacity(0.04))
+                }
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: DS.Radius.card)
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.18), Color.white.opacity(0.05)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            )
+            .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 2)
 
             // Clean Filter Pills Row + Add Dream Button
             HStack(spacing: 6) {
@@ -717,12 +795,24 @@ private struct Life2MasterBucketListView: View {
             }
         }
         .padding(DS.Space.lg)
-        .background(DS.Color.surface)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card))
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: DS.Radius.card).fill(.ultraThinMaterial)
+                RoundedRectangle(cornerRadius: DS.Radius.card).fill(Color.white.opacity(0.04))
+            }
+        )
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.card)
-                .stroke(DS.Color.border.opacity(0.4), lineWidth: 1)
+                .stroke(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.18), Color.white.opacity(0.05)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
         )
+        .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 2)
     }
 }
 
@@ -868,8 +958,24 @@ private struct Life3LifeErasChronologyView: View {
                     .foregroundStyle(DS.Color.textTertiary)
             }
             .padding(DS.Space.xl)
-            .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
-            .overlay(RoundedRectangle(cornerRadius: DS.Radius.card).stroke(DS.Color.border.opacity(0.4), lineWidth: 1))
+            .background(
+                ZStack {
+                    RoundedRectangle(cornerRadius: DS.Radius.card).fill(.ultraThinMaterial)
+                    RoundedRectangle(cornerRadius: DS.Radius.card).fill(Color.white.opacity(0.04))
+                }
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: DS.Radius.card)
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.18), Color.white.opacity(0.05)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            )
+            .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 2)
 
             // Life Matrix
             VStack(alignment: .leading, spacing: DS.Space.sm) {
@@ -902,8 +1008,24 @@ private struct Life3LifeErasChronologyView: View {
                     }
                 }
                 .padding(DS.Space.lg)
-                .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
-                .overlay(RoundedRectangle(cornerRadius: DS.Radius.card).stroke(DS.Color.border.opacity(0.4), lineWidth: 1))
+                .background(
+                    ZStack {
+                        RoundedRectangle(cornerRadius: DS.Radius.card).fill(.ultraThinMaterial)
+                        RoundedRectangle(cornerRadius: DS.Radius.card).fill(Color.white.opacity(0.04))
+                    }
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: DS.Radius.card)
+                        .stroke(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.18), Color.white.opacity(0.05)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                )
+                .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 2)
             }
 
             // Life Eras & Chapters Timeline
@@ -966,11 +1088,24 @@ private struct Life3LifeErasChronologyView: View {
         }
         .padding(DS.Space.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: DS.Radius.card).fill(.ultraThinMaterial)
+                RoundedRectangle(cornerRadius: DS.Radius.card).fill(Color.white.opacity(0.04))
+            }
+        )
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.card)
-                .stroke(DS.Color.border.opacity(0.4), lineWidth: 1)
+                .stroke(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.18), Color.white.opacity(0.05)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
         )
+        .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 2)
     }
 }
 
@@ -1066,8 +1201,24 @@ private struct Life4SelfMasteryAuditsView: View {
                 }
             }
             .padding(DS.Space.xl)
-            .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
-            .overlay(RoundedRectangle(cornerRadius: DS.Radius.card).stroke(DS.Color.border.opacity(0.4), lineWidth: 1))
+            .background(
+                ZStack {
+                    RoundedRectangle(cornerRadius: DS.Radius.card).fill(.ultraThinMaterial)
+                    RoundedRectangle(cornerRadius: DS.Radius.card).fill(Color.white.opacity(0.04))
+                }
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: DS.Radius.card)
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.18), Color.white.opacity(0.05)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            )
+            .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 2)
 
             // Mental Models & Wisdom Vault
             VStack(alignment: .leading, spacing: DS.Space.sm) {
@@ -1106,11 +1257,24 @@ private struct Life4SelfMasteryAuditsView: View {
                         }
                         .padding(DS.Space.lg)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+                        .background(
+                            ZStack {
+                                RoundedRectangle(cornerRadius: DS.Radius.card).fill(.ultraThinMaterial)
+                                RoundedRectangle(cornerRadius: DS.Radius.card).fill(Color.white.opacity(0.04))
+                            }
+                        )
                         .overlay(
                             RoundedRectangle(cornerRadius: DS.Radius.card)
-                                .stroke(DS.Color.border.opacity(0.4), lineWidth: 1)
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [Color.white.opacity(0.18), Color.white.opacity(0.05)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 1
+                                )
                         )
+                        .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 2)
                     }
                 }
             }

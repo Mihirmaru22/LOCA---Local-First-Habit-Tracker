@@ -89,7 +89,7 @@ struct MacOnboardingView: View {
                     .font(.system(size: 18, weight: .bold))
                     .foregroundStyle(DS.Color.textPrimary)
 
-                Text("PLUTO APP VERSION 3.5")
+                Text("PLUTO OS · EXECUTIVE ARCHITECTURE")
                     .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(DS.Color.textPrimary)
                     .tracking(0.8)
@@ -127,34 +127,34 @@ struct MacOnboardingView: View {
             }
 
             VStack(spacing: 6) {
-                Text("Welcome to PLUTO Version 3.5")
+                Text("Welcome to PLUTO")
                     .font(.system(size: 26, weight: .bold))
                     .foregroundStyle(DS.Color.textPrimary)
 
-                Text("The Apple Silicon & Local-First Executive Operating System for Habits, Focus & Life Mastery")
+                Text("The Sovereign Local-First Operating System Built Across Three Master Pillars")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(DS.Color.textSecondary)
                     .multilineTextAlignment(.center)
             }
 
-            // 3 Pillar Highlights
+            // 3 Master Pillar Highlights
             HStack(spacing: DS.Space.md) {
                 welcomeHighlightCard(
-                    icon: "cpu.fill",
-                    title: "Apple Neural Engine",
-                    subtitle: "Zero-latency on-device cognitive clarity scoring, smart NLP task recognition, and 3-bullet Executive Briefs."
+                    icon: "sun.max.fill",
+                    title: "1. TODAY",
+                    subtitle: "Precision Day Planner with 5-minute magnetic snapping, GTD Action Lists, and an Immersive Focus Room with Apple Background Sounds."
                 )
 
                 welcomeHighlightCard(
-                    icon: "headphones",
-                    title: "3D Spatial Audio",
-                    subtitle: "Immersive HRTF binaural flow state engine (432Hz Alpha beat) with IOKit uninterrupted focus sleep prevention."
+                    icon: "pencil.and.outline",
+                    title: "2. STUDIO",
+                    subtitle: "BrainStorm Rich-Text Notes Canvas, Apple Journal daylight reflections, and Creative Workspace for deep thinking."
                 )
 
                 welcomeHighlightCard(
-                    icon: "touchid",
-                    title: "Touch ID Vault",
-                    subtitle: "Secure Enclave biometric hardware encryption protecting your Private Journal reflections and Life Strategy."
+                    icon: "mountain.2.fill",
+                    title: "3. LIFE & ATLAS",
+                    subtitle: "Mountain Atlas with GPX elevation profiles, State & District Travel Atlas, and Milestone Horizons with Strategic Life Audits."
                 )
             }
             .padding(.horizontal, DS.Space.lg)
@@ -545,7 +545,7 @@ struct MacOnboardingView: View {
     private var personalizationStep: some View {
         VStack(alignment: .leading, spacing: DS.Space.lg) {
             VStack(alignment: .leading, spacing: 3) {
-                Text("Personalize Your V3.5 Workspace")
+                Text("Personalize Your Workspace")
                     .font(.system(size: 18, weight: .bold))
                     .foregroundStyle(DS.Color.textPrimary)
 
@@ -614,7 +614,7 @@ struct MacOnboardingView: View {
                         let isSelected = selectedAmbientSound == sound
                         Button {
                             selectedAmbientSound = sound
-                            AmbientSoundEngine.shared.setSound(sound)
+                            PlutoSoundEngine.shared.play(.tabSwitch)
                             Haptics.impact(.light)
                         } label: {
                             Text(sound)
@@ -670,11 +670,11 @@ struct MacOnboardingView: View {
             }
 
             VStack(spacing: 6) {
-                Text("PLUTO Version 3.5 is Ready")
+                Text("PLUTO OS is Ready")
                     .font(.system(size: 24, weight: .bold))
                     .foregroundStyle(DS.Color.textPrimary)
 
-                Text("Your Apple Silicon super-app is configured and synchronized locally.")
+                Text("Your 3-domain sovereign workspace is configured and ready.")
                     .font(.system(size: 13))
                     .foregroundStyle(DS.Color.textSecondary)
             }
@@ -764,7 +764,7 @@ struct MacOnboardingView: View {
                     Haptics.impact(.rigid)
                 } label: {
                     HStack(spacing: 6) {
-                        Text("Enter PLUTO V3.5")
+                        Text("Enter PLUTO OS")
                         Image(systemName: "arrow.right")
                     }
                     .font(.system(size: 12, weight: .bold))

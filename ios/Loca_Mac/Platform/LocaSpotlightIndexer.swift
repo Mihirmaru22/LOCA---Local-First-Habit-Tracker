@@ -8,6 +8,7 @@ import SwiftData
 /// Automatically indexes Habits, Tasks, Goals, Life Principles, Bucket List Dreams,
 /// and Journal Reflections into native macOS Spotlight (`CSSearchableIndex`).
 /// Enables direct search from anywhere in macOS (`⌘Space`) with instant deep linking.
+@MainActor
 final class LocaSpotlightIndexer {
 
     static let shared = LocaSpotlightIndexer()
@@ -40,38 +41,40 @@ final class LocaSpotlightIndexer {
     // MARK: - Batch Re-index All Core Items
 
     func indexAll(context: ModelContext) {
+        guard CSSearchableIndex.isIndexingAvailable() else { return }
+
+        var itemsToIndex: [CSSearchableItem] = []
+
+        // 1. Index Habits
+        if let habits = try? context.fetch(FetchDescriptor<HabitBoard>()) {
+            for habit in habits where habit.archivedAt == nil {
+                itemsToIndex.append(makeHabitItem(habit))
+            }
+        }
+
+        // 2. Index Tasks
+        if let tasks = try? context.fetch(FetchDescriptor<TodoItem>()) {
+            for task in tasks where task.archivedAt == nil && !task.title.isEmpty {
+                itemsToIndex.append(makeTaskItem(task))
+            }
+        }
+
+        // 3. Index Journal Notes
+        if let notes = try? context.fetch(FetchDescriptor<JournalNote>()) {
+            for note in notes where !note.isArchived && !note.text.isEmpty {
+                itemsToIndex.append(makeJournalItem(note))
+            }
+        }
+
+        // 4. Index Static Life & Goal Principles
+        itemsToIndex.append(contentsOf: makeDefaultLifeAndGoalItems())
+
+        // Push to macOS Spotlight Search Index safely
         Task {
-            var itemsToIndex: [CSSearchableItem] = []
-
-            // 1. Index Habits
-            if let habits = try? context.fetch(FetchDescriptor<HabitBoard>()) {
-                for habit in habits where habit.archivedAt == nil {
-                    itemsToIndex.append(makeHabitItem(habit))
-                }
-            }
-
-            // 2. Index Tasks
-            if let tasks = try? context.fetch(FetchDescriptor<TodoItem>()) {
-                for task in tasks where task.archivedAt == nil && !task.title.isEmpty {
-                    itemsToIndex.append(makeTaskItem(task))
-                }
-            }
-
-            // 3. Index Journal Notes
-            if let notes = try? context.fetch(FetchDescriptor<JournalNote>()) {
-                for note in notes where !note.isArchived && !note.text.isEmpty {
-                    itemsToIndex.append(makeJournalItem(note))
-                }
-            }
-
-            // 4. Index Static Life & Goal Principles
-            itemsToIndex.append(contentsOf: makeDefaultLifeAndGoalItems())
-
-            // Push to macOS Spotlight Search Index
             do {
                 try await CSSearchableIndex.default().indexSearchableItems(itemsToIndex)
             } catch {
-                print("CoreSpotlight indexing error: \(error)")
+                // Ignore spotlight daemon availability error
             }
         }
     }
@@ -79,6 +82,7 @@ final class LocaSpotlightIndexer {
     // MARK: - Granular Incremental Indexing
 
     func indexHabit(_ habit: HabitBoard) {
+        guard CSSearchableIndex.isIndexingAvailable() else { return }
         guard habit.archivedAt == nil else {
             removeHabit(id: habit.id.uuidString)
             return
@@ -90,6 +94,7 @@ final class LocaSpotlightIndexer {
     }
 
     func removeHabit(id: String) {
+        guard CSSearchableIndex.isIndexingAvailable() else { return }
         let identifier = ItemType.habit.makeIdentifier(id: id)
         Task {
             try? await CSSearchableIndex.default().deleteSearchableItems(withIdentifiers: [identifier])
@@ -97,6 +102,7 @@ final class LocaSpotlightIndexer {
     }
 
     func indexTaskItem(_ task: TodoItem) {
+        guard CSSearchableIndex.isIndexingAvailable() else { return }
         guard task.archivedAt == nil, !task.title.isEmpty else {
             removeTask(id: task.id.uuidString)
             return
@@ -108,6 +114,7 @@ final class LocaSpotlightIndexer {
     }
 
     func removeTask(id: String) {
+        guard CSSearchableIndex.isIndexingAvailable() else { return }
         let identifier = ItemType.task.makeIdentifier(id: id)
         Task {
             try? await CSSearchableIndex.default().deleteSearchableItems(withIdentifiers: [identifier])
@@ -115,6 +122,7 @@ final class LocaSpotlightIndexer {
     }
 
     func indexJournalNoteItem(_ note: JournalNote) {
+        guard CSSearchableIndex.isIndexingAvailable() else { return }
         guard !note.isArchived, !note.text.isEmpty else {
             removeJournalNote(id: note.id.uuidString)
             return

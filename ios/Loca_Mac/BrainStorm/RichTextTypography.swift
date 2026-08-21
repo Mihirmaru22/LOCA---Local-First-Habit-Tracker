@@ -106,8 +106,8 @@ public enum TypographyPreset: String, CaseIterable, Codable {
 
 public struct RichTextTypography {
     
-    public static let checklistCheckedGlyph = "☑︎ "
-    public static let checklistUncheckedGlyph = "☐ "
+    public static let checklistCheckedGlyph = "● "
+    public static let checklistUncheckedGlyph = "○ "
     
     // MARK: Paragraph Style Attributes
     
@@ -133,6 +133,80 @@ public struct RichTextTypography {
         return p
     }
     
+    // MARK: Apply Paragraph Styles
+    
+    public static func applyParagraphStyle(_ style: NoteParagraphStyle, to textStorage: NSMutableAttributedString, range: NSRange, preset: TypographyPreset = .standard) {
+        guard range.location != NSNotFound && range.length > 0 else { return }
+        let totalLength = textStorage.length
+        guard range.location < totalLength else { return }
+        let safeRange = NSRange(location: range.location, length: min(range.length, totalLength - range.location))
+        
+        textStorage.beginEditing()
+        
+        let pStyle = makeParagraphStyle(for: style, preset: preset)
+        let font = preset.font(for: style)
+        
+        textStorage.addAttribute(.paragraphStyle, value: pStyle, range: safeRange)
+        textStorage.addAttribute(.font, value: font, range: safeRange)
+        
+        // Custom marks per style
+        switch style {
+        case .title, .heading, .subheading:
+            textStorage.removeAttribute(.strikethroughStyle, range: safeRange)
+            textStorage.removeAttribute(.underlineStyle, range: safeRange)
+            textStorage.removeAttribute(.backgroundColor, range: safeRange)
+            textStorage.addAttribute(.foregroundColor, value: NSColor.textColor, range: safeRange)
+        case .body:
+            textStorage.addAttribute(.foregroundColor, value: NSColor.textColor, range: safeRange)
+        case .monostyled:
+            textStorage.addAttribute(.foregroundColor, value: NSColor.labelColor, range: safeRange)
+        case .quote:
+            textStorage.addAttribute(.foregroundColor, value: NSColor.secondaryLabelColor, range: safeRange)
+        case .bulletedList:
+            let string = textStorage.string as NSString
+            if safeRange.location + safeRange.length <= string.length {
+                let line = string.substring(with: safeRange)
+                if !line.hasPrefix("• ") {
+                    let clean = cleanPrefixes(from: line)
+                    textStorage.replaceCharacters(in: safeRange, with: "• " + clean)
+                }
+            }
+        case .dashedList:
+            let string = textStorage.string as NSString
+            if safeRange.location + safeRange.length <= string.length {
+                let line = string.substring(with: safeRange)
+                if !line.hasPrefix("– ") {
+                    let clean = cleanPrefixes(from: line)
+                    textStorage.replaceCharacters(in: safeRange, with: "– " + clean)
+                }
+            }
+        case .numberedList:
+            let string = textStorage.string as NSString
+            if safeRange.location + safeRange.length <= string.length {
+                let line = string.substring(with: safeRange)
+                if line.range(of: #"^\d+\.\s"#, options: .regularExpression) == nil {
+                    let clean = cleanPrefixes(from: line)
+                    textStorage.replaceCharacters(in: safeRange, with: "1. " + clean)
+                }
+            }
+        default: break
+        }
+        
+        textStorage.endEditing()
+    }
+    
+    private static func cleanPrefixes(from text: String) -> String {
+        var result = text
+        let prefixes = ["○ ", "● ", "☐ ", "☑︎ ", "☑ ", "• ", "– ", "1. ", "2. ", "3. ", "4. ", "5. "]
+        for p in prefixes {
+            if result.hasPrefix(p) {
+                result = String(result.dropFirst(p.count))
+                break
+            }
+        }
+        return result
+    }
+    
     public static func defaultAttributes(for style: NoteParagraphStyle = .body, preset: TypographyPreset = .standard, textColor: NSColor = .textColor) -> [NSAttributedString.Key: Any] {
         let font = preset.font(for: style)
         let paragraph = makeParagraphStyle(for: style, preset: preset)
@@ -153,12 +227,18 @@ public struct RichTextTypography {
     // MARK: Apply Paragraph Style to Range
     
     public static func applyParagraphStyle(_ style: NoteParagraphStyle, to textStorage: NSMutableAttributedString, range: NSRange, preset: TypographyPreset = .standard, textColor: NSColor = .textColor) {
+        guard range.location != NSNotFound else { return }
+        let currentLen = textStorage.length
+        guard currentLen > 0 && range.location <= currentLen else { return }
+        
+        let safeInputRange = NSRange(location: min(range.location, currentLen), length: min(range.length, max(0, currentLen - range.location)))
+        
         textStorage.beginEditing()
         let string = textStorage.string as NSString
-        let paragraphRange = string.paragraphRange(for: range)
+        let paragraphRange = string.paragraphRange(for: safeInputRange)
         
         // If it's a list style, ensure prefix is present
-        if let prefix = style.listPrefix {
+        if let prefix = style.listPrefix, paragraphRange.location + paragraphRange.length <= string.length {
             let paragraphText = string.substring(with: paragraphRange)
             // Strip any existing list/checklist prefixes first
             let cleanText = cleanPrefixes(from: paragraphText)
@@ -167,7 +247,19 @@ public struct RichTextTypography {
         }
         
         let newString = textStorage.string as NSString
-        let updatedParagraphRange = newString.paragraphRange(for: range)
+        let finalLen = newString.length
+        guard finalLen > 0 else {
+            textStorage.endEditing()
+            return
+        }
+        
+        let safeTargetRange = NSRange(location: min(safeInputRange.location, finalLen - 1), length: min(safeInputRange.length, finalLen - min(safeInputRange.location, finalLen - 1)))
+        let updatedParagraphRange = newString.paragraphRange(for: safeTargetRange)
+        
+        guard updatedParagraphRange.location + updatedParagraphRange.length <= finalLen else {
+            textStorage.endEditing()
+            return
+        }
         
         let newFont = preset.font(for: style)
         let newParagraphStyle = makeParagraphStyle(for: style, preset: preset)
@@ -176,6 +268,7 @@ public struct RichTextTypography {
         
         // Update font sizes across existing runs while keeping bold/italic traits if applicable
         textStorage.enumerateAttribute(.font, in: updatedParagraphRange, options: []) { currentFontObj, subRange, _ in
+            guard subRange.location + subRange.length <= textStorage.length else { return }
             if let currentFont = currentFontObj as? NSFont {
                 let traits = currentFont.fontDescriptor.symbolicTraits
                 var descriptor = newFont.fontDescriptor
@@ -195,22 +288,11 @@ public struct RichTextTypography {
         textStorage.endEditing()
     }
     
-    private static func cleanPrefixes(from text: String) -> String {
-        var result = text
-        let prefixes = [checklistUncheckedGlyph, checklistCheckedGlyph, "• ", "– ", "1. ", "2. ", "3. ", "4. ", "5. "]
-        for p in prefixes {
-            if result.hasPrefix(p) {
-                result = String(result.dropFirst(p.count))
-                break
-            }
-        }
-        return result
-    }
-    
+
     // MARK: Inline Trait Toggling (Bold / Italic)
     
     public static func toggleTrait(_ trait: NSFontDescriptor.SymbolicTraits, in textStorage: NSMutableAttributedString, range: NSRange, defaultFont: NSFont) {
-        guard range.length > 0 else { return }
+        guard range.location != NSNotFound && range.length > 0 && range.location + range.length <= textStorage.length else { return }
         textStorage.beginEditing()
         
         // 1. Check if all characters in selection currently have this trait
@@ -225,6 +307,7 @@ public struct RichTextTypography {
         
         // 2. Toggle trait across selection
         textStorage.enumerateAttribute(.font, in: range, options: []) { value, subRange, _ in
+            guard subRange.location + subRange.length <= textStorage.length else { return }
             let font = (value as? NSFont) ?? defaultFont
             var currentTraits = font.fontDescriptor.symbolicTraits
             if allHaveTrait {
@@ -244,7 +327,7 @@ public struct RichTextTypography {
     // MARK: Underline & Strikethrough
     
     public static func toggleUnderline(in textStorage: NSMutableAttributedString, range: NSRange) {
-        guard range.length > 0 else { return }
+        guard range.location != NSNotFound && range.length > 0 && range.location + range.length <= textStorage.length else { return }
         textStorage.beginEditing()
         var allUnderlined = true
         textStorage.enumerateAttribute(.underlineStyle, in: range, options: []) { value, _, stop in
@@ -262,7 +345,7 @@ public struct RichTextTypography {
     }
     
     public static func toggleStrikethrough(in textStorage: NSMutableAttributedString, range: NSRange) {
-        guard range.length > 0 else { return }
+        guard range.location != NSNotFound && range.length > 0 && range.location + range.length <= textStorage.length else { return }
         textStorage.beginEditing()
         var allStruck = true
         textStorage.enumerateAttribute(.strikethroughStyle, in: range, options: []) { value, _, stop in
@@ -282,7 +365,7 @@ public struct RichTextTypography {
     // MARK: Highlight Marker
     
     public static func toggleHighlight(in textStorage: NSMutableAttributedString, range: NSRange) {
-        guard range.length > 0 else { return }
+        guard range.location != NSNotFound && range.length > 0 && range.location + range.length <= textStorage.length else { return }
         textStorage.beginEditing()
         var allHighlighted = true
         textStorage.enumerateAttribute(.backgroundColor, in: range, options: []) { value, _, stop in
@@ -306,7 +389,7 @@ public struct RichTextTypography {
     // MARK: Text Color
     
     public static func applyTextColor(_ color: NSColor, in textStorage: NSMutableAttributedString, range: NSRange) {
-        guard range.length > 0 else { return }
+        guard range.location != NSNotFound && range.length > 0 && range.location + range.length <= textStorage.length else { return }
         textStorage.beginEditing()
         textStorage.addAttribute(.foregroundColor, value: color, range: range)
         textStorage.endEditing()
@@ -315,7 +398,7 @@ public struct RichTextTypography {
     // MARK: Link Attachment
     
     public static func applyLink(url: URL?, in textStorage: NSMutableAttributedString, range: NSRange) {
-        guard range.length > 0 else { return }
+        guard range.location != NSNotFound && range.length > 0 && range.location + range.length <= textStorage.length else { return }
         textStorage.beginEditing()
         if let url = url {
             textStorage.addAttribute(.link, value: url, range: range)
@@ -332,32 +415,55 @@ public struct RichTextTypography {
     // MARK: Checklist Insertion & Toggle
     
     public static func toggleChecklistOnCurrentParagraph(in textStorage: NSMutableAttributedString, selectedRange: NSRange, defaultFont: NSFont) -> NSRange {
-        textStorage.beginEditing()
         let string = textStorage.string as NSString
-        let paragraphRange = string.paragraphRange(for: selectedRange)
+        guard string.length > 0 else {
+            textStorage.beginEditing()
+            textStorage.insert(NSAttributedString(string: checklistUncheckedGlyph, attributes: [.font: defaultFont, .foregroundColor: NSColor.textColor]), at: 0)
+            textStorage.endEditing()
+            return NSRange(location: (checklistUncheckedGlyph as NSString).length, length: 0)
+        }
+        
+        let safeSelectedRange = NSRange(location: min(selectedRange.location, string.length), length: min(selectedRange.length, string.length - min(selectedRange.location, string.length)))
+        
+        textStorage.beginEditing()
+        let paragraphRange = string.paragraphRange(for: safeSelectedRange)
+        guard paragraphRange.location + paragraphRange.length <= string.length else {
+            textStorage.endEditing()
+            return selectedRange
+        }
+        
         let paragraphText = string.substring(with: paragraphRange)
         
-        var newSelectedRange = selectedRange
+        var newSelectedRange = safeSelectedRange
         
-        if paragraphText.hasPrefix(checklistUncheckedGlyph) {
+        let uncheckedPrefixes = [checklistUncheckedGlyph, "☐ "]
+        let checkedPrefixes = [checklistCheckedGlyph, "☑︎ ", "☑ "]
+        
+        if let matchingUnchecked = uncheckedPrefixes.first(where: { paragraphText.hasPrefix($0) }) {
             // Unchecked -> Checked
-            let replaceRange = NSRange(location: paragraphRange.location, length: (checklistUncheckedGlyph as NSString).length)
+            let replaceRange = NSRange(location: paragraphRange.location, length: (matchingUnchecked as NSString).length)
             textStorage.replaceCharacters(in: replaceRange, with: checklistCheckedGlyph)
-            let strikeRange = NSRange(location: paragraphRange.location, length: paragraphRange.length)
-            textStorage.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: strikeRange)
-            textStorage.addAttribute(.foregroundColor, value: NSColor.secondaryLabelColor, range: strikeRange)
-        } else if paragraphText.hasPrefix(checklistCheckedGlyph) {
+            let strikeLen = max(0, min(paragraphRange.length - replaceRange.length + (checklistCheckedGlyph as NSString).length, textStorage.length - paragraphRange.location))
+            let strikeRange = NSRange(location: paragraphRange.location, length: strikeLen)
+            if strikeRange.location + strikeRange.length <= textStorage.length {
+                textStorage.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: strikeRange)
+                textStorage.addAttribute(.foregroundColor, value: NSColor.secondaryLabelColor, range: strikeRange)
+            }
+        } else if let matchingChecked = checkedPrefixes.first(where: { paragraphText.hasPrefix($0) }) {
             // Checked -> Remove checklist prefix
-            let replaceRange = NSRange(location: paragraphRange.location, length: (checklistCheckedGlyph as NSString).length)
+            let replaceRange = NSRange(location: paragraphRange.location, length: (matchingChecked as NSString).length)
             textStorage.replaceCharacters(in: replaceRange, with: "")
-            let cleanRange = NSRange(location: paragraphRange.location, length: paragraphRange.length - replaceRange.length)
-            textStorage.removeAttribute(.strikethroughStyle, range: cleanRange)
-            textStorage.addAttribute(.foregroundColor, value: NSColor.textColor, range: cleanRange)
-            newSelectedRange = NSRange(location: max(paragraphRange.location, selectedRange.location - replaceRange.length), length: selectedRange.length)
+            let cleanLen = max(0, min(paragraphRange.length - replaceRange.length, textStorage.length - paragraphRange.location))
+            let cleanRange = NSRange(location: paragraphRange.location, length: cleanLen)
+            if cleanRange.location + cleanRange.length <= textStorage.length {
+                textStorage.removeAttribute(.strikethroughStyle, range: cleanRange)
+                textStorage.addAttribute(.foregroundColor, value: NSColor.textColor, range: cleanRange)
+            }
+            newSelectedRange = NSRange(location: max(paragraphRange.location, safeSelectedRange.location - replaceRange.length), length: min(safeSelectedRange.length, max(0, textStorage.length - max(paragraphRange.location, safeSelectedRange.location - replaceRange.length))))
         } else {
-            // Add Unchecked
+            // Add Unchecked Circular Bullet
             textStorage.insert(NSAttributedString(string: checklistUncheckedGlyph, attributes: [.font: defaultFont, .foregroundColor: NSColor.textColor]), at: paragraphRange.location)
-            newSelectedRange = NSRange(location: selectedRange.location + (checklistUncheckedGlyph as NSString).length, length: selectedRange.length)
+            newSelectedRange = NSRange(location: safeSelectedRange.location + (checklistUncheckedGlyph as NSString).length, length: safeSelectedRange.length)
         }
         
         textStorage.endEditing()
@@ -382,16 +488,24 @@ public struct RichTextTypography {
     
     public static func deserializeFromRTFD(data: Data?) -> NSAttributedString? {
         guard let data = data, !data.isEmpty else { return nil }
-        do {
-            let attr = try NSAttributedString(
-                data: data,
-                options: [.documentType: NSAttributedString.DocumentType.rtfd],
-                documentAttributes: nil
-            )
+        if let attr = try? NSAttributedString(
+            data: data,
+            options: [.documentType: NSAttributedString.DocumentType.rtfd],
+            documentAttributes: nil
+        ) {
             return attr
-        } catch {
-            return nil
         }
+        if let attr = try? NSAttributedString(
+            data: data,
+            options: [.documentType: NSAttributedString.DocumentType.rtf],
+            documentAttributes: nil
+        ) {
+            return attr
+        }
+        if let plainString = String(data: data, encoding: .utf8) {
+            return NSAttributedString(string: plainString)
+        }
+        return nil
     }
     
     // MARK: Legacy Markdown Migration
@@ -441,7 +555,7 @@ public struct RichTextTypography {
     
     public static func convertAttributedStringToMarkdown(attributedString: NSAttributedString) -> String {
         let string = attributedString.string
-        guard !string.isEmpty else { return "" }
+        guard !string.isEmpty && attributedString.length > 0 else { return "" }
         
         var markdown = ""
         let nsString = string as NSString
@@ -449,12 +563,14 @@ public struct RichTextTypography {
         
         while location < nsString.length {
             let paragraphRange = nsString.paragraphRange(for: NSRange(location: location, length: 0))
+            guard paragraphRange.location + paragraphRange.length <= nsString.length else { break }
             let paragraphText = nsString.substring(with: paragraphRange)
             let trimmedText = paragraphText.trimmingCharacters(in: .newlines)
             
             if !trimmedText.isEmpty {
                 var prefix = ""
-                if let font = attributedString.attribute(.font, at: paragraphRange.location, effectiveRange: nil) as? NSFont {
+                if paragraphRange.location < attributedString.length,
+                   let font = attributedString.attribute(.font, at: paragraphRange.location, effectiveRange: nil) as? NSFont {
                     if font.pointSize >= 24 {
                         prefix = "# "
                     } else if font.pointSize >= 18 {
@@ -477,6 +593,7 @@ public struct RichTextTypography {
             } else {
                 markdown += "\n"
             }
+            guard paragraphRange.length > 0 else { break }
             location = paragraphRange.location + paragraphRange.length
         }
         

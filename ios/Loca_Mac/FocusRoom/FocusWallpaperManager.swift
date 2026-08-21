@@ -13,9 +13,9 @@ final class FocusWallpaperManager {
     private let diskCacheURL: URL
 
     private init() {
-        // Configure Memory Cache Limits (up to 30 uncompressed images, ~150MB)
-        memoryCache.countLimit = 30
-        memoryCache.totalCostLimit = 150 * 1024 * 1024
+        // Ultra-low footprint memory cache (max 2 images, 16MB ceiling)
+        memoryCache.countLimit = 2
+        memoryCache.totalCostLimit = 16 * 1024 * 1024
 
         // Setup Persistent Disk Cache Directory
         let caches = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first!
@@ -33,6 +33,25 @@ final class FocusWallpaperManager {
         return diskCacheURL.appendingPathComponent("\(safeName).jpg")
     }
 
+    // MARK: - Downsampled High-Efficiency Image Decode
+
+    nonisolated static func decodeDownsampledImage(from data: Data, maxDimension: CGFloat = 1920) -> NSImage? {
+        let options: [CFString: Any] = [
+            kCGImageSourceShouldCache: false,
+            kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxDimension,
+            kCGImageSourceCreateThumbnailWithTransform: true
+        ]
+
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
+            return NSImage(data: data)
+        }
+
+        return NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width, height: cgImage.height))
+    }
+
     // MARK: - Synchronous Memory & Disk Lookup (0ms - 2ms)
 
     func cachedImage(for urlString: String) -> NSImage? {
@@ -47,9 +66,9 @@ final class FocusWallpaperManager {
         let diskURL = diskFileURL(for: urlString)
         if fileManager.fileExists(atPath: diskURL.path),
            let diskData = try? Data(contentsOf: diskURL),
-           let diskImage = NSImage(data: diskData) {
-            memoryCache.setObject(diskImage, forKey: key, cost: diskData.count)
-            return diskImage
+           let downsampledImage = Self.decodeDownsampledImage(from: diskData) {
+            memoryCache.setObject(downsampledImage, forKey: key, cost: diskData.count)
+            return downsampledImage
         }
 
         return nil
@@ -80,7 +99,7 @@ final class FocusWallpaperManager {
             guard let (data, response) = try? await URLSession.shared.data(for: request),
                   let httpResponse = response as? HTTPURLResponse,
                   httpResponse.statusCode == 200,
-                  let image = NSImage(data: data) else {
+                  let image = Self.decodeDownsampledImage(from: data) else {
                 await MainActor.run { completion(nil) }
                 return
             }
@@ -95,14 +114,10 @@ final class FocusWallpaperManager {
         }
     }
 
-    // MARK: - Background Prefetching
+    // MARK: - Cache Eviction
 
-    func prefetch(urls: [String]) {
-        for urlStr in urls {
-            if cachedImage(for: urlStr) == nil {
-                loadImage(for: urlStr) { _ in }
-            }
-        }
+    func purgeMemoryCache() {
+        memoryCache.removeAllObjects()
     }
 }
 

@@ -32,22 +32,15 @@ struct FocusRoomView: View {
     @AppStorage("mac_today_submode") private var todaySubmode: String = "Plan"
     @State private var isFullscreen: Bool = false
 
-    // Persistent Background State (Persists across App Restarts & Tab Switches)
-    @AppStorage("focus_room_selected_preset_id") private var selectedPresetID: String = "nat_1"
-    @AppStorage("focus_room_youtube_video_id") private var storedYoutubeVideoID: String = ""
+    // Persistent Background State
+    @AppStorage("focus_room_selected_preset_id") private var selectedPresetID: String = "nat_forest"
     @State private var currentSession: FocusSession? = nil
 
-    private var youtubeVideoIDBinding: Binding<String?> {
-        Binding(
-            get: { storedYoutubeVideoID.isEmpty ? nil : storedYoutubeVideoID },
-            set: { storedYoutubeVideoID = $0 ?? "" }
-        )
-    }
-
-    // Queries for Telemetry & Badges
+    // Queries for Task Badge
     @Query private var allGoals: [FocusGoal]
-    @Query(sort: [SortDescriptor(\TodoItem.createdAt)])
-    private var allTodoItems: [TodoItem]
+    @Query private var allTodoItems: [TodoItem]
+
+    init() {}
 
     private var openGoalsCount: Int { allGoals.filter { !$0.isCompleted }.count }
     private var totalGoalsCount: Int { allGoals.count }
@@ -58,142 +51,33 @@ struct FocusRoomView: View {
         GeometryReader { geo in
             ZStack(alignment: .topLeading) {
 
-                // ===================================================================
-                // LAYER 1: FULLSCREEN BACKGROUND (Strictly Clipped to Window Frame)
-                // ===================================================================
+                // LAYER 1: Fullscreen Background
                 fullscreenBackground(size: geo.size)
                     .frame(width: geo.size.width, height: geo.size.height)
                     .clipped()
                     .ignoresSafeArea(.all)
                     .zIndex(0)
 
-                // ===================================================================
-                // LAYER 3: FLOATING PANELS OVERLAY
-                // ===================================================================
+                // LAYER 3: Floating Panels Overlay
                 HStack(alignment: .top, spacing: 0) {
-
-                    // Left Column: Timer Card + Session Goals Panel stacked vertically
-                    VStack(alignment: .leading, spacing: 12) {
-                        if showTimerModal {
-                            bigTimerModal
-                                .transition(.asymmetric(
-                                    insertion: .move(edge: .top).combined(with: .opacity),
-                                    removal: .move(edge: .top).combined(with: .opacity)
-                                ))
-                        }
-
-                        if showGoalsPanel {
-                            FocusGoalsPanel(isPresented: $showGoalsPanel)
-                                .transition(.asymmetric(
-                                    insertion: .move(edge: .leading).combined(with: .opacity),
-                                    removal: .move(edge: .leading).combined(with: .opacity)
-                                ))
-                        }
-
-                        Spacer()
-                    }
-                    .padding(.leading, 20)
-                    .padding(.top, 76)
-
+                    leftPanelsColumn
                     Spacer()
-
-                    // Right Column: Active Tool Panels + Persistent Quote Card
-                    VStack(alignment: .trailing, spacing: 12) {
-                        switch activePanel {
-                        case .background:
-                            BackgroundPickerPanel(
-                                isPresented: Binding(
-                                    get: { activePanel == .background },
-                                    set: { if !$0 { activePanel = .none } }
-                                ),
-                                selectedPresetID: $selectedPresetID,
-                                youtubeVideoID: youtubeVideoIDBinding,
-                                youtubeVolume: $soundVM.youtubeVolume
-                            )
-                            .transition(.asymmetric(
-                                insertion: .move(edge: .trailing).combined(with: .opacity),
-                                removal: .move(edge: .trailing).combined(with: .opacity)
-                            ))
-
-                        case .sound:
-                            SoundMixerPanel(
-                                soundVM: soundVM,
-                                isPresented: Binding(
-                                    get: { activePanel == .sound },
-                                    set: { if !$0 { activePanel = .none } }
-                                )
-                            )
-                            .transition(.asymmetric(
-                                insertion: .move(edge: .trailing).combined(with: .opacity),
-                                removal: .move(edge: .trailing).combined(with: .opacity)
-                            ))
-
-                        case .stats:
-                            StudyStatsPanel(
-                                isPresented: Binding(
-                                    get: { activePanel == .stats },
-                                    set: { if !$0 { activePanel = .none } }
-                                )
-                            )
-                            .transition(.asymmetric(
-                                insertion: .move(edge: .trailing).combined(with: .opacity),
-                                removal: .move(edge: .trailing).combined(with: .opacity)
-                            ))
-
-                        case .none, .quote:
-                            EmptyView()
-                        }
-
-                        // Persistent Quote Card (always stays visible on screen unless closed)
-                        if showQuoteCard {
-                            QuotePanel(isPresented: $showQuoteCard)
-                                .transition(.asymmetric(
-                                    insertion: .move(edge: .trailing).combined(with: .opacity),
-                                    removal: .move(edge: .trailing).combined(with: .opacity)
-                                ))
-                        }
-
-                        Spacer()
-                    }
-                    .padding(.trailing, 20)
-                    .padding(.top, 76)
+                    rightPanelsColumn
                 }
                 .frame(width: geo.size.width, height: geo.size.height)
                 .zIndex(50)
 
-                // ===================================================================
-                // LAYER 2: FLOATING TOP BAR (Pinned to Top-Center & Edges)
-                // ===================================================================
+                // LAYER 2: Floating Top Bar
                 topFloatingBar
                     .padding(.horizontal, 20)
                     .padding(.top, 16)
                     .frame(width: geo.size.width)
                     .zIndex(100)
 
-                // ===================================================================
-                // LAYER 4: BOTTOM KEYBOARD SHORTCUT HUD
-                // ===================================================================
-                VStack {
-                    Spacer()
-                    HStack(spacing: 12) {
-                        shortcutBadge(key: "Space", label: timerVM.isRunning ? "Pause" : "Resume")
-                        shortcutBadge(key: "⌘T", label: "Timer")
-                        shortcutBadge(key: "⌘B", label: "Sidebar")
-                        shortcutBadge(key: "⌘F", label: "Fullscreen")
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(.ultraThinMaterial, in: Capsule())
-                    .background(Color.black.opacity(0.65), in: Capsule())
-                    .overlay(Capsule().stroke(Color.white.opacity(0.12), lineWidth: 0.8))
-                    .padding(.bottom, 16)
-                }
-                .frame(width: geo.size.width)
-                .zIndex(70)
+                // LAYER 4: Bottom Keyboard Shortcut HUD
+                bottomShortcutsHUD(width: geo.size.width)
 
-                // ===================================================================
-                // LAYER 5: LIQUID GLASS FLYOUT NAVIGATION DRAWER (Burger Menu Overlay)
-                // ===================================================================
+                // LAYER 5: Liquid Glass Flyout Navigation Drawer
                 liquidGlassNavDrawer(size: geo.size)
             }
             .frame(width: geo.size.width, height: geo.size.height)
@@ -206,27 +90,131 @@ struct FocusRoomView: View {
         .onAppear {
             DispatchQueue.main.async {
                 startSession()
-                // Prefetch nature preset wallpapers in background
-                let presetURLs = BackgroundPickerPanel.presets.prefix(8).map { $0.fullImageURL }
-                FocusWallpaperManager.shared.prefetch(urls: presetURLs)
             }
         }
         .onDisappear {
             DispatchQueue.main.async {
                 endSession()
+                FocusWallpaperManager.shared.purgeMemoryCache()
             }
         }
+    }
+
+    // MARK: - Subview Panels
+
+    private var leftPanelsColumn: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if showTimerModal {
+                bigTimerModal
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .top).combined(with: .opacity),
+                        removal: .move(edge: .top).combined(with: .opacity)
+                    ))
+            }
+
+            if showGoalsPanel {
+                FocusGoalsPanel(isPresented: $showGoalsPanel)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .leading).combined(with: .opacity),
+                        removal: .move(edge: .leading).combined(with: .opacity)
+                    ))
+            }
+
+            Spacer()
+        }
+        .padding(.leading, 20)
+        .padding(.top, 76)
+    }
+
+    private var rightPanelsColumn: some View {
+        VStack(alignment: .trailing, spacing: 12) {
+            activeToolPanel
+            
+            if showQuoteCard {
+                QuotePanel(isPresented: $showQuoteCard)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .trailing).combined(with: .opacity),
+                        removal: .move(edge: .trailing).combined(with: .opacity)
+                    ))
+            }
+
+            Spacer()
+        }
+        .padding(.trailing, 20)
+        .padding(.top, 76)
+    }
+
+    @ViewBuilder
+    private var activeToolPanel: some View {
+        switch activePanel {
+        case .background:
+            BackgroundPickerPanel(
+                isPresented: Binding(
+                    get: { activePanel == .background },
+                    set: { if !$0 { activePanel = .none } }
+                ),
+                selectedPresetID: $selectedPresetID
+            )
+            .transition(.asymmetric(
+                insertion: .move(edge: .trailing).combined(with: .opacity),
+                removal: .move(edge: .trailing).combined(with: .opacity)
+            ))
+
+        case .sound:
+            SoundMixerPanel(
+                soundVM: soundVM,
+                isPresented: Binding(
+                    get: { activePanel == .sound },
+                    set: { if !$0 { activePanel = .none } }
+                )
+            )
+            .transition(.asymmetric(
+                insertion: .move(edge: .trailing).combined(with: .opacity),
+                removal: .move(edge: .trailing).combined(with: .opacity)
+            ))
+
+        case .stats:
+            StudyStatsPanel(
+                isPresented: Binding(
+                    get: { activePanel == .stats },
+                    set: { if !$0 { activePanel = .none } }
+                )
+            )
+            .transition(.asymmetric(
+                insertion: .move(edge: .trailing).combined(with: .opacity),
+                removal: .move(edge: .trailing).combined(with: .opacity)
+            ))
+
+        case .none, .quote:
+            EmptyView()
+        }
+    }
+
+    private func bottomShortcutsHUD(width: CGFloat) -> some View {
+        VStack {
+            Spacer()
+            HStack(spacing: 12) {
+                shortcutBadge(key: "Space", label: timerVM.isRunning ? "Pause" : "Resume")
+                shortcutBadge(key: "⌘T", label: "Timer")
+                shortcutBadge(key: "⌘B", label: "Sidebar")
+                shortcutBadge(key: "⌘F", label: "Fullscreen")
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(.ultraThinMaterial, in: Capsule())
+            .background(Color.black.opacity(0.65), in: Capsule())
+            .overlay(Capsule().stroke(Color.white.opacity(0.12), lineWidth: 0.8))
+            .padding(.bottom, 16)
+        }
+        .frame(width: width)
+        .zIndex(70)
     }
 
     // MARK: - Layer 1: Fullscreen Background (Constrained to Window Bounds)
 
     @ViewBuilder
     private func fullscreenBackground(size: CGSize) -> some View {
-        if !storedYoutubeVideoID.isEmpty {
-            YouTubeWebView(videoID: storedYoutubeVideoID, volume: soundVM.youtubeVolume)
-                .frame(width: size.width, height: size.height)
-                .clipped()
-        } else if let preset = BackgroundPickerPanel.presets.first(where: { $0.id == selectedPresetID }) {
+        if let preset = BackgroundPickerPanel.presets.first(where: { $0.id == selectedPresetID }) ?? BackgroundPickerPanel.presets.first {
             ZStack {
                 // High-Speed Cached Wallpaper with 0ms RAM/Disk hit and zero lag
                 FocusCachedImageView(
@@ -968,7 +956,8 @@ struct FocusRoomView: View {
                                     .foregroundStyle(Color.white.opacity(0.45))
                                     .padding(.horizontal, 12)
 
-                                drawerSectionButton(title: "Studio", subtitle: "Notes & Projects", icon: "sparkles.rectangle.stack.fill", section: .studio)
+                                drawerSectionButton(title: "Notes", subtitle: "BrainStorm Canvas", icon: "note.text", section: .notes)
+                                drawerSectionButton(title: "Studio", subtitle: "Journal & Projects", icon: "sparkles.rectangle.stack.fill", section: .studio)
                                 drawerSectionButton(title: "Life", subtitle: "Mountain & Trek Atlas", icon: "mountain.2.fill", section: .life)
                                 drawerSectionButton(title: "Settings", subtitle: "Preferences & Backup", icon: "gearshape.fill", section: .settings)
                             }

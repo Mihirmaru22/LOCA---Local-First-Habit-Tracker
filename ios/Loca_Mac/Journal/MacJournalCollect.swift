@@ -182,8 +182,26 @@ struct MacJournalCollect: View {
             }
         }
         .padding(DS.Space.md)
-        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
-        .overlay(RoundedRectangle(cornerRadius: DS.Radius.card).stroke(DS.Color.border.opacity(0.4), lineWidth: 1))
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: DS.Radius.card)
+                    .fill(.ultraThinMaterial)
+                RoundedRectangle(cornerRadius: DS.Radius.card)
+                    .fill(Color.white.opacity(0.04))
+            }
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: DS.Radius.card)
+                .stroke(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.18), Color.white.opacity(0.05)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
+        )
+        .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 2)
     }
 
     private func addRoutine(name: String) {
@@ -301,13 +319,28 @@ struct DailyWeeklyMatrixContainer: View {
             }
             .padding(.horizontal, DS.Space.lg)
             .padding(.vertical, DS.Space.md)
-            .background(DS.Color.surfaceRecessed.opacity(0.3))
+            .background(Color.white.opacity(0.03))
         }
-        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: DS.Radius.card)
+                    .fill(.ultraThinMaterial)
+                RoundedRectangle(cornerRadius: DS.Radius.card)
+                    .fill(Color.white.opacity(0.04))
+            }
+        )
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.card)
-                .stroke(DS.Color.border.opacity(0.5), lineWidth: 1)
+                .stroke(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.18), Color.white.opacity(0.05)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
         )
+        .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 2)
     }
 
     private func formatDayLetter(_ date: Date) -> String {
@@ -540,7 +573,26 @@ struct DailyZenHeatmapContainer: View {
                 .padding(.horizontal, DS.Space.lg)
                 .padding(.vertical, DS.Space.md)
             }
-            .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+            .background(
+                ZStack {
+                    RoundedRectangle(cornerRadius: DS.Radius.card)
+                        .fill(.ultraThinMaterial)
+                    RoundedRectangle(cornerRadius: DS.Radius.card)
+                        .fill(Color.white.opacity(0.04))
+                }
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: DS.Radius.card)
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.18), Color.white.opacity(0.05)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            )
+            .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 2)
         }
     }
 }
@@ -728,11 +780,26 @@ struct DailyDaylightFlowContainer: View {
                 }
             }
         }
-        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: DS.Radius.card)
+                    .fill(.ultraThinMaterial)
+                RoundedRectangle(cornerRadius: DS.Radius.card)
+                    .fill(Color.white.opacity(0.04))
+            }
+        )
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.card)
-                .stroke(color.opacity(0.25), lineWidth: 1)
+                .stroke(
+                    LinearGradient(
+                        colors: [color.opacity(0.35), Color.white.opacity(0.06)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
         )
+        .shadow(color: Color.black.opacity(0.15), radius: 6, x: 0, y: 2)
     }
 
     private func completedCount(for list: [HabitBoard]) -> Int {
@@ -853,11 +920,6 @@ struct SleepCard: View {
             modelContext.insert(entry)
         }
         try? modelContext.save()
-        PlutoTelemetryEngine.shared.trackSleepLogged(
-            bedtime: bedtime.formatted(date: .omitted, time: .shortened),
-            wakeTime: wakeTime.formatted(date: .omitted, time: .shortened),
-            durationHours: hours
-        )
     }
 
     private func clearSleep() {
@@ -1121,11 +1183,26 @@ private struct SleepTimelineHorizonView: View {
             }
         }
         .padding(DS.Space.lg)
-        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: DS.Radius.card)
+                    .fill(.ultraThinMaterial)
+                RoundedRectangle(cornerRadius: DS.Radius.card)
+                    .fill(Color.white.opacity(0.04))
+            }
+        )
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.card)
-                .stroke(DS.Color.border.opacity(0.5), lineWidth: 1)
+                .stroke(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.18), Color.white.opacity(0.05)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
         )
+        .shadow(color: Color.black.opacity(0.18), radius: 6, x: 0, y: 2)
     }
 
     // MARK: - Time Badge with Popover & Inline Steppers
@@ -1383,7 +1460,18 @@ private struct SleepDialVariant: View {
             }
         }
         .padding(DS.Space.sm)
-        .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: DS.Radius.card)
+                    .fill(.ultraThinMaterial)
+                RoundedRectangle(cornerRadius: DS.Radius.card)
+                    .fill(Color.white.opacity(0.04))
+            }
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: DS.Radius.card)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
     }
 
     private func timeChip(

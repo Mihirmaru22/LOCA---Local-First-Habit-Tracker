@@ -115,14 +115,6 @@ struct MacTodoContentColumn: View {
         .onAppear {
             lastModeIndex = (TodoMode(rawValue: modeString) ?? .plan).index
         }
-        // Vend context-sensitive ⌘N action to the menu bar
-        .focusedValue(\.todayNewItemAction, {
-            switch mode.wrappedValue {
-            case .plan: NotificationCenter.default.post(name: .locaAddBlock, object: nil)
-            case .list: NotificationCenter.default.post(name: .locaFocusQuickAdd, object: nil)
-            case .time: break
-            }
-        })
     }
 
     // MARK: - Spatial Content Transition

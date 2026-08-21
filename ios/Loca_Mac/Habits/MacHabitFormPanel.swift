@@ -313,7 +313,6 @@ struct MacHabitFormPanel: View {
         modelContext.insert(newHabit)
         do {
             try modelContext.save()
-            PlutoTelemetryEngine.shared.trackHabitCreated(board: newHabit)
             Haptics.impact(.rigid)
             dismiss()
         } catch {

@@ -105,9 +105,6 @@ struct MacTodoListColumn: View {
                 }
             }
         }
-        .onChange(of: selectedVariant) { _, newVar in
-            PlutoTelemetryEngine.shared.trackLayoutChanged(section: "TodoList", newLayout: newVar.rawValue)
-        }
     }
 
     // MARK: - Top Glass Header
@@ -348,7 +345,6 @@ private struct List1CardRow: View {
                         try? modelContext.save()
                         if item.isCompleted {
                             PlutoSoundEngine.shared.play(.completePop)
-                            PlutoTelemetryEngine.shared.trackTaskCompleted(task: item)
                         }
                     }
                     Haptics.impact(.light)
@@ -670,7 +666,6 @@ private struct List3FocusCard: View {
                                 try? modelContext.save()
                                 if item.isCompleted {
                                     PlutoSoundEngine.shared.play(.completePop)
-                                    PlutoTelemetryEngine.shared.trackTaskCompleted(task: item)
                                 }
                             }
                             Haptics.impact(.light)

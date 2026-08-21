@@ -68,7 +68,7 @@ struct NarrativeView: View {
                             .foregroundStyle(DS.Color.textTertiary)
                         Slider(value: $arcResonance, in: 0...1)
                             .tint(Color.accentColor)
-                            .onChange(of: arcResonance) { _ in saveNarrativeFeedback() }
+                            .onChange(of: arcResonance) { _, _ in saveNarrativeFeedback() }
                     }
                 }
             }

@@ -44,7 +44,12 @@ struct MacBrainStormView: View {
                         selectedTag: $selectedTag
                     )
                     .frame(minWidth: 185, idealWidth: 205, maxWidth: 260)
-                    .background(Color(nsColor: NSColor(red: 0.09, green: 0.09, blue: 0.10, alpha: 1.0)))
+                    .background(
+                        ZStack {
+                            Rectangle().fill(.ultraThinMaterial)
+                            Color.black.opacity(0.42)
+                        }
+                    )
                 }
 
                 // 2. NOTES LIST / GALLERY (Column 1 - Clean, spacious card column with extended previews)
@@ -67,7 +72,12 @@ struct MacBrainStormView: View {
                         }
                     )
                     .frame(minWidth: 290, idealWidth: 340, maxWidth: 460)
-                    .background(Color(nsColor: NSColor(red: 0.11, green: 0.11, blue: 0.12, alpha: 1.0)))
+                    .background(
+                        ZStack {
+                            Rectangle().fill(.ultraThinMaterial)
+                            Color.black.opacity(0.32)
+                        }
+                    )
                 }
 
                 // 3. FULL APPLE NOTES CANVAS (Column 2 - Spacious, full remaining window width)
@@ -87,7 +97,19 @@ struct MacBrainStormView: View {
                     }
                 }
                 .frame(minWidth: 420, maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color(nsColor: NSColor(red: 0.13, green: 0.13, blue: 0.14, alpha: 1.0)))
+                .background(
+                    ZStack {
+                        Rectangle().fill(.ultraThinMaterial)
+                        LinearGradient(
+                            colors: [
+                                Color.black.opacity(0.28),
+                                Color(nsColor: NSColor(red: 0.08, green: 0.08, blue: 0.10, alpha: 0.78))
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    }
+                )
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 

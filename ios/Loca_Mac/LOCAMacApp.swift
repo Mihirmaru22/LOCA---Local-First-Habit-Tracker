@@ -27,14 +27,6 @@ struct LOCAMacApp: App {
     nonisolated private let logger = Logger(subsystem: "com.mihirmaru.loca.mac", category: "app")
 
     init() {
-        // Initialize Apple Native Notification Delegate & Categories (A1-A8)
-        PlutoNotificationManager.shared.configure()
-
-        // NOTE: Global hotkey monitoring is deferred to .onAppear in the
-        // WindowGroup body. Calling startMonitoring() here — before the
-        // NSApplication run loop is fully initialized — freezes the Cocoa
-        // event dispatch pipeline and makes the entire UI unclickable.
-
         do {
             self.container = try ModelContainerFactory.makeConfiguredContainer()
             #if DEBUG
@@ -55,11 +47,11 @@ struct LOCAMacApp: App {
                     .modelContainer(container)
                     .frame(minWidth: DS.Mac.windowMinWidth, minHeight: DS.Mac.windowMinHeight)
                     .onAppear {
+                        // Initialize Apple Native Notification categories & delegate safely
+                        PlutoNotificationManager.shared.configure()
+
                         // Seed calm initial workspace notes & projects if first launch
                         EmptyStateSeeder.shared.seedInitialDataIfNeeded(context: container.mainContext)
-
-                        // Start invisible alpha telemetry engine
-                        PlutoTelemetryEngine.shared.start()
 
                         // Defer global hotkey registration until the app
                         // window is fully displayed and the run loop is active.
@@ -77,7 +69,6 @@ struct LOCAMacApp: App {
             LOCACommands()
         }
         .windowStyle(.titleBar)
-        .windowToolbarStyle(.unified(showsTitle: true))
     }
 }
 

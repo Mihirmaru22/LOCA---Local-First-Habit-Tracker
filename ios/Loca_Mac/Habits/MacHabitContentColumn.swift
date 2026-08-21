@@ -97,9 +97,6 @@ struct MacHabitContentColumn: View {
             }
         }
         .navigationTitle("Habits")
-        .onChange(of: selectedVariant) { _, newVar in
-            PlutoTelemetryEngine.shared.trackLayoutChanged(section: "Habits", newLayout: newVar.rawValue)
-        }
         .sheet(isPresented: $showingCreateSheet) {
             MacHabitFormPanel()
         }
@@ -114,7 +111,6 @@ struct MacHabitContentColumn: View {
         do {
             if board.metric == .binary {
                 try CheckInWriter.toggleBinary(board: board, context: modelContext)
-                PlutoTelemetryEngine.shared.trackHabitCheckIn(board: board, value: board.effectiveTarget, isDone: true)
             } else {
                 let todayLogs = (board.logs ?? []).filter { $0.timestamp.isToday() && $0.archivedAt == nil }
                 let currentTotal = todayLogs.reduce(0.0) { $0 + $1.value }
@@ -127,7 +123,6 @@ struct MacHabitContentColumn: View {
                     // Incomplete: fill remaining target
                     let remaining = max(1.0, board.effectiveTarget - currentTotal)
                     try CheckInWriter.insert(value: remaining, board: board, context: modelContext)
-                    PlutoTelemetryEngine.shared.trackHabitCheckIn(board: board, value: remaining, isDone: true)
                 }
             }
             Haptics.impact(.rigid)
@@ -139,9 +134,6 @@ struct MacHabitContentColumn: View {
     private func logAmountDirect(_ amount: Double, for board: HabitBoard) {
         do {
             try CheckInWriter.insert(value: amount, board: board, context: modelContext)
-            let todayLogs = (board.logs ?? []).filter { $0.timestamp.isToday() && $0.archivedAt == nil }
-            let total = todayLogs.reduce(0.0) { $0 + $1.value }
-            PlutoTelemetryEngine.shared.trackHabitCheckIn(board: board, value: amount, isDone: total >= board.effectiveTarget)
             Haptics.impact(.light)
         } catch {
             showCheckInError = true

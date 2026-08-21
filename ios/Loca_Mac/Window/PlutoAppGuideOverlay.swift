@@ -162,7 +162,9 @@ enum PlutoAppGuideStep: Int, CaseIterable, Identifiable {
         switch self {
         case .sidebarNavigation, .todayPriorityMatrix, .todayMetricsArchitecture, .todayFocusSprintTimer:
             return .today
-        case .studioNotesHierarchy, .studioEditorEngine, .studioProjectsMatrix:
+        case .studioNotesHierarchy, .studioEditorEngine:
+            return .notes
+        case .studioProjectsMatrix:
             return .studio
         case .lifeSatelliteAtlas, .lifeBlueprintHorizon:
             return .life
@@ -266,6 +268,9 @@ final class PlutoAppGuideManager: ObservableObject {
 
     func startTour() {
         currentStep = .sidebarNavigation
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: .locaJumpToSection, object: PlutoAppGuideStep.sidebarNavigation.associatedSection)
+        }
         withAnimation(.spring(response: 0.32, dampingFraction: 0.8)) {
             isTourActive = true
         }
@@ -274,9 +279,12 @@ final class PlutoAppGuideManager: ObservableObject {
 
     func nextStep() {
         if currentStep.rawValue < PlutoAppGuideStep.allCases.count - 1 {
-            withAnimation(.spring(response: 0.30, dampingFraction: 0.82)) {
-                if let next = PlutoAppGuideStep(rawValue: currentStep.rawValue + 1) {
+            if let next = PlutoAppGuideStep(rawValue: currentStep.rawValue + 1) {
+                withAnimation(.spring(response: 0.30, dampingFraction: 0.82)) {
                     currentStep = next
+                }
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(name: .locaJumpToSection, object: next.associatedSection)
                 }
             }
             Haptics.impact(.light)
@@ -287,9 +295,12 @@ final class PlutoAppGuideManager: ObservableObject {
 
     func previousStep() {
         if currentStep.rawValue > 0 {
-            withAnimation(.spring(response: 0.30, dampingFraction: 0.82)) {
-                if let prev = PlutoAppGuideStep(rawValue: currentStep.rawValue - 1) {
+            if let prev = PlutoAppGuideStep(rawValue: currentStep.rawValue - 1) {
+                withAnimation(.spring(response: 0.30, dampingFraction: 0.82)) {
                     currentStep = prev
+                }
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(name: .locaJumpToSection, object: prev.associatedSection)
                 }
             }
             Haptics.impact(.light)
@@ -299,6 +310,9 @@ final class PlutoAppGuideManager: ObservableObject {
     func jumpTo(step: PlutoAppGuideStep) {
         withAnimation(.spring(response: 0.30, dampingFraction: 0.82)) {
             currentStep = step
+        }
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: .locaJumpToSection, object: step.associatedSection)
         }
         Haptics.impact(.light)
     }
@@ -349,7 +363,6 @@ struct SpotlightCutoutShape: Shape {
 
 struct PlutoAppGuideOverlay: View {
     @ObservedObject var guideManager = PlutoAppGuideManager.shared
-    @Binding var selectedSection: MacSection?
 
     var body: some View {
         GeometryReader { proxy in
@@ -387,17 +400,6 @@ struct PlutoAppGuideOverlay: View {
 
                 // 3. EXPLANATION POPOVER CARD
                 popoverCard(step: step, windowSize: windowSize, targetRect: targetRect)
-            }
-        }
-        .onChange(of: guideManager.currentStep) { _, newStep in
-            // Automatically drive active app section to show the real live feature!
-            if selectedSection != newStep.associatedSection {
-                selectedSection = newStep.associatedSection
-            }
-        }
-        .onAppear {
-            if selectedSection != guideManager.currentStep.associatedSection {
-                selectedSection = guideManager.currentStep.associatedSection
             }
         }
         .transition(.opacity)

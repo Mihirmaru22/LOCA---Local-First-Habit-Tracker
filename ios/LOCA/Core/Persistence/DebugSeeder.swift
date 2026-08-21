@@ -46,8 +46,6 @@ enum DebugSeeder {
             return // Real data already exists — never overwrite it.
         }
 
-        let calendar = Calendar.current
-
         let running = HabitBoard(
             name: "Running",
             metricType: HabitBoard.MetricType.quantitative.rawValue,

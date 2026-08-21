@@ -12,6 +12,8 @@ struct AmbientSoundTrack: Identifiable {
     var volume: Float = 0.0
     var isMuted: Bool = false
     var previousVolume: Float = 0.5
+    var appleKind: AppleComfortSoundKind? = nil
+    var isAppleNative: Bool { appleKind != nil }
 }
 
 // MARK: - FocusAudioDSPContext (Thread-Safe Real-Time CoreAudio DSP Engine)
@@ -318,16 +320,28 @@ final class FocusAudioDSPContext: @unchecked Sendable {
 final class FocusSoundViewModel: ObservableObject {
 
     @Published var tracks: [AmbientSoundTrack] = [
+        // Apple Native Background Sounds
+        AmbientSoundTrack(id: "apple_rain", name: "Rain", emoji: "🌧️", volume: 0.0, appleKind: .rain),
+        AmbientSoundTrack(id: "apple_stream", name: "Stream", emoji: "🌊", volume: 0.0, appleKind: .stream),
+        AmbientSoundTrack(id: "apple_ocean", name: "Ocean", emoji: "🌊", volume: 0.0, appleKind: .ocean),
+        AmbientSoundTrack(id: "apple_dark_noise", name: "Dark Noise", emoji: "🌑", volume: 0.0, appleKind: .darkNoise),
+        AmbientSoundTrack(id: "apple_bright_noise", name: "Bright Noise", emoji: "💡", volume: 0.0, appleKind: .brightNoise),
+        AmbientSoundTrack(id: "apple_balanced_noise", name: "Balanced Noise", emoji: "⚖️", volume: 0.0, appleKind: .balancedNoise),
+        AmbientSoundTrack(id: "apple_fire", name: "Fire", emoji: "🔥", volume: 0.0, appleKind: .fire),
+        AmbientSoundTrack(id: "apple_night", name: "Night", emoji: "🌌", volume: 0.0, appleKind: .night),
+        AmbientSoundTrack(id: "apple_quiet_night", name: "Quiet Night", emoji: "🌙", volume: 0.0, appleKind: .quietNight),
+        AmbientSoundTrack(id: "apple_rain_roof", name: "Rain on Roof", emoji: "🏠", volume: 0.0, appleKind: .rainOnRoof),
+        AmbientSoundTrack(id: "apple_babble", name: "Babble", emoji: "☕", volume: 0.0, appleKind: .babble),
+        AmbientSoundTrack(id: "apple_train", name: "Train", emoji: "🚂", volume: 0.0, appleKind: .train),
+
+        // Procedural Audio Synthesizer
         AmbientSoundTrack(id: "lofi", name: "LoFi beats", emoji: "⭐", volume: 0.0),
-        AmbientSoundTrack(id: "nature", name: "Nature sounds", emoji: "🌿", volume: 0.0),
-        AmbientSoundTrack(id: "rain", name: "Rain sounds", emoji: "💧", volume: 0.0),
-        AmbientSoundTrack(id: "fireplace", name: "Fireplace sounds", emoji: "🔥", volume: 0.0),
+        AmbientSoundTrack(id: "piano", name: "Piano & jazz", emoji: "🎹", volume: 0.0),
         AmbientSoundTrack(id: "library", name: "Library ambience", emoji: "📚", volume: 0.0),
-        AmbientSoundTrack(id: "piano", name: "Piano & jazz", emoji: "🎹", volume: 0.0)
+        AmbientSoundTrack(id: "nature", name: "Nature DSP", emoji: "🌿", volume: 0.0)
     ]
 
     @Published var isAllPaused: Bool = false
-    @Published var youtubeVolume: Double = 0.5
 
     // Multi-Track Studio Audio Engine
     private var audioEngine = AVAudioEngine()
@@ -361,6 +375,31 @@ final class FocusSoundViewModel: ObservableObject {
     }
 
     private func syncDSPVolume(for trackID: String, volume: Float) {
+        guard let track = tracks.first(where: { $0.id == trackID }) else { return }
+
+        // Apple Native Comfort Sound handling
+        if let appleKind = track.appleKind {
+            if AppleComfortSoundsManager.shared.isSoundDownloaded(appleKind) {
+                AppleComfortSoundsManager.shared.setVolume(for: appleKind, volume: volume)
+                return
+            } else {
+                // Procedural DSP Fallback for non-downloaded sounds
+                switch appleKind {
+                case .rain, .rainOnRoof:
+                    dspContext.volRain = volume
+                case .fire:
+                    dspContext.volFire = volume
+                case .stream, .ocean:
+                    dspContext.volNature = volume
+                case .darkNoise, .brightNoise, .balancedNoise:
+                    dspContext.volLibrary = volume
+                default:
+                    break
+                }
+                return
+            }
+        }
+
         switch trackID {
         case "lofi":      dspContext.volLofi = volume
         case "nature":    dspContext.volNature = volume
@@ -451,8 +490,16 @@ final class FocusSoundViewModel: ObservableObject {
     // MARK: - Engine Controller
 
     private func checkEngineRunning() {
-        let hasActiveTrack = tracks.contains { $0.volume > 0.001 && !$0.isMuted }
-        if hasActiveTrack && !isAllPaused {
+        // Only run CoreAudio DSP synthesis if an active procedural track (or fallback) is unmuted
+        let hasActiveDSPTrack = tracks.contains { track in
+            guard track.volume > 0.001 && !track.isMuted else { return false }
+            if let appleKind = track.appleKind {
+                return !AppleComfortSoundsManager.shared.isSoundDownloaded(appleKind)
+            }
+            return true // Pure procedural DSP track (lofi, piano, library, nature)
+        }
+
+        if hasActiveDSPTrack && !isAllPaused {
             if !isEngineStarted {
                 do {
                     try audioEngine.start()
@@ -507,22 +554,50 @@ final class FocusSoundViewModel: ObservableObject {
     func togglePauseAll() {
         isAllPaused.toggle()
         dspContext.isAllPaused = isAllPaused
+        if isAllPaused {
+            AppleComfortSoundsManager.shared.pauseAll()
+        } else {
+            AppleComfortSoundsManager.shared.resumeAll()
+        }
         checkEngineRunning()
         Haptics.impact(.medium)
     }
 
     // MARK: - Quick Mix Preset Shortcuts
 
+    func clearAllTracks() {
+        for track in tracks {
+            setVolume(for: track.id, volume: 0.0)
+        }
+        AppleComfortSoundsManager.shared.stopAll()
+    }
+
     func applyPreset(lofi: Float, nature: Float, rain: Float, fire: Float, library: Float, piano: Float) {
+        clearAllTracks()
         setVolume(for: "lofi", volume: lofi)
         setVolume(for: "nature", volume: nature)
-        setVolume(for: "rain", volume: rain)
-        setVolume(for: "fireplace", volume: fire)
+        setVolume(for: "apple_rain", volume: rain)
+        setVolume(for: "apple_fire", volume: fire)
         setVolume(for: "library", volume: library)
         setVolume(for: "piano", volume: piano)
         if isAllPaused {
             isAllPaused = false
             dspContext.isAllPaused = false
+            AppleComfortSoundsManager.shared.resumeAll()
+        }
+        checkEngineRunning()
+        Haptics.impact(.medium)
+    }
+
+    func applyAppleSoundPreset(kind: AppleComfortSoundKind, volume: Float = 0.5) {
+        clearAllTracks()
+        if let track = tracks.first(where: { $0.appleKind == kind }) {
+            setVolume(for: track.id, volume: volume)
+        }
+        if isAllPaused {
+            isAllPaused = false
+            dspContext.isAllPaused = false
+            AppleComfortSoundsManager.shared.resumeAll()
         }
         checkEngineRunning()
         Haptics.impact(.medium)

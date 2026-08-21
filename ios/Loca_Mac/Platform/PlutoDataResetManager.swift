@@ -62,9 +62,6 @@ enum PlutoDataResetManager {
             try context.save()
             logger.info("Successfully saved clean habit check-in state.")
 
-            // 4. Clear local telemetry queue files
-            PlutoTelemetryStorage.shared.clearAllQueuedFiles()
-
         } catch {
             logger.error("Failed to reset check-in data: \(error.localizedDescription)")
         }
@@ -139,9 +136,6 @@ enum PlutoDataResetManager {
             UserDefaults.standard.removeObject(forKey: "pluto_work_goals_v1")
             UserDefaults.standard.removeObject(forKey: "pluto_bucket_items_v1")
             UserDefaults.standard.removeObject(forKey: "has_reset_pluto_v35_checkins_clean_run")
-
-            // 8. Clear Telemetry Storage
-            PlutoTelemetryStorage.shared.clearAllQueuedFiles()
 
             // 9. Save SwiftData ModelContext
             try context.save()

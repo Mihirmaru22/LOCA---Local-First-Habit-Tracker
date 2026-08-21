@@ -23,10 +23,25 @@ public final class RichTextEditorController: ObservableObject {
     
     public func updateActiveStates() {
         guard let textView = textView, let textStorage = textView.textStorage else { return }
+        let totalLen = textStorage.length
+        guard totalLen > 0 else {
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.activeParagraphStyle = .body
+                self.isBold = false
+                self.isItalic = false
+                self.isUnderlined = false
+                self.isStrikethrough = false
+                self.isHighlighted = false
+            }
+            return
+        }
+        
         let selectedRange = textView.selectedRange()
         let string = textStorage.string as NSString
+        let stringLen = string.length
         
-        let targetLocation = selectedRange.location > 0 ? (selectedRange.location < string.length ? selectedRange.location : string.length - 1) : 0
+        let targetLocation = min(max(0, selectedRange.location > 0 ? (selectedRange.location < stringLen ? selectedRange.location : stringLen - 1) : 0), stringLen - 1)
         
         var newStyle: NoteParagraphStyle = .body
         var newBold = false
@@ -35,45 +50,49 @@ public final class RichTextEditorController: ObservableObject {
         var newStrikethrough = false
         var newHighlighted = false
         
-        if string.length > 0 && targetLocation < string.length {
+        if stringLen > 0 && targetLocation < stringLen {
             let paragraphRange = string.paragraphRange(for: NSRange(location: targetLocation, length: 0))
-            let paragraphText = string.substring(with: paragraphRange)
-            
-            // Check list prefixes
-            if paragraphText.hasPrefix("• ") {
-                newStyle = .bulletedList
-            } else if paragraphText.hasPrefix("– ") {
-                newStyle = .dashedList
-            } else if paragraphText.range(of: #"^\d+\.\s"#, options: .regularExpression) != nil {
-                newStyle = .numberedList
-            } else if let font = textStorage.attribute(.font, at: targetLocation, effectiveRange: nil) as? NSFont {
-                if font.pointSize >= 24 {
-                    newStyle = .title
-                } else if font.pointSize >= 18 {
-                    newStyle = .heading
-                } else if font.pointSize >= 15 {
-                    newStyle = .subheading
-                } else if font.fontDescriptor.symbolicTraits.contains(.monoSpace) {
-                    newStyle = .monostyled
-                } else {
-                    newStyle = .body
+            if paragraphRange.location + paragraphRange.length <= stringLen {
+                let paragraphText = string.substring(with: paragraphRange)
+                
+                // Check list prefixes
+                if paragraphText.hasPrefix("• ") {
+                    newStyle = .bulletedList
+                } else if paragraphText.hasPrefix("– ") {
+                    newStyle = .dashedList
+                } else if paragraphText.range(of: #"^\d+\.\s"#, options: .regularExpression) != nil {
+                    newStyle = .numberedList
+                } else if targetLocation < totalLen, let font = textStorage.attribute(.font, at: targetLocation, effectiveRange: nil) as? NSFont {
+                    if font.pointSize >= 24 {
+                        newStyle = .title
+                    } else if font.pointSize >= 18 {
+                        newStyle = .heading
+                    } else if font.pointSize >= 15 {
+                        newStyle = .subheading
+                    } else if font.fontDescriptor.symbolicTraits.contains(.monoSpace) {
+                        newStyle = .monostyled
+                    } else {
+                        newStyle = .body
+                    }
                 }
             }
             
             // Check inline marks
-            if let font = textStorage.attribute(.font, at: targetLocation, effectiveRange: nil) as? NSFont {
+            if targetLocation < totalLen, let font = textStorage.attribute(.font, at: targetLocation, effectiveRange: nil) as? NSFont {
                 newBold = font.fontDescriptor.symbolicTraits.contains(.bold)
                 newItalic = font.fontDescriptor.symbolicTraits.contains(.italic)
             }
             
-            let underlineVal = textStorage.attribute(.underlineStyle, at: targetLocation, effectiveRange: nil) as? Int
-            newUnderlined = (underlineVal != nil && underlineVal != 0)
-            
-            let strikeVal = textStorage.attribute(.strikethroughStyle, at: targetLocation, effectiveRange: nil) as? Int
-            newStrikethrough = (strikeVal != nil && strikeVal != 0)
-            
-            let bgVal = textStorage.attribute(.backgroundColor, at: targetLocation, effectiveRange: nil)
-            newHighlighted = (bgVal != nil)
+            if targetLocation < totalLen {
+                let underlineVal = textStorage.attribute(.underlineStyle, at: targetLocation, effectiveRange: nil) as? Int
+                newUnderlined = (underlineVal != nil && underlineVal != 0)
+                
+                let strikeVal = textStorage.attribute(.strikethroughStyle, at: targetLocation, effectiveRange: nil) as? Int
+                newStrikethrough = (strikeVal != nil && strikeVal != 0)
+                
+                let bgVal = textStorage.attribute(.backgroundColor, at: targetLocation, effectiveRange: nil)
+                newHighlighted = (bgVal != nil)
+            }
         }
         
         DispatchQueue.main.async { [weak self] in
@@ -92,7 +111,10 @@ public final class RichTextEditorController: ObservableObject {
     public func applyParagraphStyle(_ style: NoteParagraphStyle, preset: TypographyPreset) {
         guard let textView = textView, let textStorage = textView.textStorage else { return }
         let selectedRange = textView.selectedRange()
-        let paragraphRange = (textStorage.string as NSString).paragraphRange(for: selectedRange)
+        let string = textStorage.string as NSString
+        guard string.length > 0 else { return }
+        let safeRange = NSRange(location: min(selectedRange.location, string.length), length: min(selectedRange.length, string.length - min(selectedRange.location, string.length)))
+        let paragraphRange = string.paragraphRange(for: safeRange)
         
         RichTextTypography.applyParagraphStyle(style, to: textStorage, range: paragraphRange, preset: preset)
         textView.typingAttributes = RichTextTypography.defaultAttributes(for: style, preset: preset)
@@ -254,23 +276,37 @@ public final class RichTextEditorController: ObservableObject {
         guard let textView = textView, let textStorage = textView.textStorage else { return }
         let selectedRange = textView.selectedRange()
         
-        var tableString = "\n┌" + String(repeating: "──────────────┬", count: cols - 1) + "──────────────┐\n"
-        for r in 0..<rows {
-            tableString += "│" + String(repeating: "              │", count: cols) + "\n"
-            if r < rows - 1 {
-                tableString += "├" + String(repeating: "──────────────┼", count: cols - 1) + "──────────────┤\n"
-            }
+        let pStyle = NSMutableParagraphStyle()
+        pStyle.lineSpacing = 6
+        pStyle.paragraphSpacing = 4
+        var tabStops: [NSTextTab] = []
+        for i in 1...max(cols, 2) {
+            tabStops.append(NSTextTab(textAlignment: .left, location: CGFloat(i * 180), options: [:]))
         }
-        tableString += "└" + String(repeating: "──────────────┴", count: cols - 1) + "──────────────┘\n"
+        pStyle.tabStops = tabStops
         
-        let font = preset.font(for: .monostyled)
-        let attr = NSAttributedString(string: tableString, attributes: [
+        var tableString = ""
+        for r in 0..<rows {
+            var rowItems: [String] = []
+            for c in 0..<cols {
+                if r == 0 {
+                    rowItems.append("Column \(c + 1)")
+                } else {
+                    rowItems.append("Item \(r).\(c + 1)")
+                }
+            }
+            tableString += rowItems.joined(separator: "\t") + "\n"
+        }
+        
+        let font = preset.font(for: .body)
+        let attr = NSMutableAttributedString(string: "\n" + tableString, attributes: [
             .font: font,
+            .paragraphStyle: pStyle,
             .foregroundColor: NSColor.textColor
         ])
         
         textStorage.insert(attr, at: selectedRange.location)
-        textView.setSelectedRange(NSRange(location: selectedRange.location + attr.length, length: 0))
+        textView.setSelectedRange(NSRange(location: selectedRange.location + 1, length: 8))
         textView.didChangeText()
         onTextChange?(NSAttributedString(attributedString: textStorage), textStorage.string)
     }
@@ -587,32 +623,48 @@ public final class LocaAppKitTextView: NSTextView {
         }
         
         let paragraphRange = string.paragraphRange(for: NSRange(location: charIndex, length: 0))
+        guard paragraphRange.location + paragraphRange.length <= string.length else {
+            super.mouseDown(with: event)
+            return
+        }
         let paragraphText = string.substring(with: paragraphRange)
         
-        // Click on checklist checkbox glyph
-        let unchecked = RichTextTypography.checklistUncheckedGlyph
-        let checked = RichTextTypography.checklistCheckedGlyph
+        // Click on checklist checkbox glyph (handles circular ○/● and legacy ☐/☑)
+        let uncheckedPrefixes = [RichTextTypography.checklistUncheckedGlyph, "☐ "]
+        let checkedPrefixes = [RichTextTypography.checklistCheckedGlyph, "☑︎ ", "☑ "]
         
-        if paragraphText.hasPrefix(unchecked) && charIndex < paragraphRange.location + unchecked.count + 2 {
+        if let matchingUnchecked = uncheckedPrefixes.first(where: { paragraphText.hasPrefix($0) }),
+           charIndex < paragraphRange.location + (matchingUnchecked as NSString).length + 2 {
             // Toggle Unchecked -> Checked
             textStorage.beginEditing()
-            let glyphRange = NSRange(location: paragraphRange.location, length: (unchecked as NSString).length)
-            textStorage.replaceCharacters(in: glyphRange, with: checked)
-            let strikeRange = NSRange(location: paragraphRange.location, length: paragraphRange.length)
-            textStorage.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: strikeRange)
-            textStorage.addAttribute(.foregroundColor, value: NSColor.secondaryLabelColor, range: strikeRange)
+            let glyphRange = NSRange(location: paragraphRange.location, length: (matchingUnchecked as NSString).length)
+            if glyphRange.location + glyphRange.length <= textStorage.length {
+                textStorage.replaceCharacters(in: glyphRange, with: RichTextTypography.checklistCheckedGlyph)
+                let strikeLen = max(0, min(paragraphRange.length - glyphRange.length + (RichTextTypography.checklistCheckedGlyph as NSString).length, textStorage.length - paragraphRange.location))
+                let strikeRange = NSRange(location: paragraphRange.location, length: strikeLen)
+                if strikeRange.location + strikeRange.length <= textStorage.length {
+                    textStorage.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: strikeRange)
+                    textStorage.addAttribute(.foregroundColor, value: NSColor.secondaryLabelColor, range: strikeRange)
+                }
+            }
             textStorage.endEditing()
             self.didChangeText()
             Haptics.impact(.light)
             return
-        } else if paragraphText.hasPrefix(checked) && charIndex < paragraphRange.location + checked.count + 2 {
+        } else if let matchingChecked = checkedPrefixes.first(where: { paragraphText.hasPrefix($0) }),
+                  charIndex < paragraphRange.location + (matchingChecked as NSString).length + 2 {
             // Toggle Checked -> Unchecked
             textStorage.beginEditing()
-            let glyphRange = NSRange(location: paragraphRange.location, length: (checked as NSString).length)
-            textStorage.replaceCharacters(in: glyphRange, with: unchecked)
-            let strikeRange = NSRange(location: paragraphRange.location, length: paragraphRange.length)
-            textStorage.removeAttribute(.strikethroughStyle, range: strikeRange)
-            textStorage.addAttribute(.foregroundColor, value: NSColor.textColor, range: strikeRange)
+            let glyphRange = NSRange(location: paragraphRange.location, length: (matchingChecked as NSString).length)
+            if glyphRange.location + glyphRange.length <= textStorage.length {
+                textStorage.replaceCharacters(in: glyphRange, with: RichTextTypography.checklistUncheckedGlyph)
+                let strikeLen = max(0, min(paragraphRange.length - glyphRange.length + (RichTextTypography.checklistUncheckedGlyph as NSString).length, textStorage.length - paragraphRange.location))
+                let strikeRange = NSRange(location: paragraphRange.location, length: strikeLen)
+                if strikeRange.location + strikeRange.length <= textStorage.length {
+                    textStorage.removeAttribute(.strikethroughStyle, range: strikeRange)
+                    textStorage.addAttribute(.foregroundColor, value: NSColor.textColor, range: strikeRange)
+                }
+            }
             textStorage.endEditing()
             self.didChangeText()
             Haptics.impact(.light)

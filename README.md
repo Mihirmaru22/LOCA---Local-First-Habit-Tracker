@@ -6,7 +6,7 @@
 [![Platform: macOS](https://img.shields.io/badge/Platform-macOS%2014.0%2B%20(Sonoma%20%2F%20Sequoia)-000000?style=for-the-badge&logo=apple&logoColor=white)](https://apple.com/macos)
 [![Swift: 6.0](https://img.shields.io/badge/Swift-6.0%20Strict%20Concurrency-F05138?style=for-the-badge&logo=swift&logoColor=white)](https://swift.org)
 [![Storage: SwiftData](https://img.shields.io/badge/Storage-Local--First%20SwiftData%20%2B%20SQLite-4A90E2?style=for-the-badge)](https://developer.apple.com/xcode/swiftdata/)
-[![MCP: Enabled](https://img.shields.io/badge/AI%20Protocol-Model%20Context%20Protocol%20(MCP)-8A2BE2?style=for-the-badge)](https://modelcontextprotocol.io)
+[![Sounds: Apple Native](https://img.shields.io/badge/Audio-Apple%20Background%20Sounds-007AFF?style=for-the-badge)](https://apple.com)
 
 **PLUTO** is a sovereign, local-first personal operating system for macOS engineered to unify daily time execution, task inventories, keystone habits, rich-text note synthesis, deep focus sessions, and long-term life horizons into a single fluid, Apple-native desktop canvas.
 
@@ -28,7 +28,7 @@ PLUTO organizes all intentional living and productivity into 3 primary desktop d
                 ▼                                                           ▼
     ┌─────────────────────────┐                                 ┌─────────────────────────┐
     │       1. TODAY          │                                 │       2. STUDIO         │
-    │  Living Day Execution   │                                 │ Knowledge & Synthesis   │
+    │  Living Day Execution   │                                 │ Knowledge & Synthesis  │
     ├─────────────────────────┤                                 ├─────────────────────────┤
     │ • Plan: Day Timeline    │                                 │ • Notes: BrainStorm     │
     │ • List: GTD Tasks       │                                 │ • Journal: Apple Canvas │
@@ -122,52 +122,6 @@ The `Life` workspace (`⌘3`) provides high-altitude perspective across long-ter
 
 ---
 
-## ⚡️ Model Context Protocol (MCP) Server
-
-PLUTO ships with a built-in **Model Context Protocol (MCP)** server (`mcp-server/`), allowing local AI agents (**Claude Desktop, Cursor, Antigravity IDE, Windsurf**) to read and write to your local Pluto operating system:
-
-```bash
-# Build the MCP server
-cd mcp-server
-npm install
-npm run build
-```
-
-### Connect to Claude Desktop
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
-```json
-{
-  "mcpServers": {
-    "pluto": {
-      "command": "node",
-      "args": [
-        "/absolute/path/to/Plut0-main/mcp-server/build/index.js"
-      ]
-    }
-  }
-}
-```
-
-### Supported MCP Tool Capabilities (16 Tools)
-- **`get_daily_briefing`**: Summarizes today's scheduled blocks, open tasks, habits, and focus metrics.
-- **`manage_habits`**: Check-in, fetch streak heatmaps, and retrieve consistency stats.
-- **`manage_tasks`**: Create, time-block, reschedule, and complete tasks on the day planner.
-- **`query_journal`**: Search journal notes, sleep logs, and reflections.
-- **`brainstorm_notes`**: Create and search rich-text notes and folders in BrainStorm.
-
----
-
-## 🛰 Private Alpha Telemetry & Live Web Dossier
-
-For private alpha testing, Pluto includes an invisible background telemetry pipeline that streams tester interactions to a real-time Creator Web Dossier:
-
-* **Live Web Dashboard**: [https://mihirmaru22.github.io/Plut0/](https://mihirmaru22.github.io/Plut0/)
-* **Direct PostgREST Supabase Ingestion**: Outbound HTTPS sync to `/rest/v1/alpha_testers`, `/rest/v1/alpha_events`, `/rest/v1/alpha_state_snapshots`, and `/rest/v1/alpha_crashes`.
-* **Zero-Observer Footprint**: Asynchronous execution via `Task.detached` with zero UI lag and no tester popups.
-* **Bounded Local Disk Queue**: 5,000-event / 25 MB FIFO disk limit with offline exponential backoff.
-
----
-
 ## 📁 Repository Structure
 
 ```
@@ -179,20 +133,18 @@ Plut0-main/
 │   │   ├── Studio/               # Unified Studio Workspace (Notes, Journal, Projects)
 │   │   ├── BrainStorm/           # Apple Notes Canvas, NSTextView, Folders, Tags
 │   │   ├── Journal/              # Apple Journal, Sleep Track, Daylight Routines
-│   │   ├── Time/ & FocusRoom/    # Pomodoro Timer, Spatial Audio DSP, Wallpapers
+│   │   ├── Time/ & FocusRoom/    # Pomodoro Timer, Apple Background Sounds, Spatial DSP
 │   │   ├── Life/                 # Mountain Atlas, GPX Engine, Travel Atlas, Passport PDF
 │   │   ├── Habits/               # Heatmaps, Progress Bars, Quantitative Habit Loggers
 │   │   ├── Audit/                # Milestone Horizons & Strategic Life Audits
-│   │   ├── Platform/             # Spotlight, Hotkeys, Telemetry, Diagnostics, Notifications
+│   │   ├── Platform/             # Spotlight, Hotkeys, Diagnostics, Notifications
 │   │   ├── Settings/             # Mission Control, Chrono-Tunnel, Museum Gallery
 │   │   └── Menus/                # LOCACommands (macOS Menu Bar & Shortcuts)
 │   ├── LOCA/                     # Shared Core Models & SwiftData Schemas
 │   │   ├── Core/Models/          # HabitBoard, TodoItem, JournalNote, SleepEntry, BrainStorm
 │   │   └── Core/DesignSystem/    # DS Spacing, Typography, Color, and Motion Tokens
 │   └── LOCA.xcodeproj           # Xcode Project Configuration
-├── mcp-server/                   # Model Context Protocol (MCP) Server for Local AI Integration
-├── supabase/                     # Schema SQL and Alpha Ingest Edge Functions
-├── dashboard/ & docs/            # Creator Analytics Web Dossier (GitHub Pages)
+├── build_android.sh              # Android Build Helper Script
 └── create_dmg.sh                 # Production macOS DMG Packaging Script
 ```
 

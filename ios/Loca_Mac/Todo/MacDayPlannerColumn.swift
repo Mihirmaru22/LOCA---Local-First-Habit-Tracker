@@ -235,9 +235,6 @@ struct MacDayPlannerColumn: View {
                   let item = selection, let start = item.startTime else { return }
             item.startTime = snap5(cal.date(byAdding: .minute, value: delta, to: start) ?? start)
             try? modelContext.save()
-            if let newStart = item.startTime {
-                PlutoTelemetryEngine.shared.trackTaskRescheduled(task: item, newStartTime: newStart)
-            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .locaAddBlock)) { _ in
             addBlock()
@@ -577,9 +574,6 @@ struct MacDayPlannerColumn: View {
                         }
                     }
                     try? modelContext.save()
-                    if let newStart = item.startTime {
-                        PlutoTelemetryEngine.shared.trackTaskRescheduled(task: item, newStartTime: newStart)
-                    }
                     Haptics.impact(.light)
                 }
                 draggingID = nil; dragOriginalStart = nil; dragDeltaMinutes = 0
@@ -704,7 +698,8 @@ struct MacDayPlannerColumn: View {
                 }
                 .padding(.vertical, DS.Space.xs)
                 .padding(.horizontal, DS.Space.sm)
-                .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.control))
+                .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: DS.Radius.control))
+                .overlay(RoundedRectangle(cornerRadius: DS.Radius.control).stroke(Color.white.opacity(0.08), lineWidth: 1))
                 .contentShape(Rectangle())
                 .onTapGesture { selection = item }
             }
@@ -875,7 +870,12 @@ private struct PlannerBlock: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.control)
-                .stroke(isSelected ? Color.accentColor.opacity(0.45) : Color.clear, lineWidth: 1)
+                .stroke(
+                    isSelected
+                        ? Color.accentColor.opacity(0.60)
+                        : (isHovered ? Color.white.opacity(0.20) : Color.white.opacity(0.08)),
+                    lineWidth: 1
+                )
         )
         .contentShape(Rectangle())
         .onTapGesture(perform: onSelect)
@@ -902,11 +902,25 @@ private struct PlannerBlock: View {
         )
     }
 
-    private var blockFill: Color {
-        if isSelected  { return Color.accentColor.opacity(0.13) }
-        if isDragging  { return Color.accentColor.opacity(0.09) }
-        if isHovered   { return DS.Color.textPrimary.opacity(0.04) }
-        return DS.Color.surface
+    private var blockFill: AnyShapeStyle {
+        if isSelected  {
+            return AnyShapeStyle(
+                LinearGradient(
+                    colors: [Color.accentColor.opacity(0.22), Color.accentColor.opacity(0.12)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+        }
+        if isDragging  { return AnyShapeStyle(Color.accentColor.opacity(0.12)) }
+        if isHovered   { return AnyShapeStyle(Color.white.opacity(0.08)) }
+        return AnyShapeStyle(
+            LinearGradient(
+                colors: [Color.white.opacity(0.06), Color.white.opacity(0.03)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
     }
 
     private enum TM {

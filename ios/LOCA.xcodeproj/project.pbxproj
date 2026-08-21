@@ -2109,7 +2109,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Pluto;
-				INFOPLIST_KEY_NSAppDataUsageDescription = "";
+				INFOPLIST_KEY_NSAppDataUsageDescription = "PLUTO stores your habits, tasks, and journals locally on your Mac.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -2179,7 +2179,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Pluto;
-				INFOPLIST_KEY_NSAppDataUsageDescription = "";
+				INFOPLIST_KEY_NSAppDataUsageDescription = "PLUTO stores your habits, tasks, and journals locally on your Mac.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

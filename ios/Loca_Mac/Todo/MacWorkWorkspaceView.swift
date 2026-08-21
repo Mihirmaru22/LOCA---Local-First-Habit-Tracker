@@ -1,28 +1,11 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - WorkSubmode
-
-enum WorkSubmode: String, CaseIterable, Identifiable {
-    case projects = "Projects & Execution"
-    case roadmap  = "Strategic Roadmap"
-    
-    var id: String { rawValue }
-    
-    var icon: String {
-        switch self {
-        case .projects: return "folder.fill"
-        case .roadmap:  return "binoculars.fill"
-        }
-    }
-}
-
-// MARK: - MacWorkWorkspaceView (Unified Work Pillar Command Center)
+// MARK: - MacWorkWorkspaceView (Direct Projects Execution Center)
 
 struct MacWorkWorkspaceView: View {
     
     @Environment(\.modelContext) private var modelContext
-    @AppStorage("mac_work_submode_v2") private var submodeString: String = "Projects & Execution"
     
     @Query(sort: [SortDescriptor(\WorkProject.createdAt, order: .reverse)])
     private var allProjects: [WorkProject]
@@ -33,13 +16,6 @@ struct MacWorkWorkspaceView: View {
     @State private var newProjectIcon: String = "folder.fill"
     @State private var newProjectColorHex: String = "#3B82F6"
     @State private var projectSearchText: String = ""
-    
-    private var submode: Binding<WorkSubmode> {
-        Binding(
-            get: { WorkSubmode(rawValue: submodeString) ?? .projects },
-            set: { submodeString = $0.rawValue }
-        )
-    }
     
     private var filteredProjects: [WorkProject] {
         let active = allProjects.filter { !$0.isArchived }
@@ -58,75 +34,8 @@ struct MacWorkWorkspaceView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            
-            // Top Mode Switcher Bar (Clean Liquid Glass)
-            HStack(spacing: 12) {
-                HStack(spacing: 4) {
-                    ForEach(WorkSubmode.allCases) { mode in
-                        let isSelected = submode.wrappedValue == mode
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.18)) {
-                                submode.wrappedValue = mode
-                            }
-                            Haptics.impact(.light)
-                        } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: mode.icon)
-                                    .font(.system(size: 12, weight: isSelected ? .bold : .medium))
-                                Text(mode.rawValue)
-                                    .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
-                            }
-                            .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.6))
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 6)
-                            .background(
-                                isSelected
-                                    ? Color.accentColor
-                                    : Color.white.opacity(0.04),
-                                in: Capsule()
-                            )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(4)
-                .background(Color.white.opacity(0.06), in: Capsule())
-                
-                Spacer()
-                
-                if submode.wrappedValue == .projects {
-                    Button {
-                        newProjectTitle = ""
-                        isShowingCreateProjectModal = true
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "plus")
-                                .font(.system(size: 11, weight: .bold))
-                            Text("New Project")
-                                .font(.system(size: 12, weight: .semibold))
-                        }
-                        .foregroundStyle(Color.white)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 7))
-                    }
-                    .buttonStyle(.plain)
-                    .help("Create New Project (⌘⇧N)")
-                    .keyboardShortcut("n", modifiers: [.command, .shift])
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .background(Color.black.opacity(0.4).background(.ultraThinMaterial))
-            
-            Divider().opacity(0.25)
-            
-            // Main View Switcher
-            if submode.wrappedValue == .projects {
-                projectsSplitView
-            } else {
-                MacAuditView()
-            }
+            // Main Projects Split View
+            projectsSplitView
         }
         .sheet(isPresented: $isShowingCreateProjectModal) {
             createProjectModal
@@ -144,20 +53,36 @@ struct MacWorkWorkspaceView: View {
         HSplitView {
             // Left Column: Projects Navigator
             VStack(spacing: 0) {
-                // Search Bar
-                HStack(spacing: 6) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 11))
-                        .foregroundStyle(Color.white.opacity(0.4))
+                // Header & Action Bar
+                HStack(spacing: 8) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.white.opacity(0.4))
+                        
+                        TextField("Search projects...", text: $projectSearchText)
+                            .font(.system(size: 12))
+                            .textFieldStyle(.plain)
+                            .foregroundStyle(Color.white)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                    .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
                     
-                    TextField("Search projects...", text: $projectSearchText)
-                        .font(.system(size: 12))
-                        .textFieldStyle(.plain)
-                        .foregroundStyle(Color.white)
+                    Button {
+                        newProjectTitle = ""
+                        isShowingCreateProjectModal = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(Color.white)
+                            .frame(width: 26, height: 26)
+                            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 6))
+                    }
+                    .buttonStyle(.plain)
+                    .help("Create New Project (⌘⇧N)")
+                    .keyboardShortcut("n", modifiers: [.command, .shift])
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
-                .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 6))
                 .padding(10)
                 
                 Divider().opacity(0.15)

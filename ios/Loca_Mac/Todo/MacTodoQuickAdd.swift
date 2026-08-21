@@ -127,7 +127,6 @@ struct MacTodoQuickAdd: View {
         )
         modelContext.insert(item)
         try? modelContext.save()
-        PlutoTelemetryEngine.shared.trackTaskCreated(task: item)
         text = ""
     }
 

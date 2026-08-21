@@ -50,7 +50,7 @@ private struct MacTodoEditor: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
 
-                // MARK: Hero — icon bubble + display-font title
+                // MARK: Hero — icon bubble + display-font title + quick actions
                 HStack(alignment: .center, spacing: DS.Space.md) {
                     Button { showIconPicker.toggle() } label: {
                         Image(systemName: item.iconName ?? "checkmark")
@@ -74,6 +74,43 @@ private struct MacTodoEditor: View {
                         .textFieldStyle(.plain)
                         .strikethrough(item.isCompleted, color: DS.Color.textTertiary)
                         .onChange(of: item.title) { _, _ in autosave() }
+
+                    Spacer()
+
+                    // Complete / un-complete
+                    Button(action: toggleComplete) {
+                        Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(item.isCompleted ? Color.accentColor : DS.Color.textSecondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help(item.isCompleted ? "Mark not done" : "Mark done")
+
+                    // Flag — list tasks only
+                    if isListTask {
+                        Menu {
+                            Button("None")   { item.priority = 0; autosave() }
+                            Divider()
+                            Button("Low")    { item.priority = 1; autosave() }
+                            Button("Medium") { item.priority = 2; autosave() }
+                            Button("High")   { item.priority = 3; autosave() }
+                        } label: {
+                            Image(systemName: item.priority > 0 ? "flag.fill" : "flag")
+                                .font(.system(size: 15))
+                                .foregroundStyle(item.priority > 0 ? Color.orange : DS.Color.textSecondary)
+                        }
+                        .menuStyle(.borderlessButton)
+                        .help(item.priority > 0 ? "Priority: \(priorityLabel(item.priority))" : "Set priority")
+                    }
+
+                    // Delete (archive)
+                    Button(role: .destructive) { showDeleteConfirm = true } label: {
+                        Image(systemName: "trash")
+                            .font(.system(size: 15))
+                            .foregroundStyle(DS.Color.textTertiary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Archive this task")
                 }
                 .padding(.top, DS.Space.xl)
                 .padding(.bottom, DS.Space.md)
@@ -93,44 +130,6 @@ private struct MacTodoEditor: View {
             .padding(.horizontal, DS.Space.xl)
         }
         .navigationTitle(item.title.isEmpty ? "Task" : item.title)
-        .toolbar {
-            // Complete / un-complete
-            ToolbarItem(placement: .primaryAction) {
-                Button(action: toggleComplete) {
-                    Label(
-                        item.isCompleted ? "Mark Not Done" : "Mark Done",
-                        systemImage: item.isCompleted ? "checkmark.circle.fill" : "circle"
-                    )
-                }
-                .help(item.isCompleted ? "Mark not done" : "Mark done")
-                .tint(item.isCompleted ? DS.Color.textSecondary : .accentColor)
-            }
-
-            // Flag — list tasks only; amber when a priority is set
-            if isListTask {
-                ToolbarItem(placement: .primaryAction) {
-                    Menu {
-                        Button("None")   { item.priority = 0; autosave() }
-                        Divider()
-                        Button("Low")    { item.priority = 1; autosave() }
-                        Button("Medium") { item.priority = 2; autosave() }
-                        Button("High")   { item.priority = 3; autosave() }
-                    } label: {
-                        Label("Priority", systemImage: item.priority > 0 ? "flag.fill" : "flag")
-                    }
-                    .tint(item.priority > 0 ? .orange : DS.Color.textSecondary)
-                    .help(item.priority > 0 ? "Priority: \(priorityLabel(item.priority))" : "Set priority")
-                }
-            }
-
-            // Delete (archive)
-            ToolbarItem(placement: .destructiveAction) {
-                Button(role: .destructive) { showDeleteConfirm = true } label: {
-                    Label("Delete Task", systemImage: "trash")
-                }
-                .help("Archive this task")
-            }
-        }
         .confirmationDialog(
             "Delete \"\(item.title)\"?",
             isPresented: $showDeleteConfirm,
@@ -467,7 +466,26 @@ private struct GroupedCard<Content: View>: View {
             }
             .padding(DS.Space.md)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: DS.Radius.card))
+            .background(
+                ZStack {
+                    RoundedRectangle(cornerRadius: DS.Radius.card)
+                        .fill(.ultraThinMaterial)
+                    RoundedRectangle(cornerRadius: DS.Radius.card)
+                        .fill(Color.white.opacity(0.04))
+                }
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: DS.Radius.card)
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.18), Color.white.opacity(0.05)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            )
+            .shadow(color: Color.black.opacity(0.15), radius: 6, x: 0, y: 2)
         }
     }
 }

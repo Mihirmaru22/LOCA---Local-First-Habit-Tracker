@@ -7,6 +7,7 @@ import CoreSpotlight
 /// Top-level navigation sections shown in the Mac sidebar.
 enum MacSection: String, CaseIterable, Identifiable {
     case today    = "Today"
+    case notes    = "Notes"
     case studio   = "Studio"
     case life     = "Life"
     case settings = "Settings"
@@ -16,6 +17,7 @@ enum MacSection: String, CaseIterable, Identifiable {
     var systemImage: String {
         switch self {
         case .today:    "sun.max.fill"
+        case .notes:    "note.text"
         case .studio:   "sparkles.rectangle.stack.fill"
         case .life:     "mountain.2.fill"
         case .settings: "gearshape"
@@ -54,100 +56,16 @@ struct MacRootView: View {
     @AppStorage("mac_default_habit_reminder_time") private var defaultHabitTime: String = "09:00"
     @AppStorage("mac_today_submode") private var todaySubmode: String = "Plan"
     @ObservedObject private var guideManager = PlutoAppGuideManager.shared
-    @ObservedObject private var modeManager = SimplifiedModeManager.shared
 
     var body: some View {
         ZStack {
-            switch modeManager.activeStage {
-            case .hero:
-                MacHeroModeView()
-                    .transition(.opacity)
-            case .architect:
-                splitView
-                    .transition(.opacity)
-            }
+            splitView
 
             // Real-App In-Situ Spotlight Guide Overlay
             if guideManager.isTourActive {
-                PlutoAppGuideOverlay(selectedSection: $selectedSection)
+                PlutoAppGuideOverlay()
             }
         }
-        .animation(reduceMotion ? nil : DS.Motion.settle, value: modeManager.activeStage)
-    }
-
-    private var splitView: some View {
-        Group {
-            if selectedSection == .today && todaySubmode == "Time" {
-                FocusRoomView()
-                    .transition(.opacity)
-            } else if selectedSection == .studio {
-                NavigationSplitView {
-                    MacSidebarView(selection: $selectedSection)
-                        .navigationSplitViewColumnWidth(
-                            min:   DS.Mac.sidebarMinWidth,
-                            ideal: DS.Mac.sidebarIdealWidth,
-                            max:   DS.Mac.sidebarMaxWidth
-                        )
-                } detail: {
-                    MacStudioWorkspaceView()
-                }
-            } else if selectedSection == .life {
-                NavigationSplitView {
-                    MacSidebarView(selection: $selectedSection)
-                        .navigationSplitViewColumnWidth(
-                            min:   DS.Mac.sidebarMinWidth,
-                            ideal: DS.Mac.sidebarIdealWidth,
-                            max:   DS.Mac.sidebarMaxWidth
-                        )
-                } detail: {
-                    MacLifeView()
-                }
-            } else if selectedSection == .settings {
-                NavigationSplitView {
-                    MacSidebarView(selection: $selectedSection)
-                        .navigationSplitViewColumnWidth(
-                            min:   DS.Mac.sidebarMinWidth,
-                            ideal: DS.Mac.sidebarIdealWidth,
-                            max:   DS.Mac.sidebarMaxWidth
-                        )
-                } detail: {
-                    MacSettingsView()
-                }
-            } else {
-                NavigationSplitView(columnVisibility: $columnVisibility) {
-                    MacSidebarView(selection: $selectedSection)
-                        .navigationSplitViewColumnWidth(
-                            min:   DS.Mac.sidebarMinWidth,
-                            ideal: DS.Mac.sidebarIdealWidth,
-                            max:   DS.Mac.sidebarMaxWidth
-                        )
-                } content: {
-                    MacContentColumn(section: selectedSection,
-                                     selectedHabit:       $selectedHabit,
-                                     selectedTodo:        $selectedTodo,
-                                     selectedJournalRow:  $selectedJournalRow,
-                                     selectedJournalNote: $selectedJournalNote,
-                                     selectedLifeRow:     $selectedLifeRow)
-                        .navigationSplitViewColumnWidth(
-                            min:   DS.Mac.contentMinWidth,
-                            ideal: DS.Mac.contentIdealWidth,
-                            max:   DS.Mac.contentMaxWidth
-                        )
-                } detail: {
-                    MacDetailColumn(section: selectedSection,
-                                     selectedHabit:       $selectedHabit,
-                                     selectedTodo:        $selectedTodo,
-                                     selectedJournalRow:  $selectedJournalRow,
-                                     selectedJournalNote: $selectedJournalNote,
-                                     selectedLifeRow:     $selectedLifeRow)
-                        .navigationSplitViewColumnWidth(
-                            min:   DS.Mac.detailMinWidth,
-                            ideal: DS.Mac.detailIdealWidth
-                        )
-                }
-            }
-        }
-        .navigationTitle("PLUTO")
         .sheet(isPresented: $showOnboarding) {
             MacOnboardingView(isPresented: $showOnboarding)
                 .frame(minWidth: 720, minHeight: 520)
@@ -157,19 +75,21 @@ struct MacRootView: View {
                 showOnboarding = true
             }
 
-            LocaSpotlightIndexer.shared.indexAll(context: modelContext)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                LocaSpotlightIndexer.shared.indexAll(context: modelContext)
 
-            // Auto-sync Apple Native Notifications (A1-A8)
-            PlutoNotificationManager.shared.syncAll(
-                habits: activeHabits,
-                masterEnabled: masterNotificationsEnabled,
-                eveningReflectionEnabled: eveningReflectionEnabled,
-                eveningReflectionTime: eveningReflectionTime,
-                streakAlertEnabled: streakAlertEnabled,
-                streakAlertTime: streakAlertTime,
-                weeklyDigestEnabled: weeklyDigestEnabled,
-                defaultHabitTime: defaultHabitTime
-            )
+                // Auto-sync Apple Native Notifications (A1-A8)
+                PlutoNotificationManager.shared.syncAll(
+                    habits: activeHabits,
+                    masterEnabled: masterNotificationsEnabled,
+                    eveningReflectionEnabled: eveningReflectionEnabled,
+                    eveningReflectionTime: eveningReflectionTime,
+                    streakAlertEnabled: streakAlertEnabled,
+                    streakAlertTime: streakAlertTime,
+                    weeklyDigestEnabled: weeklyDigestEnabled,
+                    defaultHabitTime: defaultHabitTime
+                )
+            }
         }
         .onContinueUserActivity(CSSearchableItemActionType) { userActivity in
             if let identifier = userActivity.userInfo?[CSSearchableItemActivityIdentifier] as? String,
@@ -231,67 +151,80 @@ struct MacRootView: View {
         .onOpenURL { url in
             PlutoNotificationManager.shared.handleDeepLinkURL(url)
         }
-        .onReceive(NotificationCenter.default.publisher(for: .locaToggleProMode)) { _ in
-            modeManager.toggleMode()
-        }
     }
-}
 
-// MARK: - MacContentColumn
-
-/// Picks the correct content list for the active sidebar section.
-private struct MacContentColumn: View {
-
-    let section: MacSection?
-    @Binding var selectedHabit:       HabitBoard?
-    @Binding var selectedTodo:        TodoItem?
-    @Binding var selectedJournalRow:  JournalRow?
-    @Binding var selectedJournalNote: JournalNote?
-    @Binding var selectedLifeRow:     LifeRow?
-
-    var body: some View {
-        switch section {
-        case .today:
-            MacTodoContentColumn(selection: $selectedTodo)
-        case .studio, .life, .settings:
-            EmptyView()
-        case nil:
-            MacEmptyContentView()
+    @ViewBuilder
+    private var splitView: some View {
+        if selectedSection == .today && todaySubmode == "Time" {
+            FocusRoomView()
+                .transition(.opacity)
+        } else if selectedSection == .today {
+            NavigationSplitView(columnVisibility: $columnVisibility) {
+                MacSidebarView(selection: $selectedSection)
+                    .navigationSplitViewColumnWidth(
+                        min:   DS.Mac.sidebarMinWidth,
+                        ideal: DS.Mac.sidebarIdealWidth,
+                        max:   DS.Mac.sidebarMaxWidth
+                    )
+            } content: {
+                MacTodoContentColumn(selection: $selectedTodo)
+                    .navigationSplitViewColumnWidth(
+                        min:   DS.Mac.contentMinWidth,
+                        ideal: DS.Mac.contentIdealWidth,
+                        max:   DS.Mac.contentMaxWidth
+                    )
+            } detail: {
+                MacTodoDetailColumn(item: $selectedTodo)
+                    .navigationSplitViewColumnWidth(
+                        min:   DS.Mac.detailMinWidth,
+                        ideal: DS.Mac.detailIdealWidth
+                    )
+            }
+        } else if selectedSection == .notes {
+            NavigationSplitView {
+                MacSidebarView(selection: $selectedSection)
+                    .navigationSplitViewColumnWidth(
+                        min:   DS.Mac.sidebarMinWidth,
+                        ideal: DS.Mac.sidebarIdealWidth,
+                        max:   DS.Mac.sidebarMaxWidth
+                    )
+            } detail: {
+                MacBrainStormView()
+            }
+        } else if selectedSection == .studio {
+            NavigationSplitView {
+                MacSidebarView(selection: $selectedSection)
+                    .navigationSplitViewColumnWidth(
+                        min:   DS.Mac.sidebarMinWidth,
+                        ideal: DS.Mac.sidebarIdealWidth,
+                        max:   DS.Mac.sidebarMaxWidth
+                    )
+            } detail: {
+                MacStudioWorkspaceView()
+            }
+        } else if selectedSection == .life {
+            NavigationSplitView {
+                MacSidebarView(selection: $selectedSection)
+                    .navigationSplitViewColumnWidth(
+                        min:   DS.Mac.sidebarMinWidth,
+                        ideal: DS.Mac.sidebarIdealWidth,
+                        max:   DS.Mac.sidebarMaxWidth
+                    )
+            } detail: {
+                MacLifeView()
+            }
+        } else {
+            NavigationSplitView {
+                MacSidebarView(selection: $selectedSection)
+                    .navigationSplitViewColumnWidth(
+                        min:   DS.Mac.sidebarMinWidth,
+                        ideal: DS.Mac.sidebarIdealWidth,
+                        max:   DS.Mac.sidebarMaxWidth
+                    )
+            } detail: {
+                MacSettingsView()
+            }
         }
-    }
-}
-
-// MARK: - MacDetailColumn
-
-/// Picks the correct detail view for the active section and selection.
-private struct MacDetailColumn: View {
-
-    let section: MacSection?
-    @Binding var selectedHabit:       HabitBoard?
-    @Binding var selectedTodo:        TodoItem?
-    @Binding var selectedJournalRow:  JournalRow?
-    @Binding var selectedJournalNote: JournalNote?
-    @Binding var selectedLifeRow:     LifeRow?
-
-    var body: some View {
-        switch section {
-        case .today:
-            MacTodoDetailColumn(item: $selectedTodo)
-        case .studio:
-            MacStudioWorkspaceView()
-        case .life:
-            MacLifeView()
-        case .settings:
-            MacSettingsView()
-        case nil:
-            MacDetailPlaceholder()
-        }
-    }
-}
-
-private struct MacEmptyContentView: View {
-    var body: some View {
-        ContentUnavailableView("No Section Selected", systemImage: "sidebar.left")
     }
 }
 
@@ -300,7 +233,6 @@ private struct MacEmptyContentView: View {
 struct MacDetailPlaceholder: View {
 
     @Environment(\.modelContext) private var modelContext
-    @ObservedObject private var modeManager = SimplifiedModeManager.shared
 
     @Query(filter: #Predicate<HabitBoard> { $0.archivedAt == nil })
     private var habits: [HabitBoard]
@@ -348,9 +280,7 @@ struct MacDetailPlaceholder: View {
                     guidedActionRow(icon: "calendar.day.timeline.left", title: "Day Planner Timeline", shortcut: "⌘1")
                     guidedActionRow(icon: "note.text", title: "BrainStorm Notes Studio", shortcut: "⌘2")
                     guidedActionRow(icon: "mountain.2.fill", title: "Trek & Travel Atlas", shortcut: "⌘3")
-                    guidedActionRow(icon: "arrow.left.and.right.square", title: "Switch to Simplified Mode", shortcut: "⌘⇧P") {
-                        modeManager.enableSimplifiedMode()
-                    }
+                    guidedActionRow(icon: "gearshape", title: "Settings & Preferences", shortcut: "⌘,")
                 }
                 .padding(16)
                 .frame(maxWidth: 420)

@@ -328,9 +328,11 @@ final class AppleJournalRichTextController: NSObject, ObservableObject {
     }
 
     private func toggleLinePrefix(_ prefix: String) {
-        guard let tv = textView, let string = tv.string as NSString? else { return }
+        guard let tv = textView, let string = tv.string as NSString?, string.length > 0 else { return }
         let range = tv.selectedRange()
-        let lineRange = string.lineRange(for: NSRange(location: range.location, length: 0))
+        let safeLocation = min(range.location, string.length)
+        let lineRange = string.lineRange(for: NSRange(location: safeLocation, length: 0))
+        guard lineRange.location + lineRange.length <= string.length else { return }
         let currentLine = string.substring(with: lineRange)
 
         let prefixes = ["• ", "○ ", "● ", "1. ", "“ "]
@@ -363,7 +365,7 @@ final class AppleJournalRichTextController: NSObject, ObservableObject {
         var underline: Int = 0
         var strikethrough: Int = 0
 
-        if range.length > 0, let ts = tv.textStorage {
+        if let ts = tv.textStorage, ts.length > 0, range.length > 0, range.location < ts.length {
             font = ts.attribute(.font, at: range.location, effectiveRange: nil) as? NSFont
             underline = ts.attribute(.underlineStyle, at: range.location, effectiveRange: nil) as? Int ?? 0
             strikethrough = ts.attribute(.strikethroughStyle, at: range.location, effectiveRange: nil) as? Int ?? 0
@@ -382,13 +384,16 @@ final class AppleJournalRichTextController: NSObject, ObservableObject {
         var hasNumbered = false
         var hasQuote = false
 
-        if let str = tv.string as NSString? {
-            let lineRange = str.lineRange(for: NSRange(location: range.location, length: 0))
-            let currentLine = str.substring(with: lineRange)
-            hasBullet = currentLine.hasPrefix("• ")
-            hasChecklist = currentLine.hasPrefix("○ ") || currentLine.hasPrefix("● ") || currentLine.hasPrefix("☑ ") || currentLine.hasPrefix("☐ ")
-            hasNumbered = currentLine.range(of: "^[0-9]+\\. ", options: .regularExpression) != nil
-            hasQuote = currentLine.hasPrefix("“ ") || currentLine.hasPrefix("> ")
+        if let str = tv.string as NSString?, str.length > 0 {
+            let safeLocation = min(range.location, str.length - 1)
+            let lineRange = str.lineRange(for: NSRange(location: safeLocation, length: 0))
+            if lineRange.location + lineRange.length <= str.length {
+                let currentLine = str.substring(with: lineRange)
+                hasBullet = currentLine.hasPrefix("• ")
+                hasChecklist = currentLine.hasPrefix("○ ") || currentLine.hasPrefix("● ") || currentLine.hasPrefix("☑ ") || currentLine.hasPrefix("☐ ")
+                hasNumbered = currentLine.range(of: "^[0-9]+\\. ", options: .regularExpression) != nil
+                hasQuote = currentLine.hasPrefix("“ ") || currentLine.hasPrefix("> ")
+            }
         }
 
         DispatchQueue.main.async {
@@ -500,8 +505,10 @@ struct AppleJournalRichTextView: NSViewRepresentable {
         func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
             if commandSelector == #selector(NSResponder.insertNewline(_:)) {
                 let range = textView.selectedRange()
-                guard let str = textView.string as NSString? else { return false }
-                let lineRange = str.lineRange(for: NSRange(location: range.location, length: 0))
+                guard let str = textView.string as NSString?, str.length > 0 else { return false }
+                let safeLocation = min(range.location, str.length)
+                let lineRange = str.lineRange(for: NSRange(location: safeLocation, length: 0))
+                guard lineRange.location + lineRange.length <= str.length else { return false }
                 let currentLine = str.substring(with: lineRange)
 
                 if currentLine.hasPrefix("• ") {
@@ -544,8 +551,9 @@ struct AppleJournalRichTextView: NSViewRepresentable {
         }
 
         func handleCheckboxTap(_ textView: NSTextView, at charIndex: Int) {
-            if let string = textView.string as NSString? {
+            if let string = textView.string as NSString?, charIndex < string.length {
                 let range = NSRange(location: charIndex, length: 1)
+                guard range.location + range.length <= string.length else { return }
                 let char = string.substring(with: range)
                 if char == "○" || char == "☐" {
                     textView.insertText("●", replacementRange: range)
@@ -2125,13 +2133,38 @@ struct MacAppleJournalView: View {
         HStack(spacing: 0) {
             MacJournalContentColumn(selectedRow: $selectedRow, selectedNote: $selectedNote)
                 .frame(minWidth: 280, idealWidth: 320, maxWidth: 360)
-                .background(Color(nsColor: NSColor(red: 0.08, green: 0.08, blue: 0.10, alpha: 1.0)))
+                .background(
+                    ZStack {
+                        Rectangle().fill(.ultraThinMaterial)
+                        Color.black.opacity(0.35)
+                    }
+                )
 
-            Divider().opacity(0.3)
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.14), Color.white.opacity(0.04), Color.white.opacity(0.10)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: 1)
 
             MacJournalDetailColumn(selectedRow: $selectedRow, selectedNote: $selectedNote)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(DS.Color.background)
+                .background(
+                    ZStack {
+                        Rectangle().fill(.ultraThinMaterial)
+                        LinearGradient(
+                            colors: [
+                                Color.black.opacity(0.30),
+                                Color(nsColor: NSColor(red: 0.08, green: 0.08, blue: 0.10, alpha: 0.82))
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    }
+                )
         }
     }
 }
