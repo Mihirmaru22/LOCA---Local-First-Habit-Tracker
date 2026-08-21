@@ -5,18 +5,13 @@ import SwiftUI
 /// 182-day (26-week) heatmap for the Mac detail column.
 ///
 /// Reuses the `RefHeatCell` rendering from `HabitDetailView` directly —
-/// same intensity tiers, same today-ring, same future-cell rule. The only
-/// Mac-specific adaptation is the cell size: `DS.Mac.heatmapCellSize` (13 pt)
-/// vs iOS's 11 pt, so the 26-week grid fills the 380+ pt detail column
-/// without scrolling.
-///
-/// The grid is calculated via `GeometryReader` so the column count adjusts
-/// if the user resizes the window — columns are added or removed to fill
-/// the available width at the current cell size.
+/// same intensity tiers, same today-ring, same future-cell rule. The 26-week
+/// grid fills the detail column cleanly with a stable fixed-column layout.
 struct MacHeatmapCard: View {
 
     let board: HabitBoard
 
+    private let cols:   Int     = 26
     private let gap:    CGFloat = DS.Mac.heatmapCellGap
     private let cell:   CGFloat = DS.Mac.heatmapCellSize
     private let labelW: CGFloat = 32
@@ -28,27 +23,22 @@ struct MacHeatmapCard: View {
     @State private var cellsByDate: [Date: DayCell] = [:]
 
     var body: some View {
-        GeometryReader { geo in
-            let usable = geo.size.width - hPad * 2 - labelW - gap
-            let cols   = max(1, Int((usable + gap) / (cell + gap)))
-            let cSize  = (usable - gap * CGFloat(cols - 1)) / CGFloat(cols)
-            let gridH  = (cSize + gap) * 7 - gap + vPad * 2
+        VStack(alignment: .leading, spacing: DS.Space.sm) {
+            // Title row
+            HStack(spacing: DS.Space.xs) {
+                Image(systemName: "calendar.circle")
+                    .font(.caption)
+                    .foregroundStyle(ColorPalette[board.colorIndex])
+                Text("26-WEEK HEATMAP")
+                    .font(DS.Text.footnote)
+                    .foregroundStyle(DS.Color.textSecondary)
+                    .tracking(0.5)
+            }
+            .padding(.horizontal, hPad)
+            .padding(.top, vPad)
 
-            VStack(alignment: .leading, spacing: DS.Space.sm) {
-                // Title row
-                HStack(spacing: DS.Space.xs) {
-                    Image(systemName: "calendar.circle")
-                        .font(.caption)
-                        .foregroundStyle(ColorPalette[board.colorIndex])
-                    Text("26-WEEK HEATMAP")
-                        .font(DS.Text.footnote)
-                        .foregroundStyle(DS.Color.textSecondary)
-                        .tracking(0.5)
-                }
-                .padding(.horizontal, hPad)
-                .padding(.top, vPad)
-
-                // Grid
+            // Grid
+            ScrollView(.horizontal, showsIndicators: false) {
                 VStack(spacing: gap) {
                     ForEach(0..<7, id: \.self) { d in
                         HStack(spacing: gap) {
@@ -63,7 +53,7 @@ struct MacHeatmapCard: View {
                                     dayIndex:    d,
                                     weekIndex:   w,
                                     totalCols:   cols,
-                                    cellSize:    cSize
+                                    cellSize:    cell
                                 )
                             }
                         }
@@ -71,18 +61,16 @@ struct MacHeatmapCard: View {
                 }
                 .padding(.horizontal, hPad)
                 .padding(.bottom, vPad)
-                .frame(height: gridH)
             }
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
-                    .fill(DS.Color.surface)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
-                    .stroke(DS.Color.border.opacity(0.35), lineWidth: 1)
-            )
         }
-        .frame(height: heatmapCardHeight())
+        .background(
+            RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
+                .fill(DS.Color.surface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
+                .stroke(DS.Color.border.opacity(0.35), lineWidth: 1)
+        )
         .task(id: "\(board.id)-\(board.logs?.count ?? -1)-\(board.targetValue ?? -1)") {
             let snapshots = (board.logs ?? []).map(LogSnapshot.init(from:))
             let logs = board.logs ?? []
@@ -98,12 +86,9 @@ struct MacHeatmapCard: View {
                 target:     target,
                 windowDays: 182
             )
-            cellsByDate = Dictionary(uniqueKeysWithValues: cells.map { ($0.date, $0) })
+            await MainActor.run {
+                cellsByDate = Dictionary(uniqueKeysWithValues: cells.map { ($0.date, $0) })
+            }
         }
-    }
-
-    private func heatmapCardHeight() -> CGFloat {
-        // Title row ~28 + top-pad + grid + bottom-pad
-        28 + vPad + (cell + gap) * 7 - gap + vPad * 2
     }
 }

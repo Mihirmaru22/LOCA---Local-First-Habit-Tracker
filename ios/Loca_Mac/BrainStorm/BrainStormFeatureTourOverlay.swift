@@ -186,7 +186,6 @@ struct BrainStormFeatureTourOverlay: View {
                             Circle()
                                 .fill(step == currentStep ? currentStep.accentColor : Color.white.opacity(0.20))
                                 .frame(width: step == currentStep ? 8 : 5, height: step == currentStep ? 8 : 5)
-                                .animation(.spring(response: 0.25, dampingFraction: 0.7), value: currentStep)
                                 .onTapGesture {
                                     withAnimation(.easeInOut(duration: 0.15)) {
                                         currentStep = step
@@ -200,7 +199,7 @@ struct BrainStormFeatureTourOverlay: View {
                     // Previous Button
                     if currentStep.rawValue > 0 {
                         Button {
-                            withAnimation(.spring(response: 0.28, dampingFraction: 0.8)) {
+                            withAnimation(.easeInOut(duration: 0.18)) {
                                 if let prev = StudioFeatureTourStep(rawValue: currentStep.rawValue - 1) {
                                     currentStep = prev
                                 }
@@ -220,7 +219,7 @@ struct BrainStormFeatureTourOverlay: View {
                     // Next / Finish Button
                     Button {
                         if currentStep.rawValue < StudioFeatureTourStep.allCases.count - 1 {
-                            withAnimation(.spring(response: 0.28, dampingFraction: 0.8)) {
+                            withAnimation(.easeInOut(duration: 0.18)) {
                                 if let next = StudioFeatureTourStep(rawValue: currentStep.rawValue + 1) {
                                     currentStep = next
                                 }
@@ -243,13 +242,22 @@ struct BrainStormFeatureTourOverlay: View {
                         }
                         .foregroundStyle(Color.black)
                         .padding(.horizontal, 14)
-                        .padding(.vertical, 6)
-                        .background(currentStep.accentColor, in: RoundedRectangle(cornerRadius: 6))
+                        .padding(.vertical, 7)
+                        .background(
+                            LinearGradient(
+                                colors: [currentStep.accentColor, currentStep.accentColor.opacity(0.85)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            in: RoundedRectangle(cornerRadius: 7)
+                        )
+                        .shadow(color: currentStep.accentColor.opacity(0.4), radius: 6, x: 0, y: 2)
                     }
                     .buttonStyle(PlutoFastButtonStyle())
                 }
             }
-            .padding(18)
+            .id(currentStep)
+            .padding(22)
             .frame(width: 440)
             .background(
                 Color(nsColor: NSColor(red: 0.12, green: 0.12, blue: 0.14, alpha: 0.98)),
