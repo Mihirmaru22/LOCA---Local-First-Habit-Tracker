@@ -577,53 +577,31 @@ struct MacSettingsView: View {
     // App Guide & Walkthrough Block
     private var studioNotesGuideBlock: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Interactive in-situ spotlight walkthroughs that illuminate live features on your actual screen while blurring background noise.")
+            Text("Interactive guide and overview of the Studio markdown and rich text workspace.")
                 .font(.system(size: 11.5))
                 .foregroundStyle(DS.Color.textSecondary)
                 .lineSpacing(3)
 
-            HStack(spacing: 10) {
-                // 1. Full App Spotlight Tour
-                Button {
-                    PlutoSoundEngine.shared.play(.tabSwitch)
-                    Haptics.impact(.medium)
-                    PlutoAppGuideManager.shared.startTour()
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "sparkles")
-                            .font(.system(size: 12, weight: .bold))
-                        Text("Whole App Spotlight Tour (⌘/) ✦")
-                            .font(.system(size: 11.5, weight: .bold))
-                    }
-                    .foregroundStyle(Color.black)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Color(red: 0.95, green: 0.75, blue: 0.25), in: RoundedRectangle(cornerRadius: 6))
+            Button {
+                PlutoSoundEngine.shared.play(.tabSwitch)
+                Haptics.impact(.medium)
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
+                    showStudioFeatureTour = true
                 }
-                .buttonStyle(.plain)
-
-                // 2. Studio Notes Guide
-                Button {
-                    PlutoSoundEngine.shared.play(.tabSwitch)
-                    Haptics.impact(.medium)
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
-                        showStudioFeatureTour = true
-                    }
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "note.text")
-                            .font(.system(size: 11, weight: .bold))
-                        Text("Studio Notes Guide")
-                            .font(.system(size: 11.5, weight: .semibold))
-                    }
-                    .foregroundStyle(DS.Color.textPrimary)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: 6))
-                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(DS.Color.border, lineWidth: 1))
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "note.text")
+                        .font(.system(size: 11, weight: .bold))
+                    Text("Studio Notes Guide")
+                        .font(.system(size: 11.5, weight: .semibold))
                 }
-                .buttonStyle(.plain)
+                .foregroundStyle(DS.Color.textPrimary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(DS.Color.surface, in: RoundedRectangle(cornerRadius: 6))
+                .overlay(RoundedRectangle(cornerRadius: 6).stroke(DS.Color.border, lineWidth: 1))
             }
+            .buttonStyle(.plain)
         }
     }
 

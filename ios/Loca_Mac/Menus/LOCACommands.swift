@@ -109,14 +109,7 @@ struct LOCACommands: Commands {
 
         // MARK: Help menu
         CommandGroup(replacing: .help) {
-            Button("Interactive App Guide & Spotlight Tour") {
-                PlutoAppGuideManager.shared.startTour()
-            }
-            .keyboardShortcut("/", modifiers: [.command])
-
-            Divider()
-
-            Button("Welcome & Feature Tour…") {
+            Button("Welcome & Feature Walkthrough…") {
                 NotificationCenter.default.post(name: .locaShowOnboarding, object: nil)
             }
         }

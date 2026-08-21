@@ -89,25 +89,6 @@ struct BrainStormSettingsView: View {
                                     .contentShape(Rectangle())
                                 }
                                 .buttonStyle(PlutoFastButtonStyle())
-
-                                Button {
-                                    isPresented = false
-                                    PlutoAppGuideManager.shared.startTour()
-                                } label: {
-                                    HStack(spacing: 5) {
-                                        Image(systemName: "sparkles")
-                                            .font(.system(size: 11, weight: .bold))
-                                        Text("Whole App Tour (⌘/)")
-                                            .font(.system(size: 11.5, weight: .bold))
-                                    }
-                                    .foregroundStyle(Color.white)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 30)
-                                    .background(Color.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
-                                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(0.20), lineWidth: 1))
-                                    .contentShape(Rectangle())
-                                }
-                                .buttonStyle(PlutoFastButtonStyle())
                             }
                         }
                         .padding(14)

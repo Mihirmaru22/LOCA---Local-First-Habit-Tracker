@@ -55,17 +55,9 @@ struct MacRootView: View {
     @AppStorage("mac_weekly_digest_enabled") private var weeklyDigestEnabled: Bool = true
     @AppStorage("mac_default_habit_reminder_time") private var defaultHabitTime: String = "09:00"
     @AppStorage("mac_today_submode") private var todaySubmode: String = "Plan"
-    @ObservedObject private var guideManager = PlutoAppGuideManager.shared
 
     var body: some View {
-        ZStack {
-            splitView
-
-            // Real-App In-Situ Spotlight Guide Overlay
-            // if guideManager.isTourActive {
-            //     PlutoAppGuideOverlay()
-            // }
-        }
+        splitView
         .sheet(isPresented: $showOnboarding) {
             MacOnboardingView(isPresented: $showOnboarding)
                 .frame(minWidth: 720, minHeight: 520)
