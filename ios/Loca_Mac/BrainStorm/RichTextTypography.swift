@@ -219,12 +219,28 @@ public struct RichTextTypography {
 
     // MARK: Checklist Toggle (Pure Attribute System - Zero String Mutation)
     
+    /// Toggles checklist state on the current paragraph without modifying string length
     public static func toggleChecklistOnCurrentParagraph(in textStorage: NSMutableAttributedString, selectedRange: NSRange, defaultFont: NSFont) -> NSRange {
+        // CRITICAL FIX 1: Handle completely empty text storage to prevent out-of-bounds crash
+        guard textStorage.length > 0 else {
+            textStorage.beginEditing()
+            let checklistStyle = makeParagraphStyle(for: .checklist)
+            let emptyRange = NSRange(location: 0, length: 0)
+            textStorage.addAttribute(.paragraphStyle, value: checklistStyle, range: emptyRange)
+            textStorage.addAttribute(.noteChecklistState, value: ChecklistState.unchecked.rawValue, range: emptyRange)
+            textStorage.endEditing()
+            return selectedRange
+        }
+        
         textStorage.beginEditing()
         let string = textStorage.string as NSString
         let paragraphRange = string.paragraphRange(for: selectedRange)
         
-        let currentState = textStorage.attribute(.noteChecklistState, at: paragraphRange.location, effectiveRange: nil) as? String
+        // CRITICAL FIX 2: Clamp index to prevent out-of-bounds crash when cursor is at the 
+        // very end of the document or on an empty trailing paragraph (e.g., after a final newline).
+        let safeIndex = min(paragraphRange.location, textStorage.length - 1)
+        
+        let currentState = textStorage.attribute(.noteChecklistState, at: safeIndex, effectiveRange: nil) as? String
         
         if currentState == ChecklistState.unchecked.rawValue {
             // Unchecked -> Checked

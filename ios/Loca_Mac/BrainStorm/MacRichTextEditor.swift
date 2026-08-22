@@ -741,7 +741,12 @@ public final class LocaAppKitTextView: NSTextView {
         let paragraphText = string.substring(with: paragraphRange)
         
         // 1. Checklist smart continuation (Pure Paragraph Attribute)
-        let isChecklist = textStorage.attribute(.noteChecklistState, at: paragraphRange.location, effectiveRange: nil) != nil
+        guard textStorage.length > 0 else {
+            super.insertNewline(sender)
+            return
+        }
+        let safeIndex = min(paragraphRange.location, textStorage.length - 1)
+        let isChecklist = textStorage.attribute(.noteChecklistState, at: safeIndex, effectiveRange: nil) != nil
         if isChecklist {
             let cleanText = paragraphText.trimmingCharacters(in: .whitespacesAndNewlines)
             if cleanText.isEmpty {
@@ -831,9 +836,14 @@ public final class LocaAppKitTextView: NSTextView {
         let string = textStorage.string as NSString
         let paragraphRange = string.paragraphRange(for: selectedRange)
         
-        if let existingStyle = textStorage.attribute(.paragraphStyle, at: paragraphRange.location, effectiveRange: nil) as? NSParagraphStyle {
+        guard textStorage.length > 0 else {
+            super.insertTab(sender)
+            return
+        }
+        let safeIndex = min(paragraphRange.location, textStorage.length - 1)
+        if let existingStyle = textStorage.attribute(.paragraphStyle, at: safeIndex, effectiveRange: nil) as? NSParagraphStyle {
             let mutableStyle = existingStyle.mutableCopy() as! NSMutableParagraphStyle
-            let isChecklist = textStorage.attribute(.noteChecklistState, at: paragraphRange.location, effectiveRange: nil) != nil
+            let isChecklist = textStorage.attribute(.noteChecklistState, at: safeIndex, effectiveRange: nil) != nil
             
             if isChecklist {
                 // Indentation Math: baseHeadIndent (28pt) + (indentLevel * 20pt)
@@ -867,9 +877,14 @@ public final class LocaAppKitTextView: NSTextView {
         let string = textStorage.string as NSString
         let paragraphRange = string.paragraphRange(for: selectedRange)
         
-        if let existingStyle = textStorage.attribute(.paragraphStyle, at: paragraphRange.location, effectiveRange: nil) as? NSParagraphStyle {
+        guard textStorage.length > 0 else {
+            super.insertBacktab(sender)
+            return
+        }
+        let safeIndex = min(paragraphRange.location, textStorage.length - 1)
+        if let existingStyle = textStorage.attribute(.paragraphStyle, at: safeIndex, effectiveRange: nil) as? NSParagraphStyle {
             let mutableStyle = existingStyle.mutableCopy() as! NSMutableParagraphStyle
-            let isChecklist = textStorage.attribute(.noteChecklistState, at: paragraphRange.location, effectiveRange: nil) != nil
+            let isChecklist = textStorage.attribute(.noteChecklistState, at: safeIndex, effectiveRange: nil) != nil
             
             if isChecklist {
                 // Indentation Math: baseHeadIndent (28pt) + (indentLevel * 20pt)
@@ -913,8 +928,9 @@ public final class LocaAppKitTextView: NSTextView {
         let paragraphRange = string.paragraphRange(for: selectedRange)
         
         // 1. If at line start of a checklist item: remove checklist attribute in 1 keystroke
-        if selectedRange.location == paragraphRange.location {
-            let isChecklist = textStorage.attribute(.noteChecklistState, at: paragraphRange.location, effectiveRange: nil) != nil
+        if selectedRange.location == paragraphRange.location && textStorage.length > 0 {
+            let safeIndex = min(paragraphRange.location, textStorage.length - 1)
+            let isChecklist = textStorage.attribute(.noteChecklistState, at: safeIndex, effectiveRange: nil) != nil
             if isChecklist {
                 self.undoManager?.beginUndoGrouping()
                 textStorage.beginEditing()
@@ -1089,11 +1105,12 @@ public final class LocaAppKitTextView: NSTextView {
         let string = textStorage.string as NSString
         
         // Multi-line safe hit-testing: Clicking anywhere at x < 28pt toggles the item
-        if point.x < 28.0 {
+        if point.x < 28.0 && textStorage.length > 0 {
             let charIndex = layoutManager.characterIndex(for: point, in: textContainer, fractionOfDistanceBetweenInsertionPoints: nil)
             if charIndex < string.length {
                 let paragraphRange = string.paragraphRange(for: NSRange(location: charIndex, length: 0))
-                let checklistState = textStorage.attribute(.noteChecklistState, at: paragraphRange.location, effectiveRange: nil) as? String
+                let safeIndex = min(paragraphRange.location, textStorage.length - 1)
+                let checklistState = textStorage.attribute(.noteChecklistState, at: safeIndex, effectiveRange: nil) as? String
                 
                 if let state = checklistState {
                     self.undoManager?.beginUndoGrouping()
