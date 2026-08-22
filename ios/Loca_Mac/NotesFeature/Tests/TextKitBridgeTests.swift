@@ -519,5 +519,50 @@ struct TextKitBridgeTests {
         #expect(targetBlock?.marks.first?.startIndex == 5)
         #expect(targetBlock?.marks.first?.endIndex == 11)
     }
+    
+    @Test func testEmptyBulletEnterExitsToParagraph() {
+        let noteID = NoteID()
+        let blockID = UUID()
+        
+        var doc = CRDTDoc(id: noteID, deviceID: "test-device")
+        let item = CRDTBlock(id: blockID, type: "bullet", text: CRDTText(string: "", deviceID: "test-device"))
+        doc.addBlock(item)
+        
+        let bridge = TextKitCRDTBridge(doc: doc, deviceID: "test-device")
+        
+        // Enter on empty bullet item -> exits to paragraph
+        let split = bridge.splitBlock(at: 0)
+        #expect(split?.newBlockType == "paragraph")
+        #expect(split?.newBlockID == nil)
+        #expect(bridge.doc.blocks.first?.type == "paragraph")
+    }
+    
+    @Test func testToolbarUsesLiveCursorLocation() {
+        let noteID = NoteID()
+        let b1ID = UUID()
+        let b2ID = UUID()
+        
+        var doc = CRDTDoc(id: noteID, deviceID: "test-device")
+        let b1 = CRDTBlock(id: b1ID, type: "paragraph", text: CRDTText(string: "First paragraph.", deviceID: "test-device"))
+        let b2 = CRDTBlock(id: b2ID, type: "paragraph", text: CRDTText(string: "Second block.", deviceID: "test-device"))
+        doc.addBlock(b1)
+        doc.addBlock(b2)
+        
+        let bridge = TextKitCRDTBridge(doc: doc, deviceID: "test-device")
+        let state = EditorBridgeState(bridge: bridge)
+        
+        // User moves cursor into second block (loc 20)
+        state.updateSelection(NSRange(location: 20, length: 0))
+        #expect(bridge.lastKnownSelection.location == 20)
+        
+        // Click H2 button
+        state.toggleBlockType(.h2)
+        
+        // Assert second block converted to H2, first block remains paragraph
+        #expect(bridge.block(for: b1ID)?.type == "paragraph")
+        #expect(bridge.block(for: b2ID)?.type == "heading")
+        #expect(bridge.block(for: b2ID)?.attributes["level"] == "2")
+        #expect(state.formattingState.blockType == .h2)
+    }
 }
 #endif

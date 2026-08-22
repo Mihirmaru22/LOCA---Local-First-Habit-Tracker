@@ -279,7 +279,6 @@ public struct NotesCanvasView: View {
             
             // Kill autosave self-echo
             if note.content.hashValue == self.lastLocalContentHash {
-                print("🔁 ECHO SKIP")
                 continue
             }
             
@@ -287,7 +286,6 @@ public struct NotesCanvasView: View {
             if let existingState = self.editorState, existingState.bridge.doc.id == doc.id {
                 let currentCRDTContent = CRDTTranslator.materializeContent(from: existingState.bridge.doc)
                 if currentCRDTContent == note.content {
-                    print("🔁 ECHO SKIP")
                     continue
                 }
                 existingState.updateDocFromRemote(doc)

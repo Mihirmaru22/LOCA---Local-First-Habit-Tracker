@@ -88,7 +88,6 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
         self.stickyMarks = marks
         self.lastInsertionLocation = lastKnownSelection.location
         self.stickyArmTime = Date()
-        print("🔧 STICKY MARKS SET: \(marks)")
     }
     
     public func getStickyMarks() -> Set<String> {
@@ -112,7 +111,6 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
         // Only clear sticky marks if cursor moved away AND not within focus-return window (0.25s)
         if range.location != lastInsertionLocation && Date().timeIntervalSince(stickyArmTime) > 0.25 {
             if !stickyMarks.isEmpty {
-                print("🔧 CLEARING STICKY MARKS (cursor moved to \(range.location), expected \(lastInsertionLocation))")
                 stickyMarks.removeAll()
                 lastInsertionLocation = -1
             }
@@ -158,7 +156,6 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
             for mark in stickyMarks {
                 applyInlineMarkInternal(type: mark, in: range)
             }
-            print("🔧 APPLIED STICKY MARKS \(stickyMarks) to range \(range)")
         }
         
         // Update tracking for consecutive detection
@@ -209,9 +206,7 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
                     _ = doc.vectorClock.increment(for: deviceID)
                 }
                 lastInsertionLocation = globalLocation
-                let result = SplitResult(newBlockID: nil, newCursor: globalLocation, oldBlockType: oldType, newBlockType: "paragraph")
-                print("🎯 SPLIT: oldBlock=\(oldType) newBlock=paragraph (exited list) newCursor=\(globalLocation)")
-                return result
+                return SplitResult(newBlockID: nil, newCursor: globalLocation, oldBlockType: oldType, newBlockType: "paragraph")
             }
         }
         
@@ -253,9 +248,7 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
         let newCursor = globalLocation + 1
         lastInsertionLocation = newCursor
         
-        let result = SplitResult(newBlockID: newBlockID, newCursor: newCursor, oldBlockType: oldType, newBlockType: newType)
-        print("🎯 SPLIT: oldBlock=\(oldType) newBlock=\(newType) newCursor=\(newCursor)")
-        return result
+        return SplitResult(newBlockID: newBlockID, newCursor: newCursor, oldBlockType: oldType, newBlockType: newType)
     }
     
     private func mergeBlockWithPreceding(targetBlockIndex: Int) {
@@ -300,8 +293,6 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
     }
     
     public func toggleInlineMark(type: String, in globalRange: NSRange) {
-        print("🔧 TOOLBAR SELECTION: loc=\(globalRange.location) len=\(globalRange.length)")
-        print("🔧 TOGGLE MARK: \(type) range=\(globalRange)")
         lock.lock()
         defer { lock.unlock() }
         
@@ -321,7 +312,6 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
             }
             lastInsertionLocation = globalRange.location
             stickyArmTime = Date()
-            print("🔧 STICKY MARKS NOW: \(stickyMarks)")
         }
     }
     
@@ -386,36 +376,29 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
     
     /// Converts current block to the requested block type, or reverts to .paragraph if already active.
     public func toggleBlockType(_ targetType: EditorBlockType, at globalLocation: Int) {
-        print("🔧 TOOLBAR SELECTION: loc=\(globalLocation)")
-        print("🔧 TOGGLE BLOCK: \(targetType) at \(globalLocation)")
         lock.lock()
         defer { lock.unlock() }
         
         guard let target = resolveLocationInternal(globalLocation) else {
-            print("🔧 ERROR: no block at location \(globalLocation)")
             return
         }
         
         guard let idx = doc.blocks.firstIndex(where: { $0.id == target.block.id }) else { return }
         let currentBlock = doc.blocks[idx]
         let currentType = blockType(for: currentBlock)
-        print("🔧 BEFORE: block[\(idx)].type = \(currentBlock.type)")
         
         let (rawType, rawAttributes) = targetType.rawBlockType
         
         if currentType == targetType {
             doc.blocks[idx].type = "paragraph"
             doc.blocks[idx].attributes = [:]
-            print("🔧 REVERTING to paragraph")
         } else {
             doc.blocks[idx].type = rawType
             doc.blocks[idx].attributes = rawAttributes
-            print("🔧 SETTING to \(rawType) with attributes \(rawAttributes)")
         }
         
         doc.blocks[idx].lastModified = Date().timeIntervalSince1970
         _ = doc.vectorClock.increment(for: deviceID)
-        print("🔧 AFTER: block[\(idx)].type = \(doc.blocks[idx].type)")
     }
     
     public func toggleChecklist(at globalLocation: Int) {

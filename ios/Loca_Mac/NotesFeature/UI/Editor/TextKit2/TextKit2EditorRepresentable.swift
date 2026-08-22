@@ -194,7 +194,6 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
     }
     
     public func updateNSView(_ nsView: NSScrollView, context: Context) {
-        print("🟡 updateNSView CALLED: needsRemoteRefresh=\(state.needsRemoteRefresh)")
         guard let textView = context.coordinator.textView else { return }
         
         // Strictly guard against touching textStorage for local edits
@@ -239,7 +238,6 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
             guard !isProgrammaticEdit else { return }
             guard let tv = notification.object as? NSTextView else { return }
             let sel = tv.selectedRange()
-            print("🎨 SELECTION CHANGED: \(sel)")
             parent.state.bridge.updateLastKnownSelection(sel)
             parent.state.bridge.selectionDidChange(to: sel)
             DispatchQueue.main.async {
@@ -250,7 +248,6 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         
         public func textView(_ textView: NSTextView, shouldChangeTextIn affectedCharRange: NSRange, replacementString: String?) -> Bool {
             let replacement = replacementString ?? ""
-            print("🔍 shouldChangeTextIn: range=\(affectedCharRange) repl='\(replacement)'")
             parent.state.bridge.updateLastKnownSelection(affectedCharRange)
             
             if replacement == "\n" {
@@ -280,8 +277,6 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
                 parent.state.bridge.deleteText(at: affectedCharRange.location, length: affectedCharRange.length)
             } else if !replacement.isEmpty {
                 parent.state.bridge.insertText(replacement, at: affectedCharRange.location)
-                print("🔍 CRDT INSERTED: '\(replacement)' at \(affectedCharRange.location)")
-                print("🔍 STICKY MARKS: \(parent.state.bridge.getStickyMarks())")
             }
             
             parent.onKeystroke(parent.state.bridge.doc)
@@ -329,7 +324,6 @@ public final class EditorBridgeState: ObservableObject {
         let sel = bridge.lastKnownSelection
         let newState = bridge.currentFormattingState(at: sel)
         if formattingState != newState {
-            print("🎨 PUBLISHING STATE: bold=\(newState.isBold) italic=\(newState.isItalic) block=\(newState.blockType)")
             formattingState = newState
         }
     }

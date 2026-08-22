@@ -30,7 +30,6 @@ public struct NotesFormattingToolbar: View {
                 help: "Bold (⌘B)",
                 isBoldFont: true,
                 action: {
-                    print("🎨 TOOLBAR CLICK: B")
                     DispatchQueue.main.async {
                         onToggleBold()
                     }
@@ -44,7 +43,6 @@ public struct NotesFormattingToolbar: View {
                 help: "Italic (⌘I)",
                 isItalicFont: true,
                 action: {
-                    print("🎨 TOOLBAR CLICK: I")
                     DispatchQueue.main.async {
                         onToggleItalic()
                     }
@@ -62,7 +60,6 @@ public struct NotesFormattingToolbar: View {
                 isActive: state.blockType == .h1,
                 help: "Heading 1",
                 action: {
-                    print("🎨 TOOLBAR CLICK: H1")
                     DispatchQueue.main.async {
                         onToggleBlockType(.h1)
                     }
@@ -75,7 +72,6 @@ public struct NotesFormattingToolbar: View {
                 isActive: state.blockType == .h2,
                 help: "Heading 2",
                 action: {
-                    print("🎨 TOOLBAR CLICK: H2")
                     DispatchQueue.main.async {
                         onToggleBlockType(.h2)
                     }
@@ -88,7 +84,6 @@ public struct NotesFormattingToolbar: View {
                 isActive: state.blockType == .h3,
                 help: "Heading 3",
                 action: {
-                    print("🎨 TOOLBAR CLICK: H3")
                     DispatchQueue.main.async {
                         onToggleBlockType(.h3)
                     }
@@ -106,7 +101,6 @@ public struct NotesFormattingToolbar: View {
                 isActive: state.blockType == .checklist,
                 help: "Checklist",
                 action: {
-                    print("🎨 TOOLBAR CLICK: checklist")
                     DispatchQueue.main.async {
                         onToggleBlockType(.checklist)
                     }
@@ -119,7 +113,6 @@ public struct NotesFormattingToolbar: View {
                 isActive: state.blockType == .bullet,
                 help: "Bullet List",
                 action: {
-                    print("🎨 TOOLBAR CLICK: bullet")
                     DispatchQueue.main.async {
                         onToggleBlockType(.bullet)
                     }
@@ -132,7 +125,6 @@ public struct NotesFormattingToolbar: View {
                 isActive: state.blockType == .paragraph,
                 help: "Normal Paragraph",
                 action: {
-                    print("🎨 TOOLBAR CLICK: paragraph")
                     DispatchQueue.main.async {
                         onToggleBlockType(.paragraph)
                     }
@@ -150,7 +142,6 @@ public struct NotesFormattingToolbar: View {
         .shadow(color: .black.opacity(0.04), radius: 3, x: 0, y: 1)
     }
     
-    @ViewBuilder
     private func toolbarButton(
         title: String?,
         icon: String?,
@@ -161,26 +152,34 @@ public struct NotesFormattingToolbar: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Group {
-                if let title = title {
-                    Text(title)
-                        .fontWeight(isBoldFont ? .bold : (isActive ? .semibold : .medium))
-                        .italic(isItalicFont)
-                } else if let icon = icon {
-                    Image(systemName: icon)
-                        .font(.system(size: 11, weight: isActive ? .bold : .regular))
+            ZStack {
+                if isActive {
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .fill(Color.accentColor.opacity(0.2))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                .stroke(Color.accentColor.opacity(0.4), lineWidth: 0.8)
+                        )
                 }
+                
+                Group {
+                    if let title = title {
+                        Text(title)
+                            .font(.system(size: 11, weight: isBoldFont ? .heavy : .semibold))
+                            .italic(isItalicFont)
+                    } else if let icon = icon {
+                        Image(systemName: icon)
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                }
+                .foregroundColor(isActive ? .accentColor : .primary.opacity(0.85))
             }
-            .font(.system(size: 11, design: .rounded))
-            .frame(minWidth: 26, minHeight: 22)
-            .background(Capsule().fill(isActive ? Color.accentColor.opacity(0.28) : Color.clear))
-            .overlay(Capsule().strokeBorder(isActive ? Color.accentColor.opacity(0.6) : Color.clear, lineWidth: 1))
-            .foregroundStyle(isActive ? Color.primary : Color.secondary)
+            .frame(width: 26, height: 22)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .help(help)
-        .accessibilityValue(isActive ? "on" : "off")
-        .animation(.easeOut(duration: 0.12), value: isActive)
+        .accessibilityLabel(help)
+        .accessibilityValue(isActive ? "Selected" : "Not selected")
     }
 }
