@@ -15,7 +15,7 @@ struct MacBrainStormView: View {
     @State private var selectedTag: String? = nil
     @State private var selectedNoteID: UUID? = nil
     @State private var isZenMode: Bool = false
-    @AppStorage("brainstorm_show_folders") private var showFolders: Bool = false
+    @AppStorage("notes_show_notes_list") private var showNotesList: Bool = true
 
     // Modal & Toast States
     @State private var isShowingSettings: Bool = false
@@ -33,24 +33,17 @@ struct MacBrainStormView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            // Clean Native macOS Split View (Notes List ↔ Large Note Canvas, with optional Folders)
+            // Clean Native macOS Split View (Collapsible Notes List ↔ Large Full Note Canvas)
             HSplitView {
-                
-                // 1. FOLDERS & TAGS SIDEBAR (Hidden by default for spacious 2-column layout)
-                if showFolders && !isZenMode {
-                    BrainStormFolderSidebar(
-                        selectedSystemFolder: $selectedSystemFolder,
-                        selectedFolderID: $selectedFolderID,
-                        selectedTag: $selectedTag
-                    )
-                    .frame(minWidth: 185, idealWidth: 205, maxWidth: 260)
-                    .background(Color(nsColor: NSColor(red: 0.09, green: 0.09, blue: 0.10, alpha: 1.0)))
-                }
 
-                // 2. NOTES LIST / GALLERY (Column 1 - Clean, spacious card column with extended previews)
-                if !isZenMode {
+                // 1. NOTES LIST / GALLERY (Collapsible via burger button or ⌘\)
+                if showNotesList && !isZenMode {
                     BrainStormNotesListColumn(
-                        showFolders: $showFolders,
+                        onToggleSidebar: {
+                            withAnimation(.easeInOut(duration: 0.18)) {
+                                showNotesList.toggle()
+                            }
+                        },
                         selectedSystemFolder: selectedSystemFolder,
                         selectedFolderID: selectedFolderID,
                         selectedTag: selectedTag,
@@ -66,16 +59,22 @@ struct MacBrainStormView: View {
                             }
                         }
                     )
-                    .frame(minWidth: 290, idealWidth: 340, maxWidth: 460)
+                    .frame(minWidth: 280, idealWidth: 320, maxWidth: 440)
                     .background(Color(nsColor: NSColor(red: 0.11, green: 0.11, blue: 0.12, alpha: 1.0)))
                 }
 
-                // 3. FULL APPLE NOTES CANVAS (Column 2 - Spacious, full remaining window width)
+                // 2. FULL APPLE NOTES CANVAS (Expands to 100% full width when list is closed)
                 Group {
                     if let note = selectedNote {
                         BrainStormEditorView(
                             note: note,
                             isZenMode: $isZenMode,
+                            onToggleSidebar: {
+                                withAnimation(.easeInOut(duration: 0.18)) {
+                                    showNotesList.toggle()
+                                }
+                            },
+                            isSidebarVisible: showNotesList && !isZenMode,
                             onOpenTour: {
                                 withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
                                     isShowingFeatureTour = true

@@ -243,7 +243,7 @@ struct MacDetailPlaceholder: View {
 
                     guidedActionRow(icon: "plus.circle", title: "New Task / Block", shortcut: "⌘N")
                     guidedActionRow(icon: "calendar.day.timeline.left", title: "Day Planner Timeline", shortcut: "⌘1")
-                    guidedActionRow(icon: "note.text", title: "BrainStorm Notes Studio", shortcut: "⌘2")
+                    guidedActionRow(icon: "note.text", title: "Notes", shortcut: "⌘2")
                     guidedActionRow(icon: "sparkles.rectangle.stack.fill", title: "Studio Projects & Goals", shortcut: "⌘3")
                     guidedActionRow(icon: "mountain.2.fill", title: "Trek & Travel Atlas", shortcut: "⌘4")
                     guidedActionRow(icon: "gearshape", title: "Settings & Preferences", shortcut: "⌘,")

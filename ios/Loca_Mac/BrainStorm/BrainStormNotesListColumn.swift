@@ -20,10 +20,11 @@ struct BrainStormNotesListColumn: View {
     @Query private var allNotes: [BrainStormNote]
     @Query private var allFolders: [BrainStormFolder]
 
+    var onToggleSidebar: (() -> Void)? = nil
     var showFolders: Binding<Bool>? = nil
-    var selectedSystemFolder: SystemFolderType?
-    var selectedFolderID: UUID?
-    var selectedTag: String?
+    var selectedSystemFolder: SystemFolderType? = .allNotes
+    var selectedFolderID: UUID? = nil
+    var selectedTag: String? = nil
     @Binding var selectedNote: BrainStormNote?
     var onOpenTour: (() -> Void)? = nil
 
@@ -110,7 +111,23 @@ struct BrainStormNotesListColumn: View {
             // Top Header: Title, Search, View Mode Toggle, New Note Button
             VStack(spacing: 8) {
                 HStack(spacing: 8) {
-                    if let showFolders = showFolders {
+                    if let onToggleSidebar = onToggleSidebar {
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.18)) {
+                                onToggleSidebar()
+                            }
+                            Haptics.impact(.light)
+                        } label: {
+                            Image(systemName: "sidebar.leading")
+                                .font(.system(size: 12.5, weight: .medium))
+                                .foregroundStyle(Color.white.opacity(0.85))
+                                .frame(width: 24, height: 22)
+                                .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 4))
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(PlutoFastButtonStyle())
+                        .help("Hide Notes List (⌘\\)")
+                    } else if let showFolders = showFolders {
                         Button {
                             withAnimation(.easeInOut(duration: 0.15)) {
                                 showFolders.wrappedValue.toggle()
@@ -337,14 +354,14 @@ struct BrainStormNotesListColumn: View {
     // MARK: - Column Title
 
     private var columnTitle: String {
-        if let system = selectedSystemFolder {
+        if let system = selectedSystemFolder, system != .allNotes {
             return system.rawValue
         } else if let folderID = selectedFolderID, let folder = allFolders.first(where: { $0.id == folderID }) {
             return folder.name
         } else if let tag = selectedTag {
             return "#\(tag)"
         }
-        return "All Notes"
+        return "Notes"
     }
 
     // MARK: - List View Row

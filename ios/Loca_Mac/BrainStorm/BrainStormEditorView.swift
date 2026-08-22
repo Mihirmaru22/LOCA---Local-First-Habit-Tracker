@@ -19,6 +19,8 @@ struct BrainStormEditorView: View {
     @Environment(\.modelContext) private var modelContext
     @Bindable var note: BrainStormNote
     @Binding var isZenMode: Bool
+    var onToggleSidebar: (() -> Void)? = nil
+    var isSidebarVisible: Bool = true
     var onOpenTour: (() -> Void)? = nil
 
     @StateObject private var editorController = RichTextEditorController()
@@ -60,31 +62,33 @@ struct BrainStormEditorView: View {
             SlashCommandItem(id: "todo", title: "To-Do Checklist", subtitle: "Interactive checkable item", icon: "checklist", category: "List") {
                 editorController.toggleChecklist(preset: typographyPreset)
             },
-            SlashCommandItem(id: "bullet", title: "Bulleted List", subtitle: "Simple bullet point list", icon: "list.bullet", category: "List") {
+            SlashCommandItem(id: "bullet", title: "Bulleted List", subtitle: "Bulleted item list", icon: "list.bullet", category: "List") {
                 editorController.applyParagraphStyle(.bulletedList, preset: typographyPreset)
             },
-            SlashCommandItem(id: "number", title: "Numbered List", subtitle: "Ordered sequence list", icon: "list.number", category: "List") {
+            SlashCommandItem(id: "number", title: "Numbered List", subtitle: "Numbered sequential list", icon: "list.number", category: "List") {
                 editorController.applyParagraphStyle(.numberedList, preset: typographyPreset)
             },
-            SlashCommandItem(id: "quote", title: "Blockquote", subtitle: "Indented callout block", icon: "quote.opening", category: "Structure") {
+            SlashCommandItem(id: "quote", title: "Block Quote", subtitle: "Indented quote callout", icon: "text.quote", category: "Structure") {
                 editorController.applyParagraphStyle(.quote, preset: typographyPreset)
             },
-            SlashCommandItem(id: "code", title: "Code Block", subtitle: "Monospaced code snippet", icon: "curlybraces", category: "Structure") {
+            SlashCommandItem(id: "code", title: "Code Block", subtitle: "Monostyled monospace code", icon: "chevron.left.forwardslash.chevron.right", category: "Structure") {
                 editorController.applyParagraphStyle(.monostyled, preset: typographyPreset)
             },
-            SlashCommandItem(id: "table", title: "Table Grid", subtitle: "2x2 structured table", icon: "tablecells", category: "Insert") {
+            SlashCommandItem(id: "table", title: "Table Grid", subtitle: "2x2 Markdown structured table", icon: "tablecells", category: "Structure") {
                 editorController.insertTable(rows: 2, cols: 2, preset: typographyPreset)
             },
-            SlashCommandItem(id: "photo", title: "Insert Photo", subtitle: "Embed image with thumbnail", icon: "photo.on.rectangle", category: "Media") {
+            SlashCommandItem(id: "photo", title: "Insert Photo", subtitle: "Attach image file directly", icon: "photo", category: "Media") {
                 choosePhotoOrVideo()
             },
-            SlashCommandItem(id: "file", title: "Attach File", subtitle: "Attach document or asset", icon: "paperclip", category: "Media") {
+            SlashCommandItem(id: "file", title: "Attach File", subtitle: "Attach document or asset", icon: "doc", category: "Media") {
                 attachGeneralFile()
             },
-            SlashCommandItem(id: "date", title: "Insert Date", subtitle: "Today's formatted date", icon: "calendar", category: "Stamp") {
-                let df = DateFormatter()
-                df.dateStyle = .medium
-                editorController.insertLink(url: URL(string: "https://pluto.local")!, title: df.string(from: Date()), preset: typographyPreset)
+            SlashCommandItem(id: "date", title: "Date Stamp", subtitle: "Insert today's formatted date", icon: "calendar", category: "Content") {
+                let formatter = DateFormatter()
+                formatter.dateStyle = .medium
+                formatter.timeStyle = .short
+                let dateStr = formatter.string(from: Date()) + " "
+                editorController.applyTextColor(.textColor)
             }
         ]
     }
@@ -206,7 +210,33 @@ struct BrainStormEditorView: View {
     // MARK: - Apple Notes Unified Top Toolbar
 
     private var appleNotesTopToolbar: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
+            
+            // Sidebar Toggle Button (Burger / Sidebar Leading)
+            if let onToggleSidebar = onToggleSidebar {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.18)) {
+                        onToggleSidebar()
+                    }
+                    Haptics.impact(.light)
+                } label: {
+                    Image(systemName: "sidebar.leading")
+                        .font(.system(size: 12.5, weight: .medium))
+                        .foregroundStyle(isSidebarVisible ? Color.white.opacity(0.85) : Color(red: 0.95, green: 0.75, blue: 0.25))
+                        .frame(width: 28, height: 26)
+                        .background(
+                            isSidebarVisible
+                                ? (hoveredTool == "sidebar" ? Color.white.opacity(0.12) : Color.white.opacity(0.06))
+                                : Color(red: 0.95, green: 0.75, blue: 0.25).opacity(0.18),
+                            in: RoundedRectangle(cornerRadius: 5)
+                        )
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(PlutoFastButtonStyle())
+                .onHover { h in hoveredTool = h ? "sidebar" : nil }
+                .help(isSidebarVisible ? "Hide Notes List (⌘\\)" : "Show Notes List (⌘\\)")
+                .keyboardShortcut("\\", modifiers: .command)
+            }
             
             // Left Group: Segmented Formatting Pill (Aa | ☑︎ | ⊞ | 📎 | 🔗)
             HStack(spacing: 0) {
