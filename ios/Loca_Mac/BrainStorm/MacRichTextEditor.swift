@@ -1034,9 +1034,9 @@ public final class LocaAppKitTextView: NSTextView {
                 if firstGlyph < layoutManager.numberOfGlyphs {
                     let lineRect = layoutManager.lineFragmentRect(forGlyphAt: firstGlyph, effectiveRange: nil)
                     
-                    let circleSize: CGFloat = 19.5
-                    let circleX: CGFloat = origin.x + 7.5
-                    let circleY: CGFloat = origin.y + lineRect.origin.y + (lineRect.height - circleSize) / 2 + 1
+                    let circleSize: CGFloat = 18.5
+                    let circleX: CGFloat = origin.x + 6.5
+                    let circleY: CGFloat = origin.y + lineRect.origin.y + (lineRect.height - circleSize) / 2
                     let circleRect = NSRect(x: circleX, y: circleY, width: circleSize, height: circleSize)
                     
                     NSGraphicsContext.saveGraphicsState()
@@ -1050,28 +1050,28 @@ public final class LocaAppKitTextView: NSTextView {
                         
                         // Crisp Checkmark ✓ Path inside circle
                         let checkmark = NSBezierPath()
-                        checkmark.lineWidth = 2.1
+                        checkmark.lineWidth = 2.0
                         checkmark.lineCapStyle = .round
                         checkmark.lineJoinStyle = .round
                         NSColor.black.withAlphaComponent(0.85).setStroke()
                         
                         let cx = circleRect.origin.x
                         let cy = circleRect.origin.y
-                        checkmark.move(to: NSPoint(x: cx + 4.8, y: cy + 9.6))
-                        checkmark.line(to: NSPoint(x: cx + 8.0, y: cy + 5.6))
-                        checkmark.line(to: NSPoint(x: cx + 14.4, y: cy + 13.6))
+                        checkmark.move(to: NSPoint(x: cx + 4.5, y: cy + 9.0))
+                        checkmark.line(to: NSPoint(x: cx + 7.5, y: cy + 5.2))
+                        checkmark.line(to: NSPoint(x: cx + 13.6, y: cy + 13.0))
                         checkmark.stroke()
                     } else {
                         let isHovered = hoveredCheckboxParaRange?.location == paraRange.location
                         let strokeColor = isHovered
                             ? NSColor(red: 0.96, green: 0.76, blue: 0.28, alpha: 0.95)
-                            : NSColor.white.withAlphaComponent(0.40)
+                            : NSColor.white.withAlphaComponent(0.38)
                         strokeColor.setStroke()
-                        circlePath.lineWidth = isHovered ? 2.0 : 1.6
+                        circlePath.lineWidth = isHovered ? 1.9 : 1.5
                         circlePath.stroke()
                         
                         if isHovered {
-                            NSColor(red: 0.96, green: 0.76, blue: 0.28, alpha: 0.15).setFill()
+                            NSColor(red: 0.96, green: 0.76, blue: 0.28, alpha: 0.14).setFill()
                             circlePath.fill()
                         }
                     }
