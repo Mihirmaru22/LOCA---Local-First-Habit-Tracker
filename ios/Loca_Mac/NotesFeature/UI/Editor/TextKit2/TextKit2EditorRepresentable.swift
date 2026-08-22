@@ -22,11 +22,18 @@ public final class NoteCanvasTextView: NSTextView {
         return super.becomeFirstResponder()
     }
     
+    public override func keyDown(with event: NSEvent) {
+        print("🔴 KEYDOWN REACHED APPKIT: \(event.characters ?? "")")
+        super.keyDown(with: event)
+    }
+    
     public override func mouseDown(with event: NSEvent) {
         // Ensure text view claims first responder status on click
         if window?.firstResponder != self {
             window?.makeFirstResponder(self)
         }
+        print("📍 MOUSE DOWN: window.firstResponder is \(String(describing: window?.firstResponder))")
+        print("📍 TYPING ATTRIBUTES: \(self.typingAttributes)")
         
         let point = convert(event.locationInWindow, from: nil)
         if let handler = onGutterClicked, handler(point) {
@@ -59,6 +66,7 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
     }
     
     public func makeNSView(context: Context) -> NSScrollView {
+        print("🔵 MAKE NSVIEW CALLED")
         let textContentStorage = NSTextContentStorage()
         let textLayoutManager = NSTextLayoutManager()
         textContentStorage.addTextLayoutManager(textLayoutManager)
@@ -135,6 +143,7 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
     }
     
     public func updateNSView(_ nsView: NSScrollView, context: Context) {
+        print("🟡 updateNSView CALLED: needsRemoteRefresh=\(state.needsRemoteRefresh)")
         guard let textView = context.coordinator.textView,
               let textContentStorage = context.coordinator.textContentStorage else { return }
         
@@ -180,6 +189,7 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         
         public func textView(_ textView: NSTextView, shouldChangeTextIn affectedCharRange: NSRange, replacementString: String?) -> Bool {
             let replacement = replacementString ?? ""
+            print("🔍 shouldChangeTextIn CALLED: range=\(affectedCharRange), replacement='\(replacement)'")
             
             if replacement == "\n" {
                 // Return key: Split block into two distinct blocks with new UUIDs
@@ -192,6 +202,7 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
                         textView.scrollRangeToVisible(NSRange(location: newCursorPos, length: 0))
                     }
                     parent.onKeystroke(parent.state.bridge.doc)
+                    print("🔴 DELEGATE RETURNING: false (Block Split Handled)")
                     return false
                 }
             }
@@ -208,6 +219,7 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
             parent.onKeystroke(parent.state.bridge.doc)
             
             // 3. Return true to let TextKit 2 apply edit to backing store natively with 0ms latency
+            print("🟢 DELEGATE RETURNING: true (Native Apply)")
             return true
         }
         
