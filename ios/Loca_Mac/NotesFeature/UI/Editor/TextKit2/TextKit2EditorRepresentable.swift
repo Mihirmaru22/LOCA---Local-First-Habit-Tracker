@@ -300,7 +300,7 @@ public final class EditorBridgeState: ObservableObject {
     
     public func updateSelection(_ newRange: NSRange) {
         self.currentSelection = newRange
-        bridge.clearStickyMarks()
+        bridge.selectionDidChange(to: newRange)
         refreshFormattingState()
     }
     

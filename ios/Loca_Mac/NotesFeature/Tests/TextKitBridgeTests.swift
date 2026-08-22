@@ -372,5 +372,40 @@ struct TextKitBridgeTests {
         #expect(targetBlock?.marks.first?.startIndex == 7)
         #expect(targetBlock?.marks.first?.endIndex == 13)
     }
+    
+    @Test func testConsecutiveTypingPreservesStickyMarksUntilCursorMoves() {
+        let noteID = NoteID()
+        let blockID = UUID()
+        
+        var doc = CRDTDoc(id: noteID, deviceID: "test-device")
+        doc.addBlock(CRDTBlock(id: blockID, type: "paragraph", text: CRDTText(string: "", deviceID: "test-device")))
+        
+        let bridge = TextKitCRDTBridge(doc: doc, deviceID: "test-device")
+        let state = EditorBridgeState(bridge: bridge)
+        
+        // Empty selection at index 0, toggle bold
+        state.updateSelection(NSRange(location: 0, length: 0))
+        state.toggleBold()
+        #expect(bridge.getStickyMarks().contains("bold"))
+        
+        // Type character 1 at 0
+        bridge.insertText("A", at: 0)
+        state.updateSelection(NSRange(location: 1, length: 0))
+        #expect(bridge.getStickyMarks().contains("bold"))
+        
+        // Type character 2 at 1
+        bridge.insertText("B", at: 1)
+        state.updateSelection(NSRange(location: 2, length: 0))
+        #expect(bridge.getStickyMarks().contains("bold"))
+        
+        // Type character 3 at 2
+        bridge.insertText("C", at: 2)
+        state.updateSelection(NSRange(location: 3, length: 0))
+        #expect(bridge.getStickyMarks().contains("bold"))
+        
+        // Move cursor to 0 (non-consecutive)
+        state.updateSelection(NSRange(location: 0, length: 0))
+        #expect(bridge.getStickyMarks().isEmpty)
+    }
 }
 #endif

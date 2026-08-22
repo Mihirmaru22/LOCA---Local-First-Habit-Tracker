@@ -45,8 +45,10 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
     // Cached map of block ID to its global NSRange in the rendered attributed string
     public private(set) var blockRanges: [UUID: NSRange] = [:]
     
-    // Sticky marks for empty selection typing
+    // Sticky marks for empty selection typing with consecutive progression detection
     private var stickyMarks: Set<String> = []
+    private var lastInsertionLocation: Int = -1
+    private var lastInsertionTime: Date = Date.distantPast
     
     public init(doc: CRDTDoc, deviceID: String = "local-device") {
         self.doc = doc
@@ -59,6 +61,7 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         self.stickyMarks = marks
+        self.lastInsertionLocation = -1
         print("🔧 STICKY MARKS SET: \(marks)")
     }
     
@@ -72,6 +75,21 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         self.stickyMarks.removeAll()
+        self.lastInsertionLocation = -1
+    }
+    
+    public func selectionDidChange(to range: NSRange) {
+        lock.lock()
+        defer { lock.unlock() }
+        
+        // Only clear sticky marks if cursor moved away from consecutive typing progression
+        if range.location != lastInsertionLocation {
+            if !stickyMarks.isEmpty {
+                print("🔧 CLEARING STICKY MARKS (cursor moved to \(range.location), expected \(lastInsertionLocation))")
+                stickyMarks.removeAll()
+                lastInsertionLocation = -1
+            }
+        }
     }
     
     // MARK: - Block Range Resolution
@@ -115,6 +133,10 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
             }
             print("🔧 APPLIED STICKY MARKS \(stickyMarks) to range \(range)")
         }
+        
+        // Update tracking for consecutive detection
+        lastInsertionLocation = globalLocation + text.count
+        lastInsertionTime = Date()
     }
     
     /// Deletes text at a global character location.
@@ -132,6 +154,8 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
             }
             doc.deleteText(at: target.relativeIndex, length: length, in: target.block.id)
         }
+        
+        lastInsertionLocation = globalLocation
     }
     
     /// Splits the current block on Return keypress.
@@ -165,6 +189,7 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
         )
         
         doc.insertBlock(newBlock, afterBlockID: target.block.id)
+        lastInsertionLocation = globalLocation + 1
         return newBlockID
     }
     
@@ -228,6 +253,7 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
             } else {
                 stickyMarks.insert(type)
             }
+            lastInsertionLocation = globalRange.location
             print("🔧 STICKY MARKS NOW: \(stickyMarks)")
         }
     }
@@ -302,20 +328,26 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
             return
         }
         
-        let currentType = blockType(for: target.block)
-        print("🔧 BEFORE: block type = \(currentType)")
+        guard let idx = doc.blocks.firstIndex(where: { $0.id == target.block.id }) else { return }
+        let currentBlock = doc.blocks[idx]
+        let currentType = blockType(for: currentBlock)
+        print("🔧 BEFORE: block[\(idx)].type = \(currentBlock.type)")
         
-        let destination: EditorBlockType = (currentType == targetType) ? .paragraph : targetType
-        let raw = destination.rawBlockType
+        let (rawType, rawAttributes) = targetType.rawBlockType
         
-        if let idx = doc.blocks.firstIndex(where: { $0.id == target.block.id }) {
-            doc.blocks[idx].type = raw.type
-            doc.blocks[idx].attributes = raw.attributes
-            doc.blocks[idx].lastModified = Date().timeIntervalSince1970
-            _ = doc.vectorClock.increment(for: deviceID)
-            print("🔧 AFTER: block[\(idx)].type = \(doc.blocks[idx].type)")
-            print("🔧 CRDT DOC UPDATED: \(doc.blocks.count) blocks")
+        if currentType == targetType {
+            doc.blocks[idx].type = "paragraph"
+            doc.blocks[idx].attributes = [:]
+            print("🔧 REVERTING to paragraph")
+        } else {
+            doc.blocks[idx].type = rawType
+            doc.blocks[idx].attributes = rawAttributes
+            print("🔧 SETTING to \(rawType) with attributes \(rawAttributes)")
         }
+        
+        doc.blocks[idx].lastModified = Date().timeIntervalSince1970
+        _ = doc.vectorClock.increment(for: deviceID)
+        print("🔧 AFTER: block[\(idx)].type = \(doc.blocks[idx].type)")
     }
     
     public func toggleChecklist(at globalLocation: Int) {
