@@ -696,6 +696,8 @@ public final class LocaAppKitTextView: NSTextView {
                     let pStyle = RichTextTypography.makeParagraphStyle(for: .checklist, preset: currentPreset)
                     let updatedRange = (textStorage.string as NSString).paragraphRange(for: NSRange(location: paragraphRange.location, length: 0))
                     textStorage.addAttribute(.paragraphStyle, value: pStyle, range: updatedRange)
+                    textStorage.addAttribute(.noteChecklistState, value: ChecklistState.unchecked.rawValue, range: updatedRange)
+                    textStorage.addAttribute(.foregroundColor, value: NSColor.clear, range: NSRange(location: paragraphRange.location, length: (glyph as NSString).length))
                     self.typingAttributes = RichTextTypography.defaultAttributes(for: .checklist, preset: currentPreset)
                     textStorage.endEditing()
                     self.setSelectedRange(NSRange(location: paragraphRange.location + glyph.count, length: 0))
@@ -755,7 +757,8 @@ public final class LocaAppKitTextView: NSTextView {
                 let checklistAttr = NSAttributedString(string: prefix, attributes: [
                     .font: font,
                     .paragraphStyle: pStyle,
-                    .foregroundColor: NSColor.textColor
+                    .noteChecklistState: ChecklistState.unchecked.rawValue,
+                    .foregroundColor: NSColor.clear
                 ])
                 let newLocation = self.selectedRange().location
                 textStorage.insert(checklistAttr, at: newLocation)
@@ -1120,6 +1123,7 @@ public final class LocaAppKitTextView: NSTextView {
                             let textLen = updatedParaRange.length - prefixLen
                             
                             textStorage.addAttribute(.noteChecklistState, value: ChecklistState.checked.rawValue, range: updatedParaRange)
+                            textStorage.addAttribute(.foregroundColor, value: NSColor.clear, range: NSRange(location: updatedParaRange.location, length: prefixLen))
                             textStorage.removeAttribute(.strikethroughStyle, range: updatedParaRange)
                             
                             let textSnippet = (textStorage.string as NSString).substring(with: NSRange(location: updatedParaRange.location + prefixLen, length: max(0, textLen))).trimmingCharacters(in: .whitespacesAndNewlines)
@@ -1141,9 +1145,13 @@ public final class LocaAppKitTextView: NSTextView {
                             textStorage.replaceCharacters(in: glyphRange, with: RichTextTypography.checklistUncheckedGlyph)
                             
                             let updatedParaRange = (textStorage.string as NSString).paragraphRange(for: NSRange(location: paragraphRange.location, length: 0))
+                            let prefixLen = (RichTextTypography.checklistUncheckedGlyph as NSString).length
+                            let textLen = updatedParaRange.length - prefixLen
+                            
                             textStorage.addAttribute(.noteChecklistState, value: ChecklistState.unchecked.rawValue, range: updatedParaRange)
                             textStorage.removeAttribute(.strikethroughStyle, range: updatedParaRange)
-                            textStorage.addAttribute(.foregroundColor, value: NSColor.textColor, range: updatedParaRange)
+                            textStorage.addAttribute(.foregroundColor, value: NSColor.textColor, range: NSRange(location: updatedParaRange.location + prefixLen, length: max(0, textLen)))
+                            textStorage.addAttribute(.foregroundColor, value: NSColor.clear, range: NSRange(location: updatedParaRange.location, length: prefixLen))
                             textStorage.endEditing()
                             self.setNeedsDisplay(self.bounds)
                             self.didChangeText()

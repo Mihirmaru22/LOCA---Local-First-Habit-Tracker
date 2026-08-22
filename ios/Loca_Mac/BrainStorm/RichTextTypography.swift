@@ -252,7 +252,8 @@ public struct RichTextTypography {
             let textLen = updatedParaRange.length - prefixLen
             
             textStorage.addAttribute(.noteChecklistState, value: ChecklistState.checked.rawValue, range: updatedParaRange)
-            // Remove strikethrough from the entire paragraph first (glyph never has strike)
+            // Make prefix text character invisible so only vector badge renders
+            textStorage.addAttribute(.foregroundColor, value: NSColor.clear, range: NSRange(location: updatedParaRange.location, length: prefixLen))
             textStorage.removeAttribute(.strikethroughStyle, range: updatedParaRange)
             
             let textSnippet = (textStorage.string as NSString).substring(with: NSRange(location: updatedParaRange.location + prefixLen, length: max(0, textLen))).trimmingCharacters(in: .whitespacesAndNewlines)
@@ -279,9 +280,12 @@ public struct RichTextTypography {
             
             let updatedRange = NSRange(location: paragraphRange.location, length: (newParaText as NSString).length)
             let pStyle = makeParagraphStyle(for: .checklist)
+            let prefixLen = (checklistUncheckedGlyph as NSString).length
             textStorage.addAttribute(.paragraphStyle, value: pStyle, range: updatedRange)
             textStorage.addAttribute(.noteChecklistState, value: ChecklistState.unchecked.rawValue, range: updatedRange)
-            newSelectedRange = NSRange(location: selectedRange.location + (checklistUncheckedGlyph as NSString).length, length: selectedRange.length)
+            // Make prefix text character invisible so only vector badge renders
+            textStorage.addAttribute(.foregroundColor, value: NSColor.clear, range: NSRange(location: paragraphRange.location, length: prefixLen))
+            newSelectedRange = NSRange(location: selectedRange.location + prefixLen, length: selectedRange.length)
         }
         
         textStorage.endEditing()
