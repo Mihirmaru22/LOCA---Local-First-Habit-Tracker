@@ -365,6 +365,27 @@ public struct MacRichTextEditor: NSViewRepresentable {
         self.onTextChangeDebounced = onTextChangeDebounced
         self.onSlashTriggered = onSlashTriggered
     }
+
+    public init(
+        attributedText: Binding<NSAttributedString>,
+        plainText: Binding<String>,
+        preset: TypographyPreset = .standard,
+        isEditable: Bool = true,
+        controller: RichTextEditorController? = nil,
+        onTextChange: ((NSAttributedString, String) -> Void)? = nil
+    ) {
+        self.initialAttributedText = attributedText.wrappedValue
+        self.initialPlainText = plainText.wrappedValue
+        self.preset = preset
+        self.isEditable = isEditable
+        self.controller = controller
+        self.onTextChangeDebounced = { attr, plain in
+            attributedText.wrappedValue = attr
+            plainText.wrappedValue = plain
+            onTextChange?(attr, plain)
+        }
+        self.onSlashTriggered = nil
+    }
     
     public func makeCoordinator() -> Coordinator {
         Coordinator(self)
