@@ -279,9 +279,33 @@ public struct RichTextTypography {
         textStorage.endEditing()
     }
     
-    // MARK: Highlight Marker
+    // MARK: Highlight Marker (Apple Notes 5-Color Palette)
     
-    public static func toggleHighlight(in textStorage: NSMutableAttributedString, range: NSRange) {
+    public enum NoteHighlightColor: String, CaseIterable, Identifiable, Codable {
+        case amber = "Amber Gold"
+        case emerald = "Emerald Mint"
+        case cyan = "Cyan Sky"
+        case violet = "Iris Violet"
+        case pink = "Coral Pink"
+        
+        public var id: String { rawValue }
+        
+        public var color: NSColor {
+            switch self {
+            case .amber:   return NSColor(red: 1.0, green: 0.84, blue: 0.04, alpha: 0.38)
+            case .emerald: return NSColor(red: 0.20, green: 0.78, blue: 0.35, alpha: 0.38)
+            case .cyan:    return NSColor(red: 0.0, green: 0.78, blue: 0.75, alpha: 0.38)
+            case .violet:  return NSColor(red: 0.69, green: 0.32, blue: 0.87, alpha: 0.38)
+            case .pink:    return NSColor(red: 1.0, green: 0.18, blue: 0.33, alpha: 0.38)
+            }
+        }
+        
+        public var swiftUIColor: SwiftUI.Color {
+            SwiftUI.Color(nsColor: color.withAlphaComponent(1.0))
+        }
+    }
+    
+    public static func toggleHighlight(in textStorage: NSMutableAttributedString, range: NSRange, color: NoteHighlightColor = .amber) {
         guard range.length > 0 else { return }
         textStorage.beginEditing()
         var allHighlighted = true
@@ -297,9 +321,34 @@ public struct RichTextTypography {
         if allHighlighted {
             textStorage.removeAttribute(.backgroundColor, range: range)
         } else {
-            let highlightColor = NSColor.systemYellow.withAlphaComponent(0.35)
-            textStorage.addAttribute(.backgroundColor, value: highlightColor, range: range)
+            textStorage.addAttribute(.backgroundColor, value: color.color, range: range)
         }
+        textStorage.endEditing()
+    }
+    
+    // MARK: Real NSTextAttachment Inline Images
+    
+    public static func insertImageAttachment(image: NSImage, in textStorage: NSMutableAttributedString, at location: Int, maxDisplayWidth: CGFloat = 520) {
+        let attachment = NSTextAttachment()
+        
+        var targetSize = image.size
+        if targetSize.width > maxDisplayWidth && targetSize.width > 0 {
+            let ratio = maxDisplayWidth / targetSize.width
+            targetSize = NSSize(width: maxDisplayWidth, height: targetSize.height * ratio)
+        }
+        
+        let cell = NSTextAttachmentCell(imageCell: image)
+        cell.image = image
+        attachment.attachmentCell = cell
+        
+        let attr = NSMutableAttributedString(string: "\n")
+        let imageAttr = NSAttributedString(attachment: attachment)
+        attr.append(imageAttr)
+        attr.append(NSAttributedString(string: "\n"))
+        
+        textStorage.beginEditing()
+        let safeLocation = min(location, textStorage.length)
+        textStorage.insert(attr, at: safeLocation)
         textStorage.endEditing()
     }
     

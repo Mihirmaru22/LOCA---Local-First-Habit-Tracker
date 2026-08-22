@@ -8,6 +8,7 @@ import Combine
 public final class RichTextEditorController: ObservableObject {
     public weak var textView: LocaAppKitTextView?
     public var onTextChange: ((NSAttributedString, String) -> Void)?
+    public var onSlashTriggered: ((CGPoint) -> Void)?
     
     // Live Active Formatting States (Observed by Aa Popover & Toolbar)
     @Published public var activeParagraphStyle: NoteParagraphStyle = .body
@@ -198,11 +199,11 @@ public final class RichTextEditorController: ObservableObject {
         }
     }
     
-    public func toggleHighlight() {
+    public func toggleHighlight(color: RichTextTypography.NoteHighlightColor = .amber) {
         guard let textView = textView, let textStorage = textView.textStorage else { return }
         let selectedRange = textView.selectedRange()
         if selectedRange.length > 0 {
-            RichTextTypography.toggleHighlight(in: textStorage, range: selectedRange)
+            RichTextTypography.toggleHighlight(in: textStorage, range: selectedRange, color: color)
             textView.didChangeText()
             updateActiveStates(immediate: true)
             onTextChange?(NSAttributedString(attributedString: textStorage), textStorage.string)
@@ -212,7 +213,7 @@ public final class RichTextEditorController: ObservableObject {
                 textView.typingAttributes.removeValue(forKey: .backgroundColor)
                 isHighlighted = false
             } else {
-                textView.typingAttributes[.backgroundColor] = NSColor.systemYellow.withAlphaComponent(0.35)
+                textView.typingAttributes[.backgroundColor] = color.color
                 isHighlighted = true
             }
         }
@@ -239,6 +240,14 @@ public final class RichTextEditorController: ObservableObject {
         textView.setSelectedRange(newRange)
         textView.didChangeText()
         updateActiveStates(immediate: true)
+        onTextChange?(NSAttributedString(attributedString: textStorage), textStorage.string)
+    }
+    
+    public func insertImage(image: NSImage) {
+        guard let textView = textView, let textStorage = textView.textStorage else { return }
+        let location = textView.selectedRange().location
+        RichTextTypography.insertImageAttachment(image: image, in: textStorage, at: location)
+        textView.didChangeText()
         onTextChange?(NSAttributedString(attributedString: textStorage), textStorage.string)
     }
     
@@ -285,6 +294,46 @@ public final class RichTextEditorController: ObservableObject {
         textView.didChangeText()
         onTextChange?(NSAttributedString(attributedString: textStorage), textStorage.string)
     }
+    
+    // MARK: - In-Note Search Navigation
+    
+    public func jumpToNextMatch(query: String) {
+        guard let textView = textView, let textStorage = textView.textStorage, !query.isEmpty else { return }
+        let currentPos = textView.selectedRange().location + textView.selectedRange().length
+        let fullString = textStorage.string as NSString
+        let searchRange = NSRange(location: currentPos < fullString.length ? currentPos : 0, length: currentPos < fullString.length ? fullString.length - currentPos : fullString.length)
+        
+        var foundRange = fullString.range(of: query, options: .caseInsensitive, range: searchRange)
+        if foundRange.location == NSNotFound && currentPos > 0 {
+            // Wrap around
+            foundRange = fullString.range(of: query, options: .caseInsensitive, range: NSRange(location: 0, length: fullString.length))
+        }
+        
+        if foundRange.location != NSNotFound {
+            textView.setSelectedRange(foundRange)
+            textView.scrollRangeToVisible(foundRange)
+            textView.showFindIndicator(for: foundRange)
+        }
+    }
+    
+    public func jumpToPreviousMatch(query: String) {
+        guard let textView = textView, let textStorage = textView.textStorage, !query.isEmpty else { return }
+        let currentPos = textView.selectedRange().location
+        let fullString = textStorage.string as NSString
+        let searchRange = NSRange(location: 0, length: min(currentPos, fullString.length))
+        
+        var foundRange = fullString.range(of: query, options: [.caseInsensitive, .backwards], range: searchRange)
+        if foundRange.location == NSNotFound {
+            // Wrap to end
+            foundRange = fullString.range(of: query, options: [.caseInsensitive, .backwards], range: NSRange(location: 0, length: fullString.length))
+        }
+        
+        if foundRange.location != NSNotFound {
+            textView.setSelectedRange(foundRange)
+            textView.scrollRangeToVisible(foundRange)
+            textView.showFindIndicator(for: foundRange)
+        }
+    }
 }
 
 // MARK: - MacRichTextEditor (AppKit NSTextView Wrapper with 120Hz Decoupled Pipeline)
@@ -297,6 +346,7 @@ public struct MacRichTextEditor: NSViewRepresentable {
     var isEditable: Bool = true
     var controller: RichTextEditorController? = nil
     var onTextChangeDebounced: ((NSAttributedString, String) -> Void)? = nil
+    var onSlashTriggered: ((CGPoint) -> Void)? = nil
     
     public init(
         initialAttributedText: NSAttributedString,
@@ -304,7 +354,8 @@ public struct MacRichTextEditor: NSViewRepresentable {
         preset: TypographyPreset = .standard,
         isEditable: Bool = true,
         controller: RichTextEditorController? = nil,
-        onTextChangeDebounced: ((NSAttributedString, String) -> Void)? = nil
+        onTextChangeDebounced: ((NSAttributedString, String) -> Void)? = nil,
+        onSlashTriggered: ((CGPoint) -> Void)? = nil
     ) {
         self.initialAttributedText = initialAttributedText
         self.initialPlainText = initialPlainText
@@ -312,6 +363,7 @@ public struct MacRichTextEditor: NSViewRepresentable {
         self.isEditable = isEditable
         self.controller = controller
         self.onTextChangeDebounced = onTextChangeDebounced
+        self.onSlashTriggered = onSlashTriggered
     }
     
     public func makeCoordinator() -> Coordinator {
@@ -352,9 +404,13 @@ public struct MacRichTextEditor: NSViewRepresentable {
         textView.isSelectable = true
         textView.delegate = context.coordinator
         
+        // Drag & Drop
+        textView.registerForDraggedTypes([.fileURL, .png, .tiff, .string])
+        
         // Native Apple Notes Insets & Caret
         textView.textContainerInset = NSSize(width: 32, height: 20)
         textView.insertionPointColor = NSColor(red: 0.96, green: 0.65, blue: 0.18, alpha: 1.0)
+        textView.currentPreset = preset
         
         // Default typing attributes
         textView.typingAttributes = RichTextTypography.defaultAttributes(for: .body, preset: preset)
@@ -371,6 +427,7 @@ public struct MacRichTextEditor: NSViewRepresentable {
         if let ctrl = controller {
             ctrl.textView = textView
             ctrl.onTextChange = onTextChangeDebounced
+            ctrl.onSlashTriggered = onSlashTriggered
             ctrl.updateActiveStates(immediate: true)
         }
         
@@ -382,9 +439,11 @@ public struct MacRichTextEditor: NSViewRepresentable {
         guard let textView = nsView.documentView as? LocaAppKitTextView else { return }
         
         context.coordinator.parent = self
+        textView.currentPreset = preset
         if let ctrl = controller {
             ctrl.textView = textView
             ctrl.onTextChange = onTextChangeDebounced
+            ctrl.onSlashTriggered = onSlashTriggered
         }
         
         textView.isEditable = isEditable
@@ -425,16 +484,130 @@ public struct MacRichTextEditor: NSViewRepresentable {
     }
 }
 
-// MARK: - LocaAppKitTextView (Subclass for Apple Notes Smart Mechanics & Zero Latency)
+// MARK: - LocaAppKitTextView (Subclass for Apple Notes Smart Mechanics, Line Swapping & Drag-Drop)
 
 public final class LocaAppKitTextView: NSTextView {
     
     public var currentPreset: TypographyPreset = .standard
+    public var onSlashRequested: ((CGPoint) -> Void)?
+    
+    // MARK: - Drag & Drop Operations (Images & Files from Finder)
+    
+    public override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        if sender.draggingPasteboard.canReadItem(withDataConformingToTypes: ["public.file-url", "public.image"]) {
+            return .copy
+        }
+        return super.draggingEntered(sender)
+    }
+    
+    public override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        let pboard = sender.draggingPasteboard
+        
+        // 1. Image Files
+        if let urls = pboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL], let firstURL = urls.first {
+            if let image = NSImage(contentsOf: firstURL) {
+                let point = convert(sender.draggingLocation, from: nil)
+                if let layoutManager = self.layoutManager, let textContainer = self.textContainer, let textStorage = self.textStorage {
+                    let glyph = layoutManager.glyphIndex(for: point, in: textContainer)
+                    let charIndex = layoutManager.characterIndexForGlyph(at: glyph)
+                    RichTextTypography.insertImageAttachment(image: image, in: textStorage, at: charIndex)
+                    self.didChangeText()
+                    Haptics.notify(.success)
+                    return true
+                }
+            }
+        }
+        
+        // 2. Direct Image Objects
+        if let images = pboard.readObjects(forClasses: [NSImage.self], options: nil) as? [NSImage], let firstImage = images.first {
+            if let textStorage = self.textStorage {
+                let location = self.selectedRange().location
+                RichTextTypography.insertImageAttachment(image: firstImage, in: textStorage, at: location)
+                self.didChangeText()
+                Haptics.notify(.success)
+                return true
+            }
+        }
+        
+        return super.performDragOperation(sender)
+    }
+    
+    // MARK: - Line Reordering Handlers (⌥↑ / ⌥↓)
+    
+    public override func keyDown(with event: NSEvent) {
+        if event.modifierFlags.contains(.option) {
+            if event.keyCode == 126 { // Option + Up Arrow
+                moveParagraphUp()
+                return
+            } else if event.keyCode == 125 { // Option + Down Arrow
+                moveParagraphDown()
+                return
+            }
+        }
+        super.keyDown(with: event)
+    }
+    
+    public func moveParagraphUp() {
+        guard let textStorage = self.textStorage else { return }
+        let string = textStorage.string as NSString
+        let selectedRange = self.selectedRange()
+        let currentParaRange = string.paragraphRange(for: selectedRange)
+        
+        guard currentParaRange.location > 0 else { return }
+        
+        let prevParaRange = string.paragraphRange(for: NSRange(location: currentParaRange.location - 1, length: 0))
+        
+        textStorage.beginEditing()
+        let currentAttr = textStorage.attributedSubstring(from: currentParaRange)
+        let prevAttr = textStorage.attributedSubstring(from: prevParaRange)
+        
+        let combinedRange = NSRange(location: prevParaRange.location, length: prevParaRange.length + currentParaRange.length)
+        let swapped = NSMutableAttributedString(attributedString: currentAttr)
+        swapped.append(prevAttr)
+        
+        textStorage.replaceCharacters(in: combinedRange, with: swapped)
+        textStorage.endEditing()
+        
+        let relativeOffset = selectedRange.location - currentParaRange.location
+        let newLocation = prevParaRange.location + relativeOffset
+        self.setSelectedRange(NSRange(location: min(newLocation, textStorage.length), length: selectedRange.length))
+        self.didChangeText()
+        Haptics.impact(.light)
+    }
+    
+    public func moveParagraphDown() {
+        guard let textStorage = self.textStorage else { return }
+        let string = textStorage.string as NSString
+        let selectedRange = self.selectedRange()
+        let currentParaRange = string.paragraphRange(for: selectedRange)
+        let nextLocation = currentParaRange.location + currentParaRange.length
+        
+        guard nextLocation < string.length else { return }
+        
+        let nextParaRange = string.paragraphRange(for: NSRange(location: nextLocation, length: 0))
+        
+        textStorage.beginEditing()
+        let currentAttr = textStorage.attributedSubstring(from: currentParaRange)
+        let nextAttr = textStorage.attributedSubstring(from: nextParaRange)
+        
+        let combinedRange = NSRange(location: currentParaRange.location, length: currentParaRange.length + nextParaRange.length)
+        let swapped = NSMutableAttributedString(attributedString: nextAttr)
+        swapped.append(currentAttr)
+        
+        textStorage.replaceCharacters(in: combinedRange, with: swapped)
+        textStorage.endEditing()
+        
+        let relativeOffset = selectedRange.location - currentParaRange.location
+        let newLocation = currentParaRange.location + nextParaRange.length + relativeOffset
+        self.setSelectedRange(NSRange(location: min(newLocation, textStorage.length), length: selectedRange.length))
+        self.didChangeText()
+        Haptics.impact(.light)
+    }
     
     // MARK: - Smart Markdown Trigger on Type (e.g. '# ', '- ', '1. ', '[] ')
     
     public override func shouldChangeText(in affectedCharRange: NSRange, replacementString: String?) -> Bool {
-        guard let rep = replacementString, rep == " ", let textStorage = self.textStorage else {
+        guard let rep = replacementString, let textStorage = self.textStorage else {
             return super.shouldChangeText(in: affectedCharRange, replacementString: replacementString)
         }
         
@@ -442,79 +615,81 @@ public final class LocaAppKitTextView: NSTextView {
         let paragraphRange = string.paragraphRange(for: affectedCharRange)
         let prefixLength = affectedCharRange.location - paragraphRange.location
         
-        if prefixLength > 0 && prefixLength <= 6 {
-            let typedPrefix = string.substring(with: NSRange(location: paragraphRange.location, length: prefixLength))
-            
-            // 1. Title (# )
-            if typedPrefix == "#" {
-                textStorage.beginEditing()
-                textStorage.replaceCharacters(in: NSRange(location: paragraphRange.location, length: prefixLength), with: "")
-                RichTextTypography.applyParagraphStyle(.title, to: textStorage, range: NSRange(location: paragraphRange.location, length: 0), preset: currentPreset)
-                self.typingAttributes = RichTextTypography.defaultAttributes(for: .title, preset: currentPreset)
-                textStorage.endEditing()
-                self.setSelectedRange(NSRange(location: paragraphRange.location, length: 0))
-                self.didChangeText()
-                return false
-            }
-            
-            // 2. Heading (## )
-            if typedPrefix == "##" {
-                textStorage.beginEditing()
-                textStorage.replaceCharacters(in: NSRange(location: paragraphRange.location, length: prefixLength), with: "")
-                RichTextTypography.applyParagraphStyle(.heading, to: textStorage, range: NSRange(location: paragraphRange.location, length: 0), preset: currentPreset)
-                self.typingAttributes = RichTextTypography.defaultAttributes(for: .heading, preset: currentPreset)
-                textStorage.endEditing()
-                self.setSelectedRange(NSRange(location: paragraphRange.location, length: 0))
-                self.didChangeText()
-                return false
-            }
-            
-            // 3. Subheading (### )
-            if typedPrefix == "###" {
-                textStorage.beginEditing()
-                textStorage.replaceCharacters(in: NSRange(location: paragraphRange.location, length: prefixLength), with: "")
-                RichTextTypography.applyParagraphStyle(.subheading, to: textStorage, range: NSRange(location: paragraphRange.location, length: 0), preset: currentPreset)
-                self.typingAttributes = RichTextTypography.defaultAttributes(for: .subheading, preset: currentPreset)
-                textStorage.endEditing()
-                self.setSelectedRange(NSRange(location: paragraphRange.location, length: 0))
-                self.didChangeText()
-                return false
-            }
-            
-            // 4. Bullet List (- or *)
-            if typedPrefix == "-" || typedPrefix == "*" {
-                textStorage.beginEditing()
-                textStorage.replaceCharacters(in: NSRange(location: paragraphRange.location, length: prefixLength), with: "• ")
-                RichTextTypography.applyParagraphStyle(.bulletedList, to: textStorage, range: NSRange(location: paragraphRange.location, length: 2), preset: currentPreset)
-                self.typingAttributes = RichTextTypography.defaultAttributes(for: .bulletedList, preset: currentPreset)
-                textStorage.endEditing()
-                self.setSelectedRange(NSRange(location: paragraphRange.location + 2, length: 0))
-                self.didChangeText()
-                return false
-            }
-            
-            // 5. Checklist ([] or [ ])
-            if typedPrefix == "[]" || typedPrefix == "[ ]" {
-                let glyph = RichTextTypography.checklistUncheckedGlyph
-                textStorage.beginEditing()
-                textStorage.replaceCharacters(in: NSRange(location: paragraphRange.location, length: prefixLength), with: glyph)
-                self.typingAttributes = RichTextTypography.defaultAttributes(for: .body, preset: currentPreset)
-                textStorage.endEditing()
-                self.setSelectedRange(NSRange(location: paragraphRange.location + glyph.count, length: 0))
-                self.didChangeText()
-                return false
-            }
-            
-            // 6. Blockquote (> )
-            if typedPrefix == ">" {
-                textStorage.beginEditing()
-                textStorage.replaceCharacters(in: NSRange(location: paragraphRange.location, length: prefixLength), with: "")
-                RichTextTypography.applyParagraphStyle(.quote, to: textStorage, range: NSRange(location: paragraphRange.location, length: 0), preset: currentPreset)
-                self.typingAttributes = RichTextTypography.defaultAttributes(for: .quote, preset: currentPreset)
-                textStorage.endEditing()
-                self.setSelectedRange(NSRange(location: paragraphRange.location, length: 0))
-                self.didChangeText()
-                return false
+        if rep == " " {
+            if prefixLength > 0 && prefixLength <= 6 {
+                let typedPrefix = string.substring(with: NSRange(location: paragraphRange.location, length: prefixLength))
+                
+                // 1. Title (# )
+                if typedPrefix == "#" {
+                    textStorage.beginEditing()
+                    textStorage.replaceCharacters(in: NSRange(location: paragraphRange.location, length: prefixLength), with: "")
+                    RichTextTypography.applyParagraphStyle(.title, to: textStorage, range: NSRange(location: paragraphRange.location, length: 0), preset: currentPreset)
+                    self.typingAttributes = RichTextTypography.defaultAttributes(for: .title, preset: currentPreset)
+                    textStorage.endEditing()
+                    self.setSelectedRange(NSRange(location: paragraphRange.location, length: 0))
+                    self.didChangeText()
+                    return false
+                }
+                
+                // 2. Heading (## )
+                if typedPrefix == "##" {
+                    textStorage.beginEditing()
+                    textStorage.replaceCharacters(in: NSRange(location: paragraphRange.location, length: prefixLength), with: "")
+                    RichTextTypography.applyParagraphStyle(.heading, to: textStorage, range: NSRange(location: paragraphRange.location, length: 0), preset: currentPreset)
+                    self.typingAttributes = RichTextTypography.defaultAttributes(for: .heading, preset: currentPreset)
+                    textStorage.endEditing()
+                    self.setSelectedRange(NSRange(location: paragraphRange.location, length: 0))
+                    self.didChangeText()
+                    return false
+                }
+                
+                // 3. Subheading (### )
+                if typedPrefix == "###" {
+                    textStorage.beginEditing()
+                    textStorage.replaceCharacters(in: NSRange(location: paragraphRange.location, length: prefixLength), with: "")
+                    RichTextTypography.applyParagraphStyle(.subheading, to: textStorage, range: NSRange(location: paragraphRange.location, length: 0), preset: currentPreset)
+                    self.typingAttributes = RichTextTypography.defaultAttributes(for: .subheading, preset: currentPreset)
+                    textStorage.endEditing()
+                    self.setSelectedRange(NSRange(location: paragraphRange.location, length: 0))
+                    self.didChangeText()
+                    return false
+                }
+                
+                // 4. Bullet List (- or *)
+                if typedPrefix == "-" || typedPrefix == "*" {
+                    textStorage.beginEditing()
+                    textStorage.replaceCharacters(in: NSRange(location: paragraphRange.location, length: prefixLength), with: "• ")
+                    RichTextTypography.applyParagraphStyle(.bulletedList, to: textStorage, range: NSRange(location: paragraphRange.location, length: 2), preset: currentPreset)
+                    self.typingAttributes = RichTextTypography.defaultAttributes(for: .bulletedList, preset: currentPreset)
+                    textStorage.endEditing()
+                    self.setSelectedRange(NSRange(location: paragraphRange.location + 2, length: 0))
+                    self.didChangeText()
+                    return false
+                }
+                
+                // 5. Checklist ([] or [ ])
+                if typedPrefix == "[]" || typedPrefix == "[ ]" {
+                    let glyph = RichTextTypography.checklistUncheckedGlyph
+                    textStorage.beginEditing()
+                    textStorage.replaceCharacters(in: NSRange(location: paragraphRange.location, length: prefixLength), with: glyph)
+                    self.typingAttributes = RichTextTypography.defaultAttributes(for: .body, preset: currentPreset)
+                    textStorage.endEditing()
+                    self.setSelectedRange(NSRange(location: paragraphRange.location + glyph.count, length: 0))
+                    self.didChangeText()
+                    return false
+                }
+                
+                // 6. Blockquote (> )
+                if typedPrefix == ">" {
+                    textStorage.beginEditing()
+                    textStorage.replaceCharacters(in: NSRange(location: paragraphRange.location, length: prefixLength), with: "")
+                    RichTextTypography.applyParagraphStyle(.quote, to: textStorage, range: NSRange(location: paragraphRange.location, length: 0), preset: currentPreset)
+                    self.typingAttributes = RichTextTypography.defaultAttributes(for: .quote, preset: currentPreset)
+                    textStorage.endEditing()
+                    self.setSelectedRange(NSRange(location: paragraphRange.location, length: 0))
+                    self.didChangeText()
+                    return false
+                }
             }
         }
         
@@ -543,7 +718,6 @@ public final class LocaAppKitTextView: NSTextView {
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             
             if contentInLine.isEmpty {
-                // Empty item -> Clear checklist prefix and revert to normal body
                 textStorage.replaceCharacters(in: paragraphRange, with: "\n")
                 self.setSelectedRange(NSRange(location: paragraphRange.location, length: 0))
                 self.didChangeText()

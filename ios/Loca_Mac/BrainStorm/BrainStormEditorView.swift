@@ -30,6 +30,8 @@ struct BrainStormEditorView: View {
     @State private var isShowingAaPopover: Bool = false
     @State private var isShowingAttachPopover: Bool = false
     @State private var isShowingLinkModal: Bool = false
+    @State private var isShowingSlashMenu: Bool = false
+    @State private var selectedHighlightColor: RichTextTypography.NoteHighlightColor = .amber
     @State private var linkURLString: String = ""
     @State private var linkDisplayText: String = ""
     
@@ -43,6 +45,49 @@ struct BrainStormEditorView: View {
 
     // Debounce Timer for Auto-Save
     @State private var saveWorkItem: DispatchWorkItem? = nil
+
+    private var slashCommands: [SlashCommandItem] {
+        [
+            SlashCommandItem(id: "title", title: "Title", subtitle: "Large prominent section title", icon: "textformat.size.larger", category: "Heading") {
+                editorController.applyParagraphStyle(.title, preset: typographyPreset)
+            },
+            SlashCommandItem(id: "heading", title: "Heading", subtitle: "Major section header", icon: "textformat.size", category: "Heading") {
+                editorController.applyParagraphStyle(.heading, preset: typographyPreset)
+            },
+            SlashCommandItem(id: "subheading", title: "Subheading", subtitle: "Medium section header", icon: "textformat.size.smaller", category: "Heading") {
+                editorController.applyParagraphStyle(.subheading, preset: typographyPreset)
+            },
+            SlashCommandItem(id: "todo", title: "To-Do Checklist", subtitle: "Interactive checkable item", icon: "checklist", category: "List") {
+                editorController.toggleChecklist(preset: typographyPreset)
+            },
+            SlashCommandItem(id: "bullet", title: "Bulleted List", subtitle: "Simple bullet point list", icon: "list.bullet", category: "List") {
+                editorController.applyParagraphStyle(.bulletedList, preset: typographyPreset)
+            },
+            SlashCommandItem(id: "number", title: "Numbered List", subtitle: "Ordered sequence list", icon: "list.number", category: "List") {
+                editorController.applyParagraphStyle(.numberedList, preset: typographyPreset)
+            },
+            SlashCommandItem(id: "quote", title: "Blockquote", subtitle: "Indented callout block", icon: "quote.opening", category: "Structure") {
+                editorController.applyParagraphStyle(.quote, preset: typographyPreset)
+            },
+            SlashCommandItem(id: "code", title: "Code Block", subtitle: "Monospaced code snippet", icon: "curlybraces", category: "Structure") {
+                editorController.applyParagraphStyle(.monostyled, preset: typographyPreset)
+            },
+            SlashCommandItem(id: "table", title: "Table Grid", subtitle: "2x2 structured table", icon: "tablecells", category: "Insert") {
+                editorController.insertTable(rows: 2, cols: 2, preset: typographyPreset)
+            },
+            SlashCommandItem(id: "photo", title: "Insert Photo", subtitle: "Embed image with thumbnail", icon: "photo.on.rectangle", category: "Media") {
+                choosePhotoOrVideo()
+            },
+            SlashCommandItem(id: "file", title: "Attach File", subtitle: "Attach document or asset", icon: "paperclip", category: "Media") {
+                attachGeneralFile()
+            },
+            SlashCommandItem(id: "date", title: "Insert Date", subtitle: "Today's formatted date", icon: "calendar", category: "Stamp") {
+                let df = DateFormatter()
+                df.dateStyle = .medium
+                editorController.insertLink(url: URL(string: "https://pluto.local")!, title: df.string(from: Date()), preset: typographyPreset)
+            }
+        ]
+    }
 
     private var findMatchesCount: Int {
         guard !findQuery.isEmpty else { return 0 }
@@ -66,60 +111,78 @@ struct BrainStormEditorView: View {
             }
 
             // 3. APPLE NOTES CANVAS
-            VStack(alignment: .leading, spacing: 0) {
-                // Centered Date Timestamp (Exact Apple Notes Layout)
-                HStack {
-                    Spacer()
-                    Text(formatHeaderDate(note.updatedAt))
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(Color.white.opacity(0.35))
-                    Spacer()
-                }
-                .padding(.top, 14)
-                .padding(.bottom, 6)
-
-                // The True AppKit Rich Text Surface (120Hz Decoupled Zero-Lag Pipeline)
-                MacRichTextEditor(
-                    initialAttributedText: note.attributedBody,
-                    initialPlainText: note.bodyText,
-                    preset: typographyPreset,
-                    isEditable: !note.isLocked,
-                    controller: editorController,
-                    onTextChangeDebounced: { updatedAttr, updatedPlain in
-                        handleTextChange(updatedAttr: updatedAttr, updatedPlain: updatedPlain)
-                    }
-                )
-                .id(note.id)
-                .padding(.horizontal, isZenMode ? 70 : 24)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                // Inline Tag Pills
-                if !note.tags.isEmpty {
-                    Divider().opacity(0.10)
-                        .padding(.horizontal, isZenMode ? 70 : 24)
-
-                    HStack(spacing: 6) {
-                        Image(systemName: "tag.fill")
-                            .font(.system(size: 10))
-                            .foregroundStyle(Color.accentColor.opacity(0.8))
-
-                        ForEach(note.tags, id: \.self) { tag in
-                            Text("#\(tag)")
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundStyle(Color.accentColor)
-                                .padding(.horizontal, 7)
-                                .padding(.vertical, 2)
-                                .background(Color.accentColor.opacity(0.12), in: Capsule())
-                        }
+            ZStack(alignment: .topTrailing) {
+                VStack(alignment: .leading, spacing: 0) {
+                    // Centered Date Timestamp (Exact Apple Notes Layout)
+                    HStack {
+                        Spacer()
+                        Text(formatHeaderDate(note.updatedAt))
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(Color.white.opacity(0.35))
                         Spacer()
                     }
+                    .padding(.top, 14)
+                    .padding(.bottom, 6)
+
+                    // The True AppKit Rich Text Surface (120Hz Decoupled Zero-Lag Pipeline)
+                    MacRichTextEditor(
+                        initialAttributedText: note.attributedBody,
+                        initialPlainText: note.bodyText,
+                        preset: typographyPreset,
+                        isEditable: !note.isLocked,
+                        controller: editorController,
+                        onTextChangeDebounced: { updatedAttr, updatedPlain in
+                            handleTextChange(updatedAttr: updatedAttr, updatedPlain: updatedPlain)
+                        },
+                        onSlashTriggered: { _ in
+                            withAnimation(.easeOut(duration: 0.15)) {
+                                isShowingSlashMenu = true
+                            }
+                        }
+                    )
+                    .id(note.id)
                     .padding(.horizontal, isZenMode ? 70 : 24)
-                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                    // Inline Tag Pills
+                    if !note.tags.isEmpty {
+                        Divider().opacity(0.10)
+                            .padding(.horizontal, isZenMode ? 70 : 24)
+
+                        HStack(spacing: 6) {
+                            Image(systemName: "tag.fill")
+                                .font(.system(size: 10))
+                                .foregroundStyle(Color.accentColor.opacity(0.8))
+
+                            ForEach(note.tags, id: \.self) { tag in
+                                Text("#\(tag)")
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundStyle(Color.accentColor)
+                                    .padding(.horizontal, 7)
+                                    .padding(.vertical, 2)
+                                    .background(Color.accentColor.opacity(0.12), in: Capsule())
+                            }
+                            Spacer()
+                        }
+                        .padding(.horizontal, isZenMode ? 70 : 24)
+                        .padding(.vertical, 8)
+                    }
+                }
+                .background(
+                    Color(nsColor: NSColor(red: 0.11, green: 0.11, blue: 0.12, alpha: 1.0))
+                )
+
+                // Floating Slash Command Palette
+                if isShowingSlashMenu {
+                    BrainStormSlashMenu(items: slashCommands) {
+                        withAnimation(.easeIn(duration: 0.12)) {
+                            isShowingSlashMenu = false
+                        }
+                    }
+                    .padding(20)
+                    .transition(.scale(scale: 0.95).combined(with: .opacity))
                 }
             }
-            .background(
-                Color(nsColor: NSColor(red: 0.11, green: 0.11, blue: 0.12, alpha: 1.0))
-            )
 
             // 4. BOTTOM METADATA HUD
             if showWordCountHUD {
@@ -453,7 +516,7 @@ struct BrainStormEditorView: View {
                 }
 
                 markButton(icon: "pencil.tip", isActive: editorController.isHighlighted) {
-                    editorController.toggleHighlight()
+                    editorController.toggleHighlight(color: selectedHighlightColor)
                 }
 
                 ColorPicker("", selection: Binding(
@@ -469,6 +532,28 @@ struct BrainStormEditorView: View {
             }
             .padding(.horizontal, 4)
             .padding(.top, 2)
+
+            // Apple Notes 5-Color Highlighter Palette
+            HStack(spacing: 6) {
+                Text("HIGHLIGHT")
+                    .font(.system(size: 8, weight: .bold, design: .monospaced))
+                    .foregroundStyle(Color.white.opacity(0.4))
+                Spacer()
+                ForEach(RichTextTypography.NoteHighlightColor.allCases) { tint in
+                    Circle()
+                        .fill(tint.swiftUIColor)
+                        .frame(width: 14, height: 14)
+                        .overlay(
+                            Circle().stroke(selectedHighlightColor == tint ? Color.white : Color.clear, lineWidth: 1.5)
+                        )
+                        .onTapGesture {
+                            selectedHighlightColor = tint
+                            editorController.toggleHighlight(color: tint)
+                        }
+                }
+            }
+            .padding(.horizontal, 4)
+            .padding(.vertical, 2)
 
             Divider().opacity(0.25)
 
@@ -491,7 +576,7 @@ struct BrainStormEditorView: View {
             styleRow(style: .quote, title: "│ Block Quote", fontSize: 13, weight: .medium)
         }
         .padding(10)
-        .frame(width: 220)
+        .frame(width: 230)
         .background(Color(nsColor: NSColor(red: 0.16, green: 0.16, blue: 0.18, alpha: 1.0)))
     }
 
@@ -595,12 +680,17 @@ struct BrainStormEditorView: View {
         panel.allowedContentTypes = [.image, .movie]
         panel.allowsMultipleSelection = false
         if panel.runModal() == .OK, let url = panel.url {
-            let noteAttachment = "\n[Photo: \(url.lastPathComponent)]\n"
-            let attr = NSAttributedString(string: noteAttachment, attributes: RichTextTypography.defaultAttributes(for: .body, preset: typographyPreset))
-            let mutable = NSMutableAttributedString(attributedString: localAttributedText)
-            mutable.append(attr)
-            localAttributedText = mutable
-            handleTextChange(updatedAttr: mutable, updatedPlain: mutable.string)
+            if let image = NSImage(contentsOf: url) {
+                editorController.insertImage(image: image)
+                Haptics.notify(.success)
+            } else {
+                let noteAttachment = "\n📎 Media: \(url.lastPathComponent)\n"
+                let attr = NSAttributedString(string: noteAttachment, attributes: RichTextTypography.defaultAttributes(for: .body, preset: typographyPreset))
+                let mutable = NSMutableAttributedString(attributedString: localAttributedText)
+                mutable.append(attr)
+                localAttributedText = mutable
+                handleTextChange(updatedAttr: mutable, updatedPlain: mutable.string)
+            }
         }
     }
 
@@ -630,11 +720,36 @@ struct BrainStormEditorView: View {
                 .font(.system(size: 12))
                 .foregroundStyle(Color.white)
                 .frame(width: 160)
+                .onSubmit {
+                    editorController.jumpToNextMatch(query: findQuery)
+                }
 
             if !findQuery.isEmpty {
                 Text(findMatchesCount > 0 ? "\(findMatchesCount) match\(findMatchesCount > 1 ? "es" : "")" : "No matches")
                     .font(.system(size: 10.5, design: .monospaced))
                     .foregroundStyle(findMatchesCount > 0 ? Color.accentColor : Color.red.opacity(0.8))
+
+                // Previous Match Button
+                Button {
+                    editorController.jumpToPreviousMatch(query: findQuery)
+                } label: {
+                    Image(systemName: "chevron.up")
+                        .font(.system(size: 10.5, weight: .bold))
+                        .foregroundStyle(Color.white.opacity(0.7))
+                }
+                .buttonStyle(.plain)
+                .help("Previous match (⇧Enter)")
+
+                // Next Match Button
+                Button {
+                    editorController.jumpToNextMatch(query: findQuery)
+                } label: {
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 10.5, weight: .bold))
+                        .foregroundStyle(Color.white.opacity(0.7))
+                }
+                .buttonStyle(.plain)
+                .help("Next match (Enter)")
             }
 
             Spacer()
