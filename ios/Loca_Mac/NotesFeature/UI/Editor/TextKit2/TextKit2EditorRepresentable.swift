@@ -29,7 +29,20 @@ public final class NoteCanvasTextView: NSTextView {
     
     public override func insertText(_ string: Any, replacementRange: NSRange) {
         print("🟣 INSERT TEXT CALLED: string=\(string), range=\(replacementRange)")
+        print("🧪 textStorage is nil: \(self.textStorage == nil)")
+        print("🧪 textStorage === textContentStorage: \(self.textStorage === self.textContentStorage)")
+        print("🧪 textStorage.length: \(self.textStorage?.length ?? -1)")
+        print("🧪 selectedRange: \(self.selectedRange())")
+        print("🧪 tlm.textContentStorage is nil: \(self.textLayoutManager?.textContentStorage == nil)")
+        print("🧪 contentStorage.layoutManagers count: \(self.textContentStorage?.textLayoutManagers.count ?? -1)")
+        print("🧪 container.size: \(self.textContainer?.containerSize ?? .zero)")
         super.insertText(string, replacementRange: replacementRange)
+    }
+    
+    public override func shouldChangeText(in affectedCharRange: NSRange, replacementString: String?) -> Bool {
+        let result = super.shouldChangeText(in: affectedCharRange, replacementString: replacementString)
+        print("🔥 NSTEXTVIEW.shouldChangeText range=\(affectedCharRange) repl=\(replacementString ?? "") handled=\(result)")
+        return result
     }
     
     public override func performKeyEquivalent(with event: NSEvent) -> Bool {
