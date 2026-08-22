@@ -586,5 +586,32 @@ struct TextKitBridgeTests {
         #expect(!rendered.string.contains("[x]"))
         #expect(rendered.string.count == 21)
     }
+    
+    @Test func testSplitThenFastTypeKeepsIndent() {
+        let noteID = NoteID()
+        let b1ID = UUID()
+        
+        var doc = CRDTDoc(id: noteID, deviceID: "test-device")
+        let b1 = CRDTBlock(id: b1ID, type: "checklistItem", text: CRDTText(string: "First item", deviceID: "test-device"), attributes: ["isChecked": "false"])
+        doc.addBlock(b1)
+        
+        let bridge = TextKitCRDTBridge(doc: doc, deviceID: "test-device")
+        let split = bridge.splitBlock(at: 10)
+        #expect(split != nil)
+        #expect(split?.newBlockType == "checklistItem")
+        
+        // Fast type "Hello" into new block
+        bridge.insertText("Hello", at: split!.newCursor)
+        
+        let rendered = bridge.renderAttributedString()
+        let newBlockRange = bridge.blockRanges[split!.newBlockID!]
+        #expect(newBlockRange != nil)
+        
+        // Read paragraph style of the new block
+        let attrs = rendered.attributes(at: newBlockRange!.location, effectiveRange: nil)
+        let style = attrs[.paragraphStyle] as? NSParagraphStyle
+        #expect(style?.headIndent == 24)
+        #expect(style?.firstLineHeadIndent == 24)
+    }
 }
 #endif

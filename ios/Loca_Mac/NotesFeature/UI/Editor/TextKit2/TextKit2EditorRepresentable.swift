@@ -97,7 +97,7 @@ public final class NoteCanvasTextView: NSTextView {
             
             if block.type == "checklistItem" {
                 let isChecked = block.attributes["isChecked"] == "true"
-                let symbolName = isChecked ? "checkmark.square.fill" : "square"
+                let symbolName = isChecked ? "checkmark.circle.fill" : "circle"
                 let tintColor = isChecked ? NSColor.controlAccentColor : NSColor.secondaryLabelColor
                 
                 let config = NSImage.SymbolConfiguration(pointSize: 13, weight: .regular)
@@ -184,6 +184,8 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
             .paragraphStyle: NSParagraphStyle.default
         ]
         
+        context.coordinator.textView = textView
+        
         // Wire in-place format updates directly to textStorage with Programmatic-Edit Guard
         state.onInPlaceFormatUpdate = { [weak textView, weak state, weak coordinator = context.coordinator] in
             guard let tv = textView, let storage = tv.textStorage, let state = state else { return }
@@ -195,6 +197,14 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
             state.bridge.updateLastKnownSelection(intendedCursor)
             coordinator?.isProgrammaticEdit = false
             tv.setNeedsDisplay(tv.bounds)
+            
+            let bType = state.bridge.blockType(at: intendedCursor.location)
+            var isChecked = false
+            if let target = state.bridge.resolveLocation(intendedCursor.location) {
+                isChecked = target.block.attributes["isChecked"] == "true"
+            }
+            coordinator?.syncTypingAttributes(for: bType, isChecked: isChecked)
+            
             self.onKeystroke(state.bridge.doc)
         }
         
@@ -238,6 +248,9 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
             
             tv.setNeedsDisplay(tv.bounds)
             
+            let isChecked = target.block.attributes["isChecked"] != "true"
+            coordinator?.syncTypingAttributes(for: .checklist, isChecked: isChecked)
+            
             DispatchQueue.main.async {
                 self.state.refreshFormattingState()
                 self.onKeystroke(self.state.bridge.doc)
@@ -254,8 +267,6 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         scrollView.hasHorizontalScroller = false
         scrollView.autohidesScrollers = true
         scrollView.drawsBackground = false
-        
-        context.coordinator.textView = textView
         
         return scrollView
     }
@@ -292,6 +303,13 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         textView.scrollRangeToVisible(newSelection)
         context.coordinator.isProgrammaticEdit = false
         textView.setNeedsDisplay(textView.bounds)
+        
+        let bType = state.bridge.blockType(at: newSelection.location)
+        var isChecked = false
+        if let target = state.bridge.resolveLocation(newSelection.location) {
+            isChecked = target.block.attributes["isChecked"] == "true"
+        }
+        context.coordinator.syncTypingAttributes(for: bType, isChecked: isChecked)
     }
     
     public final class Coordinator: NSObject, NSTextViewDelegate {
@@ -303,12 +321,77 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
             self.parent = parent
         }
         
+        public func syncTypingAttributes(for blockType: EditorBlockType, isChecked: Bool = false) {
+            guard let tv = textView else { return }
+            let style = NSMutableParagraphStyle()
+            var attrs: [NSAttributedString.Key: Any] = [:]
+            
+            switch blockType {
+            case .checklist:
+                style.headIndent = 24
+                style.firstLineHeadIndent = 24
+                style.paragraphSpacing = 4
+                style.lineHeightMultiple = 1.2
+                attrs[.font] = NSFont.systemFont(ofSize: 14)
+                if isChecked {
+                    attrs[.foregroundColor] = NSColor.secondaryLabelColor
+                    attrs[.strikethroughStyle] = NSUnderlineStyle.single.rawValue
+                    attrs[.strikethroughColor] = NSColor.secondaryLabelColor
+                } else {
+                    attrs[.foregroundColor] = NSColor.labelColor
+                }
+            case .bullet:
+                style.headIndent = 18
+                style.firstLineHeadIndent = 18
+                style.paragraphSpacing = 4
+                style.lineHeightMultiple = 1.2
+                attrs[.font] = NSFont.systemFont(ofSize: 14)
+                attrs[.foregroundColor] = NSColor.labelColor
+            case .h1:
+                style.paragraphSpacingBefore = 12
+                style.paragraphSpacing = 6
+                style.lineHeightMultiple = 1.15
+                attrs[.font] = NSFont.systemFont(ofSize: 24, weight: .bold)
+                attrs[.foregroundColor] = NSColor.labelColor
+            case .h2:
+                style.paragraphSpacingBefore = 10
+                style.paragraphSpacing = 4
+                style.lineHeightMultiple = 1.15
+                attrs[.font] = NSFont.systemFont(ofSize: 18, weight: .bold)
+                attrs[.foregroundColor] = NSColor.labelColor
+            case .h3:
+                style.paragraphSpacingBefore = 8
+                style.paragraphSpacing = 3
+                style.lineHeightMultiple = 1.15
+                attrs[.font] = NSFont.systemFont(ofSize: 15, weight: .semibold)
+                attrs[.foregroundColor] = NSColor.labelColor
+            case .paragraph:
+                style.headIndent = 0
+                style.firstLineHeadIndent = 0
+                style.paragraphSpacing = 4
+                style.lineHeightMultiple = 1.2
+                attrs[.font] = NSFont.systemFont(ofSize: 14)
+                attrs[.foregroundColor] = NSColor.labelColor
+            }
+            
+            attrs[.paragraphStyle] = style
+            tv.typingAttributes = attrs
+        }
+        
         public func textViewDidChangeSelection(_ notification: Notification) {
             guard !isProgrammaticEdit else { return }
             guard let tv = notification.object as? NSTextView else { return }
             let sel = tv.selectedRange()
             parent.state.bridge.updateLastKnownSelection(sel)
             parent.state.bridge.selectionDidChange(to: sel)
+            
+            let bType = parent.state.bridge.blockType(at: sel.location)
+            var isChecked = false
+            if let target = parent.state.bridge.resolveLocation(sel.location) {
+                isChecked = target.block.attributes["isChecked"] == "true"
+            }
+            syncTypingAttributes(for: bType, isChecked: isChecked)
+            
             DispatchQueue.main.async {
                 self.parent.state.refreshFormattingState()
                 self.parent.onSelectionChanged(sel)
@@ -334,6 +417,14 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
                         isProgrammaticEdit = false
                         textView.setNeedsDisplay(textView.bounds)
                     }
+                    
+                    let newBType = parent.state.bridge.blockType(at: split.newCursor)
+                    var isChecked = false
+                    if let target = parent.state.bridge.resolveLocation(split.newCursor) {
+                        isChecked = target.block.attributes["isChecked"] == "true"
+                    }
+                    syncTypingAttributes(for: newBType, isChecked: isChecked)
+                    
                     parent.onKeystroke(parent.state.bridge.doc)
                     DispatchQueue.main.async {
                         self.parent.state.refreshFormattingState()
@@ -359,11 +450,13 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         
         public func textDidChange(_ notification: Notification) {
             guard let tv = textView else { return }
-            tv.typingAttributes = [
-                .font: NSFont.systemFont(ofSize: 14),
-                .foregroundColor: NSColor.labelColor,
-                .paragraphStyle: NSParagraphStyle.default
-            ]
+            let sel = tv.selectedRange()
+            let bType = parent.state.bridge.blockType(at: sel.location)
+            var isChecked = false
+            if let target = parent.state.bridge.resolveLocation(sel.location) {
+                isChecked = target.block.attributes["isChecked"] == "true"
+            }
+            syncTypingAttributes(for: bType, isChecked: isChecked)
         }
     }
 }
