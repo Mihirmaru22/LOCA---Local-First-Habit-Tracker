@@ -1102,14 +1102,17 @@ public final class LocaAppKitTextView: NSTextView {
         }
         
         let string = textStorage.string as NSString
+        let origin = self.textContainerOrigin
         var foundCheckbox = false
         
-        if point.x < 28.0 {
-            // Find character index at mouse Y position for safe multi-line hit testing
-            let charIndex = layoutManager.characterIndex(for: point, in: textContainer, fractionOfDistanceBetweenInsertionPoints: nil)
+        if point.x < 28.0 && textStorage.length > 0 {
+            // Sample inside text column at (x = 35.0, y = point.y - origin.y) to prevent snapping to next paragraph on wrapped lines
+            let samplePoint = NSPoint(x: 35.0, y: point.y - origin.y)
+            let charIndex = layoutManager.characterIndex(for: samplePoint, in: textContainer, fractionOfDistanceBetweenInsertionPoints: nil)
             if charIndex < string.length {
                 let paraRange = string.paragraphRange(for: NSRange(location: charIndex, length: 0))
-                let isChecklist = textStorage.attribute(.noteChecklistState, at: paraRange.location, effectiveRange: nil) != nil
+                let safeIndex = min(paraRange.location, textStorage.length - 1)
+                let isChecklist = textStorage.attribute(.noteChecklistState, at: safeIndex, effectiveRange: nil) != nil
                 if isChecklist {
                     foundCheckbox = true
                     if hoveredCheckboxParaRange != paraRange {
@@ -1151,7 +1154,15 @@ public final class LocaAppKitTextView: NSTextView {
         let string = textStorage.string as NSString
         let origin = self.textContainerOrigin
         
-        let glyphRange = layoutManager.glyphRange(forBoundingRect: rect, in: textContainer)
+        // Convert dirty rect from view coordinates to textContainer coordinate space for 100% jitter-free fast scrolling
+        let containerRect = NSRect(
+            x: rect.origin.x - origin.x,
+            y: rect.origin.y - origin.y,
+            width: rect.size.width,
+            height: rect.size.height
+        )
+        
+        let glyphRange = layoutManager.glyphRange(forBoundingRect: containerRect, in: textContainer)
         var charRange = layoutManager.characterRange(forGlyphRange: glyphRange, actualGlyphRange: nil)
         charRange = string.paragraphRange(for: charRange)
         
@@ -1234,10 +1245,13 @@ public final class LocaAppKitTextView: NSTextView {
         }
         
         let string = textStorage.string as NSString
+        let origin = self.textContainerOrigin
         
         // Multi-line safe hit-testing: Clicking anywhere at x < 28pt toggles the item
         if point.x < 28.0 && textStorage.length > 0 {
-            let charIndex = layoutManager.characterIndex(for: point, in: textContainer, fractionOfDistanceBetweenInsertionPoints: nil)
+            // Sample at x = 35.0 inside text container space to guarantee resolution of wrapped multi-line items
+            let samplePoint = NSPoint(x: 35.0, y: point.y - origin.y)
+            let charIndex = layoutManager.characterIndex(for: samplePoint, in: textContainer, fractionOfDistanceBetweenInsertionPoints: nil)
             if charIndex < string.length {
                 let paragraphRange = string.paragraphRange(for: NSRange(location: charIndex, length: 0))
                 let safeIndex = min(paragraphRange.location, textStorage.length - 1)
