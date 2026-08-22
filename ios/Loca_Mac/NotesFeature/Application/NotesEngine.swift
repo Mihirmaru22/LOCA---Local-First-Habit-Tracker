@@ -81,8 +81,20 @@ public final class NotesEngine: ObservableObject {
         try await pinNoteUseCase.execute(noteID: noteID, isPinned: isPinned)
     }
     
+    public func setPinned(_ isPinned: Bool, for noteID: NoteID) async throws {
+        try await pinNoteUseCase.execute(noteID: noteID, isPinned: isPinned)
+    }
+    
     public func delete(noteID: NoteID) async throws {
         try await deleteNoteUseCase.softDelete(noteID: noteID)
+    }
+    
+    public func deleteNote(id: NoteID) async throws {
+        try await deleteNoteUseCase.softDelete(noteID: id)
+    }
+    
+    public func delete(id: NoteID) async throws {
+        try await deleteNoteUseCase.softDelete(noteID: id)
     }
     
     public func restore(noteID: NoteID) async throws {

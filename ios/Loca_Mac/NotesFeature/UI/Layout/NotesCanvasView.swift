@@ -3,7 +3,7 @@ import SwiftUI
 /// Main native macOS 2-Column user interface combining the Navigator (Left) and TextKit 2 Editor Canvas (Right).
 public struct NotesCanvasView: View {
     
-    @StateObject private var engine: NotesEngine
+    @ObservedObject public var engine: NotesEngine
     private let autosave = AutosaveCoordinator()
     
     // Navigator state
@@ -23,7 +23,7 @@ public struct NotesCanvasView: View {
     @State private var editorState: EditorBridgeState? = nil
     
     public init(engine: NotesEngine = .inMemory()) {
-        _engine = StateObject(wrappedValue: engine)
+        self.engine = engine
     }
     
     public var body: some View {
@@ -173,7 +173,7 @@ public struct NotesCanvasView: View {
         editorState?.bridge.doc.isPinned = newPinned
         
         Task {
-            try? await engine.setPinned(newPinned, for: noteID)
+            try? await engine.setPinned(newPinned, noteID: noteID)
         }
     }
     
@@ -189,7 +189,7 @@ public struct NotesCanvasView: View {
     
     private func deleteNote(_ id: NoteID) {
         Task {
-            try? await engine.deleteNote(id: id)
+            try? await engine.delete(noteID: id)
             if selectedNoteID == id {
                 selectedNoteID = nil
             }
