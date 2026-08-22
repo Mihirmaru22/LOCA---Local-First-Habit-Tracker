@@ -1,25 +1,23 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - MacStudioWorkspaceView (Unified Projects + Notes Sovereign Studio)
+// MARK: - MacStudioWorkspaceView (Unified Projects + Journal Sovereign Studio)
 
-/// Unified Knowledge & Execution Workspace combining Work Projects and Apple Notes BrainStorm.
+/// Unified Knowledge & Execution Workspace combining Work Projects and Apple Journal.
 struct MacStudioWorkspaceView: View {
 
-    @AppStorage("mac_studio_active_tab") private var activeTab: StudioTab = .notes
+    @AppStorage("mac_studio_active_tab") private var activeTab: StudioTab = .projects
 
     enum StudioTab: String, CaseIterable, Identifiable {
-        case notes    = "Notes"
-        case journal  = "Journal"
         case projects = "Projects"
+        case journal  = "Journal"
 
         var id: String { rawValue }
 
         var icon: String {
             switch self {
-            case .notes:    return "note.text"
-            case .journal:  return "book.pages.fill"
             case .projects: return "briefcase.fill"
+            case .journal:  return "book.pages.fill"
             }
         }
     }
@@ -78,12 +76,10 @@ struct MacStudioWorkspaceView: View {
             // Active Workspace Content
             Group {
                 switch activeTab {
-                case .notes:
-                    MacBrainStormView()
-                case .journal:
-                    MacAppleJournalView()
                 case .projects:
                     MacWorkWorkspaceView()
+                case .journal:
+                    MacAppleJournalView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

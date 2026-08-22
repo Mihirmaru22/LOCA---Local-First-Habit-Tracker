@@ -105,33 +105,4 @@ struct Loca_MacTests {
         #expect(remainingTasks.count == 1)
         #expect(remainingTasks.first?.sectionID == nil)
     }
-
-    // MARK: - Invariant 5: Pillar Bridge Note Extraction
-    @MainActor
-    @Test func testPillarBridgeNoteToWork() throws {
-        let schema = Schema([BrainStormNote.self, WorkProject.self, WorkSection.self, TodoItem.self, JournalNote.self])
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try ModelContainer(for: schema, configurations: [config])
-        let context = ModelContext(container)
-        
-        let noteBody = """
-# Project Alpha Brief
-Here is the specification.
-- [ ] Implement feature A
-- [x] Review architecture
-"""
-        let note = BrainStormNote(title: "Alpha Note", bodyText: noteBody)
-        context.insert(note)
-        try context.save()
-        
-        let project = PillarBridgeController.shared.sendNoteToWork(note: note, context: context, archiveOriginal: true)
-        let projID = project.id
-        
-        #expect(project.title == "Alpha Note")
-        #expect(note.isArchived == true)
-        
-        let createdTasks = try context.fetch(FetchDescriptor<TodoItem>(predicate: #Predicate { $0.projectID == projID }))
-        #expect(createdTasks.count == 2)
-        #expect(createdTasks.filter { $0.isCompleted }.count == 1)
-    }
 }

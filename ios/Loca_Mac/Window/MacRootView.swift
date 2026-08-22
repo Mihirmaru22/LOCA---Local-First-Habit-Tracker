@@ -7,7 +7,6 @@ import CoreSpotlight
 /// Top-level navigation sections shown in the Mac sidebar.
 enum MacSection: String, CaseIterable, Identifiable {
     case today    = "Today"
-    case notes    = "Notes"
     case studio   = "Studio"
     case life     = "Life"
     case settings = "Settings"
@@ -17,7 +16,6 @@ enum MacSection: String, CaseIterable, Identifiable {
     var systemImage: String {
         switch self {
         case .today:    "sun.max.fill"
-        case .notes:    "note.text"
         case .studio:   "sparkles.rectangle.stack.fill"
         case .life:     "mountain.2.fill"
         case .settings: "gearshape"
@@ -105,9 +103,6 @@ struct MacRootView: View {
                 selectedSection = section
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .locaOpenNoteById)) { note in
-            selectedSection = .notes
-        }
         .onReceive(NotificationCenter.default.publisher(for: .locaShowOnboarding)) { _ in
             showOnboarding = true
         }
@@ -144,17 +139,6 @@ struct MacRootView: View {
                         min:   DS.Mac.detailMinWidth,
                         ideal: DS.Mac.detailIdealWidth
                     )
-            }
-        } else if selectedSection == .notes {
-            NavigationSplitView {
-                MacSidebarView(selection: $selectedSection)
-                    .navigationSplitViewColumnWidth(
-                        min:   DS.Mac.sidebarMinWidth,
-                        ideal: DS.Mac.sidebarIdealWidth,
-                        max:   DS.Mac.sidebarMaxWidth
-                    )
-            } detail: {
-                MacBrainStormView()
             }
         } else if selectedSection == .studio {
             NavigationSplitView {
