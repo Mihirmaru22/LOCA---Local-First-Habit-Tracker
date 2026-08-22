@@ -118,13 +118,16 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
             .paragraphStyle: NSParagraphStyle.default
         ]
         
-        // Wire in-place format updates directly to textStorage
-        state.onInPlaceFormatUpdate = { [weak textView, weak state] in
+        // Wire in-place format updates directly to textStorage with Programmatic-Edit Guard
+        state.onInPlaceFormatUpdate = { [weak textView, weak state, weak coordinator = context.coordinator] in
             guard let tv = textView, let storage = tv.textStorage, let state = state else { return }
-            let currentSel = state.bridge.lastKnownSelection
+            let intendedCursor = state.bridge.lastKnownSelection
+            coordinator?.isProgrammaticEdit = true
             let rendered = state.bridge.renderAttributedString()
             storage.setAttributedString(rendered)
-            tv.setSelectedRange(currentSel)
+            tv.setSelectedRange(intendedCursor)
+            state.bridge.updateLastKnownSelection(intendedCursor)
+            coordinator?.isProgrammaticEdit = false
             self.onKeystroke(state.bridge.doc)
         }
         
@@ -144,7 +147,7 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         }
         
         // Gutter Click Handler
-        textView.onGutterClicked = { [weak textView] clickPoint in
+        textView.onGutterClicked = { [weak textView, weak coordinator = context.coordinator] clickPoint in
             guard let tv = textView, let storage = tv.textStorage else { return false }
             
             // Check if click X is in left gutter margin (< 30pt)
@@ -160,8 +163,13 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
             
             // Toggle checklist state
             self.state.bridge.toggleChecklist(blockID: target.block.id)
+            let intendedCursor = self.state.bridge.lastKnownSelection
+            coordinator?.isProgrammaticEdit = true
             let updatedAttributed = self.state.bridge.renderAttributedString()
             storage.setAttributedString(updatedAttributed)
+            tv.setSelectedRange(intendedCursor)
+            self.state.bridge.updateLastKnownSelection(intendedCursor)
+            coordinator?.isProgrammaticEdit = false
             
             DispatchQueue.main.async {
                 self.state.refreshFormattingState()
@@ -200,6 +208,7 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         let oldLength = storage.length
         let currentSelection = textView.selectedRange()
         
+        context.coordinator.isProgrammaticEdit = true
         let newAttributed = state.bridge.renderAttributedString()
         storage.setAttributedString(newAttributed)
         
@@ -212,18 +221,22 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
             totalNewLength: newAttributed.length
         )
         textView.setSelectedRange(newSelection)
+        state.bridge.updateLastKnownSelection(newSelection)
         textView.scrollRangeToVisible(newSelection)
+        context.coordinator.isProgrammaticEdit = false
     }
     
     public final class Coordinator: NSObject, NSTextViewDelegate {
         var parent: TextKit2EditorRepresentable
         weak var textView: NoteCanvasTextView?
+        public var isProgrammaticEdit = false
         
         init(_ parent: TextKit2EditorRepresentable) {
             self.parent = parent
         }
         
         public func textViewDidChangeSelection(_ notification: Notification) {
+            guard !isProgrammaticEdit else { return }
             guard let tv = notification.object as? NSTextView else { return }
             let sel = tv.selectedRange()
             print("🎨 SELECTION CHANGED: \(sel)")
@@ -241,14 +254,18 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
             parent.state.bridge.updateLastKnownSelection(affectedCharRange)
             
             if replacement == "\n" {
-                // Return key: Split block in-place with Apple Notes semantics
+                // Return key: Split block in-place with Apple Notes semantics & Programmatic Guard
                 if let split = parent.state.bridge.splitBlock(at: affectedCharRange.location) {
                     if let storage = textView.textStorage {
+                        isProgrammaticEdit = true
                         let updatedAttributed = parent.state.bridge.renderAttributedString()
                         storage.setAttributedString(updatedAttributed)
                         let newCursorPos = min(split.newCursor, updatedAttributed.length)
-                        textView.setSelectedRange(NSRange(location: newCursorPos, length: 0))
-                        textView.scrollRangeToVisible(NSRange(location: newCursorPos, length: 0))
+                        let intendedCursor = NSRange(location: newCursorPos, length: 0)
+                        textView.setSelectedRange(intendedCursor)
+                        parent.state.bridge.updateLastKnownSelection(intendedCursor)
+                        textView.scrollRangeToVisible(intendedCursor)
+                        isProgrammaticEdit = false
                     }
                     parent.onKeystroke(parent.state.bridge.doc)
                     DispatchQueue.main.async {

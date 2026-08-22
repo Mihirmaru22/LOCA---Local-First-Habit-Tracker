@@ -286,9 +286,11 @@ public struct NotesCanvasView: View {
             let doc = CRDTTranslator.crdtDoc(from: note)
             if let existingState = self.editorState, existingState.bridge.doc.id == doc.id {
                 let currentCRDTContent = CRDTTranslator.materializeContent(from: existingState.bridge.doc)
-                if currentCRDTContent != note.content {
-                    existingState.updateDocFromRemote(doc)
+                if currentCRDTContent == note.content {
+                    print("🔁 ECHO SKIP")
+                    continue
                 }
+                existingState.updateDocFromRemote(doc)
             } else {
                 let bridge = TextKitCRDTBridge(doc: doc)
                 self.editorState = EditorBridgeState(bridge: bridge)
