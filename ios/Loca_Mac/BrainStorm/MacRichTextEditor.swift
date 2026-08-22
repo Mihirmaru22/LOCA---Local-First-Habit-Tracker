@@ -889,7 +889,52 @@ public final class LocaAppKitTextView: NSTextView {
         super.insertBacktab(sender)
     }
     
-    // MARK: - Interactive Checkbox Click Detection
+    // MARK: - Smart Delete Backward (Backspace deletes list/checklist prefix in 1 hit)
+    
+    public override func deleteBackward(_ sender: Any?) {
+        guard let textStorage = self.textStorage else {
+            super.deleteBackward(sender)
+            return
+        }
+        
+        let selectedRange = self.selectedRange()
+        if selectedRange.length > 0 {
+            super.deleteBackward(sender)
+            return
+        }
+        
+        let string = textStorage.string as NSString
+        let paragraphRange = string.paragraphRange(for: selectedRange)
+        let paragraphText = string.substring(with: paragraphRange)
+        
+        let prefixes = [
+            RichTextTypography.checklistUncheckedGlyph,
+            RichTextTypography.checklistCheckedGlyph,
+            "○ ", "● ", "☐ ", "☑︎ ", "• ", "– "
+        ]
+        
+        for prefix in prefixes {
+            if paragraphText.hasPrefix(prefix) {
+                let prefixLen = (prefix as NSString).length
+                if selectedRange.location == paragraphRange.location + prefixLen || paragraphText.trimmingCharacters(in: .whitespacesAndNewlines) == prefix.trimmingCharacters(in: .whitespacesAndNewlines) {
+                    textStorage.beginEditing()
+                    let replaceRange = NSRange(location: paragraphRange.location, length: prefixLen)
+                    textStorage.replaceCharacters(in: replaceRange, with: "")
+                    let remainingLen = max(0, paragraphRange.length - prefixLen)
+                    textStorage.removeAttribute(.strikethroughStyle, range: NSRange(location: paragraphRange.location, length: remainingLen))
+                    textStorage.addAttribute(.foregroundColor, value: NSColor.textColor, range: NSRange(location: paragraphRange.location, length: remainingLen))
+                    textStorage.endEditing()
+                    self.setSelectedRange(NSRange(location: paragraphRange.location, length: 0))
+                    self.didChangeText()
+                    return
+                }
+            }
+        }
+        
+        super.deleteBackward(sender)
+    }
+    
+    // MARK: - Interactive Checkbox Click Detection (Circle Glyph & Strikethrough Protection)
     
     public override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
@@ -910,29 +955,57 @@ public final class LocaAppKitTextView: NSTextView {
         let paragraphRange = string.paragraphRange(for: NSRange(location: charIndex, length: 0))
         let paragraphText = string.substring(with: paragraphRange)
         
-        let unchecked = RichTextTypography.checklistUncheckedGlyph
-        let checked = RichTextTypography.checklistCheckedGlyph
+        let uncheckedPrefixes = [RichTextTypography.checklistUncheckedGlyph, "○ ", "☐ ", "[ ] "]
+        let checkedPrefixes = [RichTextTypography.checklistCheckedGlyph, "● ", "☑︎ ", "[x] "]
         
-        if paragraphText.hasPrefix(unchecked) && charIndex < paragraphRange.location + unchecked.count + 2 {
-            // Toggle Unchecked -> Checked
+        var matchedUnchecked: String? = nil
+        for p in uncheckedPrefixes {
+            if paragraphText.hasPrefix(p) {
+                matchedUnchecked = p
+                break
+            }
+        }
+        
+        var matchedChecked: String? = nil
+        for p in checkedPrefixes {
+            if paragraphText.hasPrefix(p) {
+                matchedChecked = p
+                break
+            }
+        }
+        
+        if let unchecked = matchedUnchecked, charIndex < paragraphRange.location + unchecked.count + 2 {
+            // Toggle Unchecked (○) -> Checked (●)
             textStorage.beginEditing()
             let glyphRange = NSRange(location: paragraphRange.location, length: (unchecked as NSString).length)
-            textStorage.replaceCharacters(in: glyphRange, with: checked)
-            let strikeRange = NSRange(location: paragraphRange.location, length: paragraphRange.length)
-            textStorage.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: strikeRange)
-            textStorage.addAttribute(.foregroundColor, value: NSColor.secondaryLabelColor, range: strikeRange)
+            textStorage.replaceCharacters(in: glyphRange, with: RichTextTypography.checklistCheckedGlyph)
+            
+            let updatedParaRange = (textStorage.string as NSString).paragraphRange(for: NSRange(location: paragraphRange.location, length: 0))
+            let prefixLen = (RichTextTypography.checklistCheckedGlyph as NSString).length
+            let textLen = updatedParaRange.length - prefixLen
+            
+            // Remove strikethrough from the entire paragraph first (glyph never has strike)
+            textStorage.removeAttribute(.strikethroughStyle, range: updatedParaRange)
+            
+            let textSnippet = (textStorage.string as NSString).substring(with: NSRange(location: updatedParaRange.location + prefixLen, length: max(0, textLen))).trimmingCharacters(in: .whitespacesAndNewlines)
+            if !textSnippet.isEmpty && textLen > 0 {
+                let strikeRange = NSRange(location: updatedParaRange.location + prefixLen, length: textLen)
+                textStorage.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: strikeRange)
+                textStorage.addAttribute(.foregroundColor, value: NSColor.secondaryLabelColor, range: strikeRange)
+            }
             textStorage.endEditing()
             self.didChangeText()
             Haptics.impact(.light)
             return
-        } else if paragraphText.hasPrefix(checked) && charIndex < paragraphRange.location + checked.count + 2 {
-            // Toggle Checked -> Unchecked
+        } else if let checked = matchedChecked, charIndex < paragraphRange.location + checked.count + 2 {
+            // Toggle Checked (●) -> Unchecked (○)
             textStorage.beginEditing()
             let glyphRange = NSRange(location: paragraphRange.location, length: (checked as NSString).length)
-            textStorage.replaceCharacters(in: glyphRange, with: unchecked)
-            let strikeRange = NSRange(location: paragraphRange.location, length: paragraphRange.length)
-            textStorage.removeAttribute(.strikethroughStyle, range: strikeRange)
-            textStorage.addAttribute(.foregroundColor, value: NSColor.textColor, range: strikeRange)
+            textStorage.replaceCharacters(in: glyphRange, with: RichTextTypography.checklistUncheckedGlyph)
+            
+            let updatedParaRange = (textStorage.string as NSString).paragraphRange(for: NSRange(location: paragraphRange.location, length: 0))
+            textStorage.removeAttribute(.strikethroughStyle, range: updatedParaRange)
+            textStorage.addAttribute(.foregroundColor, value: NSColor.textColor, range: updatedParaRange)
             textStorage.endEditing()
             self.didChangeText()
             Haptics.impact(.light)

@@ -107,8 +107,8 @@ public enum TypographyPreset: String, CaseIterable, Codable {
 
 public struct RichTextTypography {
     
-    public static let checklistCheckedGlyph = "☑︎ "
-    public static let checklistUncheckedGlyph = "☐ "
+    public static let checklistCheckedGlyph = "● "
+    public static let checklistUncheckedGlyph = "○ "
     
     // MARK: Paragraph Style Attributes
     
@@ -198,7 +198,7 @@ public struct RichTextTypography {
     
     private static func cleanPrefixes(from text: String) -> String {
         var result = text
-        let prefixes = [checklistUncheckedGlyph, checklistCheckedGlyph, "• ", "– ", "1. ", "2. ", "3. ", "4. ", "5. "]
+        let prefixes = [checklistUncheckedGlyph, checklistCheckedGlyph, "○ ", "● ", "☐ ", "☑︎ ", "• ", "– ", "1. ", "2. ", "3. ", "4. ", "5. "]
         for p in prefixes {
             if result.hasPrefix(p) {
                 result = String(result.dropFirst(p.count))
@@ -206,6 +206,57 @@ public struct RichTextTypography {
             }
         }
         return result
+    }
+
+    // MARK: Checklist Insertion & Toggle
+    
+    public static func toggleChecklistOnCurrentParagraph(in textStorage: NSMutableAttributedString, selectedRange: NSRange, defaultFont: NSFont) -> NSRange {
+        textStorage.beginEditing()
+        let string = textStorage.string as NSString
+        let paragraphRange = string.paragraphRange(for: selectedRange)
+        let paragraphText = string.substring(with: paragraphRange)
+        
+        var newSelectedRange = selectedRange
+        
+        let isUnchecked = paragraphText.hasPrefix(checklistUncheckedGlyph) || paragraphText.hasPrefix("☐ ") || paragraphText.hasPrefix("[ ] ")
+        let isChecked = paragraphText.hasPrefix(checklistCheckedGlyph) || paragraphText.hasPrefix("☑︎ ") || paragraphText.hasPrefix("[x] ")
+        
+        if isUnchecked {
+            // Unchecked -> Checked
+            let oldPrefix = paragraphText.hasPrefix(checklistUncheckedGlyph) ? checklistUncheckedGlyph : (paragraphText.hasPrefix("☐ ") ? "☐ " : "[ ] ")
+            let replaceRange = NSRange(location: paragraphRange.location, length: (oldPrefix as NSString).length)
+            textStorage.replaceCharacters(in: replaceRange, with: checklistCheckedGlyph)
+            
+            let updatedParaRange = (textStorage.string as NSString).paragraphRange(for: selectedRange)
+            let prefixLen = (checklistCheckedGlyph as NSString).length
+            let textLen = updatedParaRange.length - prefixLen
+            
+            // Remove strikethrough from the entire paragraph first (glyph never has strike)
+            textStorage.removeAttribute(.strikethroughStyle, range: updatedParaRange)
+            
+            let textSnippet = (textStorage.string as NSString).substring(with: NSRange(location: updatedParaRange.location + prefixLen, length: max(0, textLen))).trimmingCharacters(in: .whitespacesAndNewlines)
+            if !textSnippet.isEmpty && textLen > 0 {
+                let strikeRange = NSRange(location: updatedParaRange.location + prefixLen, length: textLen)
+                textStorage.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: strikeRange)
+                textStorage.addAttribute(.foregroundColor, value: NSColor.secondaryLabelColor, range: strikeRange)
+            }
+        } else if isChecked {
+            // Checked -> Remove checklist prefix
+            let oldPrefix = paragraphText.hasPrefix(checklistCheckedGlyph) ? checklistCheckedGlyph : (paragraphText.hasPrefix("☑︎ ") ? "☑︎ " : "[x] ")
+            let replaceRange = NSRange(location: paragraphRange.location, length: (oldPrefix as NSString).length)
+            textStorage.replaceCharacters(in: replaceRange, with: "")
+            let cleanRange = NSRange(location: paragraphRange.location, length: paragraphRange.length - replaceRange.length)
+            textStorage.removeAttribute(.strikethroughStyle, range: cleanRange)
+            textStorage.addAttribute(.foregroundColor, value: NSColor.textColor, range: cleanRange)
+            newSelectedRange = NSRange(location: max(paragraphRange.location, selectedRange.location - replaceRange.length), length: selectedRange.length)
+        } else {
+            // Add Unchecked Circle
+            textStorage.insert(NSAttributedString(string: checklistUncheckedGlyph, attributes: [.font: defaultFont, .foregroundColor: NSColor.textColor]), at: paragraphRange.location)
+            newSelectedRange = NSRange(location: selectedRange.location + (checklistUncheckedGlyph as NSString).length, length: selectedRange.length)
+        }
+        
+        textStorage.endEditing()
+        return newSelectedRange
     }
     
     // MARK: Inline Trait Toggling (Bold / Italic)
@@ -377,41 +428,6 @@ public struct RichTextTypography {
             textStorage.addAttribute(.foregroundColor, value: NSColor.textColor, range: range)
         }
         textStorage.endEditing()
-    }
-    
-    // MARK: Checklist Insertion & Toggle
-    
-    public static func toggleChecklistOnCurrentParagraph(in textStorage: NSMutableAttributedString, selectedRange: NSRange, defaultFont: NSFont) -> NSRange {
-        textStorage.beginEditing()
-        let string = textStorage.string as NSString
-        let paragraphRange = string.paragraphRange(for: selectedRange)
-        let paragraphText = string.substring(with: paragraphRange)
-        
-        var newSelectedRange = selectedRange
-        
-        if paragraphText.hasPrefix(checklistUncheckedGlyph) {
-            // Unchecked -> Checked
-            let replaceRange = NSRange(location: paragraphRange.location, length: (checklistUncheckedGlyph as NSString).length)
-            textStorage.replaceCharacters(in: replaceRange, with: checklistCheckedGlyph)
-            let strikeRange = NSRange(location: paragraphRange.location, length: paragraphRange.length)
-            textStorage.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: strikeRange)
-            textStorage.addAttribute(.foregroundColor, value: NSColor.secondaryLabelColor, range: strikeRange)
-        } else if paragraphText.hasPrefix(checklistCheckedGlyph) {
-            // Checked -> Remove checklist prefix
-            let replaceRange = NSRange(location: paragraphRange.location, length: (checklistCheckedGlyph as NSString).length)
-            textStorage.replaceCharacters(in: replaceRange, with: "")
-            let cleanRange = NSRange(location: paragraphRange.location, length: paragraphRange.length - replaceRange.length)
-            textStorage.removeAttribute(.strikethroughStyle, range: cleanRange)
-            textStorage.addAttribute(.foregroundColor, value: NSColor.textColor, range: cleanRange)
-            newSelectedRange = NSRange(location: max(paragraphRange.location, selectedRange.location - replaceRange.length), length: selectedRange.length)
-        } else {
-            // Add Unchecked
-            textStorage.insert(NSAttributedString(string: checklistUncheckedGlyph, attributes: [.font: defaultFont, .foregroundColor: NSColor.textColor]), at: paragraphRange.location)
-            newSelectedRange = NSRange(location: selectedRange.location + (checklistUncheckedGlyph as NSString).length, length: selectedRange.length)
-        }
-        
-        textStorage.endEditing()
-        return newSelectedRange
     }
     
     // MARK: RTFD Binary Serialization (RTFD with Attachments)
