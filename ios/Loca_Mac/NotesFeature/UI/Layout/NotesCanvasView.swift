@@ -89,20 +89,18 @@ public struct NotesCanvasView: View {
                 HStack {
                     Spacer()
                     NotesFormattingToolbar(
-                        onApplyInlineMark: { type in
-                            state.bridge.applyInlineMark(type: type, in: state.currentSelection)
+                        state: state.formattingState,
+                        onToggleBold: {
+                            state.toggleBold()
                             handleLocalKeystroke(state.bridge.doc)
-                            state.requestFormatRefresh()
                         },
-                        onSetBlockType: { type, attrs in
-                            state.bridge.setBlockType(type, at: state.currentSelection.location, attributes: attrs)
+                        onToggleItalic: {
+                            state.toggleItalic()
                             handleLocalKeystroke(state.bridge.doc)
-                            state.requestFormatRefresh()
                         },
-                        onToggleChecklist: {
-                            state.bridge.toggleChecklist(at: state.currentSelection.location)
+                        onToggleBlockType: { blockType in
+                            state.toggleBlockType(blockType)
                             handleLocalKeystroke(state.bridge.doc)
-                            state.requestFormatRefresh()
                         }
                     )
                 }

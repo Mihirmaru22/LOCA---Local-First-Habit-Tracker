@@ -237,5 +237,143 @@ struct TextKitBridgeTests {
         state.updateDocFromRemote(remoteDoc)
         #expect(state.needsRemoteRefresh == true)
     }
+    
+    // MARK: - Stateful Formatting Toolbar Tests
+    
+    @Test func testToolbarReflectsCursorInsideBoldSpan() {
+        let noteID = NoteID()
+        let blockID = UUID()
+        
+        var doc = CRDTDoc(id: noteID, deviceID: "test-device")
+        var paragraph = CRDTBlock(id: blockID, type: "paragraph", text: CRDTText(string: "Hello Bold World", deviceID: "test-device"))
+        paragraph.applyMark(type: "bold", startIndex: 6, endIndex: 10) // "Bold" is at 6..<10
+        doc.addBlock(paragraph)
+        
+        let bridge = TextKitCRDTBridge(doc: doc, deviceID: "test-device")
+        
+        // Cursor at index 7 (inside "Bold")
+        let insideState = bridge.currentFormattingState(at: NSRange(location: 7, length: 0))
+        #expect(insideState.isBold == true)
+        #expect(insideState.isItalic == false)
+        #expect(insideState.blockType == .paragraph)
+        
+        // Cursor at index 2 (inside "Hello")
+        let outsideState = bridge.currentFormattingState(at: NSRange(location: 2, length: 0))
+        #expect(outsideState.isBold == false)
+    }
+    
+    @Test func testBoldAndItalicOnSimultaneously() {
+        let noteID = NoteID()
+        let blockID = UUID()
+        
+        var doc = CRDTDoc(id: noteID, deviceID: "test-device")
+        var paragraph = CRDTBlock(id: blockID, type: "paragraph", text: CRDTText(string: "Formatted Text", deviceID: "test-device"))
+        paragraph.applyMark(type: "bold", startIndex: 0, endIndex: 9)
+        paragraph.applyMark(type: "italic", startIndex: 0, endIndex: 9)
+        doc.addBlock(paragraph)
+        
+        let bridge = TextKitCRDTBridge(doc: doc, deviceID: "test-device")
+        
+        // Selection over "Formatted" (0...9)
+        let state = bridge.currentFormattingState(at: NSRange(location: 0, length: 9))
+        #expect(state.isBold == true)
+        #expect(state.isItalic == true)
+        #expect(state.blockType == .paragraph)
+    }
+    
+    @Test func testBlockTypeExclusive() {
+        let noteID = NoteID()
+        let blockID = UUID()
+        
+        var doc = CRDTDoc(id: noteID, deviceID: "test-device")
+        let paragraph = CRDTBlock(id: blockID, type: "paragraph", text: CRDTText(string: "Exclusive Headings", deviceID: "test-device"))
+        doc.addBlock(paragraph)
+        
+        let bridge = TextKitCRDTBridge(doc: doc, deviceID: "test-device")
+        
+        // Activate H1
+        bridge.toggleBlockType(.h1, at: 5)
+        let h1State = bridge.currentFormattingState(at: NSRange(location: 5, length: 0))
+        #expect(h1State.blockType == .h1)
+        
+        // Activate H2 while H1 is active -> switches to H2
+        bridge.toggleBlockType(.h2, at: 5)
+        let h2State = bridge.currentFormattingState(at: NSRange(location: 5, length: 0))
+        #expect(h2State.blockType == .h2)
+    }
+    
+    @Test func testActiveBlockClickRevertsToParagraph() {
+        let noteID = NoteID()
+        let blockID = UUID()
+        
+        var doc = CRDTDoc(id: noteID, deviceID: "test-device")
+        let h1Block = CRDTBlock(id: blockID, type: "heading", text: CRDTText(string: "Title Text", deviceID: "test-device"), attributes: ["level": "1"])
+        doc.addBlock(h1Block)
+        
+        let bridge = TextKitCRDTBridge(doc: doc, deviceID: "test-device")
+        let initial = bridge.currentFormattingState(at: NSRange(location: 2, length: 0))
+        #expect(initial.blockType == .h1)
+        
+        // Clicking H1 again reverts to paragraph
+        bridge.toggleBlockType(.h1, at: 2)
+        let reverted = bridge.currentFormattingState(at: NSRange(location: 2, length: 0))
+        #expect(reverted.blockType == .paragraph)
+    }
+    
+    @Test func testToggleBoldOffRemovesMark() {
+        let noteID = NoteID()
+        let blockID = UUID()
+        
+        var doc = CRDTDoc(id: noteID, deviceID: "test-device")
+        var paragraph = CRDTBlock(id: blockID, type: "paragraph", text: CRDTText(string: "Selected Word Here", deviceID: "test-device"))
+        paragraph.applyMark(type: "bold", startIndex: 9, endIndex: 13) // "Word" is at 9..<13
+        doc.addBlock(paragraph)
+        
+        let bridge = TextKitCRDTBridge(doc: doc, deviceID: "test-device")
+        
+        // Select "Word" (range: 9, length: 4) and toggle bold off
+        bridge.toggleInlineMark(type: "bold", in: NSRange(location: 9, length: 4))
+        
+        let targetBlock = bridge.block(for: blockID)
+        #expect(targetBlock?.marks.isEmpty == true)
+        
+        let state = bridge.currentFormattingState(at: NSRange(location: 9, length: 4))
+        #expect(state.isBold == false)
+    }
+    
+    @Test func testStickyBoldTypingWithEmptySelection() {
+        let noteID = NoteID()
+        let blockID = UUID()
+        
+        var doc = CRDTDoc(id: noteID, deviceID: "test-device")
+        doc.addBlock(CRDTBlock(id: blockID, type: "paragraph", text: CRDTText(string: "Prefix ", deviceID: "test-device")))
+        
+        let bridge = TextKitCRDTBridge(doc: doc, deviceID: "test-device")
+        let state = EditorBridgeState(bridge: bridge)
+        
+        // Empty selection at index 7 (after "Prefix ")
+        state.updateSelection(NSRange(location: 7, length: 0))
+        #expect(state.formattingState.isBold == false)
+        
+        // Toggle bold with empty selection -> sets stickyBold
+        state.toggleBold()
+        #expect(state.stickyBold == true)
+        #expect(state.formattingState.isBold == true)
+        
+        // Simulate typing with sticky bold
+        let insertLoc = 7
+        let typedText = "Bolded"
+        bridge.insertText(typedText, at: insertLoc)
+        if state.stickyBold {
+            bridge.applyInlineMark(type: "bold", in: NSRange(location: insertLoc, length: typedText.count))
+        }
+        
+        let targetBlock = bridge.block(for: blockID)
+        #expect(targetBlock?.text.string == "Prefix Bolded")
+        #expect(targetBlock?.marks.count == 1)
+        #expect(targetBlock?.marks.first?.type == "bold")
+        #expect(targetBlock?.marks.first?.startIndex == 7)
+        #expect(targetBlock?.marks.first?.endIndex == 13)
+    }
 }
 #endif

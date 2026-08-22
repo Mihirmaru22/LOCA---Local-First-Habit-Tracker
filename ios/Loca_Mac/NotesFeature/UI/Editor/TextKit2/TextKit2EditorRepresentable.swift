@@ -16,10 +16,12 @@ import Combine
 import SwiftUI
 import AppKit
 
-/// Subclassed NSTextView supporting interactive checkbox gutter clicks, first responder handling, and text engine integration.
+/// Subclassed NSTextView supporting interactive checkbox gutter clicks, keyboard shortcuts, and text engine integration.
 public final class NoteCanvasTextView: NSTextView {
     
     public var onGutterClicked: ((NSPoint) -> Bool)?
+    public var onToggleBold: (() -> Void)?
+    public var onToggleItalic: (() -> Void)?
     
     public override var acceptsFirstResponder: Bool { true }
     public override var canBecomeKeyView: Bool { true }
@@ -27,6 +29,26 @@ public final class NoteCanvasTextView: NSTextView {
     
     public override func becomeFirstResponder() -> Bool {
         return super.becomeFirstResponder()
+    }
+    
+    public override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        if flags == .command {
+            if let chars = event.charactersIgnoringModifiers?.lowercased() {
+                if chars == "b" {
+                    if let toggleBold = onToggleBold {
+                        toggleBold()
+                        return true
+                    }
+                } else if chars == "i" {
+                    if let toggleItalic = onToggleItalic {
+                        toggleItalic()
+                        return true
+                    }
+                }
+            }
+        }
+        return super.performKeyEquivalent(with: event)
     }
     
     public override func mouseDown(with event: NSEvent) {
@@ -96,6 +118,19 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
             .paragraphStyle: NSParagraphStyle.default
         ]
         
+        // Wire Keyboard Shortcuts (⌘B / ⌘I)
+        textView.onToggleBold = { [weak state] in
+            guard let state = state else { return }
+            state.toggleBold()
+            self.onKeystroke(state.bridge.doc)
+        }
+        
+        textView.onToggleItalic = { [weak state] in
+            guard let state = state else { return }
+            state.toggleItalic()
+            self.onKeystroke(state.bridge.doc)
+        }
+        
         // Gutter Click Handler
         textView.onGutterClicked = { [weak textView] clickPoint in
             guard let tv = textView, let storage = tv.textStorage else { return false }
@@ -116,6 +151,7 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
             let updatedAttributed = self.state.bridge.renderAttributedString()
             storage.setAttributedString(updatedAttributed)
             
+            self.state.refreshFormattingState()
             self.onKeystroke(self.state.bridge.doc)
             return true
         }
@@ -174,8 +210,11 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         
         public func textViewDidChangeSelection(_ notification: Notification) {
             guard let tv = notification.object as? NSTextView else { return }
-            parent.state.currentSelection = tv.selectedRange()
-            parent.onSelectionChanged(tv.selectedRange())
+            let sel = tv.selectedRange()
+            DispatchQueue.main.async {
+                self.parent.state.updateSelection(sel)
+                self.parent.onSelectionChanged(sel)
+            }
         }
         
         public func textView(_ textView: NSTextView, shouldChangeTextIn affectedCharRange: NSRange, replacementString: String?) -> Bool {
@@ -192,22 +231,33 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
                         textView.scrollRangeToVisible(NSRange(location: newCursorPos, length: 0))
                     }
                     parent.onKeystroke(parent.state.bridge.doc)
+                    DispatchQueue.main.async {
+                        self.parent.state.refreshFormattingState()
+                    }
                     return false
                 }
             }
             
             // Standard Typing / Deletion / Replacement:
-            // 1. Update CRDT model synchronously
             if replacement.isEmpty && affectedCharRange.length > 0 {
                 parent.state.bridge.deleteText(at: affectedCharRange.location, length: affectedCharRange.length)
             } else if !replacement.isEmpty {
-                parent.state.bridge.insertText(replacement, at: affectedCharRange.location)
+                let insertLoc = affectedCharRange.location
+                parent.state.bridge.insertText(replacement, at: insertLoc)
+                
+                // Apply sticky marks if active
+                if parent.state.stickyBold {
+                    parent.state.bridge.applyInlineMark(type: "bold", in: NSRange(location: insertLoc, length: replacement.count))
+                }
+                if parent.state.stickyItalic {
+                    parent.state.bridge.applyInlineMark(type: "italic", in: NSRange(location: insertLoc, length: replacement.count))
+                }
             }
             
-            // 2. Notify parent onKeystroke for debounced autosave
             parent.onKeystroke(parent.state.bridge.doc)
-            
-            // 3. Return true to let AppKit apply edit to backing store natively with 0ms latency
+            DispatchQueue.main.async {
+                self.parent.state.refreshFormattingState()
+            }
             return true
         }
         
@@ -226,19 +276,72 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
 @MainActor
 public final class EditorBridgeState: ObservableObject {
     public var bridge: TextKitCRDTBridge
+    @Published public var formattingState: FormattingState = FormattingState()
     @Published public var needsRemoteRefresh: Bool = false
     public var currentSelection: NSRange = NSRange(location: 0, length: 0)
     
+    // Sticky typing flags for empty selection
+    public var stickyBold: Bool = false
+    public var stickyItalic: Bool = false
+    
     public init(bridge: TextKitCRDTBridge) {
         self.bridge = bridge
+        self.formattingState = bridge.currentFormattingState(at: currentSelection)
+    }
+    
+    public func updateSelection(_ newRange: NSRange) {
+        self.currentSelection = newRange
+        // Moving cursor clears sticky typing flags
+        self.stickyBold = false
+        self.stickyItalic = false
+        refreshFormattingState()
+    }
+    
+    public func refreshFormattingState() {
+        let newState = bridge.currentFormattingState(
+            at: currentSelection,
+            stickyBold: stickyBold,
+            stickyItalic: stickyItalic
+        )
+        if formattingState != newState {
+            formattingState = newState
+        }
+    }
+    
+    public func toggleBold() {
+        if currentSelection.length > 0 {
+            bridge.toggleInlineMark(type: "bold", in: currentSelection)
+            needsRemoteRefresh = true
+        } else {
+            stickyBold.toggle()
+        }
+        refreshFormattingState()
+    }
+    
+    public func toggleItalic() {
+        if currentSelection.length > 0 {
+            bridge.toggleInlineMark(type: "italic", in: currentSelection)
+            needsRemoteRefresh = true
+        } else {
+            stickyItalic.toggle()
+        }
+        refreshFormattingState()
+    }
+    
+    public func toggleBlockType(_ type: EditorBlockType) {
+        bridge.toggleBlockType(type, at: currentSelection.location)
+        needsRemoteRefresh = true
+        refreshFormattingState()
     }
     
     public func updateDocFromRemote(_ newDoc: CRDTDoc) {
         bridge.doc = newDoc
         needsRemoteRefresh = true
+        refreshFormattingState()
     }
     
     public func requestFormatRefresh() {
         needsRemoteRefresh = true
+        refreshFormattingState()
     }
 }

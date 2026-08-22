@@ -60,6 +60,29 @@ public struct CRDTBlock: Identifiable, Hashable, Codable, Sendable {
         lastModified = Date().timeIntervalSince1970
     }
     
+    public mutating func removeMark(type: String, startIndex: Int, endIndex: Int) {
+        guard startIndex < endIndex else { return }
+        var updated: [CRDTTextMark] = []
+        for mark in marks {
+            if mark.type != type {
+                updated.append(mark)
+                continue
+            }
+            if mark.endIndex <= startIndex || mark.startIndex >= endIndex {
+                updated.append(mark)
+            } else {
+                if mark.startIndex < startIndex {
+                    updated.append(CRDTTextMark(type: type, startIndex: mark.startIndex, endIndex: startIndex))
+                }
+                if mark.endIndex > endIndex {
+                    updated.append(CRDTTextMark(type: type, startIndex: endIndex, endIndex: mark.endIndex))
+                }
+            }
+        }
+        marks = updated
+        lastModified = Date().timeIntervalSince1970
+    }
+    
     public mutating func adjustMarksForInsertion(at index: Int, length: Int) {
         for i in 0..<marks.count {
             if index < marks[i].startIndex {

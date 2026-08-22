@@ -1,7 +1,41 @@
 import Foundation
 import AppKit
 
-/// Bidirectional bridging engine translating TextKit 2 layout offsets and mouse events to granular CRDT operations.
+/// Supported rich-text block types for formatting controls and typography mapping.
+public enum EditorBlockType: String, Equatable, CaseIterable, Sendable {
+    case h1
+    case h2
+    case h3
+    case checklist
+    case bullet
+    case paragraph
+    
+    public var rawBlockType: (type: String, attributes: [String: String]) {
+        switch self {
+        case .h1: return ("heading", ["level": "1"])
+        case .h2: return ("heading", ["level": "2"])
+        case .h3: return ("heading", ["level": "3"])
+        case .checklist: return ("checklistItem", ["isChecked": "false"])
+        case .bullet: return ("bullet", [:])
+        case .paragraph: return ("paragraph", [:])
+        }
+    }
+}
+
+/// Equatable formatting state derived from CRDT document truth for stateful toolbar buttons.
+public struct FormattingState: Equatable, Sendable {
+    public var isBold: Bool
+    public var isItalic: Bool
+    public var blockType: EditorBlockType
+    
+    public init(isBold: Bool = false, isItalic: Bool = false, blockType: EditorBlockType = .paragraph) {
+        self.isBold = isBold
+        self.isItalic = isItalic
+        self.blockType = blockType
+    }
+}
+
+/// Bidirectional bridging engine translating TextKit layout offsets and mouse events to granular CRDT operations.
 public final class TextKitCRDTBridge: @unchecked Sendable {
     
     public var doc: CRDTDoc
@@ -133,7 +167,30 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
     public func applyInlineMark(type: String, in globalRange: NSRange) {
         lock.lock()
         defer { lock.unlock() }
+        applyInlineMarkInternal(type: type, in: globalRange)
+    }
+    
+    public func removeInlineMark(type: String, in globalRange: NSRange) {
+        lock.lock()
+        defer { lock.unlock() }
+        removeInlineMarkInternal(type: type, in: globalRange)
+    }
+    
+    public func toggleInlineMark(type: String, in globalRange: NSRange) {
+        lock.lock()
+        defer { lock.unlock() }
         
+        if globalRange.length > 0 {
+            let active = activeInlineMarksInternal(at: globalRange)
+            if active.contains(type) {
+                removeInlineMarkInternal(type: type, in: globalRange)
+            } else {
+                applyInlineMarkInternal(type: type, in: globalRange)
+            }
+        }
+    }
+    
+    private func applyInlineMarkInternal(type: String, in globalRange: NSRange) {
         let activeBlocks = doc.blocks.filter { !$0.isDeleted }
         var runningOffset = 0
         
@@ -148,6 +205,28 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
                 
                 if let idx = doc.blocks.firstIndex(where: { $0.id == block.id }) {
                     doc.blocks[idx].applyMark(type: type, startIndex: startRel, endIndex: endRel)
+                    _ = doc.vectorClock.increment(for: deviceID)
+                }
+            }
+            runningOffset += blockLen + 1
+        }
+    }
+    
+    private func removeInlineMarkInternal(type: String, in globalRange: NSRange) {
+        let activeBlocks = doc.blocks.filter { !$0.isDeleted }
+        var runningOffset = 0
+        
+        for block in activeBlocks {
+            let blockLen = block.text.string.count
+            let blockRange = NSRange(location: runningOffset, length: blockLen)
+            
+            let intersection = NSIntersectionRange(globalRange, blockRange)
+            if intersection.length > 0 {
+                let startRel = intersection.location - runningOffset
+                let endRel = startRel + intersection.length
+                
+                if let idx = doc.blocks.firstIndex(where: { $0.id == block.id }) {
+                    doc.blocks[idx].removeMark(type: type, startIndex: startRel, endIndex: endRel)
                     _ = doc.vectorClock.increment(for: deviceID)
                 }
             }
@@ -170,6 +249,25 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
         }
     }
     
+    /// Converts current block to the requested block type, or reverts to .paragraph if already active.
+    public func toggleBlockType(_ targetType: EditorBlockType, at globalLocation: Int) {
+        lock.lock()
+        defer { lock.unlock() }
+        
+        guard let target = resolveLocationInternal(globalLocation) else { return }
+        let currentType = blockType(for: target.block)
+        
+        let destination: EditorBlockType = (currentType == targetType) ? .paragraph : targetType
+        let raw = destination.rawBlockType
+        
+        if let idx = doc.blocks.firstIndex(where: { $0.id == target.block.id }) {
+            doc.blocks[idx].type = raw.type
+            doc.blocks[idx].attributes = raw.attributes
+            doc.blocks[idx].lastModified = Date().timeIntervalSince1970
+            _ = doc.vectorClock.increment(for: deviceID)
+        }
+    }
+    
     public func toggleChecklist(at globalLocation: Int) {
         lock.lock()
         defer { lock.unlock() }
@@ -182,6 +280,103 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         doc.toggleChecklist(blockID: blockID)
+    }
+    
+    // MARK: - Formatting State Derivation (Source of Truth = CRDT)
+    
+    public func activeInlineMarks(at selection: NSRange) -> Set<String> {
+        lock.lock()
+        defer { lock.unlock() }
+        return activeInlineMarksInternal(at: selection)
+    }
+    
+    public func blockType(at location: Int) -> EditorBlockType {
+        lock.lock()
+        defer { lock.unlock() }
+        guard let target = resolveLocationInternal(location) else { return .paragraph }
+        return blockType(for: target.block)
+    }
+    
+    public func currentFormattingState(at selection: NSRange, stickyBold: Bool = false, stickyItalic: Bool = false) -> FormattingState {
+        lock.lock()
+        defer { lock.unlock() }
+        
+        let marks = activeInlineMarksInternal(at: selection)
+        let isBold = stickyBold || marks.contains("bold")
+        let isItalic = stickyItalic || marks.contains("italic")
+        
+        let bType: EditorBlockType
+        if let target = resolveLocationInternal(selection.location) {
+            bType = blockType(for: target.block)
+        } else {
+            bType = .paragraph
+        }
+        
+        return FormattingState(isBold: isBold, isItalic: isItalic, blockType: bType)
+    }
+    
+    private func blockType(for block: CRDTBlock) -> EditorBlockType {
+        if block.type == "heading" {
+            let level = block.attributes["level"] ?? "1"
+            if level == "1" { return .h1 }
+            if level == "2" { return .h2 }
+            if level == "3" { return .h3 }
+            return .h1
+        } else if block.type == "checklistItem" {
+            return .checklist
+        } else if block.type == "bullet" {
+            return .bullet
+        } else {
+            return .paragraph
+        }
+    }
+    
+    private func activeInlineMarksInternal(at selection: NSRange) -> Set<String> {
+        let activeBlocks = doc.blocks.filter { !$0.isDeleted }
+        guard !activeBlocks.isEmpty else { return [] }
+        
+        if selection.length == 0 {
+            let checkPos = max(0, selection.location > 0 ? selection.location - 1 : 0)
+            guard let target = resolveLocationInternal(checkPos) else { return [] }
+            
+            var result = Set<String>()
+            for mark in target.block.marks {
+                if target.relativeIndex >= mark.startIndex && target.relativeIndex < mark.endIndex {
+                    result.insert(mark.type)
+                }
+            }
+            return result
+        } else {
+            var boldCovered = true
+            var italicCovered = true
+            var foundAnyBlock = false
+            
+            var runningOffset = 0
+            for block in activeBlocks {
+                let blockLen = block.text.string.count
+                let blockRange = NSRange(location: runningOffset, length: blockLen)
+                let intersection = NSIntersectionRange(selection, blockRange)
+                
+                if intersection.length > 0 {
+                    foundAnyBlock = true
+                    let startRel = intersection.location - runningOffset
+                    let endRel = startRel + intersection.length
+                    
+                    let hasBold = block.marks.contains { $0.type == "bold" && $0.startIndex <= startRel && $0.endIndex >= endRel }
+                    if !hasBold { boldCovered = false }
+                    
+                    let hasItalic = block.marks.contains { $0.type == "italic" && $0.startIndex <= startRel && $0.endIndex >= endRel }
+                    if !hasItalic { italicCovered = false }
+                }
+                runningOffset += blockLen + 1
+            }
+            
+            guard foundAnyBlock else { return [] }
+            var result = Set<String>()
+            if boldCovered { result.insert("bold") }
+            if italicCovered { result.insert("italic") }
+            return result
+        }
     }
     
     // MARK: - Attributed String Generation & Inline Mark Rendering

@@ -1,112 +1,146 @@
 import SwiftUI
 
-/// Floating or pinned rich-text formatting bar for inline styling and block conversion.
+/// Stateful rich-text formatting bar for inline styling and block conversion with visual ON states.
 public struct NotesFormattingToolbar: View {
     
-    public let onApplyInlineMark: (String) -> Void
-    public let onSetBlockType: (String, [String: String]) -> Void
-    public let onToggleChecklist: () -> Void
+    public let state: FormattingState
+    public let onToggleBold: () -> Void
+    public let onToggleItalic: () -> Void
+    public let onToggleBlockType: (EditorBlockType) -> Void
     
     public init(
-        onApplyInlineMark: @escaping (String) -> Void,
-        onSetBlockType: @escaping (String, [String: String]) -> Void,
-        onToggleChecklist: @escaping () -> Void
+        state: FormattingState,
+        onToggleBold: @escaping () -> Void,
+        onToggleItalic: @escaping () -> Void,
+        onToggleBlockType: @escaping (EditorBlockType) -> Void
     ) {
-        self.onApplyInlineMark = onApplyInlineMark
-        self.onSetBlockType = onSetBlockType
-        self.onToggleChecklist = onToggleChecklist
+        self.state = state
+        self.onToggleBold = onToggleBold
+        self.onToggleItalic = onToggleItalic
+        self.onToggleBlockType = onToggleBlockType
     }
     
     public var body: some View {
-        HStack(spacing: 4) {
-            // Inline marks group
-            Button {
-                onApplyInlineMark("bold")
-            } label: {
-                Text("B").bold()
-            }
-            .buttonStyle(ToolbarIconButtonStyle())
-            .help("Bold (⌘B)")
+        HStack(spacing: 3) {
+            // Inline marks group (Combine with each other and with any block type)
+            toolbarButton(
+                title: "B",
+                icon: nil,
+                isActive: state.isBold,
+                help: "Bold (⌘B)",
+                isBoldFont: true,
+                action: onToggleBold
+            )
             
-            Button {
-                onApplyInlineMark("italic")
-            } label: {
-                Text("I").italic()
-            }
-            .buttonStyle(ToolbarIconButtonStyle())
-            .help("Italic (⌘I)")
-            
-            Divider()
-                .frame(height: 14)
-                .padding(.horizontal, 2)
-            
-            // Headings group
-            Button("H1") {
-                onSetBlockType("heading", ["level": "1"])
-            }
-            .buttonStyle(ToolbarIconButtonStyle())
-            .help("Heading 1")
-            
-            Button("H2") {
-                onSetBlockType("heading", ["level": "2"])
-            }
-            .buttonStyle(ToolbarIconButtonStyle())
-            .help("Heading 2")
-            
-            Button("H3") {
-                onSetBlockType("heading", ["level": "3"])
-            }
-            .buttonStyle(ToolbarIconButtonStyle())
-            .help("Heading 3")
+            toolbarButton(
+                title: "I",
+                icon: nil,
+                isActive: state.isItalic,
+                help: "Italic (⌘I)",
+                isItalicFont: true,
+                action: onToggleItalic
+            )
             
             Divider()
                 .frame(height: 14)
                 .padding(.horizontal, 2)
             
-            // Lists group
-            Button {
-                onSetBlockType("checklistItem", ["isChecked": "false"])
-            } label: {
-                Image(systemName: "checklist")
-            }
-            .buttonStyle(ToolbarIconButtonStyle())
-            .help("Checklist")
+            // Exclusive Headings Group
+            toolbarButton(
+                title: "H1",
+                icon: nil,
+                isActive: state.blockType == .h1,
+                help: "Heading 1",
+                action: { onToggleBlockType(.h1) }
+            )
             
-            Button {
-                onSetBlockType("bullet", [:])
-            } label: {
-                Image(systemName: "list.bullet")
-            }
-            .buttonStyle(ToolbarIconButtonStyle())
-            .help("Bullet List")
+            toolbarButton(
+                title: "H2",
+                icon: nil,
+                isActive: state.blockType == .h2,
+                help: "Heading 2",
+                action: { onToggleBlockType(.h2) }
+            )
             
-            Button {
-                onSetBlockType("paragraph", [:])
-            } label: {
-                Image(systemName: "paragraph")
-            }
-            .buttonStyle(ToolbarIconButtonStyle())
-            .help("Normal Body Text")
+            toolbarButton(
+                title: "H3",
+                icon: nil,
+                isActive: state.blockType == .h3,
+                help: "Heading 3",
+                action: { onToggleBlockType(.h3) }
+            )
+            
+            Divider()
+                .frame(height: 14)
+                .padding(.horizontal, 2)
+            
+            // Lists & Paragraph Group
+            toolbarButton(
+                title: nil,
+                icon: "checklist",
+                isActive: state.blockType == .checklist,
+                help: "Checklist",
+                action: { onToggleBlockType(.checklist) }
+            )
+            
+            toolbarButton(
+                title: nil,
+                icon: "list.bullet",
+                isActive: state.blockType == .bullet,
+                help: "Bullet List",
+                action: { onToggleBlockType(.bullet) }
+            )
+            
+            toolbarButton(
+                title: nil,
+                icon: "paragraph",
+                isActive: state.blockType == .paragraph,
+                help: "Normal Paragraph",
+                action: { onToggleBlockType(.paragraph) }
+            )
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 3)
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .stroke(Color.primary.opacity(0.1), lineWidth: 0.5)
         )
-        .shadow(color: .black.opacity(0.06), radius: 4, x: 0, y: 2)
+        .shadow(color: .black.opacity(0.04), radius: 3, x: 0, y: 1)
     }
-}
-
-private struct ToolbarIconButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 11, weight: .semibold, design: .rounded))
-            .foregroundStyle(configuration.isPressed ? Color.accentColor : Color.primary)
+    
+    @ViewBuilder
+    private func toolbarButton(
+        title: String?,
+        icon: String?,
+        isActive: Bool,
+        help: String,
+        isBoldFont: Bool = false,
+        isItalicFont: Bool = false,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Group {
+                if let title = title {
+                    Text(title)
+                        .fontWeight(isBoldFont ? .bold : (isActive ? .semibold : .medium))
+                        .italic(isItalicFont)
+                } else if let icon = icon {
+                    Image(systemName: icon)
+                        .font(.system(size: 11, weight: isActive ? .bold : .regular))
+                }
+            }
+            .font(.system(size: 11, design: .rounded))
             .frame(minWidth: 26, minHeight: 22)
-            .background(configuration.isPressed ? Color.accentColor.opacity(0.12) : Color.clear)
-            .clipShape(RoundedRectangle(cornerRadius: 4))
+            .background(Capsule().fill(isActive ? Color.accentColor.opacity(0.28) : Color.clear))
+            .overlay(Capsule().strokeBorder(isActive ? Color.accentColor.opacity(0.6) : Color.clear, lineWidth: 1))
+            .foregroundStyle(isActive ? Color.primary : Color.secondary)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(help)
+        .accessibilityValue(isActive ? "on" : "off")
+        .animation(.easeOut(duration: 0.12), value: isActive)
     }
 }
