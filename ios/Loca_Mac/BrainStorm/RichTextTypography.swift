@@ -139,7 +139,7 @@ public struct RichTextTypography {
             p.headIndent = 18
             p.firstLineHeadIndent = 18
         case .checklist:
-            p.headIndent = 28
+            p.headIndent = 30
             p.firstLineHeadIndent = 0
         case .bulletedList, .dashedList:
             p.headIndent = 22

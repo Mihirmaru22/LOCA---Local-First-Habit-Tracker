@@ -981,7 +981,7 @@ public final class LocaAppKitTextView: NSTextView {
                 let firstGlyph = layoutManager.glyphIndexForCharacter(at: paraRange.location)
                 if firstGlyph < layoutManager.numberOfGlyphs {
                     let lineRect = layoutManager.lineFragmentRect(forGlyphAt: firstGlyph, effectiveRange: nil)
-                    let hitRect = NSRect(x: 0, y: lineRect.origin.y, width: 34, height: lineRect.height)
+                    let hitRect = NSRect(x: 0, y: lineRect.origin.y, width: 38, height: lineRect.height)
                     if hitRect.contains(point) {
                         foundCheckbox = true
                         if hoveredCheckboxParaRange != paraRange {
@@ -1029,8 +1029,8 @@ public final class LocaAppKitTextView: NSTextView {
                 if firstGlyph < layoutManager.numberOfGlyphs {
                     let lineRect = layoutManager.lineFragmentRect(forGlyphAt: firstGlyph, effectiveRange: nil)
                     
-                    let circleSize: CGFloat = 16.5
-                    let circleX: CGFloat = origin.x + 8
+                    let circleSize: CGFloat = 19.5
+                    let circleX: CGFloat = origin.x + 7.5
                     let circleY: CGFloat = origin.y + lineRect.origin.y + (lineRect.height - circleSize) / 2 + 1
                     let circleRect = NSRect(x: circleX, y: circleY, width: circleSize, height: circleSize)
                     
@@ -1045,28 +1045,28 @@ public final class LocaAppKitTextView: NSTextView {
                         
                         // Crisp Checkmark ✓ Path inside circle
                         let checkmark = NSBezierPath()
-                        checkmark.lineWidth = 1.9
+                        checkmark.lineWidth = 2.1
                         checkmark.lineCapStyle = .round
                         checkmark.lineJoinStyle = .round
                         NSColor.black.withAlphaComponent(0.85).setStroke()
                         
                         let cx = circleRect.origin.x
                         let cy = circleRect.origin.y
-                        checkmark.move(to: NSPoint(x: cx + 4.2, y: cy + 8.2))
-                        checkmark.line(to: NSPoint(x: cx + 6.8, y: cy + 4.8))
-                        checkmark.line(to: NSPoint(x: cx + 12.0, y: cy + 11.4))
+                        checkmark.move(to: NSPoint(x: cx + 4.8, y: cy + 9.6))
+                        checkmark.line(to: NSPoint(x: cx + 8.0, y: cy + 5.6))
+                        checkmark.line(to: NSPoint(x: cx + 14.4, y: cy + 13.6))
                         checkmark.stroke()
                     } else {
                         let isHovered = hoveredCheckboxParaRange?.location == paraRange.location
                         let strokeColor = isHovered
                             ? NSColor(red: 0.96, green: 0.76, blue: 0.28, alpha: 0.95)
-                            : NSColor.white.withAlphaComponent(0.38)
+                            : NSColor.white.withAlphaComponent(0.40)
                         strokeColor.setStroke()
-                        circlePath.lineWidth = isHovered ? 1.8 : 1.5
+                        circlePath.lineWidth = isHovered ? 2.0 : 1.6
                         circlePath.stroke()
                         
                         if isHovered {
-                            NSColor(red: 0.96, green: 0.76, blue: 0.28, alpha: 0.14).setFill()
+                            NSColor(red: 0.96, green: 0.76, blue: 0.28, alpha: 0.15).setFill()
                             circlePath.fill()
                         }
                     }
@@ -1102,7 +1102,7 @@ public final class LocaAppKitTextView: NSTextView {
                 let firstGlyph = layoutManager.glyphIndexForCharacter(at: paragraphRange.location)
                 if firstGlyph < layoutManager.numberOfGlyphs {
                     let lineRect = layoutManager.lineFragmentRect(forGlyphAt: firstGlyph, effectiveRange: nil)
-                    let hitRect = NSRect(x: 0, y: lineRect.origin.y, width: 34, height: lineRect.height)
+                    let hitRect = NSRect(x: 0, y: lineRect.origin.y, width: 38, height: lineRect.height)
                     
                     if hitRect.contains(point) {
                         // Clicked exactly on the checklist gutter widget!
