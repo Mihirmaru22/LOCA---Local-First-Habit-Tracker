@@ -1,14 +1,12 @@
 import Foundation
 
-/// Pipeline that takes a CRDTDoc (Source of Truth), materializes it into domain structures, and syncs the Phase 1 SQLite read-view.
+/// Pipeline that takes a CRDTDoc (Source of Truth), materializes it into domain structures, and delegates persistence via NotesRepository.
 public final class MaterializationPipeline: Sendable {
     
-    private let store: LocalNotesStore
-    private let eventBus: NotesEventBus
+    private let repository: any NotesRepository
     
-    public init(store: LocalNotesStore, eventBus: NotesEventBus) {
-        self.store = store
-        self.eventBus = eventBus
+    public init(repository: any NotesRepository) {
+        self.repository = repository
     }
     
     @discardableResult
@@ -16,15 +14,19 @@ public final class MaterializationPipeline: Sendable {
         let content = CRDTTranslator.materializeContent(from: doc)
         let plainText = NoteTextExtractor.plainText(from: content)
         let preview = NotePreviewGenerator.preview(from: plainText)
-        let now = Date()
         
-        // Fetch existing note to preserve creation date if present
-        let existing = try await store.fetchNoteRow(id: doc.id.raw.uuidString)
-        let createdAt = existing.map { Date(timeIntervalSince1970: $0.createdAt) } ?? now
-        let sortKey = existing?.sortKey ?? String(format: "%014.3f", now.timeIntervalSince1970)
-        let schemaVer = existing?.schemaVersion ?? 1
+        let mutation = NoteMutation.materializeFromSync(
+            noteID: doc.id,
+            title: doc.title,
+            content: content,
+            plainTextCache: plainText,
+            preview: preview
+        )
         
-        let note = Note(
+        try await repository.apply(mutation)
+        
+        let materializedNote = try await repository.fetchNote(id: doc.id)
+        return materializedNote ?? Note(
             id: doc.id,
             folderID: doc.folderID,
             title: doc.title,
@@ -34,24 +36,13 @@ public final class MaterializationPipeline: Sendable {
             isPinned: doc.isPinned,
             isLocked: false,
             isDeleted: doc.isDeleted,
-            createdAt: createdAt,
-            updatedAt: now,
-            deletedAt: doc.isDeleted ? now : nil,
-            sortKey: sortKey,
-            schemaVersion: schemaVer,
-            clientUpdatedAt: now,
+            createdAt: Date(),
+            updatedAt: Date(),
+            deletedAt: doc.isDeleted ? Date() : nil,
+            sortKey: FractionalIndex.initial,
+            schemaVersion: 1,
+            clientUpdatedAt: Date(),
             deviceID: doc.deviceID
         )
-        
-        let row = NotesMappers.noteRow(from: note)
-        if existing != nil {
-            try await store.updateNoteRow(row)
-            eventBus.publish(.noteUpdated(doc.id))
-        } else {
-            try await store.insertNoteRow(row)
-            eventBus.publish(.noteCreated(doc.id))
-        }
-        
-        return note
     }
 }

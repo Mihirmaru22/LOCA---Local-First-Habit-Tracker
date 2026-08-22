@@ -1,6 +1,7 @@
 import { WebSocketServer, WebSocket } from 'ws';
 
 interface StoredDelta {
+  messageId: string;
   noteId: string;
   encryptedPayload: any;
   vectorClock: any;
@@ -37,8 +38,9 @@ wss.on('connection', (ws: WebSocket) => {
 
       // 2. Push Delta from Client
       if (message.pushDelta) {
-        const { noteID, encryptedPayload, vectorClock, deviceID } = message.pushDelta;
+        const { messageID, noteID, encryptedPayload, vectorClock, deviceID } = message.pushDelta;
         const delta: StoredDelta = {
+          messageId: messageID,
           noteId: noteID.raw,
           encryptedPayload,
           vectorClock,
@@ -51,9 +53,19 @@ wss.on('connection', (ws: WebSocket) => {
         existing.push(delta);
         deltaStore.set(noteID.raw, existing);
 
+        // Acknowledge receipt to sender immediately (ACK Gating)
+        const ackMsg = JSON.stringify({
+          ack: {
+            messageID,
+            noteID,
+          }
+        });
+        ws.send(ackMsg);
+
         // Broadcast to all other connected devices (Zero Knowledge)
         const broadcastMsg = JSON.stringify({
           broadcastDelta: {
+            messageID,
             noteID,
             encryptedPayload,
             vectorClock,
@@ -77,6 +89,7 @@ wss.on('connection', (ws: WebSocket) => {
         for (const delta of deltas) {
           ws.send(JSON.stringify({
             broadcastDelta: {
+              messageID: delta.messageId,
               noteID: { raw: delta.noteId },
               encryptedPayload: delta.encryptedPayload,
               vectorClock: delta.vectorClock,

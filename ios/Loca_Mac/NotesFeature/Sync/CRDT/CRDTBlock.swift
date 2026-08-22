@@ -17,7 +17,7 @@ public struct CRDTBlock: Identifiable, Hashable, Codable, Sendable {
         attributes: [String: String] = [:],
         lastModified: Double = Date().timeIntervalSince1970,
         isDeleted: Bool = false,
-        sortKey: String = String(format: "%014.3f", Date().timeIntervalSince1970)
+        sortKey: String = FractionalIndex.initial
     ) {
         self.id = id
         self.type = type

@@ -58,18 +58,28 @@ public final class MockWebSocketClient: WebSocketClientProtocol, @unchecked Send
     }
 }
 
-/// In-process zero-knowledge message relay for multi-device simulation.
+/// In-process zero-knowledge message relay for multi-device simulation with configurable ACK behavior.
 public final class MockRelayServer: @unchecked Sendable {
     
     private let clients = LockIsolated<[String: MockWebSocketClient]>([:])
+    public let autoAck = LockIsolated<Bool>(true)
     
-    public init() {}
+    public init(autoAck: Bool = true) {
+        self.autoAck.withValue { $0 = autoAck }
+    }
     
     public func register(client: MockWebSocketClient) {
         clients.withValue { $0[client.deviceID] = client }
     }
     
     public func broadcast(message: SyncMessage, from senderDeviceID: String) async {
+        if case .pushDelta(let messageID, let noteID, _, _, _) = message {
+            // Auto ACK back to sender if enabled
+            if autoAck.value, let sender = clients.value[senderDeviceID] {
+                sender.receive(message: .ack(messageID: messageID, noteID: noteID))
+            }
+        }
+        
         let targets = clients.value.filter { $0.key != senderDeviceID }
         for (_, client) in targets {
             client.receive(message: message)

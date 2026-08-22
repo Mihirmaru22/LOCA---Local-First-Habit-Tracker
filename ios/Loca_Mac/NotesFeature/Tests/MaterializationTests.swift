@@ -15,10 +15,11 @@ struct MaterializationTests {
         }
         
         let store = LocalNotesStore(database: db)
+        let eventBus = NotesEventBus()
+        let repo = LocalNotesRepository(store: store, eventBus: eventBus)
         let crdtStore = CRDTStore(database: db)
         let queueStore = OutboundQueueStore(database: db)
-        let eventBus = NotesEventBus()
-        let materializer = MaterializationPipeline(store: store, eventBus: eventBus)
+        let materializer = MaterializationPipeline(repository: repo)
         
         let relay = MockRelayServer()
         let mockSocket = MockWebSocketClient(deviceID: "device-1", relay: relay)
@@ -27,12 +28,11 @@ struct MaterializationTests {
         let coordinator = ShadowSyncCoordinator(
             deviceID: "device-1",
             vault: vault,
-            store: store,
+            repository: repo,
             crdtStore: crdtStore,
             queueStore: queueStore,
             client: mockSocket,
-            materializer: materializer,
-            eventBus: eventBus
+            materializer: materializer
         )
         
         return (coordinator, store, vault, tempDir)

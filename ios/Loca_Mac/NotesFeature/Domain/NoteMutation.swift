@@ -12,4 +12,5 @@ public enum NoteMutation: Sendable {
     case restore(noteID: NoteID)
     case permanentlyDelete(noteID: NoteID)
     case toggleChecklistItem(noteID: NoteID, blockID: UUID)
+    case materializeFromSync(noteID: NoteID, title: String, content: NoteContent, plainTextCache: String, preview: String)
 }

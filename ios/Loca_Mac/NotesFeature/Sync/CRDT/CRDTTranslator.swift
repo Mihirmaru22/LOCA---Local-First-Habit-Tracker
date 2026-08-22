@@ -35,9 +35,12 @@ public enum CRDTTranslator {
     public static func crdtDoc(from note: Note, deviceID: String = "local-device") -> CRDTDoc {
         var blocks: [CRDTBlock] = []
         let now = note.updatedAt.timeIntervalSince1970
+        var prevSortKey: String? = nil
         
-        for (index, block) in note.content.blocks.enumerated() {
-            let sortKey = String(format: "%014.3f_%04d", now, index)
+        for block in note.content.blocks {
+            let sortKey = FractionalIndex.between(prevSortKey, nil)
+            prevSortKey = sortKey
+            
             switch block {
             case .paragraph(let p):
                 blocks.append(
@@ -130,7 +133,7 @@ public enum CRDTTranslator {
             doc = CRDTDoc(id: noteID, deviceID: deviceID)
             doc.title = ""
             doc.folderID = folderID
-            let defaultBlock = CRDTBlock(id: UUID(), type: "paragraph", text: CRDTText(string: "", deviceID: deviceID))
+            let defaultBlock = CRDTBlock(id: UUID(), type: "paragraph", text: CRDTText(string: "", deviceID: deviceID), sortKey: FractionalIndex.initial)
             doc.addBlock(defaultBlock)
             
         case .setTitle(_, let title):
@@ -164,9 +167,12 @@ public enum CRDTTranslator {
             // Reconcile blocks while preserving CRDT atom histories for identical block IDs
             var updatedBlocks: [CRDTBlock] = []
             let existingMap = Dictionary(uniqueKeysWithValues: doc.blocks.map { ($0.id, $0) })
+            var lastSortKey: String? = nil
             
-            for (idx, block) in newContent.blocks.enumerated() {
-                let sortKey = String(format: "%014.3f_%04d", now, idx)
+            for block in newContent.blocks {
+                let sortKey = FractionalIndex.between(lastSortKey, nil)
+                lastSortKey = sortKey
+                
                 if var existing = existingMap[block.id] {
                     // Update text if changed
                     if existing.text.string != block.text {
@@ -200,6 +206,9 @@ public enum CRDTTranslator {
             }
             doc.blocks = updatedBlocks
             _ = doc.vectorClock.increment(for: deviceID)
+            
+        case .materializeFromSync:
+            break
         }
     }
 }

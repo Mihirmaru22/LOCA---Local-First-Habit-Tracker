@@ -337,6 +337,40 @@ public final class InMemoryNotesRepository: NotesRepository, @unchecked Sendable
                 notes[noteID] = note
             }
             return .noteUpdated(noteID)
+            
+        case .materializeFromSync(let noteID, let title, let content, let plainTextCache, let preview):
+            let now = Date()
+            if var note = notes[noteID] {
+                note.title = title
+                note.content = content
+                note.plainTextCache = plainTextCache
+                note.preview = preview
+                note.updatedAt = now
+                note.clientUpdatedAt = now
+                notes[noteID] = note
+                return .noteUpdated(noteID)
+            } else {
+                let note = Note(
+                    id: noteID,
+                    folderID: nil,
+                    title: title,
+                    content: content,
+                    plainTextCache: plainTextCache,
+                    preview: preview,
+                    isPinned: false,
+                    isLocked: false,
+                    isDeleted: false,
+                    createdAt: now,
+                    updatedAt: now,
+                    deletedAt: nil,
+                    sortKey: FractionalIndex.initial,
+                    schemaVersion: 1,
+                    clientUpdatedAt: now,
+                    deviceID: "in-memory-sync"
+                )
+                notes[noteID] = note
+                return .noteCreated(noteID)
+            }
         }
     }
     

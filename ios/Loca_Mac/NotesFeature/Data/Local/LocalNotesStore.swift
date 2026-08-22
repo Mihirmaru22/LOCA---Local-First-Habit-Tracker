@@ -397,6 +397,60 @@ public actor LocalNotesStore {
                 try updateNoteRow(updatedRow, on: db)
             }
             return .noteUpdated(noteID)
+            
+        case .materializeFromSync(let noteID, let title, let content, let plainTextCache, let preview):
+            let now = Date().timeIntervalSince1970
+            if var row = try fetchNoteRow(id: noteID.raw.uuidString, on: db) {
+                row.title = title
+                let dummyNote = Note(
+                    id: noteID,
+                    folderID: nil,
+                    title: title,
+                    content: content,
+                    plainTextCache: plainTextCache,
+                    preview: preview,
+                    isPinned: false,
+                    isLocked: false,
+                    isDeleted: false,
+                    createdAt: Date(),
+                    updatedAt: Date(),
+                    deletedAt: nil,
+                    sortKey: "",
+                    schemaVersion: 1,
+                    clientUpdatedAt: Date(),
+                    deviceID: ""
+                )
+                let noteRow = NotesMappers.noteRow(from: dummyNote)
+                row.contentJSON = noteRow.contentJSON
+                row.plainTextCache = plainTextCache
+                row.preview = preview
+                row.updatedAt = now
+                row.clientUpdatedAt = now
+                try updateNoteRow(row, on: db)
+                return .noteUpdated(noteID)
+            } else {
+                let note = Note(
+                    id: noteID,
+                    folderID: nil,
+                    title: title,
+                    content: content,
+                    plainTextCache: plainTextCache,
+                    preview: preview,
+                    isPinned: false,
+                    isLocked: false,
+                    isDeleted: false,
+                    createdAt: Date(timeIntervalSince1970: now),
+                    updatedAt: Date(timeIntervalSince1970: now),
+                    deletedAt: nil,
+                    sortKey: FractionalIndex.initial,
+                    schemaVersion: 1,
+                    clientUpdatedAt: Date(timeIntervalSince1970: now),
+                    deviceID: "sync-device"
+                )
+                let row = NotesMappers.noteRow(from: note)
+                try insertNoteRow(row, on: db)
+                return .noteCreated(noteID)
+            }
         }
     }
     

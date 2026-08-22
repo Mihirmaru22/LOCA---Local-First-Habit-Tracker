@@ -1,16 +1,15 @@
 import Foundation
 
-/// Central coordinator managing the distributed CRDT lifecycle, E2EE encryption, WebSocket sync, and materialization.
+/// Central coordinator managing the distributed CRDT lifecycle, E2EE encryption, WebSocket sync, ACK gating, and materialization.
 public actor ShadowSyncCoordinator {
     
     public let deviceID: String
     private let vault: NoteVault
-    private let store: LocalNotesStore
+    private let repository: any NotesRepository
     private let crdtStore: CRDTStore
     private let queueStore: OutboundQueueStore
     private let client: WebSocketClientProtocol
     private let materializer: MaterializationPipeline
-    private let eventBus: NotesEventBus
     private let networkMonitor: NetworkMonitor
     
     private var docCache: [NoteID: CRDTDoc] = [:]
@@ -20,22 +19,20 @@ public actor ShadowSyncCoordinator {
     public init(
         deviceID: String = "local-device",
         vault: NoteVault,
-        store: LocalNotesStore,
+        repository: any NotesRepository,
         crdtStore: CRDTStore,
         queueStore: OutboundQueueStore,
         client: WebSocketClientProtocol,
         materializer: MaterializationPipeline,
-        eventBus: NotesEventBus,
         networkMonitor: NetworkMonitor = .shared
     ) {
         self.deviceID = deviceID
         self.vault = vault
-        self.store = store
+        self.repository = repository
         self.crdtStore = crdtStore
         self.queueStore = queueStore
         self.client = client
         self.materializer = materializer
-        self.eventBus = eventBus
         self.networkMonitor = networkMonitor
     }
     
@@ -67,25 +64,25 @@ public actor ShadowSyncCoordinator {
         // 3. Persist raw encrypted CRDT state to SQLite
         try await crdtStore.saveEncryptedDoc(payload: encryptedPayload, vectorClock: doc.vectorClock, for: noteID)
         
-        // 4. Materialize to Phase 1 SQLite read-view & fire eventBus
+        // 4. Materialize to Phase 1 SQLite read-view via NotesRepository
         let materializedNote = try await materializer.materialize(doc: doc)
         
-        // 5. Broadcast to WebSocket or enqueue for offline sync
+        // 5. Build Push Delta with unique Message ID
+        let messageID = UUID()
         let syncMessage = SyncMessage.pushDelta(
+            messageID: messageID,
             noteID: noteID,
             encryptedPayload: encryptedPayload,
             vectorClock: doc.vectorClock,
             deviceID: deviceID
         )
         
+        // 6. Enqueue into SQLite Outbound Queue (retained until server ACK)
+        try await queueStore.enqueue(messageID: messageID, message: syncMessage, for: noteID)
+        
+        // 7. If connected, send via WebSocket
         if await client.isConnected {
-            do {
-                try await client.send(message: syncMessage)
-            } catch {
-                try await queueStore.enqueue(message: syncMessage, for: noteID)
-            }
-        } else {
-            try await queueStore.enqueue(message: syncMessage, for: noteID)
+            try? await client.send(message: syncMessage)
         }
         
         return materializedNote
@@ -94,6 +91,7 @@ public actor ShadowSyncCoordinator {
     // MARK: - Remote Message Ingestion (CRDT Merge & Decryption)
     
     public func applyRemoteDelta(
+        messageID: UUID,
         noteID: NoteID,
         encryptedPayload: EncryptedPayload,
         vectorClock: CRDTVectorClock,
@@ -115,11 +113,11 @@ public actor ShadowSyncCoordinator {
         let mergedEncrypted = try vault.encrypt(data: mergedData, for: noteID)
         try await crdtStore.saveEncryptedDoc(payload: mergedEncrypted, vectorClock: localDoc.vectorClock, for: noteID)
         
-        // 4. Materialize to SQLite read-view & emit eventBus notification
-        try await materializer.materialize(doc: localDoc)
+        // 4. Materialize to SQLite read-view via NotesRepository (does NOT enqueue local delta)
+        _ = try await materializer.materialize(doc: localDoc)
     }
     
-    // MARK: - Offline Outbound Queue Flush
+    // MARK: - Offline Outbound Queue Flush (ACK-Gated)
     
     public func flushOutboundQueue() async {
         guard await client.isConnected else { return }
@@ -131,11 +129,15 @@ public actor ShadowSyncCoordinator {
         for item in pending {
             do {
                 try await client.send(message: item.message)
-                try await queueStore.remove(itemID: item.id)
+                // Note: Item is NOT deleted here. It is deleted only when server responds with .ack
             } catch {
                 break
             }
         }
+    }
+    
+    public func handleServerAck(messageID: UUID) async {
+        try? await queueStore.remove(messageID: messageID)
     }
     
     // MARK: - Private Helpers
@@ -154,8 +156,7 @@ public actor ShadowSyncCoordinator {
         }
         
         // Fallback: If note exists in SQLite read-view, synthesize CRDTDoc
-        if let row = try await store.fetchNoteRow(id: noteID.raw.uuidString) {
-            let note = NotesMappers.note(from: row)
+        if let note = try await repository.fetchNote(id: noteID) {
             let doc = CRDTTranslator.crdtDoc(from: note, deviceID: deviceID)
             docCache[noteID] = doc
             return doc
@@ -179,6 +180,7 @@ public actor ShadowSyncCoordinator {
         case .restore(let id): return id
         case .permanentlyDelete(let id): return id
         case .toggleChecklistItem(let id, _): return id
+        case .materializeFromSync(let id, _, _, _, _): return id
         }
     }
     
@@ -189,9 +191,13 @@ public actor ShadowSyncCoordinator {
             for await msg in stream {
                 guard !Task.isCancelled else { break }
                 switch msg {
-                case .broadcastDelta(let noteID, let payload, let clock, let devID),
-                     .pushDelta(let noteID, let payload, let clock, let devID):
+                case .ack(let messageID, _):
+                    await self.handleServerAck(messageID: messageID)
+                    
+                case .broadcastDelta(let messageID, let noteID, let payload, let clock, let devID),
+                     .pushDelta(let messageID, let noteID, let payload, let clock, let devID):
                     try? await self.applyRemoteDelta(
+                        messageID: messageID,
                         noteID: noteID,
                         encryptedPayload: payload,
                         vectorClock: clock,

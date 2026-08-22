@@ -3,13 +3,14 @@ import SQLite3
 
 public struct OutboundQueueItem: Identifiable, Sendable {
     public let id: UUID
+    public let messageID: UUID
     public let noteID: NoteID
     public let message: SyncMessage
     public let createdAt: Double
     public let retryCount: Int
 }
 
-/// Actor managing the SQLite offline outbound sync queue.
+/// Actor managing the SQLite offline outbound sync queue with Server-ACK retention.
 public actor OutboundQueueStore {
     
     private let database: NotesDatabase
@@ -18,14 +19,14 @@ public actor OutboundQueueStore {
         self.database = database
     }
     
-    public func enqueue(message: SyncMessage, for noteID: NoteID) throws {
+    public func enqueue(messageID: UUID, message: SyncMessage, for noteID: NoteID) throws {
         try database.write { db in
-            let id = UUID().uuidString
+            let id = messageID.uuidString
             let msgData = try JSONEncoder().encode(message)
             let msgJSON = String(data: msgData, encoding: .utf8) ?? "{}"
             let now = Date().timeIntervalSince1970
             
-            let sql = "INSERT INTO outbound_sync_queue (id, note_id, message_json, created_at, retry_count) VALUES (?, ?, ?, ?, 0);"
+            let sql = "INSERT OR REPLACE INTO outbound_sync_queue (id, note_id, message_json, created_at, retry_count) VALUES (?, ?, ?, ?, 0);"
             let statement = try SQLiteHelper.prepare(sql: sql, on: db)
             defer { sqlite3_finalize(statement) }
             
@@ -65,6 +66,7 @@ public actor OutboundQueueStore {
                 items.append(
                     OutboundQueueItem(
                         id: id,
+                        messageID: id,
                         noteID: NoteID(raw: noteUUID),
                         message: msg,
                         createdAt: createdAt,
@@ -76,13 +78,13 @@ public actor OutboundQueueStore {
         }
     }
     
-    public func remove(itemID: UUID) throws {
+    public func remove(messageID: UUID) throws {
         try database.write { db in
             let sql = "DELETE FROM outbound_sync_queue WHERE id = ?;"
             let statement = try SQLiteHelper.prepare(sql: sql, on: db)
             defer { sqlite3_finalize(statement) }
             
-            SQLiteHelper.bind(text: itemID.uuidString, at: 1, statement: statement)
+            SQLiteHelper.bind(text: messageID.uuidString, at: 1, statement: statement)
             sqlite3_step(statement)
         }
     }

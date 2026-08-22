@@ -62,7 +62,30 @@ public struct CRDTDoc: Identifiable, Hashable, Codable, Sendable {
     // MARK: - Block Operations
     
     public mutating func addBlock(_ block: CRDTBlock) {
-        blocks.append(block)
+        var newBlock = block
+        if let last = blocks.last {
+            newBlock.sortKey = FractionalIndex.between(last.sortKey, nil)
+        } else {
+            newBlock.sortKey = FractionalIndex.initial
+        }
+        blocks.append(newBlock)
+        _ = vectorClock.increment(for: deviceID)
+    }
+    
+    public mutating func insertBlock(_ block: CRDTBlock, afterBlockID: UUID?) {
+        var newBlock = block
+        if let afterID = afterBlockID, let idx = blocks.firstIndex(where: { $0.id == afterID }) {
+            let prevKey = blocks[idx].sortKey
+            let nextKey = (idx + 1 < blocks.count) ? blocks[idx + 1].sortKey : nil
+            newBlock.sortKey = FractionalIndex.between(prevKey, nextKey)
+            blocks.insert(newBlock, at: idx + 1)
+        } else if let first = blocks.first {
+            newBlock.sortKey = FractionalIndex.between(nil, first.sortKey)
+            blocks.insert(newBlock, at: 0)
+        } else {
+            newBlock.sortKey = FractionalIndex.initial
+            blocks.append(newBlock)
+        }
         _ = vectorClock.increment(for: deviceID)
     }
     
