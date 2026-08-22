@@ -1055,6 +1055,8 @@ public final class LocaAppKitTextView: NSTextView {
         super.drawBackground(in: rect)
         
         guard let layoutManager = self.layoutManager, let textContainer = self.textContainer, let textStorage = self.textStorage else { return }
+        guard textStorage.length > 0 else { return }
+        
         let string = textStorage.string as NSString
         let origin = self.textContainerOrigin
         
@@ -1062,26 +1064,35 @@ public final class LocaAppKitTextView: NSTextView {
         var charRange = layoutManager.characterRange(forGlyphRange: glyphRange, actualGlyphRange: nil)
         charRange = string.paragraphRange(for: charRange)
         
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current?.shouldAntialias = true
+        
         var paraLoc = charRange.location
         while paraLoc < charRange.location + charRange.length && paraLoc < string.length {
             let paraRange = string.paragraphRange(for: NSRange(location: paraLoc, length: 0))
-            let checklistState = textStorage.attribute(.noteChecklistState, at: paraRange.location, effectiveRange: nil) as? String
+            let safeIndex = min(paraRange.location, textStorage.length - 1)
+            let checklistState = textStorage.attribute(.noteChecklistState, at: safeIndex, effectiveRange: nil) as? String
             
             if let state = checklistState {
                 let firstGlyph = layoutManager.glyphIndexForCharacter(at: paraRange.location)
+                var lineRect: NSRect? = nil
+                
                 if firstGlyph < layoutManager.numberOfGlyphs {
-                    let lineRect = layoutManager.lineFragmentRect(forGlyphAt: firstGlyph, effectiveRange: nil)
-                    
+                    lineRect = layoutManager.lineFragmentRect(forGlyphAt: firstGlyph, effectiveRange: nil)
+                } else if layoutManager.extraLineFragmentTextContainer != nil {
+                    lineRect = layoutManager.extraLineFragmentRect
+                }
+                
+                if let lineRect = lineRect {
                     let circleSize: CGFloat = 18.0
                     let circleX: CGFloat = origin.x + 5.0
                     let circleY: CGFloat = origin.y + lineRect.origin.y + (lineRect.height - circleSize) / 2
                     let circleRect = NSRect(x: circleX, y: circleY, width: circleSize, height: circleSize)
                     
-                    NSGraphicsContext.saveGraphicsState()
                     let circlePath = NSBezierPath(ovalIn: circleRect)
                     
                     if state == ChecklistState.checked.rawValue {
-                        // Solid Plut0 Amber Gold Checkbox Badge
+                        // Solid Plut0 Signature Amber Gold Checkbox Badge
                         let amberGold = NSColor(red: 0.96, green: 0.76, blue: 0.28, alpha: 1.0)
                         amberGold.setFill()
                         circlePath.fill()
@@ -1100,11 +1111,11 @@ public final class LocaAppKitTextView: NSTextView {
                         checkmark.line(to: NSPoint(x: cx + 13.2, y: cy + 12.6))
                         checkmark.stroke()
                     } else {
-                        // Unchecked Circular Ring
+                        // Unchecked Circular Ring (Appearance & Retina Aware)
                         let isHovered = hoveredCheckboxParaRange?.location == paraRange.location
                         let strokeColor = isHovered
                             ? NSColor(red: 0.96, green: 0.76, blue: 0.28, alpha: 0.95)
-                            : NSColor.white.withAlphaComponent(0.38)
+                            : NSColor.labelColor.withAlphaComponent(0.38)
                         strokeColor.setStroke()
                         circlePath.lineWidth = isHovered ? 1.8 : 1.5
                         circlePath.stroke()
@@ -1114,11 +1125,12 @@ public final class LocaAppKitTextView: NSTextView {
                             circlePath.fill()
                         }
                     }
-                    NSGraphicsContext.restoreGraphicsState()
                 }
             }
             paraLoc = paraRange.location + paraRange.length
         }
+        
+        NSGraphicsContext.restoreGraphicsState()
     }
     
     // MARK: - Interactive Gutter Checkbox Click Toggling
