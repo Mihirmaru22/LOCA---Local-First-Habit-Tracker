@@ -118,12 +118,21 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
             .paragraphStyle: NSParagraphStyle.default
         ]
         
+        // Wire in-place format updates directly to textStorage
+        state.onInPlaceFormatUpdate = { [weak textView, weak state] in
+            guard let tv = textView, let storage = tv.textStorage, let state = state else { return }
+            let currentSel = tv.selectedRange()
+            let rendered = state.bridge.renderAttributedString()
+            storage.setAttributedString(rendered)
+            tv.setSelectedRange(currentSel)
+            self.onKeystroke(state.bridge.doc)
+        }
+        
         // Wire Keyboard Shortcuts (⌘B / ⌘I)
         textView.onToggleBold = { [weak state] in
             guard let state = state else { return }
             DispatchQueue.main.async {
                 state.toggleBold()
-                self.onKeystroke(state.bridge.doc)
             }
         }
         
@@ -131,7 +140,6 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
             guard let state = state else { return }
             DispatchQueue.main.async {
                 state.toggleItalic()
-                self.onKeystroke(state.bridge.doc)
             }
         }
         
@@ -227,6 +235,7 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         
         public func textView(_ textView: NSTextView, shouldChangeTextIn affectedCharRange: NSRange, replacementString: String?) -> Bool {
             let replacement = replacementString ?? ""
+            print("🔍 shouldChangeTextIn: range=\(affectedCharRange) repl='\(replacement)'")
             
             if replacement == "\n" {
                 // Return key: Split block into two distinct blocks with new UUIDs
@@ -250,16 +259,9 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
             if replacement.isEmpty && affectedCharRange.length > 0 {
                 parent.state.bridge.deleteText(at: affectedCharRange.location, length: affectedCharRange.length)
             } else if !replacement.isEmpty {
-                let insertLoc = affectedCharRange.location
-                parent.state.bridge.insertText(replacement, at: insertLoc)
-                
-                // Apply sticky marks if active
-                if parent.state.stickyBold {
-                    parent.state.bridge.applyInlineMark(type: "bold", in: NSRange(location: insertLoc, length: replacement.count))
-                }
-                if parent.state.stickyItalic {
-                    parent.state.bridge.applyInlineMark(type: "italic", in: NSRange(location: insertLoc, length: replacement.count))
-                }
+                parent.state.bridge.insertText(replacement, at: affectedCharRange.location)
+                print("🔍 CRDT INSERTED: '\(replacement)' at \(affectedCharRange.location)")
+                print("🔍 STICKY MARKS: \(parent.state.bridge.getStickyMarks())")
             }
             
             parent.onKeystroke(parent.state.bridge.doc)
@@ -288,9 +290,8 @@ public final class EditorBridgeState: ObservableObject {
     public var needsRemoteRefresh: Bool = false
     public var currentSelection: NSRange = NSRange(location: 0, length: 0)
     
-    // Sticky typing flags for empty selection
-    public var stickyBold: Bool = false
-    public var stickyItalic: Bool = false
+    // Callback to apply in-place text storage changes without triggering updateNSView
+    public var onInPlaceFormatUpdate: (() -> Void)?
     
     public init(bridge: TextKitCRDTBridge) {
         self.bridge = bridge
@@ -299,18 +300,12 @@ public final class EditorBridgeState: ObservableObject {
     
     public func updateSelection(_ newRange: NSRange) {
         self.currentSelection = newRange
-        // Moving cursor clears sticky typing flags
-        self.stickyBold = false
-        self.stickyItalic = false
+        bridge.clearStickyMarks()
         refreshFormattingState()
     }
     
     public func refreshFormattingState() {
-        let newState = bridge.currentFormattingState(
-            at: currentSelection,
-            stickyBold: stickyBold,
-            stickyItalic: stickyItalic
-        )
+        let newState = bridge.currentFormattingState(at: currentSelection)
         if formattingState != newState {
             print("🎨 PUBLISHING STATE: bold=\(newState.isBold) italic=\(newState.isItalic) block=\(newState.blockType)")
             formattingState = newState
@@ -318,28 +313,24 @@ public final class EditorBridgeState: ObservableObject {
     }
     
     public func toggleBold() {
+        bridge.toggleInlineMark(type: "bold", in: currentSelection)
         if currentSelection.length > 0 {
-            bridge.toggleInlineMark(type: "bold", in: currentSelection)
-            needsRemoteRefresh = true
-        } else {
-            stickyBold.toggle()
+            onInPlaceFormatUpdate?()
         }
         refreshFormattingState()
     }
     
     public func toggleItalic() {
+        bridge.toggleInlineMark(type: "italic", in: currentSelection)
         if currentSelection.length > 0 {
-            bridge.toggleInlineMark(type: "italic", in: currentSelection)
-            needsRemoteRefresh = true
-        } else {
-            stickyItalic.toggle()
+            onInPlaceFormatUpdate?()
         }
         refreshFormattingState()
     }
     
     public func toggleBlockType(_ type: EditorBlockType) {
         bridge.toggleBlockType(type, at: currentSelection.location)
-        needsRemoteRefresh = true
+        onInPlaceFormatUpdate?()
         refreshFormattingState()
     }
     
@@ -350,7 +341,7 @@ public final class EditorBridgeState: ObservableObject {
     }
     
     public func requestFormatRefresh() {
-        needsRemoteRefresh = true
+        onInPlaceFormatUpdate?()
         refreshFormattingState()
     }
 }

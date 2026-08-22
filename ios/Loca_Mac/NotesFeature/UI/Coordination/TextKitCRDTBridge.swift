@@ -45,9 +45,33 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
     // Cached map of block ID to its global NSRange in the rendered attributed string
     public private(set) var blockRanges: [UUID: NSRange] = [:]
     
+    // Sticky marks for empty selection typing
+    private var stickyMarks: Set<String> = []
+    
     public init(doc: CRDTDoc, deviceID: String = "local-device") {
         self.doc = doc
         self.deviceID = deviceID
+    }
+    
+    // MARK: - Sticky Marks
+    
+    public func setStickyMarks(_ marks: Set<String>) {
+        lock.lock()
+        defer { lock.unlock() }
+        self.stickyMarks = marks
+        print("🔧 STICKY MARKS SET: \(marks)")
+    }
+    
+    public func getStickyMarks() -> Set<String> {
+        lock.lock()
+        defer { lock.unlock() }
+        return stickyMarks
+    }
+    
+    public func clearStickyMarks() {
+        lock.lock()
+        defer { lock.unlock() }
+        self.stickyMarks.removeAll()
     }
     
     // MARK: - Block Range Resolution
@@ -82,6 +106,15 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
             doc.blocks[idx].adjustMarksForInsertion(at: target.relativeIndex, length: text.count)
         }
         doc.insertText(text, at: target.relativeIndex, in: target.block.id)
+        
+        // If sticky marks are active, apply them to the newly inserted range
+        if !stickyMarks.isEmpty && !text.isEmpty {
+            let range = NSRange(location: globalLocation, length: text.count)
+            for mark in stickyMarks {
+                applyInlineMarkInternal(type: mark, in: range)
+            }
+            print("🔧 APPLIED STICKY MARKS \(stickyMarks) to range \(range)")
+        }
     }
     
     /// Deletes text at a global character location.
@@ -177,7 +210,7 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
     }
     
     public func toggleInlineMark(type: String, in globalRange: NSRange) {
-        print("🎨 BRIDGE TOGGLE: \(type) range=\(globalRange)")
+        print("🔧 TOGGLE MARK: \(type) range=\(globalRange)")
         lock.lock()
         defer { lock.unlock() }
         
@@ -188,6 +221,14 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
             } else {
                 applyInlineMarkInternal(type: type, in: globalRange)
             }
+        } else {
+            // Empty selection: toggle sticky mark for subsequent typing
+            if stickyMarks.contains(type) {
+                stickyMarks.remove(type)
+            } else {
+                stickyMarks.insert(type)
+            }
+            print("🔧 STICKY MARKS NOW: \(stickyMarks)")
         }
     }
     
@@ -252,12 +293,17 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
     
     /// Converts current block to the requested block type, or reverts to .paragraph if already active.
     public func toggleBlockType(_ targetType: EditorBlockType, at globalLocation: Int) {
-        print("🎨 BRIDGE TOGGLE BLOCK: \(targetType) loc=\(globalLocation)")
+        print("🔧 TOGGLE BLOCK: \(targetType) at \(globalLocation)")
         lock.lock()
         defer { lock.unlock() }
         
-        guard let target = resolveLocationInternal(globalLocation) else { return }
+        guard let target = resolveLocationInternal(globalLocation) else {
+            print("🔧 ERROR: no block at location \(globalLocation)")
+            return
+        }
+        
         let currentType = blockType(for: target.block)
+        print("🔧 BEFORE: block type = \(currentType)")
         
         let destination: EditorBlockType = (currentType == targetType) ? .paragraph : targetType
         let raw = destination.rawBlockType
@@ -267,6 +313,8 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
             doc.blocks[idx].attributes = raw.attributes
             doc.blocks[idx].lastModified = Date().timeIntervalSince1970
             _ = doc.vectorClock.increment(for: deviceID)
+            print("🔧 AFTER: block[\(idx)].type = \(doc.blocks[idx].type)")
+            print("🔧 CRDT DOC UPDATED: \(doc.blocks.count) blocks")
         }
     }
     
@@ -299,13 +347,13 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
         return blockType(for: target.block)
     }
     
-    public func currentFormattingState(at selection: NSRange, stickyBold: Bool = false, stickyItalic: Bool = false) -> FormattingState {
+    public func currentFormattingState(at selection: NSRange) -> FormattingState {
         lock.lock()
         defer { lock.unlock() }
         
         let marks = activeInlineMarksInternal(at: selection)
-        let isBold = stickyBold || marks.contains("bold")
-        let isItalic = stickyItalic || marks.contains("italic")
+        let isBold = stickyMarks.contains("bold") || marks.contains("bold")
+        let isItalic = stickyMarks.contains("italic") || marks.contains("italic")
         
         let bType: EditorBlockType
         if let target = resolveLocationInternal(selection.location) {

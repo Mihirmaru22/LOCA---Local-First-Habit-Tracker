@@ -355,18 +355,15 @@ struct TextKitBridgeTests {
         state.updateSelection(NSRange(location: 7, length: 0))
         #expect(state.formattingState.isBold == false)
         
-        // Toggle bold with empty selection -> sets stickyBold
+        // Toggle bold with empty selection -> sets stickyBold in bridge
         state.toggleBold()
-        #expect(state.stickyBold == true)
+        #expect(bridge.getStickyMarks().contains("bold"))
         #expect(state.formattingState.isBold == true)
         
-        // Simulate typing with sticky bold
+        // Typing automatically applies sticky marks
         let insertLoc = 7
         let typedText = "Bolded"
         bridge.insertText(typedText, at: insertLoc)
-        if state.stickyBold {
-            bridge.applyInlineMark(type: "bold", in: NSRange(location: insertLoc, length: typedText.count))
-        }
         
         let targetBlock = bridge.block(for: blockID)
         #expect(targetBlock?.text.string == "Prefix Bolded")
