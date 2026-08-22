@@ -134,28 +134,29 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         guard let textView = context.coordinator.textView,
               let textContentStorage = context.coordinator.textContentStorage else { return }
         
-        if state.needsRemoteRefresh {
-            DispatchQueue.main.async {
-                self.state.needsRemoteRefresh = false
-            }
-            
-            let oldLength = textContentStorage.attributedString?.length ?? 0
-            let currentSelection = textView.selectedRange()
-            
-            let newAttributed = state.bridge.renderAttributedString()
-            textContentStorage.attributedString = newAttributed
-            
-            // Hard Snap Cursor position based on length delta
-            let delta = newAttributed.length - oldLength
-            let newSelection = CursorSnapper.snapCursor(
-                currentRange: currentSelection,
-                remoteChangeLocation: currentSelection.location,
-                deltaLength: delta,
-                totalNewLength: newAttributed.length
-            )
-            textView.setSelectedRange(newSelection)
-            textView.scrollRangeToVisible(newSelection)
+        // Strictly guard against touching textStorage for local edits
+        guard state.needsRemoteRefresh else {
+            return
         }
+        
+        state.needsRemoteRefresh = false
+        
+        let oldLength = textContentStorage.attributedString?.length ?? 0
+        let currentSelection = textView.selectedRange()
+        
+        let newAttributed = state.bridge.renderAttributedString()
+        textContentStorage.attributedString = newAttributed
+        
+        // Hard Snap Cursor position based on length delta
+        let delta = newAttributed.length - oldLength
+        let newSelection = CursorSnapper.snapCursor(
+            currentRange: currentSelection,
+            remoteChangeLocation: currentSelection.location,
+            deltaLength: delta,
+            totalNewLength: newAttributed.length
+        )
+        textView.setSelectedRange(newSelection)
+        textView.scrollRangeToVisible(newSelection)
     }
     
     public final class Coordinator: NSObject, NSTextViewDelegate {
@@ -169,6 +170,7 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         
         public func textViewDidChangeSelection(_ notification: Notification) {
             guard let tv = notification.object as? NSTextView else { return }
+            parent.state.currentSelection = tv.selectedRange()
             parent.onSelectionChanged(tv.selectedRange())
         }
         
@@ -218,8 +220,9 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
 /// Observable state container synchronizing the SwiftUI shell with the active TextKitCRDTBridge.
 @MainActor
 public final class EditorBridgeState: ObservableObject {
-    @Published public var bridge: TextKitCRDTBridge
+    public var bridge: TextKitCRDTBridge
     @Published public var needsRemoteRefresh: Bool = false
+    public var currentSelection: NSRange = NSRange(location: 0, length: 0)
     
     public init(bridge: TextKitCRDTBridge) {
         self.bridge = bridge
@@ -227,6 +230,10 @@ public final class EditorBridgeState: ObservableObject {
     
     public func updateDocFromRemote(_ newDoc: CRDTDoc) {
         bridge.doc = newDoc
+        needsRemoteRefresh = true
+    }
+    
+    public func requestFormatRefresh() {
         needsRemoteRefresh = true
     }
 }

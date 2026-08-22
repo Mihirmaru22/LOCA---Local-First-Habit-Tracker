@@ -19,7 +19,6 @@ public struct NotesCanvasView: View {
     @State private var activeNoteTitle: String = ""
     @State private var activeNoteIsPinned: Bool = false
     @State private var activeNoteFolderID: FolderID? = nil
-    @State private var currentCursorSelection: NSRange = NSRange(location: 0, length: 0)
     @State private var editorState: EditorBridgeState? = nil
     
     public init(engine: NotesEngine = NotesEngine.shared) {
@@ -47,6 +46,7 @@ public struct NotesCanvasView: View {
             Rectangle()
                 .fill(Color(nsColor: .separatorColor).opacity(0.3))
                 .frame(width: 1)
+                .allowsHitTesting(false)
             
             // Column 2: Editor Canvas (Right)
             editorColumn
@@ -83,34 +83,33 @@ public struct NotesCanvasView: View {
                 )
                 
                 Divider()
+                    .allowsHitTesting(false)
                 
                 // Editor Body & Floating Toolbar
                 ZStack(alignment: .topTrailing) {
                     TextKit2EditorRepresentable(
                         state: state,
                         onKeystroke: handleLocalKeystroke,
-                        onSelectionChanged: { newRange in
-                            self.currentCursorSelection = newRange
-                        }
+                        onSelectionChanged: { _ in }
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     
                     // Formatting Toolbar (Floating Top Right)
                     NotesFormattingToolbar(
                         onApplyInlineMark: { type in
-                            state.bridge.applyInlineMark(type: type, in: currentCursorSelection)
+                            state.bridge.applyInlineMark(type: type, in: state.currentSelection)
                             handleLocalKeystroke(state.bridge.doc)
-                            state.needsRemoteRefresh = true
+                            state.requestFormatRefresh()
                         },
                         onSetBlockType: { type, attrs in
-                            state.bridge.setBlockType(type, at: currentCursorSelection.location, attributes: attrs)
+                            state.bridge.setBlockType(type, at: state.currentSelection.location, attributes: attrs)
                             handleLocalKeystroke(state.bridge.doc)
-                            state.needsRemoteRefresh = true
+                            state.requestFormatRefresh()
                         },
                         onToggleChecklist: {
-                            state.bridge.toggleChecklist(at: currentCursorSelection.location)
+                            state.bridge.toggleChecklist(at: state.currentSelection.location)
                             handleLocalKeystroke(state.bridge.doc)
-                            state.needsRemoteRefresh = true
+                            state.requestFormatRefresh()
                         }
                     )
                     .padding(.trailing, 24)
@@ -274,7 +273,11 @@ public struct NotesCanvasView: View {
             
             let doc = CRDTTranslator.crdtDoc(from: note)
             if let existingState = self.editorState, existingState.bridge.doc.id == doc.id {
-                existingState.updateDocFromRemote(doc)
+                // DO NOT overwrite or refresh if the content in the active editor is identical
+                let currentCRDTContent = CRDTTranslator.materializeContent(from: existingState.bridge.doc)
+                if currentCRDTContent != note.content {
+                    existingState.updateDocFromRemote(doc)
+                }
             } else {
                 let bridge = TextKitCRDTBridge(doc: doc)
                 self.editorState = EditorBridgeState(bridge: bridge)
