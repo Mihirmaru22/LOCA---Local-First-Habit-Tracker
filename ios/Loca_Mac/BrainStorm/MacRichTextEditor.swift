@@ -660,6 +660,11 @@ public final class LocaAppKitTextView: NSTextView {
             return super.shouldChangeText(in: affectedCharRange, replacementString: replacementString)
         }
         
+        // Guard against firing markdown triggers during IME marked text composition
+        guard !self.hasMarkedText() else {
+            return super.shouldChangeText(in: affectedCharRange, replacementString: replacementString)
+        }
+        
         let string = textStorage.string as NSString
         let paragraphRange = string.paragraphRange(for: affectedCharRange)
         let paragraphText = string.substring(with: paragraphRange)
@@ -668,6 +673,10 @@ public final class LocaAppKitTextView: NSTextView {
         if rep == " " {
             if prefixLength > 0 && prefixLength <= 6 {
                 let typedPrefix = string.substring(with: NSRange(location: paragraphRange.location, length: prefixLength))
+                
+                // Check if paragraph is already a checklist item (prevents double-conversion)
+                let safeIndex = min(paragraphRange.location, max(0, textStorage.length - 1))
+                let isAlreadyChecklist = textStorage.length > 0 && (textStorage.attribute(.noteChecklistState, at: safeIndex, effectiveRange: nil) != nil)
                 
                 // 1. Title (# )
                 if typedPrefix == "#" {
@@ -718,7 +727,7 @@ public final class LocaAppKitTextView: NSTextView {
                 }
                 
                 // 5. Checklist ([] or [ ] or - [ ]) - Atomic Markdown Trigger
-                if (typedPrefix == "[]" || typedPrefix == "[ ]" || typedPrefix == "- [ ]" || typedPrefix == "()" || typedPrefix == "( )") && paragraphText.hasPrefix(typedPrefix) {
+                if !isAlreadyChecklist && (typedPrefix == "[]" || typedPrefix == "[ ]" || typedPrefix == "- [ ]" || typedPrefix == "()" || typedPrefix == "( )") && paragraphText.hasPrefix(typedPrefix) {
                     self.undoManager?.beginUndoGrouping()
                     textStorage.beginEditing()
                     textStorage.replaceCharacters(in: NSRange(location: paragraphRange.location, length: prefixLength), with: "")
