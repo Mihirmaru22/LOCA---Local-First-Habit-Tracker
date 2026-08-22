@@ -688,30 +688,34 @@ public final class LocaAppKitTextView: NSTextView {
                     return false
                 }
                 
-                // 5. Checklist ([] or [ ])
-                if typedPrefix == "[]" || typedPrefix == "[ ]" {
-                    let glyph = RichTextTypography.checklistUncheckedGlyph
+                // 5. Checklist ([] or [ ] or - [ ]) - Atomic Markdown Trigger
+                if (typedPrefix == "[]" || typedPrefix == "[ ]" || typedPrefix == "- [ ]" || typedPrefix == "()" || typedPrefix == "( )") && paragraphText.hasPrefix(typedPrefix) {
+                    self.undoManager?.beginUndoGrouping()
                     textStorage.beginEditing()
-                    textStorage.replaceCharacters(in: NSRange(location: paragraphRange.location, length: prefixLength), with: glyph)
+                    textStorage.replaceCharacters(in: NSRange(location: paragraphRange.location, length: prefixLength), with: "")
                     let pStyle = RichTextTypography.makeParagraphStyle(for: .checklist, preset: currentPreset)
                     let updatedRange = (textStorage.string as NSString).paragraphRange(for: NSRange(location: paragraphRange.location, length: 0))
                     textStorage.addAttribute(.paragraphStyle, value: pStyle, range: updatedRange)
                     textStorage.addAttribute(.noteChecklistState, value: ChecklistState.unchecked.rawValue, range: updatedRange)
-                    textStorage.addAttribute(.foregroundColor, value: NSColor.clear, range: NSRange(location: paragraphRange.location, length: (glyph as NSString).length))
+                    textStorage.removeAttribute(.strikethroughStyle, range: updatedRange)
+                    textStorage.addAttribute(.foregroundColor, value: NSColor.textColor, range: updatedRange)
                     self.typingAttributes = RichTextTypography.defaultAttributes(for: .checklist, preset: currentPreset)
                     textStorage.endEditing()
-                    self.setSelectedRange(NSRange(location: paragraphRange.location + glyph.count, length: 0))
+                    self.undoManager?.endUndoGrouping()
+                    self.setSelectedRange(NSRange(location: paragraphRange.location, length: 0))
                     self.didChangeText()
                     return false
                 }
                 
                 // 6. Blockquote (> )
-                if typedPrefix == ">" {
+                if typedPrefix == ">" && paragraphText.hasPrefix(">") {
+                    self.undoManager?.beginUndoGrouping()
                     textStorage.beginEditing()
                     textStorage.replaceCharacters(in: NSRange(location: paragraphRange.location, length: prefixLength), with: "")
                     RichTextTypography.applyParagraphStyle(.quote, to: textStorage, range: NSRange(location: paragraphRange.location, length: 0), preset: currentPreset)
                     self.typingAttributes = RichTextTypography.defaultAttributes(for: .quote, preset: currentPreset)
                     textStorage.endEditing()
+                    self.undoManager?.endUndoGrouping()
                     self.setSelectedRange(NSRange(location: paragraphRange.location, length: 0))
                     self.didChangeText()
                     return false
@@ -735,42 +739,46 @@ public final class LocaAppKitTextView: NSTextView {
         let paragraphRange = string.paragraphRange(for: selectedRange)
         let paragraphText = string.substring(with: paragraphRange)
         
-        // 1. Checklist smart continuation
-        if paragraphText.hasPrefix(RichTextTypography.checklistUncheckedGlyph) || paragraphText.hasPrefix(RichTextTypography.checklistCheckedGlyph) || paragraphText.hasPrefix("○ ") || paragraphText.hasPrefix("● ") {
-            let prefix = RichTextTypography.checklistUncheckedGlyph
-            let contentInLine = paragraphText
-                .replacingOccurrences(of: RichTextTypography.checklistUncheckedGlyph, with: "")
-                .replacingOccurrences(of: RichTextTypography.checklistCheckedGlyph, with: "")
-                .replacingOccurrences(of: "○ ", with: "")
-                .replacingOccurrences(of: "● ", with: "")
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-            
-            if contentInLine.isEmpty {
-                textStorage.replaceCharacters(in: paragraphRange, with: "\n")
-                self.setSelectedRange(NSRange(location: paragraphRange.location, length: 0))
+        // 1. Checklist smart continuation (Pure Paragraph Attribute)
+        let isChecklist = textStorage.attribute(.noteChecklistState, at: paragraphRange.location, effectiveRange: nil) != nil
+        if isChecklist {
+            let cleanText = paragraphText.trimmingCharacters(in: .whitespacesAndNewlines)
+            if cleanText.isEmpty {
+                // Empty line -> escape checklist mode and convert to plain body
+                self.undoManager?.beginUndoGrouping()
+                textStorage.beginEditing()
+                textStorage.removeAttribute(.noteChecklistState, range: paragraphRange)
+                textStorage.removeAttribute(.strikethroughStyle, range: paragraphRange)
+                textStorage.addAttribute(.foregroundColor, value: NSColor.textColor, range: paragraphRange)
+                let bodyStyle = RichTextTypography.makeParagraphStyle(for: .body, preset: currentPreset)
+                textStorage.addAttribute(.paragraphStyle, value: bodyStyle, range: paragraphRange)
+                self.typingAttributes = RichTextTypography.defaultAttributes(for: .body, preset: currentPreset)
+                textStorage.endEditing()
+                self.undoManager?.endUndoGrouping()
                 self.didChangeText()
                 return
             } else {
+                // Populated line -> create new unchecked checklist line
+                self.undoManager?.beginUndoGrouping()
                 super.insertNewline(sender)
-                let font = (self.typingAttributes[.font] as? NSFont) ?? currentPreset.font(for: .checklist)
-                let pStyle = RichTextTypography.makeParagraphStyle(for: .checklist, preset: currentPreset)
-                let checklistAttr = NSAttributedString(string: prefix, attributes: [
-                    .font: font,
-                    .paragraphStyle: pStyle,
-                    .noteChecklistState: ChecklistState.unchecked.rawValue,
-                    .foregroundColor: NSColor.clear
-                ])
-                let newLocation = self.selectedRange().location
-                textStorage.insert(checklistAttr, at: newLocation)
-                self.setSelectedRange(NSRange(location: newLocation + prefix.count, length: 0))
+                let newParaRange = (textStorage.string as NSString).paragraphRange(for: self.selectedRange())
+                textStorage.beginEditing()
+                let checklistStyle = RichTextTypography.makeParagraphStyle(for: .checklist, preset: currentPreset)
+                textStorage.addAttribute(.paragraphStyle, value: checklistStyle, range: newParaRange)
+                textStorage.addAttribute(.noteChecklistState, value: ChecklistState.unchecked.rawValue, range: newParaRange)
+                textStorage.removeAttribute(.strikethroughStyle, range: newParaRange)
+                textStorage.addAttribute(.foregroundColor, value: NSColor.textColor, range: newParaRange)
+                self.typingAttributes = RichTextTypography.defaultAttributes(for: .checklist, preset: currentPreset)
+                textStorage.endEditing()
+                self.undoManager?.endUndoGrouping()
                 self.didChangeText()
                 return
             }
         }
         
-        // 2. Bullet List smart continuation
+        // 2. Bulleted List continuation
         if paragraphText.hasPrefix("• ") {
-            let contentInLine = paragraphText.dropFirst(2).trimmingCharacters(in: .whitespacesAndNewlines)
+            let contentInLine = paragraphText.replacingOccurrences(of: "• ", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
             if contentInLine.isEmpty {
                 textStorage.replaceCharacters(in: paragraphRange, with: "\n")
                 self.setSelectedRange(NSRange(location: paragraphRange.location, length: 0))
@@ -779,8 +787,10 @@ public final class LocaAppKitTextView: NSTextView {
             } else {
                 super.insertNewline(sender)
                 let font = (self.typingAttributes[.font] as? NSFont) ?? currentPreset.font(for: .bulletedList)
+                let pStyle = RichTextTypography.makeParagraphStyle(for: .bulletedList, preset: currentPreset)
                 let bulletAttr = NSAttributedString(string: "• ", attributes: [
                     .font: font,
+                    .paragraphStyle: pStyle,
                     .foregroundColor: NSColor.textColor
                 ])
                 let newLocation = self.selectedRange().location
@@ -791,61 +801,18 @@ public final class LocaAppKitTextView: NSTextView {
             }
         }
         
-        // 3. Dashed List smart continuation
-        if paragraphText.hasPrefix("– ") {
-            let contentInLine = paragraphText.dropFirst(2).trimmingCharacters(in: .whitespacesAndNewlines)
-            if contentInLine.isEmpty {
-                textStorage.replaceCharacters(in: paragraphRange, with: "\n")
-                self.setSelectedRange(NSRange(location: paragraphRange.location, length: 0))
-                self.didChangeText()
-                return
-            } else {
-                super.insertNewline(sender)
-                let font = (self.typingAttributes[.font] as? NSFont) ?? currentPreset.font(for: .dashedList)
-                let dashAttr = NSAttributedString(string: "– ", attributes: [
-                    .font: font,
-                    .foregroundColor: NSColor.textColor
-                ])
-                let newLocation = self.selectedRange().location
-                textStorage.insert(dashAttr, at: newLocation)
-                self.setSelectedRange(NSRange(location: newLocation + 2, length: 0))
-                self.didChangeText()
-                return
-            }
-        }
-        
-        // 4. Numbered List smart continuation
-        if let match = paragraphText.range(of: #"^(\d+)\.\s"#, options: .regularExpression) {
-            let numString = paragraphText[match].dropLast(2)
-            if let num = Int(numString) {
-                let contentInLine = paragraphText[match.upperBound...].trimmingCharacters(in: .whitespacesAndNewlines)
+        // 3. Blockquote continuation
+        if let existingStyle = textStorage.attribute(.paragraphStyle, at: paragraphRange.location, effectiveRange: nil) as? NSParagraphStyle {
+            if existingStyle.headIndent == 18 {
+                let contentInLine = paragraphText.trimmingCharacters(in: .whitespacesAndNewlines)
                 if contentInLine.isEmpty {
-                    textStorage.replaceCharacters(in: paragraphRange, with: "\n")
-                    self.setSelectedRange(NSRange(location: paragraphRange.location, length: 0))
-                    self.didChangeText()
-                    return
-                } else {
-                    super.insertNewline(sender)
-                    let nextPrefix = "\(num + 1). "
-                    let font = (self.typingAttributes[.font] as? NSFont) ?? currentPreset.font(for: .numberedList)
-                    let numAttr = NSAttributedString(string: nextPrefix, attributes: [
-                        .font: font,
-                        .foregroundColor: NSColor.textColor
-                    ])
-                    let newLocation = self.selectedRange().location
-                    textStorage.insert(numAttr, at: newLocation)
-                    self.setSelectedRange(NSRange(location: newLocation + nextPrefix.count, length: 0))
+                    let bodyStyle = RichTextTypography.makeParagraphStyle(for: .body, preset: currentPreset)
+                    textStorage.addAttribute(.paragraphStyle, value: bodyStyle, range: paragraphRange)
+                    self.typingAttributes = RichTextTypography.defaultAttributes(for: .body, preset: currentPreset)
                     self.didChangeText()
                     return
                 }
             }
-        }
-        
-        // 5. Title / Heading -> Transition down to Body on Enter
-        if let currentFont = self.typingAttributes[.font] as? NSFont, currentFont.pointSize >= 18 {
-            super.insertNewline(sender)
-            self.typingAttributes = RichTextTypography.defaultAttributes(for: .body, preset: currentPreset)
-            return
         }
         
         super.insertNewline(sender)
@@ -865,9 +832,23 @@ public final class LocaAppKitTextView: NSTextView {
         
         if let existingStyle = textStorage.attribute(.paragraphStyle, at: paragraphRange.location, effectiveRange: nil) as? NSParagraphStyle {
             let mutableStyle = existingStyle.mutableCopy() as! NSMutableParagraphStyle
-            mutableStyle.headIndent += 20
-            mutableStyle.firstLineHeadIndent += 20
+            let isChecklist = textStorage.attribute(.noteChecklistState, at: paragraphRange.location, effectiveRange: nil) != nil
+            
+            if isChecklist {
+                // Indentation Math: baseHeadIndent (28pt) + (indentLevel * 20pt)
+                let currentIndent = mutableStyle.headIndent
+                let indentLevel = Int(round((currentIndent - 28.0) / 20.0))
+                let newIndent = 28.0 + CGFloat(max(0, indentLevel + 1)) * 20.0
+                mutableStyle.headIndent = newIndent
+                mutableStyle.firstLineHeadIndent = newIndent
+            } else {
+                mutableStyle.headIndent += 20
+                mutableStyle.firstLineHeadIndent += 20
+            }
+            
+            self.undoManager?.beginUndoGrouping()
             textStorage.addAttribute(.paragraphStyle, value: mutableStyle, range: paragraphRange)
+            self.undoManager?.endUndoGrouping()
             self.didChangeText()
             return
         }
@@ -887,19 +868,33 @@ public final class LocaAppKitTextView: NSTextView {
         
         if let existingStyle = textStorage.attribute(.paragraphStyle, at: paragraphRange.location, effectiveRange: nil) as? NSParagraphStyle {
             let mutableStyle = existingStyle.mutableCopy() as! NSMutableParagraphStyle
-            if mutableStyle.headIndent >= 20 {
-                mutableStyle.headIndent -= 20
-                mutableStyle.firstLineHeadIndent = max(0, mutableStyle.firstLineHeadIndent - 20)
-                textStorage.addAttribute(.paragraphStyle, value: mutableStyle, range: paragraphRange)
-                self.didChangeText()
-                return
+            let isChecklist = textStorage.attribute(.noteChecklistState, at: paragraphRange.location, effectiveRange: nil) != nil
+            
+            if isChecklist {
+                // Indentation Math: baseHeadIndent (28pt) + (indentLevel * 20pt)
+                let currentIndent = mutableStyle.headIndent
+                let indentLevel = Int(round((currentIndent - 28.0) / 20.0))
+                let newIndent = 28.0 + CGFloat(max(0, indentLevel - 1)) * 20.0
+                mutableStyle.headIndent = newIndent
+                mutableStyle.firstLineHeadIndent = newIndent
+            } else {
+                if mutableStyle.headIndent >= 20 {
+                    mutableStyle.headIndent -= 20
+                    mutableStyle.firstLineHeadIndent = max(0, mutableStyle.firstLineHeadIndent - 20)
+                }
             }
+            
+            self.undoManager?.beginUndoGrouping()
+            textStorage.addAttribute(.paragraphStyle, value: mutableStyle, range: paragraphRange)
+            self.undoManager?.endUndoGrouping()
+            self.didChangeText()
+            return
         }
         
         super.insertBacktab(sender)
     }
     
-    // MARK: - Smart Delete Backward (Backspace deletes list/checklist prefix in 1 hit)
+    // MARK: - Smart Delete Backward (Backspace removes checklist attribute in 1 keystroke)
     
     public override func deleteBackward(_ sender: Any?) {
         guard let textStorage = self.textStorage else {
@@ -915,24 +910,35 @@ public final class LocaAppKitTextView: NSTextView {
         
         let string = textStorage.string as NSString
         let paragraphRange = string.paragraphRange(for: selectedRange)
+        
+        // 1. If at line start of a checklist item: remove checklist attribute in 1 keystroke
+        if selectedRange.location == paragraphRange.location {
+            let isChecklist = textStorage.attribute(.noteChecklistState, at: paragraphRange.location, effectiveRange: nil) != nil
+            if isChecklist {
+                self.undoManager?.beginUndoGrouping()
+                textStorage.beginEditing()
+                textStorage.removeAttribute(.noteChecklistState, range: paragraphRange)
+                textStorage.removeAttribute(.strikethroughStyle, range: paragraphRange)
+                textStorage.addAttribute(.foregroundColor, value: NSColor.textColor, range: paragraphRange)
+                let bodyStyle = RichTextTypography.makeParagraphStyle(for: .body, preset: currentPreset)
+                textStorage.addAttribute(.paragraphStyle, value: bodyStyle, range: paragraphRange)
+                self.typingAttributes = RichTextTypography.defaultAttributes(for: .body, preset: currentPreset)
+                textStorage.endEditing()
+                self.undoManager?.endUndoGrouping()
+                self.didChangeText()
+                return
+            }
+        }
+        
+        // 2. Bullet list prefix deletion
         let paragraphText = string.substring(with: paragraphRange)
-        
-        let prefixes = [
-            RichTextTypography.checklistUncheckedGlyph,
-            RichTextTypography.checklistCheckedGlyph,
-            "○ ", "● ", "☐ ", "☑︎ ", "• ", "– "
-        ]
-        
-        for prefix in prefixes {
+        for prefix in ["• ", "– ", "1. ", "2. "] {
             if paragraphText.hasPrefix(prefix) {
                 let prefixLen = (prefix as NSString).length
                 if selectedRange.location == paragraphRange.location + prefixLen || paragraphText.trimmingCharacters(in: .whitespacesAndNewlines) == prefix.trimmingCharacters(in: .whitespacesAndNewlines) {
                     textStorage.beginEditing()
                     let replaceRange = NSRange(location: paragraphRange.location, length: prefixLen)
                     textStorage.replaceCharacters(in: replaceRange, with: "")
-                    let remainingLen = max(0, paragraphRange.length - prefixLen)
-                    textStorage.removeAttribute(.strikethroughStyle, range: NSRange(location: paragraphRange.location, length: remainingLen))
-                    textStorage.addAttribute(.foregroundColor, value: NSColor.textColor, range: NSRange(location: paragraphRange.location, length: remainingLen))
                     textStorage.endEditing()
                     self.setSelectedRange(NSRange(location: paragraphRange.location, length: 0))
                     self.didChangeText()
@@ -943,6 +949,8 @@ public final class LocaAppKitTextView: NSTextView {
         
         super.deleteBackward(sender)
     }
+    
+    // MARK: - Mouse Tracking & Vector Gutter Indicator System
     
     private var hoveredCheckboxParaRange: NSRange? = nil
     private var checklistTrackingArea: NSTrackingArea? = nil
@@ -969,34 +977,22 @@ public final class LocaAppKitTextView: NSTextView {
         let string = textStorage.string as NSString
         var foundCheckbox = false
         
-        let glyphRange = layoutManager.glyphRange(for: textContainer)
-        let charRange = layoutManager.characterRange(forGlyphRange: glyphRange, actualGlyphRange: nil)
-        var paraLoc = charRange.location
-        
-        while paraLoc < charRange.location + charRange.length && paraLoc < string.length {
-            let paraRange = string.paragraphRange(for: NSRange(location: paraLoc, length: 0))
-            let paraText = string.substring(with: paraRange)
-            
-            let isUnchecked = paraText.hasPrefix("○  ") || paraText.hasPrefix("○ ") || paraText.hasPrefix("☐ ") || (textStorage.attribute(.noteChecklistState, at: paraRange.location, effectiveRange: nil) as? String == ChecklistState.unchecked.rawValue)
-            let isChecked = paraText.hasPrefix("●  ") || paraText.hasPrefix("● ") || paraText.hasPrefix("☑︎ ") || (textStorage.attribute(.noteChecklistState, at: paraRange.location, effectiveRange: nil) as? String == ChecklistState.checked.rawValue)
-            
-            if isUnchecked || isChecked {
-                let firstGlyph = layoutManager.glyphIndexForCharacter(at: paraRange.location)
-                if firstGlyph < layoutManager.numberOfGlyphs {
-                    let lineRect = layoutManager.lineFragmentRect(forGlyphAt: firstGlyph, effectiveRange: nil)
-                    let hitRect = NSRect(x: 0, y: lineRect.origin.y, width: 38, height: lineRect.height)
-                    if hitRect.contains(point) {
-                        foundCheckbox = true
-                        if hoveredCheckboxParaRange != paraRange {
-                            hoveredCheckboxParaRange = paraRange
-                            self.setNeedsDisplay(hitRect)
-                        }
-                        NSCursor.pointingHand.set()
-                        return
+        if point.x < 28.0 {
+            // Find character index at mouse Y position for safe multi-line hit testing
+            let charIndex = layoutManager.characterIndex(for: point, in: textContainer, fractionOfDistanceBetweenInsertionPoints: nil)
+            if charIndex < string.length {
+                let paraRange = string.paragraphRange(for: NSRange(location: charIndex, length: 0))
+                let isChecklist = textStorage.attribute(.noteChecklistState, at: paraRange.location, effectiveRange: nil) != nil
+                if isChecklist {
+                    foundCheckbox = true
+                    if hoveredCheckboxParaRange != paraRange {
+                        hoveredCheckboxParaRange = paraRange
+                        self.setNeedsDisplay(self.bounds)
                     }
+                    NSCursor.pointingHand.set()
+                    return
                 }
             }
-            paraLoc = paraRange.location + paraRange.length
         }
         
         if !foundCheckbox && hoveredCheckboxParaRange != nil {
@@ -1008,7 +1004,7 @@ public final class LocaAppKitTextView: NSTextView {
         super.mouseMoved(with: event)
     }
     
-    // MARK: - Native Vector Checklist Drawing (Apple Notes Retina Standard)
+    // MARK: - Native Vector Checklist Drawing (Pure Gutter Layer)
     
     public override func drawBackground(in rect: NSRect) {
         super.drawBackground(in: rect)
@@ -1024,26 +1020,23 @@ public final class LocaAppKitTextView: NSTextView {
         var paraLoc = charRange.location
         while paraLoc < charRange.location + charRange.length && paraLoc < string.length {
             let paraRange = string.paragraphRange(for: NSRange(location: paraLoc, length: 0))
-            let paraText = string.substring(with: paraRange)
+            let checklistState = textStorage.attribute(.noteChecklistState, at: paraRange.location, effectiveRange: nil) as? String
             
-            let isUnchecked = paraText.hasPrefix("○  ") || paraText.hasPrefix("○ ") || paraText.hasPrefix("☐ ") || (textStorage.attribute(.noteChecklistState, at: paraRange.location, effectiveRange: nil) as? String == ChecklistState.unchecked.rawValue)
-            let isChecked = paraText.hasPrefix("●  ") || paraText.hasPrefix("● ") || paraText.hasPrefix("☑︎ ") || (textStorage.attribute(.noteChecklistState, at: paraRange.location, effectiveRange: nil) as? String == ChecklistState.checked.rawValue)
-            
-            if isUnchecked || isChecked {
+            if let state = checklistState {
                 let firstGlyph = layoutManager.glyphIndexForCharacter(at: paraRange.location)
                 if firstGlyph < layoutManager.numberOfGlyphs {
                     let lineRect = layoutManager.lineFragmentRect(forGlyphAt: firstGlyph, effectiveRange: nil)
                     
-                    let circleSize: CGFloat = 18.5
-                    let circleX: CGFloat = origin.x + 6.5
+                    let circleSize: CGFloat = 18.0
+                    let circleX: CGFloat = origin.x + 5.0
                     let circleY: CGFloat = origin.y + lineRect.origin.y + (lineRect.height - circleSize) / 2
                     let circleRect = NSRect(x: circleX, y: circleY, width: circleSize, height: circleSize)
                     
                     NSGraphicsContext.saveGraphicsState()
                     let circlePath = NSBezierPath(ovalIn: circleRect)
                     
-                    if isChecked {
-                        // Amber Gold Checkbox Badge
+                    if state == ChecklistState.checked.rawValue {
+                        // Solid Plut0 Amber Gold Checkbox Badge
                         let amberGold = NSColor(red: 0.96, green: 0.76, blue: 0.28, alpha: 1.0)
                         amberGold.setFill()
                         circlePath.fill()
@@ -1057,17 +1050,18 @@ public final class LocaAppKitTextView: NSTextView {
                         
                         let cx = circleRect.origin.x
                         let cy = circleRect.origin.y
-                        checkmark.move(to: NSPoint(x: cx + 4.5, y: cy + 9.0))
-                        checkmark.line(to: NSPoint(x: cx + 7.5, y: cy + 5.2))
-                        checkmark.line(to: NSPoint(x: cx + 13.6, y: cy + 13.0))
+                        checkmark.move(to: NSPoint(x: cx + 4.2, y: cy + 8.8))
+                        checkmark.line(to: NSPoint(x: cx + 7.2, y: cy + 5.0))
+                        checkmark.line(to: NSPoint(x: cx + 13.2, y: cy + 12.6))
                         checkmark.stroke()
                     } else {
+                        // Unchecked Circular Ring
                         let isHovered = hoveredCheckboxParaRange?.location == paraRange.location
                         let strokeColor = isHovered
                             ? NSColor(red: 0.96, green: 0.76, blue: 0.28, alpha: 0.95)
                             : NSColor.white.withAlphaComponent(0.38)
                         strokeColor.setStroke()
-                        circlePath.lineWidth = isHovered ? 1.9 : 1.5
+                        circlePath.lineWidth = isHovered ? 1.8 : 1.5
                         circlePath.stroke()
                         
                         if isHovered {
@@ -1082,7 +1076,7 @@ public final class LocaAppKitTextView: NSTextView {
         }
     }
     
-    // MARK: - Interactive Checkbox Click Detection (Pixel-Perfect Gutter Hit Testing)
+    // MARK: - Interactive Gutter Checkbox Click Toggling
     
     public override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
@@ -1092,76 +1086,37 @@ public final class LocaAppKitTextView: NSTextView {
         }
         
         let string = textStorage.string as NSString
-        let glyphRange = layoutManager.glyphRange(for: textContainer)
-        let charRange = layoutManager.characterRange(forGlyphRange: glyphRange, actualGlyphRange: nil)
-        var paraLoc = charRange.location
         
-        while paraLoc < charRange.location + charRange.length && paraLoc < string.length {
-            let paragraphRange = string.paragraphRange(for: NSRange(location: paraLoc, length: 0))
-            let paragraphText = string.substring(with: paragraphRange)
-            
-            let isUnchecked = paragraphText.hasPrefix("○  ") || paragraphText.hasPrefix("○ ") || paragraphText.hasPrefix("☐ ") || (textStorage.attribute(.noteChecklistState, at: paragraphRange.location, effectiveRange: nil) as? String == ChecklistState.unchecked.rawValue)
-            let isChecked = paragraphText.hasPrefix("●  ") || paragraphText.hasPrefix("● ") || paragraphText.hasPrefix("☑︎ ") || (textStorage.attribute(.noteChecklistState, at: paragraphRange.location, effectiveRange: nil) as? String == ChecklistState.checked.rawValue)
-            
-            if isUnchecked || isChecked {
-                let firstGlyph = layoutManager.glyphIndexForCharacter(at: paragraphRange.location)
-                if firstGlyph < layoutManager.numberOfGlyphs {
-                    let lineRect = layoutManager.lineFragmentRect(forGlyphAt: firstGlyph, effectiveRange: nil)
-                    let hitRect = NSRect(x: 0, y: lineRect.origin.y, width: 38, height: lineRect.height)
-                    
-                    if hitRect.contains(point) {
-                        // Clicked exactly on the checklist gutter widget!
-                        if isUnchecked {
-                            // Toggle Unchecked -> Checked
-                            textStorage.beginEditing()
-                            let oldPrefix = paragraphText.hasPrefix("○  ") ? "○  " : (paragraphText.hasPrefix("○ ") ? "○ " : "☐ ")
-                            let glyphRange = NSRange(location: paragraphRange.location, length: (oldPrefix as NSString).length)
-                            textStorage.replaceCharacters(in: glyphRange, with: RichTextTypography.checklistCheckedGlyph)
-                            
-                            let updatedParaRange = (textStorage.string as NSString).paragraphRange(for: NSRange(location: paragraphRange.location, length: 0))
-                            let prefixLen = (RichTextTypography.checklistCheckedGlyph as NSString).length
-                            let textLen = updatedParaRange.length - prefixLen
-                            
-                            textStorage.addAttribute(.noteChecklistState, value: ChecklistState.checked.rawValue, range: updatedParaRange)
-                            textStorage.addAttribute(.foregroundColor, value: NSColor.clear, range: NSRange(location: updatedParaRange.location, length: prefixLen))
-                            textStorage.removeAttribute(.strikethroughStyle, range: updatedParaRange)
-                            
-                            let textSnippet = (textStorage.string as NSString).substring(with: NSRange(location: updatedParaRange.location + prefixLen, length: max(0, textLen))).trimmingCharacters(in: .whitespacesAndNewlines)
-                            if !textSnippet.isEmpty && textLen > 0 {
-                                let strikeRange = NSRange(location: updatedParaRange.location + prefixLen, length: textLen)
-                                textStorage.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: strikeRange)
-                                textStorage.addAttribute(.foregroundColor, value: NSColor.secondaryLabelColor, range: strikeRange)
-                            }
-                            textStorage.endEditing()
-                            self.setNeedsDisplay(self.bounds)
-                            self.didChangeText()
-                            Haptics.impact(.light)
-                            return
-                        } else if isChecked {
-                            // Toggle Checked -> Unchecked
-                            textStorage.beginEditing()
-                            let oldPrefix = paragraphText.hasPrefix("●  ") ? "●  " : (paragraphText.hasPrefix("● ") ? "● " : "☑︎ ")
-                            let glyphRange = NSRange(location: paragraphRange.location, length: (oldPrefix as NSString).length)
-                            textStorage.replaceCharacters(in: glyphRange, with: RichTextTypography.checklistUncheckedGlyph)
-                            
-                            let updatedParaRange = (textStorage.string as NSString).paragraphRange(for: NSRange(location: paragraphRange.location, length: 0))
-                            let prefixLen = (RichTextTypography.checklistUncheckedGlyph as NSString).length
-                            let textLen = updatedParaRange.length - prefixLen
-                            
-                            textStorage.addAttribute(.noteChecklistState, value: ChecklistState.unchecked.rawValue, range: updatedParaRange)
-                            textStorage.removeAttribute(.strikethroughStyle, range: updatedParaRange)
-                            textStorage.addAttribute(.foregroundColor, value: NSColor.textColor, range: NSRange(location: updatedParaRange.location + prefixLen, length: max(0, textLen)))
-                            textStorage.addAttribute(.foregroundColor, value: NSColor.clear, range: NSRange(location: updatedParaRange.location, length: prefixLen))
-                            textStorage.endEditing()
-                            self.setNeedsDisplay(self.bounds)
-                            self.didChangeText()
-                            Haptics.impact(.light)
-                            return
-                        }
+        // Multi-line safe hit-testing: Clicking anywhere at x < 28pt toggles the item
+        if point.x < 28.0 {
+            let charIndex = layoutManager.characterIndex(for: point, in: textContainer, fractionOfDistanceBetweenInsertionPoints: nil)
+            if charIndex < string.length {
+                let paragraphRange = string.paragraphRange(for: NSRange(location: charIndex, length: 0))
+                let checklistState = textStorage.attribute(.noteChecklistState, at: paragraphRange.location, effectiveRange: nil) as? String
+                
+                if let state = checklistState {
+                    self.undoManager?.beginUndoGrouping()
+                    textStorage.beginEditing()
+                    if state == ChecklistState.unchecked.rawValue {
+                        // Unchecked -> Checked
+                        textStorage.addAttribute(.noteChecklistState, value: ChecklistState.checked.rawValue, range: paragraphRange)
+                        textStorage.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: paragraphRange)
+                        textStorage.addAttribute(.foregroundColor, value: NSColor.secondaryLabelColor, range: paragraphRange)
+                    } else {
+                        // Checked -> Unchecked
+                        textStorage.addAttribute(.noteChecklistState, value: ChecklistState.unchecked.rawValue, range: paragraphRange)
+                        textStorage.removeAttribute(.strikethroughStyle, range: paragraphRange)
+                        textStorage.addAttribute(.foregroundColor, value: NSColor.textColor, range: paragraphRange)
                     }
+                    textStorage.endEditing()
+                    self.undoManager?.endUndoGrouping()
+                    
+                    self.setNeedsDisplay(self.bounds)
+                    self.didChangeText()
+                    Haptics.impact(.light)
+                    return
                 }
             }
-            paraLoc = paragraphRange.location + paragraphRange.length
         }
         
         super.mouseDown(with: event)
