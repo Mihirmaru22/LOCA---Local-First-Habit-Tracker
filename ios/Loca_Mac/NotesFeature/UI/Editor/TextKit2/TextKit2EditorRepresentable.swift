@@ -96,17 +96,20 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
     
     public func makeNSView(context: Context) -> NSScrollView {
         print("🔵 MAKE NSVIEW CALLED")
-        let textContentStorage = NSTextContentStorage()
-        let textLayoutManager = NSTextLayoutManager()
-        textContentStorage.addTextLayoutManager(textLayoutManager)
         
-        let textContainer = NSTextContainer()
-        textContainer.widthTracksTextView = true
-        textContainer.lineFragmentPadding = 0
-        textContainer.containerSize = NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude)
-        textLayoutManager.textContainer = textContainer
+        // AppKit-owned TextKit 2 construction
+        let textView = NoteCanvasTextView(usingTextLayoutManager: true)
+        guard let tlm = textView.textLayoutManager,
+              let tcs = textView.textContentStorage ?? (tlm.textContentManager as? NSTextContentStorage),
+              let tc = tlm.textContainer else {
+            fatalError("TK2 stack missing")
+        }
         
-        let textView = NoteCanvasTextView(frame: .zero, textContainer: textContainer)
+        tc.widthTracksTextView = true
+        tc.heightTracksTextView = false
+        tc.lineFragmentPadding = 0
+        tc.size = NSSize(width: 676, height: CGFloat.greatestFiniteMagnitude)
+        
         textView.delegate = context.coordinator
         textView.isEditable = true
         textView.isSelectable = true
@@ -133,12 +136,13 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         print("🔗 TEXTKIT 2 LINKAGE:")
         print("   textView.textLayoutManager != nil : \(textView.textLayoutManager != nil)")
         print("   textView.textContentStorage != nil : \(textView.textContentStorage != nil)")
+        print("   textView.textStorage != nil : \(textView.textStorage != nil)")
         print("   textView.isEditable : \(textView.isEditable)")
         print("   textView.isSelectable : \(textView.isSelectable)")
         
         // Gutter Click Handler
-        textView.onGutterClicked = { [weak textView, weak textContentStorage] clickPoint in
-            guard let tv = textView, let storage = textContentStorage else { return false }
+        textView.onGutterClicked = { [weak textView, weak tcs] clickPoint in
+            guard let tv = textView, let storage = tcs else { return false }
             
             // Check if click X is in left gutter margin (< 30pt)
             let relativeX = clickPoint.x - tv.textContainerOrigin.x
@@ -162,17 +166,17 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         
         // Initial render
         let initialAttributed = state.bridge.renderAttributedString()
-        textContentStorage.attributedString = initialAttributed
+        tcs.attributedString = initialAttributed
         
         let scrollView = NSScrollView()
-        scrollView.drawsBackground = false
+        scrollView.documentView = textView
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = false
         scrollView.autohidesScrollers = true
-        scrollView.documentView = textView
+        scrollView.drawsBackground = false
         
         context.coordinator.textView = textView
-        context.coordinator.textContentStorage = textContentStorage
+        context.coordinator.textContentStorage = tcs
         
         return scrollView
     }
