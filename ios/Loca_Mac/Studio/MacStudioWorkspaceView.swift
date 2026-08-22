@@ -36,31 +36,7 @@ struct MacStudioWorkspaceView: View {
                 // High-Speed Segmented Switcher
                 HStack(spacing: 2) {
                     ForEach(StudioTab.allCases) { tab in
-                        let isSelected = activeTab == tab
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.12)) {
-                                activeTab = tab
-                            }
-                            Haptics.impact(.light)
-                        } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: tab.icon)
-                                    .font(.system(size: 11.5, weight: isSelected ? .bold : .medium))
-                                Text(tab.rawValue)
-                                    .font(.system(size: 12, weight: isSelected ? .semibold : .medium))
-                            }
-                            .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.6))
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 5)
-                            .background(
-                                isSelected
-                                    ? Color.white.opacity(0.12)
-                                    : Color.clear,
-                                in: RoundedRectangle(cornerRadius: 6)
-                            )
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(PlutoFastButtonStyle())
+                        tabButton(for: tab)
                     }
                 }
                 .padding(3)
@@ -85,5 +61,34 @@ struct MacStudioWorkspaceView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(DS.Color.background)
+    }
+
+    @ViewBuilder
+    private func tabButton(for tab: StudioTab) -> some View {
+        let isSelected = activeTab == tab
+        Button {
+            withAnimation(.easeInOut(duration: 0.12)) {
+                activeTab = tab
+            }
+            Haptics.impact(.light)
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: tab.icon)
+                    .font(.system(size: 11.5, weight: isSelected ? .bold : .medium))
+                Text(tab.rawValue)
+                    .font(.system(size: 12, weight: isSelected ? .semibold : .medium))
+            }
+            .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.6))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 5)
+            .background(
+                isSelected
+                    ? Color.white.opacity(0.12)
+                    : Color.clear,
+                in: RoundedRectangle(cornerRadius: 6)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PlutoFastButtonStyle())
     }
 }

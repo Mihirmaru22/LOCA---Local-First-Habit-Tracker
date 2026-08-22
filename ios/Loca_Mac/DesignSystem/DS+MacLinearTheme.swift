@@ -128,3 +128,14 @@ extension View {
         }
     }
 }
+
+/// Instant response button style without standard platform animation delays.
+public struct PlutoFastButtonStyle: ButtonStyle {
+    public init() {}
+    
+    public func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? 0.75 : 1.0)
+    }
+}
+
