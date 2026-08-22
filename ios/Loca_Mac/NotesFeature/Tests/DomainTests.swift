@@ -78,4 +78,10 @@ Bullet point alpha
         #expect(summary.isPinned == true)
         #expect(summary.title == "Quick Thought")
     }
+    
+    @Test func testSearchTermSanitization() {
+        let raw = "100%_complete\\test"
+        let sanitized = LocalNotesStore.sanitizeForLike(raw)
+        #expect(sanitized == "100\\%\\_complete\\\\test")
+    }
 }

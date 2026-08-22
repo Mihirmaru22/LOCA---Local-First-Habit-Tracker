@@ -10,6 +10,20 @@ public actor LocalNotesStore {
         self.database = database
     }
     
+    // MARK: - Search Term Sanitizer
+    
+    /// Sanitizes terms for SQLite LIKE clauses escaping `\`, `%`, and `_`.
+    public static func sanitizeForLike(_ term: String) -> String {
+        var escaped = ""
+        for char in term {
+            if char == "\\" || char == "%" || char == "_" {
+                escaped.append("\\")
+            }
+            escaped.append(char)
+        }
+        return escaped
+    }
+    
     // MARK: - Notes Queries
     
     public func fetchNoteRows(matching query: NoteQuery) throws -> [NoteRow] {
@@ -32,10 +46,11 @@ public actor LocalNotesStore {
                 bindIndex += 1
             }
             
-            // Search condition
+            // Search condition with ESCAPE clause
             if let search = query.searchText, !search.trimmingCharacters(in: .whitespaces).isEmpty {
-                conditions.append("(title LIKE ? OR plain_text_cache LIKE ?)")
-                let pattern = "%\(search)%"
+                conditions.append("(title LIKE ? ESCAPE '\\' OR plain_text_cache LIKE ? ESCAPE '\\')")
+                let sanitized = LocalNotesStore.sanitizeForLike(search)
+                let pattern = "%\(sanitized)%"
                 bindings.append((bindIndex, pattern))
                 bindIndex += 1
                 bindings.append((bindIndex, pattern))
@@ -112,8 +127,9 @@ public actor LocalNotesStore {
             }
             
             if let search = query.searchText, !search.trimmingCharacters(in: .whitespaces).isEmpty {
-                conditions.append("(title LIKE ? OR plain_text_cache LIKE ?)")
-                let pattern = "%\(search)%"
+                conditions.append("(title LIKE ? ESCAPE '\\' OR plain_text_cache LIKE ? ESCAPE '\\')")
+                let sanitized = LocalNotesStore.sanitizeForLike(search)
+                let pattern = "%\(sanitized)%"
                 bindings.append((bindIndex, pattern))
                 bindIndex += 1
                 bindings.append((bindIndex, pattern))
@@ -191,78 +207,267 @@ public actor LocalNotesStore {
     
     public func fetchNoteRow(id: String) throws -> NoteRow? {
         try database.read { db in
-            let sql = "SELECT id, folder_id, title, content_json, plain_text_cache, preview, is_pinned, is_locked, is_deleted, created_at, updated_at, deleted_at, sort_key, schema_version, client_updated_at, device_id FROM notes WHERE id = ? LIMIT 1;"
-            let statement = try SQLiteHelper.prepare(sql: sql, on: db)
-            defer { sqlite3_finalize(statement) }
-            
-            SQLiteHelper.bind(text: id, at: 1, statement: statement)
-            if sqlite3_step(statement) == SQLITE_ROW {
-                return readFullNoteRow(from: statement)
-            }
-            return nil
+            try fetchNoteRow(id: id, on: db)
         }
     }
     
     public func insertNoteRow(_ row: NoteRow) throws {
         try database.write { db in
-            let sql = """
-            INSERT INTO notes (id, folder_id, title, content_json, plain_text_cache, preview, is_pinned, is_locked, is_deleted, created_at, updated_at, deleted_at, sort_key, schema_version, client_updated_at, device_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-            """
-            let statement = try SQLiteHelper.prepare(sql: sql, on: db)
-            defer { sqlite3_finalize(statement) }
-            
-            bindFullNoteRow(row, statement: statement)
-            if sqlite3_step(statement) != SQLITE_DONE {
-                let msg = String(cString: sqlite3_errmsg(db))
-                throw NotesError.persistenceFailure("Failed to insert note: \(msg)")
-            }
+            try insertNoteRow(row, on: db)
         }
     }
     
     public func updateNoteRow(_ row: NoteRow) throws {
         try database.write { db in
-            let sql = """
-            UPDATE notes SET folder_id = ?, title = ?, content_json = ?, plain_text_cache = ?, preview = ?, is_pinned = ?, is_locked = ?, is_deleted = ?, updated_at = ?, deleted_at = ?, sort_key = ?, schema_version = ?, client_updated_at = ?, device_id = ?
-            WHERE id = ?;
-            """
-            let statement = try SQLiteHelper.prepare(sql: sql, on: db)
-            defer { sqlite3_finalize(statement) }
-            
-            SQLiteHelper.bind(text: row.folderID, at: 1, statement: statement)
-            SQLiteHelper.bind(text: row.title, at: 2, statement: statement)
-            SQLiteHelper.bind(text: row.contentJSON, at: 3, statement: statement)
-            SQLiteHelper.bind(text: row.plainTextCache, at: 4, statement: statement)
-            SQLiteHelper.bind(text: row.preview, at: 5, statement: statement)
-            SQLiteHelper.bind(int: row.isPinned, at: 6, statement: statement)
-            SQLiteHelper.bind(int: row.isLocked, at: 7, statement: statement)
-            SQLiteHelper.bind(int: row.isDeleted, at: 8, statement: statement)
-            SQLiteHelper.bind(double: row.updatedAt, at: 9, statement: statement)
-            SQLiteHelper.bind(double: row.deletedAt, at: 10, statement: statement)
-            SQLiteHelper.bind(text: row.sortKey, at: 11, statement: statement)
-            SQLiteHelper.bind(int: row.schemaVersion, at: 12, statement: statement)
-            SQLiteHelper.bind(double: row.clientUpdatedAt, at: 13, statement: statement)
-            SQLiteHelper.bind(text: row.deviceID, at: 14, statement: statement)
-            SQLiteHelper.bind(text: row.id, at: 15, statement: statement)
-            
-            if sqlite3_step(statement) != SQLITE_DONE {
-                let msg = String(cString: sqlite3_errmsg(db))
-                throw NotesError.persistenceFailure("Failed to update note: \(msg)")
-            }
+            try updateNoteRow(row, on: db)
         }
     }
     
     public func deleteNoteRow(id: String) throws {
         try database.write { db in
-            let sql = "DELETE FROM notes WHERE id = ?;"
-            let statement = try SQLiteHelper.prepare(sql: sql, on: db)
-            defer { sqlite3_finalize(statement) }
-            
-            SQLiteHelper.bind(text: id, at: 1, statement: statement)
-            if sqlite3_step(statement) != SQLITE_DONE {
-                let msg = String(cString: sqlite3_errmsg(db))
-                throw NotesError.persistenceFailure("Failed to delete note: \(msg)")
+            try deleteNoteRow(id: id, on: db)
+        }
+    }
+    
+    // MARK: - Batch Mutations Execution (Single Atomic Transaction)
+    
+    public func applyBatchMutations(_ mutations: [NoteMutation]) throws -> [NotesEvent] {
+        try database.write { db in
+            var events: [NotesEvent] = []
+            for mutation in mutations {
+                let event = try applyMutation(mutation, on: db)
+                events.append(event)
             }
+            return events
+        }
+    }
+    
+    private func applyMutation(_ mutation: NoteMutation, on db: OpaquePointer) throws -> NotesEvent {
+        switch mutation {
+        case .createNote(let noteID, let folderID):
+            let now = Date()
+            let content = NoteContent.empty
+            let plainText = NoteTextExtractor.plainText(from: content)
+            let preview = NotePreviewGenerator.preview(from: plainText)
+            
+            let note = Note(
+                id: noteID,
+                folderID: folderID,
+                title: "",
+                content: content,
+                plainTextCache: plainText,
+                preview: preview,
+                isPinned: false,
+                isLocked: false,
+                isDeleted: false,
+                createdAt: now,
+                updatedAt: now,
+                deletedAt: nil,
+                sortKey: String(format: "%014.3f", now.timeIntervalSince1970),
+                schemaVersion: 1,
+                clientUpdatedAt: now,
+                deviceID: "local-device"
+            )
+            let row = NotesMappers.noteRow(from: note)
+            try insertNoteRow(row, on: db)
+            return .noteCreated(noteID)
+            
+        case .setTitle(let noteID, let title):
+            guard var row = try fetchNoteRow(id: noteID.raw.uuidString, on: db) else {
+                throw NotesError.noteNotFound(noteID)
+            }
+            let now = Date().timeIntervalSince1970
+            row.title = title
+            row.updatedAt = now
+            row.clientUpdatedAt = now
+            try updateNoteRow(row, on: db)
+            return .noteUpdated(noteID)
+            
+        case .updateContent(let noteID, let content):
+            guard var row = try fetchNoteRow(id: noteID.raw.uuidString, on: db) else {
+                throw NotesError.noteNotFound(noteID)
+            }
+            let now = Date().timeIntervalSince1970
+            let plainText = NoteTextExtractor.plainText(from: content)
+            let preview = NotePreviewGenerator.preview(from: plainText)
+            
+            var note = NotesMappers.note(from: row)
+            note.content = content
+            note.plainTextCache = plainText
+            note.preview = preview
+            
+            let updatedRow = NotesMappers.noteRow(from: note)
+            row.contentJSON = updatedRow.contentJSON
+            row.plainTextCache = plainText
+            row.preview = preview
+            row.updatedAt = now
+            row.clientUpdatedAt = now
+            try updateNoteRow(row, on: db)
+            return .noteUpdated(noteID)
+            
+        case .move(let noteID, let folderID):
+            guard var row = try fetchNoteRow(id: noteID.raw.uuidString, on: db) else {
+                throw NotesError.noteNotFound(noteID)
+            }
+            let now = Date().timeIntervalSince1970
+            row.folderID = folderID?.raw.uuidString
+            row.updatedAt = now
+            row.clientUpdatedAt = now
+            try updateNoteRow(row, on: db)
+            return .noteMoved(noteID)
+            
+        case .setPinned(let noteID, let isPinned):
+            guard var row = try fetchNoteRow(id: noteID.raw.uuidString, on: db) else {
+                throw NotesError.noteNotFound(noteID)
+            }
+            let now = Date().timeIntervalSince1970
+            row.isPinned = isPinned ? 1 : 0
+            row.updatedAt = now
+            row.clientUpdatedAt = now
+            try updateNoteRow(row, on: db)
+            return .notePinned(noteID)
+            
+        case .setLocked(let noteID, let isLocked):
+            guard var row = try fetchNoteRow(id: noteID.raw.uuidString, on: db) else {
+                throw NotesError.noteNotFound(noteID)
+            }
+            let now = Date().timeIntervalSince1970
+            row.isLocked = isLocked ? 1 : 0
+            row.updatedAt = now
+            row.clientUpdatedAt = now
+            try updateNoteRow(row, on: db)
+            return .noteUpdated(noteID)
+            
+        case .markDeleted(let noteID):
+            guard var row = try fetchNoteRow(id: noteID.raw.uuidString, on: db) else {
+                throw NotesError.noteNotFound(noteID)
+            }
+            let now = Date().timeIntervalSince1970
+            row.isDeleted = 1
+            row.deletedAt = now
+            row.updatedAt = now
+            row.clientUpdatedAt = now
+            try updateNoteRow(row, on: db)
+            return .noteDeleted(noteID)
+            
+        case .restore(let noteID):
+            guard var row = try fetchNoteRow(id: noteID.raw.uuidString, on: db) else {
+                throw NotesError.noteNotFound(noteID)
+            }
+            let now = Date().timeIntervalSince1970
+            row.isDeleted = 0
+            row.deletedAt = nil
+            row.updatedAt = now
+            row.clientUpdatedAt = now
+            try updateNoteRow(row, on: db)
+            return .noteRestored(noteID)
+            
+        case .permanentlyDelete(let noteID):
+            try deleteNoteRow(id: noteID.raw.uuidString, on: db)
+            return .notePermanentlyDeleted(noteID)
+            
+        case .toggleChecklistItem(let noteID, let blockID):
+            guard let row = try fetchNoteRow(id: noteID.raw.uuidString, on: db) else {
+                throw NotesError.noteNotFound(noteID)
+            }
+            var note = NotesMappers.note(from: row)
+            var mutatedBlocks = note.content.blocks
+            var didMutate = false
+            for (idx, block) in mutatedBlocks.enumerated() {
+                if case .checklistItem(var item) = block, item.id == blockID {
+                    item.isChecked.toggle()
+                    mutatedBlocks[idx] = .checklistItem(item)
+                    didMutate = true
+                    break
+                }
+            }
+            if didMutate {
+                let now = Date()
+                let newContent = NoteContent(version: note.content.version, blocks: mutatedBlocks)
+                let plainText = NoteTextExtractor.plainText(from: newContent)
+                let preview = NotePreviewGenerator.preview(from: plainText)
+                
+                note.content = newContent
+                note.plainTextCache = plainText
+                note.preview = preview
+                note.updatedAt = now
+                note.clientUpdatedAt = now
+                
+                let updatedRow = NotesMappers.noteRow(from: note)
+                try updateNoteRow(updatedRow, on: db)
+            }
+            return .noteUpdated(noteID)
+        }
+    }
+    
+    // MARK: - Direct Row Operations on DB Pointer
+    
+    private func fetchNoteRow(id: String, on db: OpaquePointer) throws -> NoteRow? {
+        let sql = "SELECT id, folder_id, title, content_json, plain_text_cache, preview, is_pinned, is_locked, is_deleted, created_at, updated_at, deleted_at, sort_key, schema_version, client_updated_at, device_id FROM notes WHERE id = ? LIMIT 1;"
+        let statement = try SQLiteHelper.prepare(sql: sql, on: db)
+        defer { sqlite3_finalize(statement) }
+        
+        SQLiteHelper.bind(text: id, at: 1, statement: statement)
+        if sqlite3_step(statement) == SQLITE_ROW {
+            return readFullNoteRow(from: statement)
+        }
+        return nil
+    }
+    
+    private func insertNoteRow(_ row: NoteRow, on db: OpaquePointer) throws {
+        let sql = """
+        INSERT INTO notes (id, folder_id, title, content_json, plain_text_cache, preview, is_pinned, is_locked, is_deleted, created_at, updated_at, deleted_at, sort_key, schema_version, client_updated_at, device_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        """
+        let statement = try SQLiteHelper.prepare(sql: sql, on: db)
+        defer { sqlite3_finalize(statement) }
+        
+        bindFullNoteRow(row, statement: statement)
+        if sqlite3_step(statement) != SQLITE_DONE {
+            let msg = String(cString: sqlite3_errmsg(db))
+            throw NotesError.persistenceFailure("Failed to insert note: \(msg)")
+        }
+    }
+    
+    private func updateNoteRow(_ row: NoteRow, on db: OpaquePointer) throws {
+        let sql = """
+        UPDATE notes SET folder_id = ?, title = ?, content_json = ?, plain_text_cache = ?, preview = ?, is_pinned = ?, is_locked = ?, is_deleted = ?, updated_at = ?, deleted_at = ?, sort_key = ?, schema_version = ?, client_updated_at = ?, device_id = ?
+        WHERE id = ?;
+        """
+        let statement = try SQLiteHelper.prepare(sql: sql, on: db)
+        defer { sqlite3_finalize(statement) }
+        
+        SQLiteHelper.bind(text: row.folderID, at: 1, statement: statement)
+        SQLiteHelper.bind(text: row.title, at: 2, statement: statement)
+        SQLiteHelper.bind(text: row.contentJSON, at: 3, statement: statement)
+        SQLiteHelper.bind(text: row.plainTextCache, at: 4, statement: statement)
+        SQLiteHelper.bind(text: row.preview, at: 5, statement: statement)
+        SQLiteHelper.bind(int: row.isPinned, at: 6, statement: statement)
+        SQLiteHelper.bind(int: row.isLocked, at: 7, statement: statement)
+        SQLiteHelper.bind(int: row.isDeleted, at: 8, statement: statement)
+        SQLiteHelper.bind(double: row.updatedAt, at: 9, statement: statement)
+        SQLiteHelper.bind(double: row.deletedAt, at: 10, statement: statement)
+        SQLiteHelper.bind(text: row.sortKey, at: 11, statement: statement)
+        SQLiteHelper.bind(int: row.schemaVersion, at: 12, statement: statement)
+        SQLiteHelper.bind(double: row.clientUpdatedAt, at: 13, statement: statement)
+        SQLiteHelper.bind(text: row.deviceID, at: 14, statement: statement)
+        SQLiteHelper.bind(text: row.id, at: 15, statement: statement)
+        
+        if sqlite3_step(statement) != SQLITE_DONE {
+            let msg = String(cString: sqlite3_errmsg(db))
+            throw NotesError.persistenceFailure("Failed to update note: \(msg)")
+        }
+    }
+    
+    private func deleteNoteRow(id: String, on db: OpaquePointer) throws {
+        let sql = "DELETE FROM notes WHERE id = ?;"
+        let statement = try SQLiteHelper.prepare(sql: sql, on: db)
+        defer { sqlite3_finalize(statement) }
+        
+        SQLiteHelper.bind(text: id, at: 1, statement: statement)
+        if sqlite3_step(statement) != SQLITE_DONE {
+            let msg = String(cString: sqlite3_errmsg(db))
+            throw NotesError.persistenceFailure("Failed to delete note: \(msg)")
         }
     }
     

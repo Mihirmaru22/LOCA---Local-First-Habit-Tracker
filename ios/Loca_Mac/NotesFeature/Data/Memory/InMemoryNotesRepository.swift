@@ -159,160 +159,185 @@ public final class InMemoryNotesRepository: NotesRepository, @unchecked Sendable
     // MARK: - Mutations
     
     public func apply(_ mutation: NoteMutation) async throws {
-        let eventToPublish: NotesEvent
+        try await apply(mutations: [mutation])
+    }
+    
+    public func apply(mutations: [NoteMutation]) async throws {
+        guard !mutations.isEmpty else { return }
+        var eventsToPublish: [NotesEvent] = []
         
         try lock.withLock {
-            switch mutation {
-            case .createNote(let noteID, let folderID):
+            let snapshotNotes = notes
+            let snapshotFolders = folders
+            let snapshotTags = tags
+            let snapshotNoteTags = noteTags
+            
+            do {
+                for mutation in mutations {
+                    let event = try applySingleMutation(mutation)
+                    eventsToPublish.append(event)
+                }
+            } catch {
+                notes = snapshotNotes
+                folders = snapshotFolders
+                tags = snapshotTags
+                noteTags = snapshotNoteTags
+                throw error
+            }
+        }
+        
+        for event in eventsToPublish {
+            eventBus.publish(event)
+        }
+    }
+    
+    private func applySingleMutation(_ mutation: NoteMutation) throws -> NotesEvent {
+        switch mutation {
+        case .createNote(let noteID, let folderID):
+            let now = Date()
+            let content = NoteContent.empty
+            let plainText = NoteTextExtractor.plainText(from: content)
+            let preview = NotePreviewGenerator.preview(from: plainText)
+            
+            let note = Note(
+                id: noteID,
+                folderID: folderID,
+                title: "",
+                content: content,
+                plainTextCache: plainText,
+                preview: preview,
+                isPinned: false,
+                isLocked: false,
+                isDeleted: false,
+                createdAt: now,
+                updatedAt: now,
+                deletedAt: nil,
+                sortKey: String(format: "%014.3f", now.timeIntervalSince1970),
+                schemaVersion: 1,
+                clientUpdatedAt: now,
+                deviceID: "in-memory-device"
+            )
+            notes[noteID] = note
+            return .noteCreated(noteID)
+            
+        case .setTitle(let noteID, let title):
+            guard var note = notes[noteID] else {
+                throw NotesError.noteNotFound(noteID)
+            }
+            let now = Date()
+            note.title = title
+            note.updatedAt = now
+            note.clientUpdatedAt = now
+            notes[noteID] = note
+            return .noteUpdated(noteID)
+            
+        case .updateContent(let noteID, let content):
+            guard var note = notes[noteID] else {
+                throw NotesError.noteNotFound(noteID)
+            }
+            let now = Date()
+            let plainText = NoteTextExtractor.plainText(from: content)
+            let preview = NotePreviewGenerator.preview(from: plainText)
+            
+            note.content = content
+            note.plainTextCache = plainText
+            note.preview = preview
+            note.updatedAt = now
+            note.clientUpdatedAt = now
+            notes[noteID] = note
+            return .noteUpdated(noteID)
+            
+        case .move(let noteID, let folderID):
+            guard var note = notes[noteID] else {
+                throw NotesError.noteNotFound(noteID)
+            }
+            let now = Date()
+            note.folderID = folderID
+            note.updatedAt = now
+            note.clientUpdatedAt = now
+            notes[noteID] = note
+            return .noteMoved(noteID)
+            
+        case .setPinned(let noteID, let isPinned):
+            guard var note = notes[noteID] else {
+                throw NotesError.noteNotFound(noteID)
+            }
+            let now = Date()
+            note.isPinned = isPinned
+            note.updatedAt = now
+            note.clientUpdatedAt = now
+            notes[noteID] = note
+            return .notePinned(noteID)
+            
+        case .setLocked(let noteID, let isLocked):
+            guard var note = notes[noteID] else {
+                throw NotesError.noteNotFound(noteID)
+            }
+            let now = Date()
+            note.isLocked = isLocked
+            note.updatedAt = now
+            note.clientUpdatedAt = now
+            notes[noteID] = note
+            return .noteUpdated(noteID)
+            
+        case .markDeleted(let noteID):
+            guard var note = notes[noteID] else {
+                throw NotesError.noteNotFound(noteID)
+            }
+            let now = Date()
+            note.isDeleted = true
+            note.deletedAt = now
+            note.updatedAt = now
+            note.clientUpdatedAt = now
+            notes[noteID] = note
+            return .noteDeleted(noteID)
+            
+        case .restore(let noteID):
+            guard var note = notes[noteID] else {
+                throw NotesError.noteNotFound(noteID)
+            }
+            let now = Date()
+            note.isDeleted = false
+            note.deletedAt = nil
+            note.updatedAt = now
+            note.clientUpdatedAt = now
+            notes[noteID] = note
+            return .noteRestored(noteID)
+            
+        case .permanentlyDelete(let noteID):
+            notes.removeValue(forKey: noteID)
+            noteTags.removeValue(forKey: noteID)
+            return .notePermanentlyDeleted(noteID)
+            
+        case .toggleChecklistItem(let noteID, let blockID):
+            guard var note = notes[noteID] else {
+                throw NotesError.noteNotFound(noteID)
+            }
+            var mutatedBlocks = note.content.blocks
+            var didMutate = false
+            for (idx, block) in mutatedBlocks.enumerated() {
+                if case .checklistItem(var item) = block, item.id == blockID {
+                    item.isChecked.toggle()
+                    mutatedBlocks[idx] = .checklistItem(item)
+                    didMutate = true
+                    break
+                }
+            }
+            if didMutate {
                 let now = Date()
-                let content = NoteContent.empty
-                let plainText = NoteTextExtractor.plainText(from: content)
+                let newContent = NoteContent(version: note.content.version, blocks: mutatedBlocks)
+                let plainText = NoteTextExtractor.plainText(from: newContent)
                 let preview = NotePreviewGenerator.preview(from: plainText)
                 
-                let note = Note(
-                    id: noteID,
-                    folderID: folderID,
-                    title: "",
-                    content: content,
-                    plainTextCache: plainText,
-                    preview: preview,
-                    isPinned: false,
-                    isLocked: false,
-                    isDeleted: false,
-                    createdAt: now,
-                    updatedAt: now,
-                    deletedAt: nil,
-                    sortKey: String(format: "%014.3f", now.timeIntervalSince1970),
-                    schemaVersion: 1,
-                    clientUpdatedAt: now,
-                    deviceID: "in-memory-device"
-                )
-                notes[noteID] = note
-                eventToPublish = .noteCreated(noteID)
-                
-            case .setTitle(let noteID, let title):
-                guard var note = notes[noteID] else {
-                    throw NotesError.noteNotFound(noteID)
-                }
-                let now = Date()
-                note.title = title
-                note.updatedAt = now
-                note.clientUpdatedAt = now
-                notes[noteID] = note
-                eventToPublish = .noteUpdated(noteID)
-                
-            case .updateContent(let noteID, let content):
-                guard var note = notes[noteID] else {
-                    throw NotesError.noteNotFound(noteID)
-                }
-                let now = Date()
-                let plainText = NoteTextExtractor.plainText(from: content)
-                let preview = NotePreviewGenerator.preview(from: plainText)
-                
-                note.content = content
+                note.content = newContent
                 note.plainTextCache = plainText
                 note.preview = preview
                 note.updatedAt = now
                 note.clientUpdatedAt = now
                 notes[noteID] = note
-                eventToPublish = .noteUpdated(noteID)
-                
-            case .move(let noteID, let folderID):
-                guard var note = notes[noteID] else {
-                    throw NotesError.noteNotFound(noteID)
-                }
-                let now = Date()
-                note.folderID = folderID
-                note.updatedAt = now
-                note.clientUpdatedAt = now
-                notes[noteID] = note
-                eventToPublish = .noteMoved(noteID)
-                
-            case .setPinned(let noteID, let isPinned):
-                guard var note = notes[noteID] else {
-                    throw NotesError.noteNotFound(noteID)
-                }
-                let now = Date()
-                note.isPinned = isPinned
-                note.updatedAt = now
-                note.clientUpdatedAt = now
-                notes[noteID] = note
-                eventToPublish = .notePinned(noteID)
-                
-            case .setLocked(let noteID, let isLocked):
-                guard var note = notes[noteID] else {
-                    throw NotesError.noteNotFound(noteID)
-                }
-                let now = Date()
-                note.isLocked = isLocked
-                note.updatedAt = now
-                note.clientUpdatedAt = now
-                notes[noteID] = note
-                eventToPublish = .noteUpdated(noteID)
-                
-            case .markDeleted(let noteID):
-                guard var note = notes[noteID] else {
-                    throw NotesError.noteNotFound(noteID)
-                }
-                let now = Date()
-                note.isDeleted = true
-                note.deletedAt = now
-                note.updatedAt = now
-                note.clientUpdatedAt = now
-                notes[noteID] = note
-                eventToPublish = .noteDeleted(noteID)
-                
-            case .restore(let noteID):
-                guard var note = notes[noteID] else {
-                    throw NotesError.noteNotFound(noteID)
-                }
-                let now = Date()
-                note.isDeleted = false
-                note.deletedAt = nil
-                note.updatedAt = now
-                note.clientUpdatedAt = now
-                notes[noteID] = note
-                eventToPublish = .noteRestored(noteID)
-                
-            case .permanentlyDelete(let noteID):
-                notes.removeValue(forKey: noteID)
-                noteTags.removeValue(forKey: noteID)
-                eventToPublish = .notePermanentlyDeleted(noteID)
-                
-            case .toggleChecklistItem(let noteID, let blockID):
-                guard var note = notes[noteID] else {
-                    throw NotesError.noteNotFound(noteID)
-                }
-                var mutatedBlocks = note.content.blocks
-                var didMutate = false
-                for (idx, block) in mutatedBlocks.enumerated() {
-                    if case .checklistItem(var item) = block, item.id == blockID {
-                        item.isChecked.toggle()
-                        mutatedBlocks[idx] = .checklistItem(item)
-                        didMutate = true
-                        break
-                    }
-                }
-                if didMutate {
-                    let now = Date()
-                    let newContent = NoteContent(version: note.content.version, blocks: mutatedBlocks)
-                    let plainText = NoteTextExtractor.plainText(from: newContent)
-                    let preview = NotePreviewGenerator.preview(from: plainText)
-                    
-                    note.content = newContent
-                    note.plainTextCache = plainText
-                    note.preview = preview
-                    note.updatedAt = now
-                    note.clientUpdatedAt = now
-                    notes[noteID] = note
-                    eventToPublish = .noteUpdated(noteID)
-                } else {
-                    eventToPublish = .noteUpdated(noteID)
-                }
             }
+            return .noteUpdated(noteID)
         }
-        
-        eventBus.publish(eventToPublish)
     }
     
     // MARK: - Folders

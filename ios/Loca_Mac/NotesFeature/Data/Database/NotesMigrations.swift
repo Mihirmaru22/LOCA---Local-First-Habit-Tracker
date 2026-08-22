@@ -1,16 +1,82 @@
 import Foundation
 import SQLite3
 
-/// Schema migrations manager for the SQLite notes database.
+/// Schema migrations manager for the SQLite notes database with explicit version tracking.
 public enum NotesMigrations {
     
     public static func runMigrations(on db: OpaquePointer?) throws {
         try execute(sql: "PRAGMA foreign_keys = ON;", on: db)
         try execute(sql: "PRAGMA journal_mode = WAL;", on: db)
         
-        // Migration v1
-        try runMigrationV1(on: db)
+        // 1. Ensure schema_migrations table exists
+        let initMigrationsTable = """
+        CREATE TABLE IF NOT EXISTS schema_migrations (
+            version INTEGER PRIMARY KEY,
+            applied_at REAL NOT NULL
+        );
+        """
+        try execute(sql: initMigrationsTable, on: db)
+        
+        let applied = try appliedVersions(on: db)
+        
+        // 2. Migration v1: Initial Core Schema
+        if !applied.contains(1) {
+            try runMigrationV1(on: db)
+            try recordMigration(version: 1, on: db)
+        }
     }
+    
+    // MARK: - Migration Version Gating & Inspection
+    
+    public static func appliedVersions(on db: OpaquePointer?) throws -> Set<Int> {
+        guard let db = db else {
+            throw NotesError.persistenceFailure("Database connection pointer is null")
+        }
+        
+        let sql = "SELECT version FROM schema_migrations ORDER BY version ASC;"
+        var statement: OpaquePointer?
+        if sqlite3_prepare_v2(db, sql, -1, &statement, nil) != SQLITE_OK {
+            return []
+        }
+        defer { sqlite3_finalize(statement) }
+        
+        var versions = Set<Int>()
+        while sqlite3_step(statement) == SQLITE_ROW {
+            let ver = Int(sqlite3_column_int64(statement, 0))
+            versions.insert(ver)
+        }
+        return versions
+    }
+    
+    public static func recordMigration(version: Int, on db: OpaquePointer?) throws {
+        guard let db = db else {
+            throw NotesError.persistenceFailure("Database connection pointer is null")
+        }
+        let sql = "INSERT OR REPLACE INTO schema_migrations (version, applied_at) VALUES (?, ?);"
+        let statement = try SQLiteHelper.prepare(sql: sql, on: db)
+        defer { sqlite3_finalize(statement) }
+        
+        SQLiteHelper.bind(int: version, at: 1, statement: statement)
+        SQLiteHelper.bind(double: Date().timeIntervalSince1970, at: 2, statement: statement)
+        
+        if sqlite3_step(statement) != SQLITE_DONE {
+            let msg = String(cString: sqlite3_errmsg(db))
+            throw NotesError.migrationFailure("Failed to record migration v\(version): \(msg)")
+        }
+    }
+    
+    public static func runMigration(version: Int, on db: OpaquePointer?, migration: (OpaquePointer) throws -> Void) throws {
+        guard let db = db else {
+            throw NotesError.persistenceFailure("Database connection pointer is null")
+        }
+        let applied = try appliedVersions(on: db)
+        guard !applied.contains(version) else { return }
+        
+        try migration(db)
+        try recordMigration(version: version, on: db)
+    }
+    
+    // MARK: - Migrations
     
     private static func runMigrationV1(on db: OpaquePointer?) throws {
         let sql = """
@@ -75,7 +141,7 @@ public enum NotesMigrations {
         try execute(sql: sql, on: db)
     }
     
-    private static func execute(sql: String, on db: OpaquePointer?) throws {
+    public static func execute(sql: String, on db: OpaquePointer?) throws {
         guard let db = db else {
             throw NotesError.persistenceFailure("Database connection pointer is null")
         }

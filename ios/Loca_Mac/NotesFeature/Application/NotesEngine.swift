@@ -48,6 +48,14 @@ public final class NotesEngine: ObservableObject {
     
     // MARK: - Write Actions
     
+    public func apply(_ mutation: NoteMutation) async throws {
+        try await repository.apply(mutation)
+    }
+    
+    public func apply(mutations: [NoteMutation]) async throws {
+        try await repository.apply(mutations: mutations)
+    }
+    
     @discardableResult
     public func createNote(in folderID: FolderID? = nil) async throws -> NoteID {
         try await createNoteUseCase.execute(in: folderID)

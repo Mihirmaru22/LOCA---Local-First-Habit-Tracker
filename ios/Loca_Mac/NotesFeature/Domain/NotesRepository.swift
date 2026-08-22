@@ -13,6 +13,7 @@ public protocol NotesRepository: Sendable {
     
     // MARK: - Mutations
     func apply(_ mutation: NoteMutation) async throws
+    func apply(mutations: [NoteMutation]) async throws
     
     // MARK: - Folders
     func fetchFolders() async throws -> [Folder]

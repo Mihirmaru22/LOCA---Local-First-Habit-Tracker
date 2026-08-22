@@ -58,4 +58,42 @@ struct InMemoryRepositoryTests {
         let purged = try await repo.fetchNote(id: noteID)
         #expect(purged == nil)
     }
+    
+    @Test func testInMemoryBatchMutationAtomicityAndRollback() async throws {
+        let repo = InMemoryNotesRepository()
+        
+        let note1 = NoteID()
+        let note2 = NoteID()
+        let noteInvalid = NoteID()
+        
+        // 1. Successful batch of 3 mutations
+        let batch: [NoteMutation] = [
+            .createNote(noteID: note1, folderID: nil),
+            .createNote(noteID: note2, folderID: nil),
+            .setTitle(noteID: note1, title: "Memory Batch 1")
+        ]
+        try await repo.apply(mutations: batch)
+        
+        let fetched1 = try await repo.fetchNote(id: note1)
+        #expect(fetched1?.title == "Memory Batch 1")
+        
+        // 2. Failing batch containing invalid note ID -> should atomically roll back
+        let failingBatch: [NoteMutation] = [
+            .setTitle(noteID: note2, title: "Updated Note 2"),
+            .setTitle(noteID: noteInvalid, title: "Will Fail")
+        ]
+        
+        do {
+            try await repo.apply(mutations: failingBatch)
+            Issue.record("Expected batch to fail and throw")
+        } catch {
+            if let notesError = error as? NotesError {
+                #expect(notesError == .noteNotFound(noteInvalid))
+            }
+        }
+        
+        // Assert note2 title was NOT mutated (rolled back)
+        let fetched2 = try await repo.fetchNote(id: note2)
+        #expect(fetched2?.title == "")
+    }
 }
