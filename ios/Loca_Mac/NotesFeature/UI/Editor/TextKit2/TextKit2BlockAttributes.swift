@@ -44,7 +44,7 @@ public enum TextKit2BlockAttributes {
             }
             
             style.headIndent = 24
-            style.firstLineHeadIndent = 0
+            style.firstLineHeadIndent = 24
             style.paragraphSpacing = 4
             style.lineHeightMultiple = 1.2
             
@@ -52,7 +52,7 @@ public enum TextKit2BlockAttributes {
             attrs[.font] = NSFont.systemFont(ofSize: 14, weight: .regular)
             attrs[.foregroundColor] = NSColor.labelColor
             style.headIndent = 18
-            style.firstLineHeadIndent = 0
+            style.firstLineHeadIndent = 18
             style.paragraphSpacing = 4
             style.lineHeightMultiple = 1.2
             

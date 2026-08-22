@@ -564,5 +564,27 @@ struct TextKitBridgeTests {
         #expect(bridge.block(for: b2ID)?.attributes["level"] == "2")
         #expect(state.formattingState.blockType == .h2)
     }
+    
+    @Test func testMarginGlyphsDoNotShiftIndices() {
+        let noteID = NoteID()
+        let b1ID = UUID()
+        let b2ID = UUID()
+        
+        var doc = CRDTDoc(id: noteID, deviceID: "test-device")
+        let b1 = CRDTBlock(id: b1ID, type: "checklistItem", text: CRDTText(string: "Task item", deviceID: "test-device"), attributes: ["isChecked": "false"])
+        let b2 = CRDTBlock(id: b2ID, type: "bullet", text: CRDTText(string: "Bullet item", deviceID: "test-device"))
+        doc.addBlock(b1)
+        doc.addBlock(b2)
+        
+        let bridge = TextKitCRDTBridge(doc: doc, deviceID: "test-device")
+        let rendered = bridge.renderAttributedString()
+        
+        // Assert storage.string has NO glyph prefixes or attachments (exact 1:1 character parity)
+        #expect(rendered.string == "Task item\nBullet item")
+        #expect(!rendered.string.contains("•"))
+        #expect(!rendered.string.contains("[ ]"))
+        #expect(!rendered.string.contains("[x]"))
+        #expect(rendered.string.count == 21)
+    }
 }
 #endif

@@ -10,15 +10,17 @@
 // 2. AppKit text engine natively commits glyphs to the backing store at 120fps with zero latency.
 // 3. Return key triggers a custom block split and synchronous re-render with cursor placement.
 // 4. Remote CRDT merges update textStorage only on remote deltas, preventing local render loops.
+// 5. Checklist and bullet glyphs are drawn exclusively in the margin via custom draw(_:); storage string is untouched.
 
 import Foundation
 import Combine
 import SwiftUI
 import AppKit
 
-/// Subclassed NSTextView supporting interactive checkbox gutter clicks, keyboard shortcuts, and text engine integration.
+/// Subclassed NSTextView supporting interactive margin-drawn glyphs, gutter clicks, and text engine integration.
 public final class NoteCanvasTextView: NSTextView {
     
+    public weak var bridge: TextKitCRDTBridge?
     public var onGutterClicked: ((NSPoint) -> Bool)?
     public var onToggleBold: (() -> Void)?
     public var onToggleItalic: (() -> Void)?
@@ -52,17 +54,80 @@ public final class NoteCanvasTextView: NSTextView {
     }
     
     public override func mouseDown(with event: NSEvent) {
-        // Ensure text view claims first responder status on click
         if window?.firstResponder != self {
             window?.makeFirstResponder(self)
         }
         
         let point = convert(event.locationInWindow, from: nil)
         if let handler = onGutterClicked, handler(point) {
-            // Handled by gutter click (e.g. checkbox toggled)
             return
         }
         super.mouseDown(with: event)
+    }
+    
+    public override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        
+        guard let bridge = bridge,
+              let layoutManager = self.layoutManager,
+              let textContainer = self.textContainer,
+              let storage = self.textStorage else { return }
+        
+        let activeBlocks = bridge.doc.blocks.filter { !$0.isDeleted }
+        let origin = self.textContainerOrigin
+        
+        for block in activeBlocks {
+            guard block.type == "checklistItem" || block.type == "bullet" else { continue }
+            guard let range = bridge.blockRanges[block.id] else { continue }
+            guard range.location <= storage.length else { continue }
+            
+            let charIndex = min(range.location, max(0, storage.length - 1))
+            let glyphIndex = layoutManager.glyphIndexForCharacter(at: charIndex)
+            guard glyphIndex < layoutManager.numberOfGlyphs || storage.length == 0 else { continue }
+            
+            var lineRange = NSRange(location: 0, length: 0)
+            let lineRect = layoutManager.lineFragmentRect(forGlyphAt: glyphIndex, effectiveRange: &lineRange)
+            
+            let viewLineRect = NSRect(
+                x: origin.x + lineRect.origin.x,
+                y: origin.y + lineRect.origin.y,
+                width: lineRect.width,
+                height: lineRect.height
+            )
+            
+            if block.type == "checklistItem" {
+                let isChecked = block.attributes["isChecked"] == "true"
+                let symbolName = isChecked ? "checkmark.square.fill" : "square"
+                let tintColor = isChecked ? NSColor.controlAccentColor : NSColor.secondaryLabelColor
+                
+                let config = NSImage.SymbolConfiguration(pointSize: 13, weight: .regular)
+                if let symbolImage = NSImage(systemSymbolName: symbolName, accessibilityDescription: "Checkbox")?.withSymbolConfiguration(config) {
+                    let tinted = symbolImage.copy() as! NSImage
+                    tinted.lockFocus()
+                    tintColor.set()
+                    let imageRect = NSRect(origin: .zero, size: tinted.size)
+                    imageRect.fill(using: .sourceAtop)
+                    tinted.unlockFocus()
+                    
+                    let boxSize: CGFloat = 14
+                    let boxX: CGFloat = origin.x + 4
+                    let boxY: CGFloat = viewLineRect.origin.y + max(0, (viewLineRect.height - boxSize) / 2)
+                    let targetRect = NSRect(x: boxX, y: boxY, width: boxSize, height: boxSize)
+                    
+                    tinted.draw(in: targetRect, from: .zero, operation: .sourceOver, fraction: 1.0)
+                }
+            } else if block.type == "bullet" {
+                let bulletStr = "•" as NSString
+                let attrs: [NSAttributedString.Key: Any] = [
+                    .font: NSFont.systemFont(ofSize: 14, weight: .bold),
+                    .foregroundColor: NSColor.secondaryLabelColor
+                ]
+                let bulletSize = bulletStr.size(withAttributes: attrs)
+                let bulletX: CGFloat = origin.x + 6
+                let bulletY: CGFloat = viewLineRect.origin.y + max(0, (viewLineRect.height - bulletSize.height) / 2)
+                bulletStr.draw(at: NSPoint(x: bulletX, y: bulletY), withAttributes: attrs)
+            }
+        }
     }
 }
 
@@ -91,6 +156,7 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         let scrollView = NSScrollView()
         let textView = NoteCanvasTextView(frame: .zero)
         
+        textView.bridge = state.bridge
         textView.delegate = context.coordinator
         textView.isEditable = true
         textView.isSelectable = true
@@ -128,6 +194,7 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
             tv.setSelectedRange(intendedCursor)
             state.bridge.updateLastKnownSelection(intendedCursor)
             coordinator?.isProgrammaticEdit = false
+            tv.setNeedsDisplay(tv.bounds)
             self.onKeystroke(state.bridge.doc)
         }
         
@@ -146,15 +213,13 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
             }
         }
         
-        // Gutter Click Handler
+        // Gutter Click Handler (x < 24 over checklist margin)
         textView.onGutterClicked = { [weak textView, weak coordinator = context.coordinator] clickPoint in
             guard let tv = textView, let storage = tv.textStorage else { return false }
             
-            // Check if click X is in left gutter margin (< 30pt)
             let relativeX = clickPoint.x - tv.textContainerOrigin.x
-            guard relativeX >= 0 && relativeX < 30 else { return false }
+            guard relativeX >= 0 && relativeX < 24 else { return false }
             
-            // Find character index at this Y coordinate
             let charIndex = tv.characterIndexForInsertion(at: clickPoint)
             guard let target = self.state.bridge.resolveLocation(charIndex),
                   target.block.type == "checklistItem" else {
@@ -170,6 +235,8 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
             tv.setSelectedRange(intendedCursor)
             self.state.bridge.updateLastKnownSelection(intendedCursor)
             coordinator?.isProgrammaticEdit = false
+            
+            tv.setNeedsDisplay(tv.bounds)
             
             DispatchQueue.main.async {
                 self.state.refreshFormattingState()
@@ -195,6 +262,7 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
     
     public func updateNSView(_ nsView: NSScrollView, context: Context) {
         guard let textView = context.coordinator.textView else { return }
+        textView.bridge = state.bridge
         
         // Strictly guard against touching textStorage for local edits
         guard state.needsRemoteRefresh else {
@@ -223,6 +291,7 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         state.bridge.updateLastKnownSelection(newSelection)
         textView.scrollRangeToVisible(newSelection)
         context.coordinator.isProgrammaticEdit = false
+        textView.setNeedsDisplay(textView.bounds)
     }
     
     public final class Coordinator: NSObject, NSTextViewDelegate {
@@ -263,6 +332,7 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
                         parent.state.bridge.updateLastKnownSelection(intendedCursor)
                         textView.scrollRangeToVisible(intendedCursor)
                         isProgrammaticEdit = false
+                        textView.setNeedsDisplay(textView.bounds)
                     }
                     parent.onKeystroke(parent.state.bridge.doc)
                     DispatchQueue.main.async {
@@ -279,6 +349,7 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
                 parent.state.bridge.insertText(replacement, at: affectedCharRange.location)
             }
             
+            textView.setNeedsDisplay(textView.bounds)
             parent.onKeystroke(parent.state.bridge.doc)
             DispatchQueue.main.async {
                 self.parent.state.refreshFormattingState()
