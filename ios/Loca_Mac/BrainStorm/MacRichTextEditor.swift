@@ -801,17 +801,22 @@ public final class LocaAppKitTextView: NSTextView {
                 self.didChangeText()
                 return
             } else {
-                // Populated line -> create new unchecked checklist line
+                // Populated line -> create new unchecked checklist line inheriting exact indent level
+                let currentStyle = (textStorage.attribute(.paragraphStyle, at: safeIndex, effectiveRange: nil) as? NSParagraphStyle) ?? RichTextTypography.makeParagraphStyle(for: .checklist, preset: currentPreset)
+                
                 self.undoManager?.beginUndoGrouping()
                 super.insertNewline(sender)
                 let newParaRange = (textStorage.string as NSString).paragraphRange(for: self.selectedRange())
                 textStorage.beginEditing()
-                let checklistStyle = RichTextTypography.makeParagraphStyle(for: .checklist, preset: currentPreset)
-                textStorage.addAttribute(.paragraphStyle, value: checklistStyle, range: newParaRange)
+                textStorage.addAttribute(.paragraphStyle, value: currentStyle, range: newParaRange)
                 textStorage.addAttribute(.noteChecklistState, value: ChecklistState.unchecked.rawValue, range: newParaRange)
                 textStorage.removeAttribute(.strikethroughStyle, range: newParaRange)
                 textStorage.addAttribute(.foregroundColor, value: NSColor.textColor, range: newParaRange)
-                self.typingAttributes = RichTextTypography.defaultAttributes(for: .checklist, preset: currentPreset)
+                
+                var typingAttrs = RichTextTypography.defaultAttributes(for: .checklist, preset: currentPreset)
+                typingAttrs[.paragraphStyle] = currentStyle
+                self.typingAttributes = typingAttrs
+                
                 textStorage.endEditing()
                 self.undoManager?.endUndoGrouping()
                 self.didChangeText()
@@ -859,6 +864,13 @@ public final class LocaAppKitTextView: NSTextView {
         }
         
         super.insertNewline(sender)
+    }
+    
+    // MARK: - Soft Line Break (Shift+Return)
+    
+    public override func insertLineBreak(_ sender: Any?) {
+        // Inserts soft newline inside current paragraph without creating a new checklist item
+        self.insertText("\u{2028}", replacementRange: self.selectedRange())
     }
     
     // MARK: - Smart Tab & Shift-Tab Indentation
