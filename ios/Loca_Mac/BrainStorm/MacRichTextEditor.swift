@@ -873,7 +873,7 @@ public final class LocaAppKitTextView: NSTextView {
         self.insertText("\u{2028}", replacementRange: self.selectedRange())
     }
     
-    // MARK: - Smart Tab & Shift-Tab Indentation
+    // MARK: - Smart Tab & Shift-Tab Indentation (Multi-Line & Clamped)
     
     public override func insertTab(_ sender: Any?) {
         guard let textStorage = self.textStorage else {
@@ -883,31 +883,57 @@ public final class LocaAppKitTextView: NSTextView {
         
         let selectedRange = self.selectedRange()
         let string = textStorage.string as NSString
-        let paragraphRange = string.paragraphRange(for: selectedRange)
-        
         guard textStorage.length > 0 else {
             super.insertTab(sender)
             return
         }
-        let safeIndex = min(paragraphRange.location, textStorage.length - 1)
-        if let existingStyle = textStorage.attribute(.paragraphStyle, at: safeIndex, effectiveRange: nil) as? NSParagraphStyle {
-            let mutableStyle = existingStyle.mutableCopy() as! NSMutableParagraphStyle
-            let isChecklist = textStorage.attribute(.noteChecklistState, at: safeIndex, effectiveRange: nil) != nil
+        
+        let fullSelectionParaRange = string.paragraphRange(for: selectedRange)
+        var hasChecklistInSelection = false
+        
+        // Check if any paragraph in selection is a checklist item
+        var checkLoc = fullSelectionParaRange.location
+        while checkLoc < fullSelectionParaRange.location + fullSelectionParaRange.length && checkLoc < string.length {
+            let singleRange = string.paragraphRange(for: NSRange(location: checkLoc, length: 0))
+            let safeIdx = min(singleRange.location, textStorage.length - 1)
+            if textStorage.attribute(.noteChecklistState, at: safeIdx, effectiveRange: nil) != nil {
+                hasChecklistInSelection = true
+                break
+            }
+            checkLoc = singleRange.location + singleRange.length
+        }
+        
+        if hasChecklistInSelection {
+            self.undoManager?.beginUndoGrouping()
+            textStorage.beginEditing()
             
-            if isChecklist {
-                // Indentation Math: baseHeadIndent (28pt) + (indentLevel * 20pt)
-                let currentIndent = mutableStyle.headIndent
-                let indentLevel = Int(round((currentIndent - 28.0) / 20.0))
-                let newIndent = 28.0 + CGFloat(max(0, indentLevel + 1)) * 20.0
-                mutableStyle.headIndent = newIndent
-                mutableStyle.firstLineHeadIndent = newIndent
-            } else {
-                mutableStyle.headIndent += 20
-                mutableStyle.firstLineHeadIndent += 20
+            var loc = fullSelectionParaRange.location
+            while loc < fullSelectionParaRange.location + fullSelectionParaRange.length && loc < string.length {
+                let singleParaRange = string.paragraphRange(for: NSRange(location: loc, length: 0))
+                let safeIndex = min(singleParaRange.location, textStorage.length - 1)
+                
+                if let existingStyle = (textStorage.attribute(.paragraphStyle, at: safeIndex, effectiveRange: nil) as? NSParagraphStyle) ?? (textStorage.attribute(.noteChecklistState, at: safeIndex, effectiveRange: nil) != nil ? RichTextTypography.makeParagraphStyle(for: .checklist, preset: currentPreset) : nil) {
+                    let mutableStyle = existingStyle.mutableCopy() as! NSMutableParagraphStyle
+                    let isChecklist = textStorage.attribute(.noteChecklistState, at: safeIndex, effectiveRange: nil) != nil
+                    
+                    if isChecklist {
+                        // Max indent clamped to level 5 (128pt)
+                        let currentIndent = mutableStyle.headIndent
+                        let indentLevel = Int(round((currentIndent - 28.0) / 20.0))
+                        let newLevel = min(5, indentLevel + 1)
+                        let newIndent = 28.0 + CGFloat(newLevel) * 20.0
+                        mutableStyle.headIndent = newIndent
+                        mutableStyle.firstLineHeadIndent = newIndent
+                    } else {
+                        mutableStyle.headIndent += 20.0
+                        mutableStyle.firstLineHeadIndent += 20.0
+                    }
+                    textStorage.addAttribute(.paragraphStyle, value: mutableStyle, range: singleParaRange)
+                }
+                loc = singleParaRange.location + singleParaRange.length
             }
             
-            self.undoManager?.beginUndoGrouping()
-            textStorage.addAttribute(.paragraphStyle, value: mutableStyle, range: paragraphRange)
+            textStorage.endEditing()
             self.undoManager?.endUndoGrouping()
             self.didChangeText()
             return
@@ -924,33 +950,68 @@ public final class LocaAppKitTextView: NSTextView {
         
         let selectedRange = self.selectedRange()
         let string = textStorage.string as NSString
-        let paragraphRange = string.paragraphRange(for: selectedRange)
-        
         guard textStorage.length > 0 else {
             super.insertBacktab(sender)
             return
         }
-        let safeIndex = min(paragraphRange.location, textStorage.length - 1)
-        if let existingStyle = textStorage.attribute(.paragraphStyle, at: safeIndex, effectiveRange: nil) as? NSParagraphStyle {
-            let mutableStyle = existingStyle.mutableCopy() as! NSMutableParagraphStyle
-            let isChecklist = textStorage.attribute(.noteChecklistState, at: safeIndex, effectiveRange: nil) != nil
+        
+        let fullSelectionParaRange = string.paragraphRange(for: selectedRange)
+        var hasChecklistInSelection = false
+        
+        // Check if any paragraph in selection is a checklist item
+        var checkLoc = fullSelectionParaRange.location
+        while checkLoc < fullSelectionParaRange.location + fullSelectionParaRange.length && checkLoc < string.length {
+            let singleRange = string.paragraphRange(for: NSRange(location: checkLoc, length: 0))
+            let safeIdx = min(singleRange.location, textStorage.length - 1)
+            if textStorage.attribute(.noteChecklistState, at: safeIdx, effectiveRange: nil) != nil {
+                hasChecklistInSelection = true
+                break
+            }
+            checkLoc = singleRange.location + singleRange.length
+        }
+        
+        if hasChecklistInSelection {
+            self.undoManager?.beginUndoGrouping()
+            textStorage.beginEditing()
             
-            if isChecklist {
-                // Indentation Math: baseHeadIndent (28pt) + (indentLevel * 20pt)
-                let currentIndent = mutableStyle.headIndent
-                let indentLevel = Int(round((currentIndent - 28.0) / 20.0))
-                let newIndent = 28.0 + CGFloat(max(0, indentLevel - 1)) * 20.0
-                mutableStyle.headIndent = newIndent
-                mutableStyle.firstLineHeadIndent = newIndent
-            } else {
-                if mutableStyle.headIndent >= 20 {
-                    mutableStyle.headIndent -= 20
-                    mutableStyle.firstLineHeadIndent = max(0, mutableStyle.firstLineHeadIndent - 20)
+            var loc = fullSelectionParaRange.location
+            while loc < fullSelectionParaRange.location + fullSelectionParaRange.length && loc < string.length {
+                let singleParaRange = string.paragraphRange(for: NSRange(location: loc, length: 0))
+                let safeIndex = min(singleParaRange.location, textStorage.length - 1)
+                
+                if let existingStyle = textStorage.attribute(.paragraphStyle, at: safeIndex, effectiveRange: nil) as? NSParagraphStyle {
+                    let mutableStyle = existingStyle.mutableCopy() as! NSMutableParagraphStyle
+                    let isChecklist = textStorage.attribute(.noteChecklistState, at: safeIndex, effectiveRange: nil) != nil
+                    
+                    if isChecklist {
+                        let currentIndent = mutableStyle.headIndent
+                        let indentLevel = Int(round((currentIndent - 28.0) / 20.0))
+                        
+                        if indentLevel <= 0 {
+                            // Outdent at level 0 reverts checklist back to plain body paragraph
+                            textStorage.removeAttribute(.noteChecklistState, range: singleParaRange)
+                            textStorage.removeAttribute(.strikethroughStyle, range: singleParaRange)
+                            textStorage.addAttribute(.foregroundColor, value: NSColor.textColor, range: singleParaRange)
+                            let bodyStyle = RichTextTypography.makeParagraphStyle(for: .body, preset: currentPreset)
+                            textStorage.addAttribute(.paragraphStyle, value: bodyStyle, range: singleParaRange)
+                        } else {
+                            let newIndent = 28.0 + CGFloat(indentLevel - 1) * 20.0
+                            mutableStyle.headIndent = newIndent
+                            mutableStyle.firstLineHeadIndent = newIndent
+                            textStorage.addAttribute(.paragraphStyle, value: mutableStyle, range: singleParaRange)
+                        }
+                    } else {
+                        if mutableStyle.headIndent >= 20.0 {
+                            mutableStyle.headIndent -= 20.0
+                            mutableStyle.firstLineHeadIndent = max(0, mutableStyle.firstLineHeadIndent - 20.0)
+                            textStorage.addAttribute(.paragraphStyle, value: mutableStyle, range: singleParaRange)
+                        }
+                    }
                 }
+                loc = singleParaRange.location + singleParaRange.length
             }
             
-            self.undoManager?.beginUndoGrouping()
-            textStorage.addAttribute(.paragraphStyle, value: mutableStyle, range: paragraphRange)
+            textStorage.endEditing()
             self.undoManager?.endUndoGrouping()
             self.didChangeText()
             return
