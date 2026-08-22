@@ -24,6 +24,9 @@ public enum NotesMigrations {
             try runMigrationV1(on: db)
             try recordMigration(version: 1, on: db)
         }
+        
+        // 3. Migration v2: CRDT States and Outbound Sync Queue
+        try CRDTSQLiteMigrations.runMigrationV2(on: db)
     }
     
     // MARK: - Migration Version Gating & Inspection

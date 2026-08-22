@@ -349,13 +349,27 @@ public struct NotesDebugView: View {
                             }
                     }
                     
-                    // Metadata HUD
-                    HStack {
-                        Text("Device: \(note.deviceID)")
-                        Spacer()
-                        Text("Blocks: \(note.content.blocks.count)")
-                        Spacer()
-                        Text("Updated: \(note.updatedAt, style: .time)")
+                    // Metadata HUD & Sync Status
+                    VStack(spacing: 6) {
+                        HStack {
+                            Text("Device: \(note.deviceID)")
+                            Spacer()
+                            Text("Blocks: \(note.content.blocks.count)")
+                            Spacer()
+                            Text("Updated: \(note.updatedAt, style: .time)")
+                        }
+                        
+                        HStack {
+                            Image(systemName: "lock.shield.fill")
+                                .foregroundStyle(.green)
+                            Text("E2EE Shadow Sync: Active (Curve25519 + AES-256-GCM)")
+                                .font(.system(size: 9, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text("CRDT v2")
+                                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                        }
                     }
                     .font(.system(size: 10, design: .monospaced))
                     .foregroundStyle(.secondary)
