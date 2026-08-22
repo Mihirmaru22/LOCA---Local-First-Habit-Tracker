@@ -1049,6 +1049,15 @@ public final class LocaAppKitTextView: NSTextView {
         super.mouseMoved(with: event)
     }
     
+    public override func mouseExited(with event: NSEvent) {
+        if hoveredCheckboxParaRange != nil {
+            hoveredCheckboxParaRange = nil
+            self.setNeedsDisplay(self.bounds)
+            NSCursor.iBeam.set()
+        }
+        super.mouseExited(with: event)
+    }
+    
     // MARK: - Native Vector Checklist Drawing (Pure Gutter Layer)
     
     public override func drawBackground(in rect: NSRect) {
@@ -1153,6 +1162,11 @@ public final class LocaAppKitTextView: NSTextView {
                 let checklistState = textStorage.attribute(.noteChecklistState, at: safeIndex, effectiveRange: nil) as? String
                 
                 if let state = checklistState {
+                    // Activate first responder status if text view is not already focused
+                    if self.window?.firstResponder != self {
+                        self.window?.makeFirstResponder(self)
+                    }
+                    
                     self.undoManager?.beginUndoGrouping()
                     textStorage.beginEditing()
                     if state == ChecklistState.unchecked.rawValue {
