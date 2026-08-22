@@ -634,6 +634,7 @@ public final class LocaAppKitTextView: NSTextView {
         
         let string = textStorage.string as NSString
         let paragraphRange = string.paragraphRange(for: affectedCharRange)
+        let paragraphText = string.substring(with: paragraphRange)
         let prefixLength = affectedCharRange.location - paragraphRange.location
         
         if rep == " " {
