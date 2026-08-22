@@ -109,6 +109,17 @@ public enum TypographyPreset: String, CaseIterable, Codable {
     }
 }
 
+// MARK: - Note Checklists Extension
+
+extension NSAttributedString.Key {
+    public static let noteChecklistState = NSAttributedString.Key("noteChecklistState")
+}
+
+public enum ChecklistState: String, Codable {
+    case unchecked = "unchecked"
+    case checked = "checked"
+}
+
 // MARK: - RichTextTypography Helper Utilities
 
 public struct RichTextTypography {
@@ -128,7 +139,7 @@ public struct RichTextTypography {
             p.headIndent = 18
             p.firstLineHeadIndent = 18
         case .checklist:
-            p.headIndent = 26
+            p.headIndent = 28
             p.firstLineHeadIndent = 0
         case .bulletedList, .dashedList:
             p.headIndent = 22
@@ -240,6 +251,7 @@ public struct RichTextTypography {
             let prefixLen = (checklistCheckedGlyph as NSString).length
             let textLen = updatedParaRange.length - prefixLen
             
+            textStorage.addAttribute(.noteChecklistState, value: ChecklistState.checked.rawValue, range: updatedParaRange)
             // Remove strikethrough from the entire paragraph first (glyph never has strike)
             textStorage.removeAttribute(.strikethroughStyle, range: updatedParaRange)
             
@@ -255,6 +267,7 @@ public struct RichTextTypography {
             let replaceRange = NSRange(location: paragraphRange.location, length: (oldPrefix as NSString).length)
             textStorage.replaceCharacters(in: replaceRange, with: "")
             let cleanRange = NSRange(location: paragraphRange.location, length: paragraphRange.length - replaceRange.length)
+            textStorage.removeAttribute(.noteChecklistState, range: cleanRange)
             textStorage.removeAttribute(.strikethroughStyle, range: cleanRange)
             textStorage.addAttribute(.foregroundColor, value: NSColor.textColor, range: cleanRange)
             newSelectedRange = NSRange(location: max(paragraphRange.location, selectedRange.location - replaceRange.length), length: selectedRange.length)
@@ -267,6 +280,7 @@ public struct RichTextTypography {
             let updatedRange = NSRange(location: paragraphRange.location, length: (newParaText as NSString).length)
             let pStyle = makeParagraphStyle(for: .checklist)
             textStorage.addAttribute(.paragraphStyle, value: pStyle, range: updatedRange)
+            textStorage.addAttribute(.noteChecklistState, value: ChecklistState.unchecked.rawValue, range: updatedRange)
             newSelectedRange = NSRange(location: selectedRange.location + (checklistUncheckedGlyph as NSString).length, length: selectedRange.length)
         }
         
