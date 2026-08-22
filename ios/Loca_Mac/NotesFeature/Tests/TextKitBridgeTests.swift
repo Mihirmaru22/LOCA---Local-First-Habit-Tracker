@@ -38,8 +38,8 @@ struct TextKitBridgeTests {
         let bridge = TextKitCRDTBridge(doc: doc, deviceID: "test-device")
         
         // Split at index 9 ("FirstLine" | "SecondLine")
-        let newBlockID = bridge.splitBlock(at: 9)
-        #expect(newBlockID != nil)
+        let split = bridge.splitBlock(at: 9)
+        #expect(split?.newBlockID != nil)
         
         let activeBlocks = bridge.doc.blocks.filter { !$0.isDeleted }
         #expect(activeBlocks.count == 2)
@@ -405,6 +405,87 @@ struct TextKitBridgeTests {
         
         // Move cursor to 0 (non-consecutive)
         state.updateSelection(NSRange(location: 0, length: 0))
+        #expect(bridge.getStickyMarks().isEmpty)
+    }
+    
+    @Test func testEmptyChecklistItemEnterExitsToParagraph() {
+        let noteID = NoteID()
+        let blockID = UUID()
+        
+        var doc = CRDTDoc(id: noteID, deviceID: "test-device")
+        let item = CRDTBlock(id: blockID, type: "checklistItem", text: CRDTText(string: "", deviceID: "test-device"), attributes: ["isChecked": "false"])
+        doc.addBlock(item)
+        
+        let bridge = TextKitCRDTBridge(doc: doc, deviceID: "test-device")
+        
+        // Enter on empty checklist item -> exits to paragraph
+        let split = bridge.splitBlock(at: 0)
+        #expect(split?.newBlockType == "paragraph")
+        #expect(split?.newBlockID == nil)
+        #expect(bridge.doc.blocks.first?.type == "paragraph")
+    }
+    
+    @Test func testNonEmptyChecklistItemEnterCreatesNewChecklistItem() {
+        let noteID = NoteID()
+        let blockID = UUID()
+        
+        var doc = CRDTDoc(id: noteID, deviceID: "test-device")
+        let item = CRDTBlock(id: blockID, type: "checklistItem", text: CRDTText(string: "Task 1", deviceID: "test-device"), attributes: ["isChecked": "false"])
+        doc.addBlock(item)
+        
+        let bridge = TextKitCRDTBridge(doc: doc, deviceID: "test-device")
+        
+        // Enter at end of "Task 1" -> creates new checklistItem
+        let split = bridge.splitBlock(at: 6)
+        #expect(split?.newBlockType == "checklistItem")
+        #expect(split?.newBlockID != nil)
+        
+        let activeBlocks = bridge.doc.blocks.filter { !$0.isDeleted }
+        #expect(activeBlocks.count == 2)
+        #expect(activeBlocks[0].type == "checklistItem")
+        #expect(activeBlocks[1].type == "checklistItem")
+    }
+    
+    @Test func testHeadingEnterCreatesParagraph() {
+        let noteID = NoteID()
+        let blockID = UUID()
+        
+        var doc = CRDTDoc(id: noteID, deviceID: "test-device")
+        let heading = CRDTBlock(id: blockID, type: "heading", text: CRDTText(string: "Title", deviceID: "test-device"), attributes: ["level": "1"])
+        doc.addBlock(heading)
+        
+        let bridge = TextKitCRDTBridge(doc: doc, deviceID: "test-device")
+        
+        // Enter at end of "Title" -> new block is paragraph
+        let split = bridge.splitBlock(at: 5)
+        #expect(split?.newBlockType == "paragraph")
+        
+        let activeBlocks = bridge.doc.blocks.filter { !$0.isDeleted }
+        #expect(activeBlocks.count == 2)
+        #expect(activeBlocks[0].type == "heading")
+        #expect(activeBlocks[1].type == "paragraph")
+    }
+    
+    @Test func testStickyMarksDoNotLeakAcrossEnter() {
+        let noteID = NoteID()
+        let blockID = UUID()
+        
+        var doc = CRDTDoc(id: noteID, deviceID: "test-device")
+        doc.addBlock(CRDTBlock(id: blockID, type: "paragraph", text: CRDTText(string: "Bold", deviceID: "test-device")))
+        
+        let bridge = TextKitCRDTBridge(doc: doc, deviceID: "test-device")
+        let state = EditorBridgeState(bridge: bridge)
+        
+        // Toggle bold with empty selection at index 4
+        state.updateSelection(NSRange(location: 4, length: 0))
+        state.toggleBold()
+        #expect(bridge.getStickyMarks().contains("bold"))
+        
+        // Enter split at 4
+        let split = bridge.splitBlock(at: 4)
+        #expect(split != nil)
+        
+        // Sticky marks must be cleared
         #expect(bridge.getStickyMarks().isEmpty)
     }
 }

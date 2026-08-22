@@ -35,6 +35,21 @@ public struct FormattingState: Equatable, Sendable {
     }
 }
 
+/// Return-key split result containing block metadata and target cursor position.
+public struct SplitResult: Sendable {
+    public let newBlockID: UUID?
+    public let newCursor: Int
+    public let oldBlockType: String
+    public let newBlockType: String
+    
+    public init(newBlockID: UUID?, newCursor: Int, oldBlockType: String, newBlockType: String) {
+        self.newBlockID = newBlockID
+        self.newCursor = newCursor
+        self.oldBlockType = oldBlockType
+        self.newBlockType = newBlockType
+    }
+}
+
 /// Bidirectional bridging engine translating TextKit layout offsets and mouse events to granular CRDT operations.
 public final class TextKitCRDTBridge: @unchecked Sendable {
     
@@ -158,15 +173,37 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
         lastInsertionLocation = globalLocation
     }
     
-    /// Splits the current block on Return keypress.
+    /// Splits the current block on Return keypress with Apple Notes semantics.
     @discardableResult
-    public func splitBlock(at globalLocation: Int) -> UUID? {
+    public func splitBlock(at globalLocation: Int) -> SplitResult? {
         lock.lock()
         defer { lock.unlock() }
         
+        // Sticky marks must NOT leak across Enter / block splits
+        self.stickyMarks.removeAll()
+        
         guard let target = resolveLocationInternal(globalLocation) else { return nil }
         
+        let oldType = target.block.type
         let currentString = target.block.text.string
+        
+        // Check for empty list item (Checklist, Bullet, Heading) -> Revert to paragraph (Exit list mode)
+        if currentString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            if oldType == "checklistItem" || oldType == "bullet" || oldType == "heading" {
+                if let idx = doc.blocks.firstIndex(where: { $0.id == target.block.id }) {
+                    doc.blocks[idx].type = "paragraph"
+                    doc.blocks[idx].attributes = [:]
+                    doc.blocks[idx].lastModified = Date().timeIntervalSince1970
+                    _ = doc.vectorClock.increment(for: deviceID)
+                }
+                lastInsertionLocation = globalLocation
+                let result = SplitResult(newBlockID: nil, newCursor: globalLocation, oldBlockType: oldType, newBlockType: "paragraph")
+                print("🎯 SPLIT: oldBlock=\(oldType) newBlock=paragraph (exited list) newCursor=\(globalLocation)")
+                return result
+            }
+        }
+        
+        // Non-empty or standard paragraph split:
         let textAfter = String(currentString.dropFirst(target.relativeIndex))
         
         if target.relativeIndex < currentString.count {
@@ -177,8 +214,20 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
         }
         
         let newBlockID = UUID()
-        let newType = (target.block.type == "checklistItem") ? "checklistItem" : "paragraph"
-        let newAttributes = (target.block.type == "checklistItem") ? ["isChecked": "false"] : [:]
+        let newType: String
+        let newAttributes: [String: String]
+        
+        if oldType == "checklistItem" {
+            newType = "checklistItem"
+            newAttributes = ["isChecked": "false"]
+        } else if oldType == "bullet" {
+            newType = "bullet"
+            newAttributes = [:]
+        } else {
+            // Heading or Paragraph -> new block is paragraph
+            newType = "paragraph"
+            newAttributes = [:]
+        }
         
         let newBlock = CRDTBlock(
             id: newBlockID,
@@ -189,8 +238,12 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
         )
         
         doc.insertBlock(newBlock, afterBlockID: target.block.id)
-        lastInsertionLocation = globalLocation + 1
-        return newBlockID
+        let newCursor = globalLocation + 1
+        lastInsertionLocation = newCursor
+        
+        let result = SplitResult(newBlockID: newBlockID, newCursor: newCursor, oldBlockType: oldType, newBlockType: newType)
+        print("🎯 SPLIT: oldBlock=\(oldType) newBlock=\(newType) newCursor=\(newCursor)")
+        return result
     }
     
     private func mergeBlockWithPreceding(targetBlockIndex: Int) {

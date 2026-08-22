@@ -238,12 +238,12 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
             print("🔍 shouldChangeTextIn: range=\(affectedCharRange) repl='\(replacement)'")
             
             if replacement == "\n" {
-                // Return key: Split block into two distinct blocks with new UUIDs
-                if let _ = parent.state.bridge.splitBlock(at: affectedCharRange.location) {
+                // Return key: Split block in-place with Apple Notes semantics
+                if let split = parent.state.bridge.splitBlock(at: affectedCharRange.location) {
                     if let storage = textView.textStorage {
                         let updatedAttributed = parent.state.bridge.renderAttributedString()
                         storage.setAttributedString(updatedAttributed)
-                        let newCursorPos = min(affectedCharRange.location + 1, updatedAttributed.length)
+                        let newCursorPos = min(split.newCursor, updatedAttributed.length)
                         textView.setSelectedRange(NSRange(location: newCursorPos, length: 0))
                         textView.scrollRangeToVisible(NSRange(location: newCursorPos, length: 0))
                     }
