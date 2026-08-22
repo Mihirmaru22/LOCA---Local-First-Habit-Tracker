@@ -27,14 +27,14 @@ struct Loca_MacTests {
         let attr = RichTextTypography.convertMarkdownToAttributedString(markdown: markdown)
         
         #expect(attr.string.contains("Title Heading"))
-        #expect(attr.string.contains(RichTextTypography.checklistUncheckedGlyph))
-        #expect(attr.string.contains(RichTextTypography.checklistCheckedGlyph))
+        #expect(attr.string.contains("Unchecked Task"))
+        #expect(attr.string.contains("Done Task"))
         #expect(attr.string.contains("Bold Text"))
         
         let exportedMarkdown = RichTextTypography.convertAttributedStringToMarkdown(attributedString: attr)
         #expect(exportedMarkdown.contains("Title Heading"))
-        #expect(exportedMarkdown.contains("- [ ]"))
-        #expect(exportedMarkdown.contains("- [x]"))
+        #expect(exportedMarkdown.contains("- [ ] Unchecked Task"))
+        #expect(exportedMarkdown.contains("- [x] Done Task"))
     }
 
     // MARK: - Invariant 3: Work Project Progress Calculation

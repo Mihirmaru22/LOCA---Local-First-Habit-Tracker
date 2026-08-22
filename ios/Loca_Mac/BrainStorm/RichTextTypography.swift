@@ -123,6 +123,9 @@ public enum ChecklistState: String, Codable {
 
 public struct RichTextTypography {
     
+    public static let checklistCheckedGlyph = "- [x] "
+    public static let checklistUncheckedGlyph = "- [ ] "
+    
     // MARK: Paragraph Style Attributes
     
     public static func makeParagraphStyle(for style: NoteParagraphStyle, preset: TypographyPreset = .standard) -> NSParagraphStyle {
