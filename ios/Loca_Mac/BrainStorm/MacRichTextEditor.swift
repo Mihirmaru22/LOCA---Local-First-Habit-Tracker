@@ -233,12 +233,19 @@ public final class RichTextEditorController: ObservableObject {
     
     public func toggleChecklist(preset: TypographyPreset) {
         guard let textView = textView, let textStorage = textView.textStorage else { return }
+        
+        // Ensure text view is first responder so selectedRange is 100% active and valid
+        if textView.window?.firstResponder != textView {
+            textView.window?.makeFirstResponder(textView)
+        }
+        
         let selectedRange = textView.selectedRange()
         let defaultFont = preset.font(for: activeParagraphStyle)
         
         let newRange = RichTextTypography.toggleChecklistOnCurrentParagraph(in: textStorage, selectedRange: selectedRange, defaultFont: defaultFont)
         textView.setSelectedRange(newRange)
         textView.didChangeText()
+        textView.setNeedsDisplay(textView.bounds)
         updateActiveStates(immediate: true)
         onTextChange?(NSAttributedString(attributedString: textStorage), textStorage.string)
     }
