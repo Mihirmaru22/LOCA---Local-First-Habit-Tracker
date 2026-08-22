@@ -1,3 +1,4 @@
+#if canImport(Testing)
 import Foundation
 import Testing
 import CryptoKit
@@ -74,3 +75,4 @@ struct CryptoVaultTests {
         #expect(String(data: decrypted, encoding: .utf8) == "Shared State")
     }
 }
+#endif

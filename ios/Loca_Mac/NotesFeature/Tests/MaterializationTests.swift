@@ -1,3 +1,4 @@
+#if canImport(Testing)
 import Foundation
 import Testing
 
@@ -101,3 +102,4 @@ struct MaterializationTests {
         #expect(doc.title == "Iteration 999")
     }
 }
+#endif

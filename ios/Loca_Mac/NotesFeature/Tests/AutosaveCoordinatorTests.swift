@@ -1,3 +1,4 @@
+#if canImport(Testing)
 import Foundation
 import Testing
 
@@ -42,3 +43,4 @@ struct AutosaveCoordinatorTests {
         #expect(pushCount.value == 1)
     }
 }
+#endif

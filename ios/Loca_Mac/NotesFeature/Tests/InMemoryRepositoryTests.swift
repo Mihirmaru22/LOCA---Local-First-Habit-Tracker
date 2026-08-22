@@ -1,3 +1,4 @@
+#if canImport(Testing)
 import Foundation
 import Testing
 
@@ -97,3 +98,4 @@ struct InMemoryRepositoryTests {
         #expect(fetched2?.title == "")
     }
 }
+#endif

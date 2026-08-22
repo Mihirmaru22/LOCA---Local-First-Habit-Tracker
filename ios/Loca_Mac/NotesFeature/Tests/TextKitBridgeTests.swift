@@ -1,3 +1,4 @@
+#if canImport(Testing)
 import Foundation
 import Testing
 
@@ -193,3 +194,4 @@ struct TextKitBridgeTests {
         #expect(targetBlock?.marks.first?.endIndex == 7)
     }
 }
+#endif

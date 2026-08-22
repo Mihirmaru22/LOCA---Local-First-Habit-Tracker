@@ -1,3 +1,4 @@
+#if canImport(Testing)
 import Foundation
 import Testing
 
@@ -55,3 +56,4 @@ struct CursorHardSnapTests {
         #expect(snapped.length == 0)
     }
 }
+#endif

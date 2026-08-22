@@ -1,3 +1,4 @@
+#if canImport(Testing)
 import Foundation
 import Testing
 
@@ -109,3 +110,4 @@ struct CRDTConflictTests {
         #expect(!contentB.blocks.contains(where: { $0.id == blockID }))
     }
 }
+#endif

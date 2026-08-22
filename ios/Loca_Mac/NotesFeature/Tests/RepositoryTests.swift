@@ -1,3 +1,4 @@
+#if canImport(Testing)
 import Foundation
 import Testing
 
@@ -307,3 +308,4 @@ struct RepositoryTests {
         #expect(updatedVersions.contains(2))
     }
 }
+#endif

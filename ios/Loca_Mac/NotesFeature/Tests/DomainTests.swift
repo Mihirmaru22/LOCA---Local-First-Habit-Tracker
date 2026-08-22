@@ -1,3 +1,4 @@
+#if canImport(Testing)
 import Foundation
 import Testing
 
@@ -85,3 +86,4 @@ Bullet point alpha
         #expect(sanitized == "100\\%\\_complete\\\\test")
     }
 }
+#endif

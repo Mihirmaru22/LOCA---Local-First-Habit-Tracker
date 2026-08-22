@@ -1,3 +1,4 @@
+#if canImport(Testing)
 import Foundation
 import Testing
 
@@ -219,3 +220,4 @@ struct SyncEngineHardeningTests {
         #expect(titlesA.first == "Block 1")
     }
 }
+#endif
