@@ -33,7 +33,7 @@ public final class NoteCanvasTextView: NSTextView {
         print("🧪 textStorage === textContentStorage: \(self.textStorage === self.textContentStorage)")
         print("🧪 textStorage.length: \(self.textStorage?.length ?? -1)")
         print("🧪 selectedRange: \(self.selectedRange())")
-        print("🧪 tlm.textContentStorage is nil: \(self.textLayoutManager?.textContentStorage == nil)")
+        print("🧪 tlm.textContentManager is nil: \(self.textLayoutManager?.textContentManager == nil)")
         print("🧪 contentStorage.layoutManagers count: \(self.textContentStorage?.textLayoutManagers.count ?? -1)")
         print("🧪 container.size: \(self.textContainer?.containerSize ?? .zero)")
         super.insertText(string, replacementRange: replacementRange)
