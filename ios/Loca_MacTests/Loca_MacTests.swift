@@ -23,18 +23,23 @@ struct Loca_MacTests {
 
     // MARK: - Invariant 2: Markdown Legacy Migration & Checklists
     @Test func testMarkdownToAttributedConversion() throws {
-        let markdown = "# Title Heading\n- [ ] Unchecked Task\n- [x] Done Task\n**Bold Text**"
+        let markdown = "# Title Heading\n- [ ] Unchecked Task\n- [x] Done Task\n  - [X] Nested Done Task\n* [ ] Alt Marker Task\n- [ ] \n**Bold Text**"
         let attr = RichTextTypography.convertMarkdownToAttributedString(markdown: markdown)
         
         #expect(attr.string.contains("Title Heading"))
         #expect(attr.string.contains("Unchecked Task"))
         #expect(attr.string.contains("Done Task"))
+        #expect(attr.string.contains("Nested Done Task"))
+        #expect(attr.string.contains("Alt Marker Task"))
         #expect(attr.string.contains("Bold Text"))
         
         let exportedMarkdown = RichTextTypography.convertAttributedStringToMarkdown(attributedString: attr)
         #expect(exportedMarkdown.contains("Title Heading"))
         #expect(exportedMarkdown.contains("- [ ] Unchecked Task"))
         #expect(exportedMarkdown.contains("- [x] Done Task"))
+        #expect(exportedMarkdown.contains("- [x] Nested Done Task"))
+        #expect(exportedMarkdown.contains("- [ ] Alt Marker Task"))
+        #expect(exportedMarkdown.contains("- [ ] \n") || exportedMarkdown.contains("- [ ]\n"))
     }
 
     // MARK: - Invariant 3: Work Project Progress Calculation

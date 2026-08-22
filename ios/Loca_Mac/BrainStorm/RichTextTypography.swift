@@ -468,7 +468,7 @@ public struct RichTextTypography {
         }
     }
     
-    // MARK: Legacy Markdown Migration
+    // MARK: Legacy Markdown Migration & Lossless Serialization
     
     public static func convertMarkdownToAttributedString(markdown: String, preset: TypographyPreset = .standard) -> NSAttributedString {
         guard !markdown.isEmpty else { return NSAttributedString() }
@@ -476,13 +476,34 @@ public struct RichTextTypography {
         let result = NSMutableAttributedString()
         let lines = markdown.components(separatedBy: "\n")
         
+        // Regex to match checklist items: optional indent, marker (-, *, +), brackets ([ ], [x], [X], [  ]), and trailing text
+        let checklistRegex = try? NSRegularExpression(pattern: #"^(\s*)([-*+])\s*\[([ xX]*)\]\s*(.*)$"#, options: [])
+        
         for (index, line) in lines.enumerated() {
             var lineStyle: NoteParagraphStyle = .body
             var lineText = line
             var isChecklistUnchecked = false
             var isChecklistChecked = false
+            var indentLevel = 0
             
-            if line.hasPrefix("# ") {
+            if let regex = checklistRegex,
+               let match = regex.firstMatch(in: line, options: [], range: NSRange(location: 0, length: (line as NSString).length)) {
+                
+                let nsLine = line as NSString
+                let indentStr = match.range(at: 1).location != NSNotFound ? nsLine.substring(with: match.range(at: 1)) : ""
+                let stateStr = match.range(at: 3).location != NSNotFound ? nsLine.substring(with: match.range(at: 3)).trimmingCharacters(in: .whitespaces) : ""
+                let contentStr = match.range(at: 4).location != NSNotFound ? nsLine.substring(with: match.range(at: 4)) : ""
+                
+                lineStyle = .checklist
+                lineText = contentStr
+                indentLevel = indentStr.count / 2 // 2 or 4 spaces per indent level
+                
+                if stateStr.lowercased() == "x" {
+                    isChecklistChecked = true
+                } else {
+                    isChecklistUnchecked = true
+                }
+            } else if line.hasPrefix("# ") {
                 lineStyle = .title
                 lineText = String(line.dropFirst(2))
             } else if line.hasPrefix("## ") {
@@ -494,26 +515,29 @@ public struct RichTextTypography {
             } else if line.hasPrefix("> ") {
                 lineStyle = .quote
                 lineText = String(line.dropFirst(2))
-            } else if line.hasPrefix("- [ ] ") {
-                lineStyle = .checklist
-                lineText = String(line.dropFirst(6))
-                isChecklistUnchecked = true
-            } else if line.hasPrefix("- [x] ") || line.hasPrefix("- [X] ") {
-                lineStyle = .checklist
-                lineText = String(line.dropFirst(6))
-                isChecklistChecked = true
-            } else if line.hasPrefix("- ") || line.hasPrefix("* ") {
+            } else if line.hasPrefix("- ") || line.hasPrefix("* ") || line.hasPrefix("+ ") {
                 lineStyle = .bulletedList
                 lineText = "• " + String(line.dropFirst(2))
             }
             
             var attrs = defaultAttributes(for: lineStyle, preset: preset)
-            if isChecklistChecked {
-                attrs[.noteChecklistState] = ChecklistState.checked.rawValue
-                attrs[.strikethroughStyle] = NSUnderlineStyle.single.rawValue
-                attrs[.foregroundColor] = NSColor.secondaryLabelColor
-            } else if isChecklistUnchecked {
-                attrs[.noteChecklistState] = ChecklistState.unchecked.rawValue
+            
+            if lineStyle == .checklist {
+                let pStyle = makeParagraphStyle(for: .checklist, preset: preset).mutableCopy() as! NSMutableParagraphStyle
+                if indentLevel > 0 {
+                    let totalIndent = 28.0 + CGFloat(min(5, indentLevel)) * 20.0
+                    pStyle.headIndent = totalIndent
+                    pStyle.firstLineHeadIndent = totalIndent
+                }
+                attrs[.paragraphStyle] = pStyle
+                
+                if isChecklistChecked {
+                    attrs[.noteChecklistState] = ChecklistState.checked.rawValue
+                    attrs[.strikethroughStyle] = NSUnderlineStyle.single.rawValue
+                    attrs[.foregroundColor] = NSColor.secondaryLabelColor
+                } else {
+                    attrs[.noteChecklistState] = ChecklistState.unchecked.rawValue
+                }
             }
             
             let attrLine = NSMutableAttributedString(string: lineText, attributes: attrs)
@@ -539,16 +563,24 @@ public struct RichTextTypography {
             let paragraphRange = nsString.paragraphRange(for: NSRange(location: location, length: 0))
             let paragraphText = nsString.substring(with: paragraphRange)
             let trimmedText = paragraphText.trimmingCharacters(in: .newlines)
+            let safeIdx = min(paragraphRange.location, max(0, attributedString.length - 1))
             
-            if !trimmedText.isEmpty {
-                var prefix = ""
-                let checklistState = attributedString.attribute(.noteChecklistState, at: paragraphRange.location, effectiveRange: nil) as? String
+            let checklistState = attributedString.length > 0 ? (attributedString.attribute(.noteChecklistState, at: safeIdx, effectiveRange: nil) as? String) : nil
+            let pStyle = attributedString.length > 0 ? (attributedString.attribute(.paragraphStyle, at: safeIdx, effectiveRange: nil) as? NSParagraphStyle) : nil
+            
+            if checklistState != nil {
+                // Indentation reconstruction
+                var indentPrefix = ""
+                if let pStyle = pStyle, pStyle.headIndent > 28.0 {
+                    let level = max(0, Int(round((pStyle.headIndent - 28.0) / 20.0)))
+                    indentPrefix = String(repeating: "  ", count: level)
+                }
                 
-                if checklistState == ChecklistState.checked.rawValue {
-                    prefix = "- [x] "
-                } else if checklistState == ChecklistState.unchecked.rawValue {
-                    prefix = "- [ ] "
-                } else if let font = attributedString.attribute(.font, at: paragraphRange.location, effectiveRange: nil) as? NSFont {
+                let checkMarker = (checklistState == ChecklistState.checked.rawValue) ? "- [x] " : "- [ ] "
+                markdown += indentPrefix + checkMarker + trimmedText + "\n"
+            } else if !trimmedText.isEmpty {
+                var prefix = ""
+                if let font = attributedString.attribute(.font, at: paragraphRange.location, effectiveRange: nil) as? NSFont {
                     if font.pointSize >= 24 {
                         prefix = "# "
                     } else if font.pointSize >= 18 {
