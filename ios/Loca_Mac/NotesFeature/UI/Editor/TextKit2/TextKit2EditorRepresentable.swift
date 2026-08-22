@@ -27,6 +27,22 @@ public final class NoteCanvasTextView: NSTextView {
         super.keyDown(with: event)
     }
     
+    public override func insertText(_ string: Any, replacementRange: NSRange) {
+        print("🟣 INSERT TEXT CALLED: string=\(string), range=\(replacementRange)")
+        super.insertText(string, replacementRange: replacementRange)
+    }
+    
+    public override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        let result = super.performKeyEquivalent(with: event)
+        print("🟠 PERFORM KEY EQUIVALENT: \(event.characters ?? ""), handled=\(result)")
+        return result
+    }
+    
+    public override func doCommand(by commandSelector: Selector) {
+        print("🟤 DO COMMAND: \(commandSelector)")
+        super.doCommand(by: commandSelector)
+    }
+    
     public override func mouseDown(with event: NSEvent) {
         // Ensure text view claims first responder status on click
         if window?.firstResponder != self {
@@ -100,6 +116,12 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
             .foregroundColor: NSColor.labelColor,
             .paragraphStyle: NSParagraphStyle.default
         ]
+        
+        print("🔗 TEXTKIT 2 LINKAGE:")
+        print("   textView.textLayoutManager != nil : \(textView.textLayoutManager != nil)")
+        print("   textView.textContentStorage != nil : \(textView.textContentStorage != nil)")
+        print("   textView.isEditable : \(textView.isEditable)")
+        print("   textView.isSelectable : \(textView.isSelectable)")
         
         // Gutter Click Handler
         textView.onGutterClicked = { [weak textView, weak textContentStorage] clickPoint in
