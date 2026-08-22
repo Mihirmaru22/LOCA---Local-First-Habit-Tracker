@@ -29,7 +29,12 @@ public struct NotesFormattingToolbar: View {
                 isActive: state.isBold,
                 help: "Bold (⌘B)",
                 isBoldFont: true,
-                action: onToggleBold
+                action: {
+                    print("🎨 TOOLBAR CLICK: B")
+                    DispatchQueue.main.async {
+                        onToggleBold()
+                    }
+                }
             )
             
             toolbarButton(
@@ -38,7 +43,12 @@ public struct NotesFormattingToolbar: View {
                 isActive: state.isItalic,
                 help: "Italic (⌘I)",
                 isItalicFont: true,
-                action: onToggleItalic
+                action: {
+                    print("🎨 TOOLBAR CLICK: I")
+                    DispatchQueue.main.async {
+                        onToggleItalic()
+                    }
+                }
             )
             
             Divider()
@@ -51,7 +61,12 @@ public struct NotesFormattingToolbar: View {
                 icon: nil,
                 isActive: state.blockType == .h1,
                 help: "Heading 1",
-                action: { onToggleBlockType(.h1) }
+                action: {
+                    print("🎨 TOOLBAR CLICK: H1")
+                    DispatchQueue.main.async {
+                        onToggleBlockType(.h1)
+                    }
+                }
             )
             
             toolbarButton(
@@ -59,7 +74,12 @@ public struct NotesFormattingToolbar: View {
                 icon: nil,
                 isActive: state.blockType == .h2,
                 help: "Heading 2",
-                action: { onToggleBlockType(.h2) }
+                action: {
+                    print("🎨 TOOLBAR CLICK: H2")
+                    DispatchQueue.main.async {
+                        onToggleBlockType(.h2)
+                    }
+                }
             )
             
             toolbarButton(
@@ -67,7 +87,12 @@ public struct NotesFormattingToolbar: View {
                 icon: nil,
                 isActive: state.blockType == .h3,
                 help: "Heading 3",
-                action: { onToggleBlockType(.h3) }
+                action: {
+                    print("🎨 TOOLBAR CLICK: H3")
+                    DispatchQueue.main.async {
+                        onToggleBlockType(.h3)
+                    }
+                }
             )
             
             Divider()
@@ -80,7 +105,12 @@ public struct NotesFormattingToolbar: View {
                 icon: "checklist",
                 isActive: state.blockType == .checklist,
                 help: "Checklist",
-                action: { onToggleBlockType(.checklist) }
+                action: {
+                    print("🎨 TOOLBAR CLICK: checklist")
+                    DispatchQueue.main.async {
+                        onToggleBlockType(.checklist)
+                    }
+                }
             )
             
             toolbarButton(
@@ -88,7 +118,12 @@ public struct NotesFormattingToolbar: View {
                 icon: "list.bullet",
                 isActive: state.blockType == .bullet,
                 help: "Bullet List",
-                action: { onToggleBlockType(.bullet) }
+                action: {
+                    print("🎨 TOOLBAR CLICK: bullet")
+                    DispatchQueue.main.async {
+                        onToggleBlockType(.bullet)
+                    }
+                }
             )
             
             toolbarButton(
@@ -96,7 +131,12 @@ public struct NotesFormattingToolbar: View {
                 icon: "paragraph",
                 isActive: state.blockType == .paragraph,
                 help: "Normal Paragraph",
-                action: { onToggleBlockType(.paragraph) }
+                action: {
+                    print("🎨 TOOLBAR CLICK: paragraph")
+                    DispatchQueue.main.async {
+                        onToggleBlockType(.paragraph)
+                    }
+                }
             )
         }
         .padding(.horizontal, 6)

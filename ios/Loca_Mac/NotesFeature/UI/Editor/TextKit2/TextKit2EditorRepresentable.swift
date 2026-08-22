@@ -121,14 +121,18 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         // Wire Keyboard Shortcuts (⌘B / ⌘I)
         textView.onToggleBold = { [weak state] in
             guard let state = state else { return }
-            state.toggleBold()
-            self.onKeystroke(state.bridge.doc)
+            DispatchQueue.main.async {
+                state.toggleBold()
+                self.onKeystroke(state.bridge.doc)
+            }
         }
         
         textView.onToggleItalic = { [weak state] in
             guard let state = state else { return }
-            state.toggleItalic()
-            self.onKeystroke(state.bridge.doc)
+            DispatchQueue.main.async {
+                state.toggleItalic()
+                self.onKeystroke(state.bridge.doc)
+            }
         }
         
         // Gutter Click Handler
@@ -151,8 +155,10 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
             let updatedAttributed = self.state.bridge.renderAttributedString()
             storage.setAttributedString(updatedAttributed)
             
-            self.state.refreshFormattingState()
-            self.onKeystroke(self.state.bridge.doc)
+            DispatchQueue.main.async {
+                self.state.refreshFormattingState()
+                self.onKeystroke(self.state.bridge.doc)
+            }
             return true
         }
         
@@ -172,6 +178,7 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
     }
     
     public func updateNSView(_ nsView: NSScrollView, context: Context) {
+        print("🟡 updateNSView CALLED: needsRemoteRefresh=\(state.needsRemoteRefresh)")
         guard let textView = context.coordinator.textView else { return }
         
         // Strictly guard against touching textStorage for local edits
@@ -211,6 +218,7 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         public func textViewDidChangeSelection(_ notification: Notification) {
             guard let tv = notification.object as? NSTextView else { return }
             let sel = tv.selectedRange()
+            print("🎨 SELECTION CHANGED: \(sel)")
             DispatchQueue.main.async {
                 self.parent.state.updateSelection(sel)
                 self.parent.onSelectionChanged(sel)
@@ -277,7 +285,7 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
 public final class EditorBridgeState: ObservableObject {
     public var bridge: TextKitCRDTBridge
     @Published public var formattingState: FormattingState = FormattingState()
-    @Published public var needsRemoteRefresh: Bool = false
+    public var needsRemoteRefresh: Bool = false
     public var currentSelection: NSRange = NSRange(location: 0, length: 0)
     
     // Sticky typing flags for empty selection
@@ -304,6 +312,7 @@ public final class EditorBridgeState: ObservableObject {
             stickyItalic: stickyItalic
         )
         if formattingState != newState {
+            print("🎨 PUBLISHING STATE: bold=\(newState.isBold) italic=\(newState.isItalic) block=\(newState.blockType)")
             formattingState = newState
         }
     }

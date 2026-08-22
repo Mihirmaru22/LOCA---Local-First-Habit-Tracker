@@ -177,6 +177,7 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
     }
     
     public func toggleInlineMark(type: String, in globalRange: NSRange) {
+        print("🎨 BRIDGE TOGGLE: \(type) range=\(globalRange)")
         lock.lock()
         defer { lock.unlock() }
         
@@ -251,6 +252,7 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
     
     /// Converts current block to the requested block type, or reverts to .paragraph if already active.
     public func toggleBlockType(_ targetType: EditorBlockType, at globalLocation: Int) {
+        print("🎨 BRIDGE TOGGLE BLOCK: \(targetType) loc=\(globalLocation)")
         lock.lock()
         defer { lock.unlock() }
         
