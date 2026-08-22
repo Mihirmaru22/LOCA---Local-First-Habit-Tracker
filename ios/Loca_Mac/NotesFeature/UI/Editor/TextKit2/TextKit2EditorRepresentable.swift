@@ -1,15 +1,15 @@
 // Editing Contract: Option A (Native Apply + Observe)
 // 1. textView(_:shouldChangeTextIn:replacementString:) updates the CRDT model and returns true for standard typing.
-// 2. TextKit 2 natively commits glyphs to the backing store at 120fps with zero latency.
+// 2. AppKit text engine natively commits glyphs to the backing store at 120fps with zero latency.
 // 3. Return key triggers a custom block split and synchronous re-render with cursor placement.
-// 4. Remote CRDT merges update NSTextContentStorage only on remote deltas, preventing local render loops.
+// 4. Remote CRDT merges update textStorage only on remote deltas, preventing local render loops.
 
 import Foundation
 import Combine
 import SwiftUI
 import AppKit
 
-/// Subclassed NSTextView supporting interactive checkbox gutter clicks, first responder handling, and TextKit 2 integration.
+/// Subclassed NSTextView supporting interactive checkbox gutter clicks, first responder handling, and text engine integration.
 public final class NoteCanvasTextView: NSTextView {
     
     public var onGutterClicked: ((NSPoint) -> Bool)?
@@ -22,19 +22,21 @@ public final class NoteCanvasTextView: NSTextView {
         return super.becomeFirstResponder()
     }
     
+    public func stackAudit(_ tag: String) {
+        print("🧭 [\(tag)] textStorageNil=\(self.textStorage == nil) layoutManagerNil=\(self.layoutManager == nil) length=\(self.textStorage?.length ?? -1)")
+    }
+    
     public override func keyDown(with event: NSEvent) {
         print("🔴 KEYDOWN REACHED APPKIT: \(event.characters ?? "")")
         super.keyDown(with: event)
     }
     
     public override func insertText(_ string: Any, replacementRange: NSRange) {
+        stackAudit("insertText")
         print("🟣 INSERT TEXT CALLED: string=\(string), range=\(replacementRange)")
         print("🧪 textStorage is nil: \(self.textStorage == nil)")
-        print("🧪 textStorage === textContentStorage: \(self.textStorage === self.textContentStorage)")
         print("🧪 textStorage.length: \(self.textStorage?.length ?? -1)")
         print("🧪 selectedRange: \(self.selectedRange())")
-        print("🧪 tlm.textContentManager is nil: \(self.textLayoutManager?.textContentManager == nil)")
-        print("🧪 contentStorage.layoutManagers count: \(self.textContentStorage?.textLayoutManagers.count ?? -1)")
         print("🧪 container.size: \(self.textContainer?.containerSize ?? .zero)")
         super.insertText(string, replacementRange: replacementRange)
     }
@@ -57,6 +59,7 @@ public final class NoteCanvasTextView: NSTextView {
     }
     
     public override func mouseDown(with event: NSEvent) {
+        stackAudit("mouseDown")
         // Ensure text view claims first responder status on click
         if window?.firstResponder != self {
             window?.makeFirstResponder(self)
@@ -73,7 +76,7 @@ public final class NoteCanvasTextView: NSTextView {
     }
 }
 
-/// SwiftUI Representable wrapping AppKit NoteCanvasTextView backed by TextKit 2 and wired to TextKitCRDTBridge.
+/// SwiftUI Representable wrapping AppKit NoteCanvasTextView wired to TextKitCRDTBridge.
 public struct TextKit2EditorRepresentable: NSViewRepresentable {
     
     @ObservedObject public var state: EditorBridgeState
@@ -97,18 +100,8 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
     public func makeNSView(context: Context) -> NSScrollView {
         print("🔵 MAKE NSVIEW CALLED")
         
-        // AppKit-owned TextKit 2 construction
-        let textView = NoteCanvasTextView(usingTextLayoutManager: true)
-        guard let tlm = textView.textLayoutManager,
-              let tcs = textView.textContentStorage ?? (tlm.textContentManager as? NSTextContentStorage),
-              let tc = tlm.textContainer else {
-            fatalError("TK2 stack missing")
-        }
-        
-        tc.widthTracksTextView = true
-        tc.heightTracksTextView = false
-        tc.lineFragmentPadding = 0
-        tc.size = NSSize(width: 676, height: CGFloat.greatestFiniteMagnitude)
+        let scrollView = NSScrollView()
+        let textView = NoteCanvasTextView(frame: .zero)
         
         textView.delegate = context.coordinator
         textView.isEditable = true
@@ -127,22 +120,19 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         textView.isVerticallyResizable = true
         textView.isHorizontallyResizable = false
         textView.autoresizingMask = [.width]
+        textView.textContainer?.widthTracksTextView = true
+        textView.textContainer?.containerSize = NSSize(width: 676, height: CGFloat.greatestFiniteMagnitude)
+        textView.textContainer?.lineFragmentPadding = 0
+        
         textView.typingAttributes = [
             .font: NSFont.systemFont(ofSize: 14),
             .foregroundColor: NSColor.labelColor,
             .paragraphStyle: NSParagraphStyle.default
         ]
         
-        print("🔗 TEXTKIT 2 LINKAGE:")
-        print("   textView.textLayoutManager != nil : \(textView.textLayoutManager != nil)")
-        print("   textView.textContentStorage != nil : \(textView.textContentStorage != nil)")
-        print("   textView.textStorage != nil : \(textView.textStorage != nil)")
-        print("   textView.isEditable : \(textView.isEditable)")
-        print("   textView.isSelectable : \(textView.isSelectable)")
-        
         // Gutter Click Handler
-        textView.onGutterClicked = { [weak textView, weak tcs] clickPoint in
-            guard let tv = textView, let storage = tcs else { return false }
+        textView.onGutterClicked = { [weak textView] clickPoint in
+            guard let tv = textView, let storage = tv.textStorage else { return false }
             
             // Check if click X is in left gutter margin (< 30pt)
             let relativeX = clickPoint.x - tv.textContainerOrigin.x
@@ -158,17 +148,16 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
             // Toggle checklist state
             self.state.bridge.toggleChecklist(blockID: target.block.id)
             let updatedAttributed = self.state.bridge.renderAttributedString()
-            storage.attributedString = updatedAttributed
+            storage.setAttributedString(updatedAttributed)
             
             self.onKeystroke(self.state.bridge.doc)
             return true
         }
         
-        // Initial render
+        // Initial render directly into textStorage
         let initialAttributed = state.bridge.renderAttributedString()
-        tcs.attributedString = initialAttributed
+        textView.textStorage?.setAttributedString(initialAttributed)
         
-        let scrollView = NSScrollView()
         scrollView.documentView = textView
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = false
@@ -176,15 +165,15 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         scrollView.drawsBackground = false
         
         context.coordinator.textView = textView
-        context.coordinator.textContentStorage = tcs
+        textView.stackAudit("makeNSView.end")
         
         return scrollView
     }
     
     public func updateNSView(_ nsView: NSScrollView, context: Context) {
+        guard let textView = context.coordinator.textView else { return }
+        textView.stackAudit("updateNSView.start")
         print("🟡 updateNSView CALLED: needsRemoteRefresh=\(state.needsRemoteRefresh)")
-        guard let textView = context.coordinator.textView,
-              let textContentStorage = context.coordinator.textContentStorage else { return }
         
         // Strictly guard against touching textStorage for local edits
         guard state.needsRemoteRefresh else {
@@ -193,11 +182,12 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         
         state.needsRemoteRefresh = false
         
-        let oldLength = textContentStorage.attributedString?.length ?? 0
+        guard let storage = textView.textStorage else { return }
+        let oldLength = storage.length
         let currentSelection = textView.selectedRange()
         
         let newAttributed = state.bridge.renderAttributedString()
-        textContentStorage.attributedString = newAttributed
+        storage.setAttributedString(newAttributed)
         
         // Hard Snap Cursor position based on length delta
         let delta = newAttributed.length - oldLength
@@ -209,12 +199,12 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         )
         textView.setSelectedRange(newSelection)
         textView.scrollRangeToVisible(newSelection)
+        textView.stackAudit("updateNSView.end")
     }
     
     public final class Coordinator: NSObject, NSTextViewDelegate {
         var parent: TextKit2EditorRepresentable
         weak var textView: NoteCanvasTextView?
-        weak var textContentStorage: NSTextContentStorage?
         
         init(_ parent: TextKit2EditorRepresentable) {
             self.parent = parent
@@ -233,9 +223,9 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
             if replacement == "\n" {
                 // Return key: Split block into two distinct blocks with new UUIDs
                 if let _ = parent.state.bridge.splitBlock(at: affectedCharRange.location) {
-                    if let storage = textContentStorage {
+                    if let storage = textView.textStorage {
                         let updatedAttributed = parent.state.bridge.renderAttributedString()
-                        storage.attributedString = updatedAttributed
+                        storage.setAttributedString(updatedAttributed)
                         let newCursorPos = min(affectedCharRange.location + 1, updatedAttributed.length)
                         textView.setSelectedRange(NSRange(location: newCursorPos, length: 0))
                         textView.scrollRangeToVisible(NSRange(location: newCursorPos, length: 0))
@@ -257,7 +247,7 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
             // 2. Notify parent onKeystroke for debounced autosave
             parent.onKeystroke(parent.state.bridge.doc)
             
-            // 3. Return true to let TextKit 2 apply edit to backing store natively with 0ms latency
+            // 3. Return true to let AppKit apply edit to backing store natively with 0ms latency
             print("🟢 DELEGATE RETURNING: true (Native Apply)")
             return true
         }
