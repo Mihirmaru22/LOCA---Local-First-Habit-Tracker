@@ -9,6 +9,7 @@ public enum NoteParagraphStyle: String, CaseIterable, Codable {
     case heading = "Heading"
     case subheading = "Subheading"
     case body = "Body"
+    case checklist = "Checklist"
     case monostyled = "Monostyled"
     case bulletedList = "Bulleted List"
     case dashedList = "Dashed List"
@@ -20,10 +21,10 @@ public enum NoteParagraphStyle: String, CaseIterable, Codable {
         case .title: return 26
         case .heading: return 19
         case .subheading: return 15.5
-        case .body: return 13.5
-        case .monostyled: return 13
-        case .bulletedList, .dashedList, .numberedList: return 13.5
-        case .quote: return 14
+        case .body, .checklist: return 14.5
+        case .monostyled: return 13.5
+        case .bulletedList, .dashedList, .numberedList: return 14
+        case .quote: return 14.5
         }
     }
     
@@ -32,7 +33,7 @@ public enum NoteParagraphStyle: String, CaseIterable, Codable {
         case .title: return .bold
         case .heading: return .bold
         case .subheading: return .semibold
-        case .body: return .regular
+        case .body, .checklist: return .regular
         case .monostyled: return .regular
         case .bulletedList, .dashedList, .numberedList: return .regular
         case .quote: return .medium
@@ -44,7 +45,9 @@ public enum NoteParagraphStyle: String, CaseIterable, Codable {
         case .title: return 4
         case .heading: return 3
         case .subheading: return 2
-        case .body, .bulletedList, .dashedList, .numberedList: return 3
+        case .body: return 3
+        case .checklist: return 5
+        case .bulletedList, .dashedList, .numberedList: return 4
         case .monostyled: return 2
         case .quote: return 3
         }
@@ -55,16 +58,19 @@ public enum NoteParagraphStyle: String, CaseIterable, Codable {
         case .title: return 10
         case .heading: return 8
         case .subheading: return 6
-        case .body, .monostyled: return 5
-        case .bulletedList, .dashedList, .numberedList: return 3
+        case .body: return 5
+        case .checklist: return 6
+        case .bulletedList, .dashedList, .numberedList: return 4
+        case .monostyled: return 4
         case .quote: return 6
         }
     }
     
     public var listPrefix: String? {
         switch self {
-        case .bulletedList: return "• "
-        case .dashedList: return "– "
+        case .checklist: return "○  "
+        case .bulletedList: return "•  "
+        case .dashedList: return "–  "
         case .numberedList: return "1. "
         default: return nil
         }
@@ -107,8 +113,8 @@ public enum TypographyPreset: String, CaseIterable, Codable {
 
 public struct RichTextTypography {
     
-    public static let checklistCheckedGlyph = "● "
-    public static let checklistUncheckedGlyph = "○ "
+    public static let checklistCheckedGlyph = "●  "
+    public static let checklistUncheckedGlyph = "○  "
     
     // MARK: Paragraph Style Attributes
     
@@ -121,8 +127,11 @@ public struct RichTextTypography {
         case .quote:
             p.headIndent = 18
             p.firstLineHeadIndent = 18
+        case .checklist:
+            p.headIndent = 26
+            p.firstLineHeadIndent = 0
         case .bulletedList, .dashedList:
-            p.headIndent = 20
+            p.headIndent = 22
             p.firstLineHeadIndent = 0
         case .numberedList:
             p.headIndent = 24
@@ -250,8 +259,14 @@ public struct RichTextTypography {
             textStorage.addAttribute(.foregroundColor, value: NSColor.textColor, range: cleanRange)
             newSelectedRange = NSRange(location: max(paragraphRange.location, selectedRange.location - replaceRange.length), length: selectedRange.length)
         } else {
-            // Add Unchecked Circle
-            textStorage.insert(NSAttributedString(string: checklistUncheckedGlyph, attributes: [.font: defaultFont, .foregroundColor: NSColor.textColor]), at: paragraphRange.location)
+            // Add Unchecked Circle with generous checklist paragraph styling
+            let cleanText = cleanPrefixes(from: paragraphText)
+            let newParaText = checklistUncheckedGlyph + cleanText
+            textStorage.replaceCharacters(in: paragraphRange, with: newParaText)
+            
+            let updatedRange = NSRange(location: paragraphRange.location, length: (newParaText as NSString).length)
+            let pStyle = makeParagraphStyle(for: .checklist)
+            textStorage.addAttribute(.paragraphStyle, value: pStyle, range: updatedRange)
             newSelectedRange = NSRange(location: selectedRange.location + (checklistUncheckedGlyph as NSString).length, length: selectedRange.length)
         }
         

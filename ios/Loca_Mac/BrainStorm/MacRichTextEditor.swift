@@ -693,7 +693,10 @@ public final class LocaAppKitTextView: NSTextView {
                     let glyph = RichTextTypography.checklistUncheckedGlyph
                     textStorage.beginEditing()
                     textStorage.replaceCharacters(in: NSRange(location: paragraphRange.location, length: prefixLength), with: glyph)
-                    self.typingAttributes = RichTextTypography.defaultAttributes(for: .body, preset: currentPreset)
+                    let pStyle = RichTextTypography.makeParagraphStyle(for: .checklist, preset: currentPreset)
+                    let updatedRange = (textStorage.string as NSString).paragraphRange(for: NSRange(location: paragraphRange.location, length: 0))
+                    textStorage.addAttribute(.paragraphStyle, value: pStyle, range: updatedRange)
+                    self.typingAttributes = RichTextTypography.defaultAttributes(for: .checklist, preset: currentPreset)
                     textStorage.endEditing()
                     self.setSelectedRange(NSRange(location: paragraphRange.location + glyph.count, length: 0))
                     self.didChangeText()
@@ -731,11 +734,13 @@ public final class LocaAppKitTextView: NSTextView {
         let paragraphText = string.substring(with: paragraphRange)
         
         // 1. Checklist smart continuation
-        if paragraphText.hasPrefix(RichTextTypography.checklistUncheckedGlyph) || paragraphText.hasPrefix(RichTextTypography.checklistCheckedGlyph) {
+        if paragraphText.hasPrefix(RichTextTypography.checklistUncheckedGlyph) || paragraphText.hasPrefix(RichTextTypography.checklistCheckedGlyph) || paragraphText.hasPrefix("○ ") || paragraphText.hasPrefix("● ") {
             let prefix = RichTextTypography.checklistUncheckedGlyph
             let contentInLine = paragraphText
                 .replacingOccurrences(of: RichTextTypography.checklistUncheckedGlyph, with: "")
                 .replacingOccurrences(of: RichTextTypography.checklistCheckedGlyph, with: "")
+                .replacingOccurrences(of: "○ ", with: "")
+                .replacingOccurrences(of: "● ", with: "")
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             
             if contentInLine.isEmpty {
@@ -745,9 +750,11 @@ public final class LocaAppKitTextView: NSTextView {
                 return
             } else {
                 super.insertNewline(sender)
-                let font = (self.typingAttributes[.font] as? NSFont) ?? currentPreset.font(for: .body)
+                let font = (self.typingAttributes[.font] as? NSFont) ?? currentPreset.font(for: .checklist)
+                let pStyle = RichTextTypography.makeParagraphStyle(for: .checklist, preset: currentPreset)
                 let checklistAttr = NSAttributedString(string: prefix, attributes: [
                     .font: font,
+                    .paragraphStyle: pStyle,
                     .foregroundColor: NSColor.textColor
                 ])
                 let newLocation = self.selectedRange().location
