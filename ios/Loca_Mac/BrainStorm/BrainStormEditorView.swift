@@ -78,17 +78,18 @@ struct BrainStormEditorView: View {
                 .padding(.top, 14)
                 .padding(.bottom, 6)
 
-                // The True AppKit Rich Text Surface
+                // The True AppKit Rich Text Surface (120Hz Decoupled Zero-Lag Pipeline)
                 MacRichTextEditor(
-                    attributedText: $localAttributedText,
-                    plainText: $localPlainText,
+                    initialAttributedText: note.attributedBody,
+                    initialPlainText: note.bodyText,
                     preset: typographyPreset,
                     isEditable: !note.isLocked,
                     controller: editorController,
-                    onTextChange: { updatedAttr, updatedPlain in
+                    onTextChangeDebounced: { updatedAttr, updatedPlain in
                         handleTextChange(updatedAttr: updatedAttr, updatedPlain: updatedPlain)
                     }
                 )
+                .id(note.id)
                 .padding(.horizontal, isZenMode ? 70 : 24)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
@@ -736,7 +737,16 @@ struct BrainStormEditorView: View {
             try? modelContext?.save()
         }
         saveWorkItem = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.40, execute: work)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.60, execute: work)
+    }
+
+    private func flushSaveNow() {
+        saveWorkItem?.cancel()
+        note.bodyText = localPlainText
+        note.bodyRTFData = RichTextTypography.serializeToRTFD(attributedString: localAttributedText)
+        note.updateTitleFromContent()
+        note.updatedAt = Date()
+        try? modelContext.save()
     }
 
     private func loadNoteContent() {

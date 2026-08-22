@@ -17,73 +17,84 @@ public final class RichTextEditorController: ObservableObject {
     @Published public var isStrikethrough: Bool = false
     @Published public var isHighlighted: Bool = false
     
+    private var stateUpdateWorkItem: DispatchWorkItem?
+    
     public init() {}
     
-    // MARK: - Update Active States from Selection
+    // MARK: - Update Active States from Selection (Throttled for 120Hz Fluidity)
     
-    public func updateActiveStates() {
-        guard let textView = textView, let textStorage = textView.textStorage else { return }
-        let selectedRange = textView.selectedRange()
-        let string = textStorage.string as NSString
+    public func updateActiveStates(immediate: Bool = false) {
+        stateUpdateWorkItem?.cancel()
         
-        let targetLocation = selectedRange.location > 0 ? (selectedRange.location < string.length ? selectedRange.location : string.length - 1) : 0
-        
-        var newStyle: NoteParagraphStyle = .body
-        var newBold = false
-        var newItalic = false
-        var newUnderlined = false
-        var newStrikethrough = false
-        var newHighlighted = false
-        
-        if string.length > 0 && targetLocation < string.length {
-            let paragraphRange = string.paragraphRange(for: NSRange(location: targetLocation, length: 0))
-            let paragraphText = string.substring(with: paragraphRange)
+        let updateBlock = { [weak self] in
+            guard let self = self, let textView = self.textView, let textStorage = textView.textStorage else { return }
+            let selectedRange = textView.selectedRange()
+            let string = textStorage.string as NSString
             
-            // Check list prefixes
-            if paragraphText.hasPrefix("• ") {
-                newStyle = .bulletedList
-            } else if paragraphText.hasPrefix("– ") {
-                newStyle = .dashedList
-            } else if paragraphText.range(of: #"^\d+\.\s"#, options: .regularExpression) != nil {
-                newStyle = .numberedList
-            } else if let font = textStorage.attribute(.font, at: targetLocation, effectiveRange: nil) as? NSFont {
-                if font.pointSize >= 24 {
-                    newStyle = .title
-                } else if font.pointSize >= 18 {
-                    newStyle = .heading
-                } else if font.pointSize >= 15 {
-                    newStyle = .subheading
-                } else if font.fontDescriptor.symbolicTraits.contains(.monoSpace) {
-                    newStyle = .monostyled
-                } else {
-                    newStyle = .body
+            let targetLocation = selectedRange.location > 0 ? (selectedRange.location < string.length ? selectedRange.location : string.length - 1) : 0
+            
+            var newStyle: NoteParagraphStyle = .body
+            var newBold = false
+            var newItalic = false
+            var newUnderlined = false
+            var newStrikethrough = false
+            var newHighlighted = false
+            
+            if string.length > 0 && targetLocation < string.length {
+                let paragraphRange = string.paragraphRange(for: NSRange(location: targetLocation, length: 0))
+                let paragraphText = string.substring(with: paragraphRange)
+                
+                // Check list prefixes
+                if paragraphText.hasPrefix("• ") {
+                    newStyle = .bulletedList
+                } else if paragraphText.hasPrefix("– ") {
+                    newStyle = .dashedList
+                } else if paragraphText.range(of: #"^\d+\.\s"#, options: .regularExpression) != nil {
+                    newStyle = .numberedList
+                } else if let font = textStorage.attribute(.font, at: targetLocation, effectiveRange: nil) as? NSFont {
+                    if font.pointSize >= 24 {
+                        newStyle = .title
+                    } else if font.pointSize >= 18 {
+                        newStyle = .heading
+                    } else if font.pointSize >= 15 {
+                        newStyle = .subheading
+                    } else if font.fontDescriptor.symbolicTraits.contains(.monoSpace) {
+                        newStyle = .monostyled
+                    } else {
+                        newStyle = .body
+                    }
                 }
+                
+                // Check inline marks
+                if let font = textStorage.attribute(.font, at: targetLocation, effectiveRange: nil) as? NSFont {
+                    newBold = font.fontDescriptor.symbolicTraits.contains(.bold)
+                    newItalic = font.fontDescriptor.symbolicTraits.contains(.italic)
+                }
+                
+                let underlineVal = textStorage.attribute(.underlineStyle, at: targetLocation, effectiveRange: nil) as? Int
+                newUnderlined = (underlineVal != nil && underlineVal != 0)
+                
+                let strikeVal = textStorage.attribute(.strikethroughStyle, at: targetLocation, effectiveRange: nil) as? Int
+                newStrikethrough = (strikeVal != nil && strikeVal != 0)
+                
+                let bgVal = textStorage.attribute(.backgroundColor, at: targetLocation, effectiveRange: nil)
+                newHighlighted = (bgVal != nil)
             }
             
-            // Check inline marks
-            if let font = textStorage.attribute(.font, at: targetLocation, effectiveRange: nil) as? NSFont {
-                newBold = font.fontDescriptor.symbolicTraits.contains(.bold)
-                newItalic = font.fontDescriptor.symbolicTraits.contains(.italic)
-            }
-            
-            let underlineVal = textStorage.attribute(.underlineStyle, at: targetLocation, effectiveRange: nil) as? Int
-            newUnderlined = (underlineVal != nil && underlineVal != 0)
-            
-            let strikeVal = textStorage.attribute(.strikethroughStyle, at: targetLocation, effectiveRange: nil) as? Int
-            newStrikethrough = (strikeVal != nil && strikeVal != 0)
-            
-            let bgVal = textStorage.attribute(.backgroundColor, at: targetLocation, effectiveRange: nil)
-            newHighlighted = (bgVal != nil)
-        }
-        
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
             if self.activeParagraphStyle != newStyle { self.activeParagraphStyle = newStyle }
             if self.isBold != newBold { self.isBold = newBold }
             if self.isItalic != newItalic { self.isItalic = newItalic }
             if self.isUnderlined != newUnderlined { self.isUnderlined = newUnderlined }
             if self.isStrikethrough != newStrikethrough { self.isStrikethrough = newStrikethrough }
             if self.isHighlighted != newHighlighted { self.isHighlighted = newHighlighted }
+        }
+        
+        if immediate {
+            updateBlock()
+        } else {
+            let work = DispatchWorkItem(block: updateBlock)
+            stateUpdateWorkItem = work
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.08, execute: work)
         }
     }
     
@@ -111,7 +122,7 @@ public final class RichTextEditorController: ObservableObject {
         if selectedRange.length > 0 {
             RichTextTypography.toggleTrait(.bold, in: textStorage, range: selectedRange, defaultFont: defaultFont)
             textView.didChangeText()
-            updateActiveStates()
+            updateActiveStates(immediate: true)
             onTextChange?(NSAttributedString(attributedString: textStorage), textStorage.string)
         } else {
             var currentFont = (textView.typingAttributes[.font] as? NSFont) ?? defaultFont
@@ -137,7 +148,7 @@ public final class RichTextEditorController: ObservableObject {
         if selectedRange.length > 0 {
             RichTextTypography.toggleTrait(.italic, in: textStorage, range: selectedRange, defaultFont: defaultFont)
             textView.didChangeText()
-            updateActiveStates()
+            updateActiveStates(immediate: true)
             onTextChange?(NSAttributedString(attributedString: textStorage), textStorage.string)
         } else {
             var currentFont = (textView.typingAttributes[.font] as? NSFont) ?? defaultFont
@@ -161,7 +172,7 @@ public final class RichTextEditorController: ObservableObject {
         if selectedRange.length > 0 {
             RichTextTypography.toggleUnderline(in: textStorage, range: selectedRange)
             textView.didChangeText()
-            updateActiveStates()
+            updateActiveStates(immediate: true)
             onTextChange?(NSAttributedString(attributedString: textStorage), textStorage.string)
         } else {
             let current = (textView.typingAttributes[.underlineStyle] as? Int) ?? 0
@@ -177,7 +188,7 @@ public final class RichTextEditorController: ObservableObject {
         if selectedRange.length > 0 {
             RichTextTypography.toggleStrikethrough(in: textStorage, range: selectedRange)
             textView.didChangeText()
-            updateActiveStates()
+            updateActiveStates(immediate: true)
             onTextChange?(NSAttributedString(attributedString: textStorage), textStorage.string)
         } else {
             let current = (textView.typingAttributes[.strikethroughStyle] as? Int) ?? 0
@@ -193,7 +204,7 @@ public final class RichTextEditorController: ObservableObject {
         if selectedRange.length > 0 {
             RichTextTypography.toggleHighlight(in: textStorage, range: selectedRange)
             textView.didChangeText()
-            updateActiveStates()
+            updateActiveStates(immediate: true)
             onTextChange?(NSAttributedString(attributedString: textStorage), textStorage.string)
         } else {
             let current = textView.typingAttributes[.backgroundColor]
@@ -227,7 +238,7 @@ public final class RichTextEditorController: ObservableObject {
         let newRange = RichTextTypography.toggleChecklistOnCurrentParagraph(in: textStorage, selectedRange: selectedRange, defaultFont: defaultFont)
         textView.setSelectedRange(newRange)
         textView.didChangeText()
-        updateActiveStates()
+        updateActiveStates(immediate: true)
         onTextChange?(NSAttributedString(attributedString: textStorage), textStorage.string)
     }
     
@@ -276,34 +287,31 @@ public final class RichTextEditorController: ObservableObject {
     }
 }
 
-// MARK: - MacRichTextEditor (AppKit NSTextView Wrapper)
+// MARK: - MacRichTextEditor (AppKit NSTextView Wrapper with 120Hz Decoupled Pipeline)
 
 public struct MacRichTextEditor: NSViewRepresentable {
     
-    @Binding var attributedText: NSAttributedString
-    @Binding var plainText: String
+    let initialAttributedText: NSAttributedString
+    let initialPlainText: String
     var preset: TypographyPreset = .standard
     var isEditable: Bool = true
-    var activeStyle: Binding<NoteParagraphStyle>? = nil
     var controller: RichTextEditorController? = nil
-    var onTextChange: ((NSAttributedString, String) -> Void)? = nil
+    var onTextChangeDebounced: ((NSAttributedString, String) -> Void)? = nil
     
     public init(
-        attributedText: Binding<NSAttributedString>,
-        plainText: Binding<String>,
+        initialAttributedText: NSAttributedString,
+        initialPlainText: String,
         preset: TypographyPreset = .standard,
         isEditable: Bool = true,
-        activeStyle: Binding<NoteParagraphStyle>? = nil,
         controller: RichTextEditorController? = nil,
-        onTextChange: ((NSAttributedString, String) -> Void)? = nil
+        onTextChangeDebounced: ((NSAttributedString, String) -> Void)? = nil
     ) {
-        self._attributedText = attributedText
-        self._plainText = plainText
+        self.initialAttributedText = initialAttributedText
+        self.initialPlainText = initialPlainText
         self.preset = preset
         self.isEditable = isEditable
-        self.activeStyle = activeStyle
         self.controller = controller
-        self.onTextChange = onTextChange
+        self.onTextChangeDebounced = onTextChangeDebounced
     }
     
     public func makeCoordinator() -> Coordinator {
@@ -325,6 +333,7 @@ public struct MacRichTextEditor: NSViewRepresentable {
         
         let textContainer = NSTextContainer(containerSize: NSSize(width: contentSize.width, height: CGFloat.greatestFiniteMagnitude))
         textContainer.widthTracksTextView = true
+        textContainer.lineFragmentPadding = 0
         layoutManager.addTextContainer(textContainer)
         
         let textView = LocaAppKitTextView(frame: .zero, textContainer: textContainer)
@@ -343,28 +352,26 @@ public struct MacRichTextEditor: NSViewRepresentable {
         textView.isSelectable = true
         textView.delegate = context.coordinator
         
-        // Insets & Spacing
-        textView.textContainerInset = NSSize(width: 24, height: 16)
+        // Native Apple Notes Insets & Caret
+        textView.textContainerInset = NSSize(width: 32, height: 20)
+        textView.insertionPointColor = NSColor(red: 0.96, green: 0.65, blue: 0.18, alpha: 1.0)
         
-        // Typing attributes default
+        // Default typing attributes
         textView.typingAttributes = RichTextTypography.defaultAttributes(for: .body, preset: preset)
         
-        // Initial Attributed String
-        if attributedText.length > 0 {
-            textStorage.setAttributedString(attributedText)
-        } else if !plainText.isEmpty {
-            let migrated = RichTextTypography.convertMarkdownToAttributedString(markdown: plainText, preset: preset)
+        // Populate Initial Content
+        if initialAttributedText.length > 0 {
+            textStorage.setAttributedString(initialAttributedText)
+        } else if !initialPlainText.isEmpty {
+            let migrated = RichTextTypography.convertMarkdownToAttributedString(markdown: initialPlainText, preset: preset)
             textStorage.setAttributedString(migrated)
-            DispatchQueue.main.async {
-                self.attributedText = migrated
-            }
         }
         
         context.coordinator.textView = textView
         if let ctrl = controller {
             ctrl.textView = textView
-            ctrl.onTextChange = onTextChange
-            ctrl.updateActiveStates()
+            ctrl.onTextChange = onTextChangeDebounced
+            ctrl.updateActiveStates(immediate: true)
         }
         
         scrollView.documentView = textView
@@ -377,46 +384,18 @@ public struct MacRichTextEditor: NSViewRepresentable {
         context.coordinator.parent = self
         if let ctrl = controller {
             ctrl.textView = textView
-            ctrl.onTextChange = onTextChange
+            ctrl.onTextChange = onTextChangeDebounced
         }
         
         textView.isEditable = isEditable
-        
-        // Skip expensive comparisons if the user is actively typing locally
-        if context.coordinator.isTypingLocally { return }
-        
-        // Only synchronize if content was changed externally (e.g. switching notes)
-        if !context.coordinator.isUpdatingDirectly {
-            let currentText = textView.textStorage?.string ?? ""
-            if currentText != plainText {
-                context.coordinator.isUpdatingDirectly = true
-                let savedSelection = textView.selectedRange()
-                
-                if attributedText.length > 0 {
-                    textView.textStorage?.setAttributedString(attributedText)
-                } else if !plainText.isEmpty {
-                    let parsed = RichTextTypography.convertMarkdownToAttributedString(markdown: plainText, preset: preset)
-                    textView.textStorage?.setAttributedString(parsed)
-                } else {
-                    textView.textStorage?.setAttributedString(NSAttributedString())
-                }
-                
-                if savedSelection.location <= (textView.textStorage?.length ?? 0) {
-                    textView.setSelectedRange(savedSelection)
-                }
-                context.coordinator.isUpdatingDirectly = false
-            }
-        }
     }
     
-    // MARK: - Coordinator
+    // MARK: - Coordinator (Decoupled Zero-Lag RunLoop Coordinator)
     
     public class Coordinator: NSObject, NSTextViewDelegate {
         var parent: MacRichTextEditor
         weak var textView: LocaAppKitTextView?
-        var isUpdatingDirectly = false
-        var isTypingLocally = false
-        private var typingResetWorkItem: DispatchWorkItem?
+        private var debounceWorkItem: DispatchWorkItem?
         
         init(_ parent: MacRichTextEditor) {
             self.parent = parent
@@ -425,35 +404,124 @@ public struct MacRichTextEditor: NSViewRepresentable {
         public func textDidChange(_ notification: Notification) {
             guard let textView = textView, let textStorage = textView.textStorage else { return }
             
-            isTypingLocally = true
-            isUpdatingDirectly = true
+            // 1. Throttled UI state update for formatting toolbar
+            parent.controller?.updateActiveStates(immediate: false)
             
-            let updatedAttr = NSAttributedString(attributedString: textStorage)
-            let updatedPlain = textStorage.string
-            
-            parent.onTextChange?(updatedAttr, updatedPlain)
-            parent.controller?.updateActiveStates()
-            
-            isUpdatingDirectly = false
-            
-            // Reset typing lock after typing pauses
-            typingResetWorkItem?.cancel()
-            let resetWork = DispatchWorkItem { [weak self] in
-                self?.isTypingLocally = false
+            // 2. Debounced save callback (Zero lag during continuous 120Hz keystrokes)
+            debounceWorkItem?.cancel()
+            let work = DispatchWorkItem { [weak self, weak textStorage] in
+                guard let self = self, let storage = textStorage else { return }
+                let attrCopy = NSAttributedString(attributedString: storage)
+                let plainCopy = storage.string
+                self.parent.onTextChangeDebounced?(attrCopy, plainCopy)
             }
-            typingResetWorkItem = resetWork
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35, execute: resetWork)
+            debounceWorkItem = work
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.45, execute: work)
         }
         
         public func textViewDidChangeSelection(_ notification: Notification) {
-            parent.controller?.updateActiveStates()
+            parent.controller?.updateActiveStates(immediate: false)
         }
     }
 }
 
-// MARK: - LocaAppKitTextView (Subclass for Apple Notes Mechanics)
+// MARK: - LocaAppKitTextView (Subclass for Apple Notes Smart Mechanics & Zero Latency)
 
 public final class LocaAppKitTextView: NSTextView {
+    
+    public var currentPreset: TypographyPreset = .standard
+    
+    // MARK: - Smart Markdown Trigger on Type (e.g. '# ', '- ', '1. ', '[] ')
+    
+    public override func shouldChangeText(in affectedCharRange: NSRange, replacementString: String?) -> Bool {
+        guard let rep = replacementString, rep == " ", let textStorage = self.textStorage else {
+            return super.shouldChangeText(in: affectedCharRange, replacementString: replacementString)
+        }
+        
+        let string = textStorage.string as NSString
+        let paragraphRange = string.paragraphRange(for: affectedCharRange)
+        let prefixLength = affectedCharRange.location - paragraphRange.location
+        
+        if prefixLength > 0 && prefixLength <= 6 {
+            let typedPrefix = string.substring(with: NSRange(location: paragraphRange.location, length: prefixLength))
+            
+            // 1. Title (# )
+            if typedPrefix == "#" {
+                textStorage.beginEditing()
+                textStorage.replaceCharacters(in: NSRange(location: paragraphRange.location, length: prefixLength), with: "")
+                RichTextTypography.applyParagraphStyle(.title, to: textStorage, range: NSRange(location: paragraphRange.location, length: 0), preset: currentPreset)
+                self.typingAttributes = RichTextTypography.defaultAttributes(for: .title, preset: currentPreset)
+                textStorage.endEditing()
+                self.setSelectedRange(NSRange(location: paragraphRange.location, length: 0))
+                self.didChangeText()
+                return false
+            }
+            
+            // 2. Heading (## )
+            if typedPrefix == "##" {
+                textStorage.beginEditing()
+                textStorage.replaceCharacters(in: NSRange(location: paragraphRange.location, length: prefixLength), with: "")
+                RichTextTypography.applyParagraphStyle(.heading, to: textStorage, range: NSRange(location: paragraphRange.location, length: 0), preset: currentPreset)
+                self.typingAttributes = RichTextTypography.defaultAttributes(for: .heading, preset: currentPreset)
+                textStorage.endEditing()
+                self.setSelectedRange(NSRange(location: paragraphRange.location, length: 0))
+                self.didChangeText()
+                return false
+            }
+            
+            // 3. Subheading (### )
+            if typedPrefix == "###" {
+                textStorage.beginEditing()
+                textStorage.replaceCharacters(in: NSRange(location: paragraphRange.location, length: prefixLength), with: "")
+                RichTextTypography.applyParagraphStyle(.subheading, to: textStorage, range: NSRange(location: paragraphRange.location, length: 0), preset: currentPreset)
+                self.typingAttributes = RichTextTypography.defaultAttributes(for: .subheading, preset: currentPreset)
+                textStorage.endEditing()
+                self.setSelectedRange(NSRange(location: paragraphRange.location, length: 0))
+                self.didChangeText()
+                return false
+            }
+            
+            // 4. Bullet List (- or *)
+            if typedPrefix == "-" || typedPrefix == "*" {
+                textStorage.beginEditing()
+                textStorage.replaceCharacters(in: NSRange(location: paragraphRange.location, length: prefixLength), with: "• ")
+                RichTextTypography.applyParagraphStyle(.bulletedList, to: textStorage, range: NSRange(location: paragraphRange.location, length: 2), preset: currentPreset)
+                self.typingAttributes = RichTextTypography.defaultAttributes(for: .bulletedList, preset: currentPreset)
+                textStorage.endEditing()
+                self.setSelectedRange(NSRange(location: paragraphRange.location + 2, length: 0))
+                self.didChangeText()
+                return false
+            }
+            
+            // 5. Checklist ([] or [ ])
+            if typedPrefix == "[]" || typedPrefix == "[ ]" {
+                let glyph = RichTextTypography.checklistUncheckedGlyph
+                textStorage.beginEditing()
+                textStorage.replaceCharacters(in: NSRange(location: paragraphRange.location, length: prefixLength), with: glyph)
+                self.typingAttributes = RichTextTypography.defaultAttributes(for: .body, preset: currentPreset)
+                textStorage.endEditing()
+                self.setSelectedRange(NSRange(location: paragraphRange.location + glyph.count, length: 0))
+                self.didChangeText()
+                return false
+            }
+            
+            // 6. Blockquote (> )
+            if typedPrefix == ">" {
+                textStorage.beginEditing()
+                textStorage.replaceCharacters(in: NSRange(location: paragraphRange.location, length: prefixLength), with: "")
+                RichTextTypography.applyParagraphStyle(.quote, to: textStorage, range: NSRange(location: paragraphRange.location, length: 0), preset: currentPreset)
+                self.typingAttributes = RichTextTypography.defaultAttributes(for: .quote, preset: currentPreset)
+                textStorage.endEditing()
+                self.setSelectedRange(NSRange(location: paragraphRange.location, length: 0))
+                self.didChangeText()
+                return false
+            }
+        }
+        
+        return super.shouldChangeText(in: affectedCharRange, replacementString: replacementString)
+    }
+    
+    // MARK: - Smart Return & Continuations
     
     public override func insertNewline(_ sender: Any?) {
         guard let textStorage = self.textStorage else {
@@ -475,13 +543,14 @@ public final class LocaAppKitTextView: NSTextView {
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             
             if contentInLine.isEmpty {
+                // Empty item -> Clear checklist prefix and revert to normal body
                 textStorage.replaceCharacters(in: paragraphRange, with: "\n")
                 self.setSelectedRange(NSRange(location: paragraphRange.location, length: 0))
                 self.didChangeText()
                 return
             } else {
                 super.insertNewline(sender)
-                let font = (self.typingAttributes[.font] as? NSFont) ?? NSFont.systemFont(ofSize: 13.5)
+                let font = (self.typingAttributes[.font] as? NSFont) ?? currentPreset.font(for: .body)
                 let checklistAttr = NSAttributedString(string: prefix, attributes: [
                     .font: font,
                     .foregroundColor: NSColor.textColor
@@ -504,7 +573,7 @@ public final class LocaAppKitTextView: NSTextView {
                 return
             } else {
                 super.insertNewline(sender)
-                let font = (self.typingAttributes[.font] as? NSFont) ?? NSFont.systemFont(ofSize: 13.5)
+                let font = (self.typingAttributes[.font] as? NSFont) ?? currentPreset.font(for: .bulletedList)
                 let bulletAttr = NSAttributedString(string: "• ", attributes: [
                     .font: font,
                     .foregroundColor: NSColor.textColor
@@ -527,7 +596,7 @@ public final class LocaAppKitTextView: NSTextView {
                 return
             } else {
                 super.insertNewline(sender)
-                let font = (self.typingAttributes[.font] as? NSFont) ?? NSFont.systemFont(ofSize: 13.5)
+                let font = (self.typingAttributes[.font] as? NSFont) ?? currentPreset.font(for: .dashedList)
                 let dashAttr = NSAttributedString(string: "– ", attributes: [
                     .font: font,
                     .foregroundColor: NSColor.textColor
@@ -553,7 +622,7 @@ public final class LocaAppKitTextView: NSTextView {
                 } else {
                     super.insertNewline(sender)
                     let nextPrefix = "\(num + 1). "
-                    let font = (self.typingAttributes[.font] as? NSFont) ?? NSFont.systemFont(ofSize: 13.5)
+                    let font = (self.typingAttributes[.font] as? NSFont) ?? currentPreset.font(for: .numberedList)
                     let numAttr = NSAttributedString(string: nextPrefix, attributes: [
                         .font: font,
                         .foregroundColor: NSColor.textColor
@@ -567,8 +636,65 @@ public final class LocaAppKitTextView: NSTextView {
             }
         }
         
+        // 5. Title / Heading -> Transition down to Body on Enter
+        if let currentFont = self.typingAttributes[.font] as? NSFont, currentFont.pointSize >= 18 {
+            super.insertNewline(sender)
+            self.typingAttributes = RichTextTypography.defaultAttributes(for: .body, preset: currentPreset)
+            return
+        }
+        
         super.insertNewline(sender)
     }
+    
+    // MARK: - Smart Tab & Shift-Tab Indentation
+    
+    public override func insertTab(_ sender: Any?) {
+        guard let textStorage = self.textStorage else {
+            super.insertTab(sender)
+            return
+        }
+        
+        let selectedRange = self.selectedRange()
+        let string = textStorage.string as NSString
+        let paragraphRange = string.paragraphRange(for: selectedRange)
+        
+        if let existingStyle = textStorage.attribute(.paragraphStyle, at: paragraphRange.location, effectiveRange: nil) as? NSParagraphStyle {
+            let mutableStyle = existingStyle.mutableCopy() as! NSMutableParagraphStyle
+            mutableStyle.headIndent += 20
+            mutableStyle.firstLineHeadIndent += 20
+            textStorage.addAttribute(.paragraphStyle, value: mutableStyle, range: paragraphRange)
+            self.didChangeText()
+            return
+        }
+        
+        super.insertTab(sender)
+    }
+    
+    public override func insertBacktab(_ sender: Any?) {
+        guard let textStorage = self.textStorage else {
+            super.insertBacktab(sender)
+            return
+        }
+        
+        let selectedRange = self.selectedRange()
+        let string = textStorage.string as NSString
+        let paragraphRange = string.paragraphRange(for: selectedRange)
+        
+        if let existingStyle = textStorage.attribute(.paragraphStyle, at: paragraphRange.location, effectiveRange: nil) as? NSParagraphStyle {
+            let mutableStyle = existingStyle.mutableCopy() as! NSMutableParagraphStyle
+            if mutableStyle.headIndent >= 20 {
+                mutableStyle.headIndent -= 20
+                mutableStyle.firstLineHeadIndent = max(0, mutableStyle.firstLineHeadIndent - 20)
+                textStorage.addAttribute(.paragraphStyle, value: mutableStyle, range: paragraphRange)
+                self.didChangeText()
+                return
+            }
+        }
+        
+        super.insertBacktab(sender)
+    }
+    
+    // MARK: - Interactive Checkbox Click Detection
     
     public override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
@@ -589,7 +715,6 @@ public final class LocaAppKitTextView: NSTextView {
         let paragraphRange = string.paragraphRange(for: NSRange(location: charIndex, length: 0))
         let paragraphText = string.substring(with: paragraphRange)
         
-        // Click on checklist checkbox glyph
         let unchecked = RichTextTypography.checklistUncheckedGlyph
         let checked = RichTextTypography.checklistCheckedGlyph
         
