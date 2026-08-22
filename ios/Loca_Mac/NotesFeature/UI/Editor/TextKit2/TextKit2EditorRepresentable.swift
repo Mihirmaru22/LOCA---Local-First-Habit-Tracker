@@ -1,3 +1,5 @@
+import Foundation
+import Combine
 import SwiftUI
 import AppKit
 
@@ -163,6 +165,7 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
 }
 
 /// Observable state container synchronizing the SwiftUI shell with the active TextKitCRDTBridge.
+@MainActor
 public final class EditorBridgeState: ObservableObject {
     @Published public var bridge: TextKitCRDTBridge
     @Published public var needsRemoteRefresh: Bool = false
