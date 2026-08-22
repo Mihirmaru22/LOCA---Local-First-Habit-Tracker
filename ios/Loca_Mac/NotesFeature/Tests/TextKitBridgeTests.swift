@@ -193,5 +193,49 @@ struct TextKitBridgeTests {
         #expect(targetBlock?.marks.first?.startIndex == 0)
         #expect(targetBlock?.marks.first?.endIndex == 7)
     }
+    
+    // MARK: - Typing Pipeline Regression Tests (Option A Contract)
+    
+    @Test func testLocalTypingRendersAndReachesCRDT() {
+        let noteID = NoteID()
+        let blockID = UUID()
+        
+        var doc = CRDTDoc(id: noteID, deviceID: "test-device")
+        doc.addBlock(CRDTBlock(id: blockID, type: "paragraph", text: CRDTText(string: "", deviceID: "test-device")))
+        
+        let bridge = TextKitCRDTBridge(doc: doc, deviceID: "test-device")
+        let state = EditorBridgeState(bridge: bridge)
+        
+        // Simulate typing "H", "e", "y"
+        bridge.insertText("H", at: 0)
+        bridge.insertText("e", at: 1)
+        bridge.insertText("y", at: 2)
+        
+        // Assert CRDT model has "Hey"
+        #expect(bridge.doc.blocks.first?.text.string == "Hey")
+        
+        // Assert rendered attributed string matches
+        let rendered = bridge.renderAttributedString().string
+        #expect(rendered == "Hey")
+    }
+    
+    @Test func testLocalEditDoesNotTriggerRemoteRenderLoop() {
+        let noteID = NoteID()
+        var doc = CRDTDoc(id: noteID, deviceID: "test-device")
+        doc.addBlock(CRDTBlock(id: UUID(), type: "paragraph", text: CRDTText(string: "Initial", deviceID: "test-device")))
+        
+        let bridge = TextKitCRDTBridge(doc: doc, deviceID: "test-device")
+        let state = EditorBridgeState(bridge: bridge)
+        
+        // Local edit does not flag needsRemoteRefresh
+        bridge.insertText(" Text", at: 7)
+        #expect(state.needsRemoteRefresh == false)
+        
+        // Remote update explicitly sets needsRemoteRefresh
+        var remoteDoc = bridge.doc
+        remoteDoc.insertText(" Remote", at: 12, in: remoteDoc.blocks.first!.id)
+        state.updateDocFromRemote(remoteDoc)
+        #expect(state.needsRemoteRefresh == true)
+    }
 }
 #endif
