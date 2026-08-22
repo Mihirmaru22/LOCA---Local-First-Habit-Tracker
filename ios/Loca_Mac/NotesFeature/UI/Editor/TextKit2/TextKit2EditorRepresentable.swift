@@ -16,6 +16,7 @@ public final class NoteCanvasTextView: NSTextView {
     
     public override var acceptsFirstResponder: Bool { true }
     public override var canBecomeKeyView: Bool { true }
+    public override var needsPanelToBecomeKey: Bool { true }
     
     public override func becomeFirstResponder() -> Bool {
         return super.becomeFirstResponder()
@@ -78,6 +79,8 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         textView.isAutomaticDashSubstitutionEnabled = false
         textView.drawsBackground = false
         textView.font = NSFont.systemFont(ofSize: 14)
+        textView.textColor = NSColor.labelColor
+        textView.insertionPointColor = NSColor.controlAccentColor
         textView.textContainerInset = NSSize(width: 24, height: 16)
         textView.minSize = NSSize(width: 0, height: 0)
         textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
@@ -86,7 +89,8 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         textView.autoresizingMask = [.width]
         textView.typingAttributes = [
             .font: NSFont.systemFont(ofSize: 14),
-            .foregroundColor: NSColor.labelColor
+            .foregroundColor: NSColor.labelColor,
+            .paragraphStyle: NSParagraphStyle.default
         ]
         
         // Gutter Click Handler
@@ -211,7 +215,8 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
             guard let tv = textView else { return }
             tv.typingAttributes = [
                 .font: NSFont.systemFont(ofSize: 14),
-                .foregroundColor: NSColor.labelColor
+                .foregroundColor: NSColor.labelColor,
+                .paragraphStyle: NSParagraphStyle.default
             ]
         }
     }

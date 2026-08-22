@@ -85,16 +85,9 @@ public struct NotesCanvasView: View {
                 Divider()
                     .allowsHitTesting(false)
                 
-                // Editor Body & Floating Toolbar
-                ZStack(alignment: .topTrailing) {
-                    TextKit2EditorRepresentable(
-                        state: state,
-                        onKeystroke: handleLocalKeystroke,
-                        onSelectionChanged: { _ in }
-                    )
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    
-                    // Formatting Toolbar (Floating Top Right)
+                // Formatting Toolbar Strip
+                HStack {
+                    Spacer()
                     NotesFormattingToolbar(
                         onApplyInlineMark: { type in
                             state.bridge.applyInlineMark(type: type, in: state.currentSelection)
@@ -112,9 +105,21 @@ public struct NotesCanvasView: View {
                             state.requestFormatRefresh()
                         }
                     )
-                    .padding(.trailing, 24)
-                    .padding(.top, 12)
                 }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 6)
+                .background(Color(nsColor: .windowBackgroundColor).opacity(0.35))
+                
+                Divider()
+                    .allowsHitTesting(false)
+                
+                // Editor Body
+                TextKit2EditorRepresentable(
+                    state: state,
+                    onKeystroke: handleLocalKeystroke,
+                    onSelectionChanged: { _ in }
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .background(Color(nsColor: .textBackgroundColor))
         } else {
