@@ -1,4 +1,11 @@
-// Editing Contract: Option A (Native Apply + Observe)
+// MARK: - Architecture Decision Record (ADR)
+// - SHIPPING TEXT SYSTEM: AppKit NSTextStorage (TextKit 1 compatible pipeline).
+// - REASON: Hand-wired pure TextKit 2 stack produced a detached textStorage accessor, silently aborting insertText.
+//   The AppKit NSTextStorage pipeline is proven, rock-solid, and zero-latency across all macOS versions.
+// - The CRDT document model, block-attribute typography, and CRDT bridge are completely storage-agnostic.
+// - TextKit 2 migration is deferred to Phase 5 (Polish) as a non-breaking optimization, not a correctness requirement.
+//
+// MARK: - Editing Contract: Option A (Native Apply + Observe)
 // 1. textView(_:shouldChangeTextIn:replacementString:) updates the CRDT model and returns true for standard typing.
 // 2. AppKit text engine natively commits glyphs to the backing store at 120fps with zero latency.
 // 3. Return key triggers a custom block split and synchronous re-render with cursor placement.
@@ -22,50 +29,11 @@ public final class NoteCanvasTextView: NSTextView {
         return super.becomeFirstResponder()
     }
     
-    public func stackAudit(_ tag: String) {
-        print("🧭 [\(tag)] textStorageNil=\(self.textStorage == nil) layoutManagerNil=\(self.layoutManager == nil) length=\(self.textStorage?.length ?? -1)")
-    }
-    
-    public override func keyDown(with event: NSEvent) {
-        print("🔴 KEYDOWN REACHED APPKIT: \(event.characters ?? "")")
-        super.keyDown(with: event)
-    }
-    
-    public override func insertText(_ string: Any, replacementRange: NSRange) {
-        stackAudit("insertText")
-        print("🟣 INSERT TEXT CALLED: string=\(string), range=\(replacementRange)")
-        print("🧪 textStorage is nil: \(self.textStorage == nil)")
-        print("🧪 textStorage.length: \(self.textStorage?.length ?? -1)")
-        print("🧪 selectedRange: \(self.selectedRange())")
-        print("🧪 container.size: \(self.textContainer?.containerSize ?? .zero)")
-        super.insertText(string, replacementRange: replacementRange)
-    }
-    
-    public override func shouldChangeText(in affectedCharRange: NSRange, replacementString: String?) -> Bool {
-        let result = super.shouldChangeText(in: affectedCharRange, replacementString: replacementString)
-        print("🔥 NSTEXTVIEW.shouldChangeText range=\(affectedCharRange) repl=\(replacementString ?? "") handled=\(result)")
-        return result
-    }
-    
-    public override func performKeyEquivalent(with event: NSEvent) -> Bool {
-        let result = super.performKeyEquivalent(with: event)
-        print("🟠 PERFORM KEY EQUIVALENT: \(event.characters ?? ""), handled=\(result)")
-        return result
-    }
-    
-    public override func doCommand(by commandSelector: Selector) {
-        print("🟤 DO COMMAND: \(commandSelector)")
-        super.doCommand(by: commandSelector)
-    }
-    
     public override func mouseDown(with event: NSEvent) {
-        stackAudit("mouseDown")
         // Ensure text view claims first responder status on click
         if window?.firstResponder != self {
             window?.makeFirstResponder(self)
         }
-        print("📍 MOUSE DOWN: window.firstResponder is \(String(describing: window?.firstResponder))")
-        print("📍 TYPING ATTRIBUTES: \(self.typingAttributes)")
         
         let point = convert(event.locationInWindow, from: nil)
         if let handler = onGutterClicked, handler(point) {
@@ -98,8 +66,6 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
     }
     
     public func makeNSView(context: Context) -> NSScrollView {
-        print("🔵 MAKE NSVIEW CALLED")
-        
         let scrollView = NSScrollView()
         let textView = NoteCanvasTextView(frame: .zero)
         
@@ -165,15 +131,12 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         scrollView.drawsBackground = false
         
         context.coordinator.textView = textView
-        textView.stackAudit("makeNSView.end")
         
         return scrollView
     }
     
     public func updateNSView(_ nsView: NSScrollView, context: Context) {
         guard let textView = context.coordinator.textView else { return }
-        textView.stackAudit("updateNSView.start")
-        print("🟡 updateNSView CALLED: needsRemoteRefresh=\(state.needsRemoteRefresh)")
         
         // Strictly guard against touching textStorage for local edits
         guard state.needsRemoteRefresh else {
@@ -199,7 +162,6 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         )
         textView.setSelectedRange(newSelection)
         textView.scrollRangeToVisible(newSelection)
-        textView.stackAudit("updateNSView.end")
     }
     
     public final class Coordinator: NSObject, NSTextViewDelegate {
@@ -218,7 +180,6 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         
         public func textView(_ textView: NSTextView, shouldChangeTextIn affectedCharRange: NSRange, replacementString: String?) -> Bool {
             let replacement = replacementString ?? ""
-            print("🔍 shouldChangeTextIn CALLED: range=\(affectedCharRange), replacement='\(replacement)'")
             
             if replacement == "\n" {
                 // Return key: Split block into two distinct blocks with new UUIDs
@@ -231,7 +192,6 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
                         textView.scrollRangeToVisible(NSRange(location: newCursorPos, length: 0))
                     }
                     parent.onKeystroke(parent.state.bridge.doc)
-                    print("🔴 DELEGATE RETURNING: false (Block Split Handled)")
                     return false
                 }
             }
@@ -248,7 +208,6 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
             parent.onKeystroke(parent.state.bridge.doc)
             
             // 3. Return true to let AppKit apply edit to backing store natively with 0ms latency
-            print("🟢 DELEGATE RETURNING: true (Native Apply)")
             return true
         }
         
