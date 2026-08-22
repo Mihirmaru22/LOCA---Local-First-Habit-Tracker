@@ -20,6 +20,7 @@ public struct NotesCanvasView: View {
     @State private var activeNoteIsPinned: Bool = false
     @State private var activeNoteFolderID: FolderID? = nil
     @State private var editorState: EditorBridgeState? = nil
+    @State private var lastLocalContentHash: Int = 0
     
     public init(engine: NotesEngine = NotesEngine.shared) {
         self.engine = engine
@@ -149,6 +150,8 @@ public struct NotesCanvasView: View {
         let plainText = NoteTextExtractor.plainText(from: content)
         let preview = NotePreviewGenerator.preview(from: plainText)
         
+        self.lastLocalContentHash = content.hashValue
+        
         // Debounced materialization to SQLite (500ms)
         Task {
             await autosave.scheduleMaterialization(for: noteID) { [engine] in
@@ -274,9 +277,14 @@ public struct NotesCanvasView: View {
             self.activeNoteIsPinned = note.isPinned
             self.activeNoteFolderID = note.folderID
             
+            // Kill autosave self-echo
+            if note.content.hashValue == self.lastLocalContentHash {
+                print("🔁 ECHO SKIP")
+                continue
+            }
+            
             let doc = CRDTTranslator.crdtDoc(from: note)
             if let existingState = self.editorState, existingState.bridge.doc.id == doc.id {
-                // DO NOT overwrite or refresh if the content in the active editor is identical
                 let currentCRDTContent = CRDTTranslator.materializeContent(from: existingState.bridge.doc)
                 if currentCRDTContent != note.content {
                     existingState.updateDocFromRemote(doc)

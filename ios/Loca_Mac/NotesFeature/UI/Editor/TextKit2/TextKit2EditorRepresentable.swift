@@ -121,7 +121,7 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         // Wire in-place format updates directly to textStorage
         state.onInPlaceFormatUpdate = { [weak textView, weak state] in
             guard let tv = textView, let storage = tv.textStorage, let state = state else { return }
-            let currentSel = tv.selectedRange()
+            let currentSel = state.bridge.lastKnownSelection
             let rendered = state.bridge.renderAttributedString()
             storage.setAttributedString(rendered)
             tv.setSelectedRange(currentSel)
@@ -227,8 +227,10 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
             guard let tv = notification.object as? NSTextView else { return }
             let sel = tv.selectedRange()
             print("🎨 SELECTION CHANGED: \(sel)")
+            parent.state.bridge.updateLastKnownSelection(sel)
+            parent.state.bridge.selectionDidChange(to: sel)
             DispatchQueue.main.async {
-                self.parent.state.updateSelection(sel)
+                self.parent.state.refreshFormattingState()
                 self.parent.onSelectionChanged(sel)
             }
         }
@@ -236,6 +238,7 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         public func textView(_ textView: NSTextView, shouldChangeTextIn affectedCharRange: NSRange, replacementString: String?) -> Bool {
             let replacement = replacementString ?? ""
             print("🔍 shouldChangeTextIn: range=\(affectedCharRange) repl='\(replacement)'")
+            parent.state.bridge.updateLastKnownSelection(affectedCharRange)
             
             if replacement == "\n" {
                 // Return key: Split block in-place with Apple Notes semantics
@@ -295,17 +298,19 @@ public final class EditorBridgeState: ObservableObject {
     
     public init(bridge: TextKitCRDTBridge) {
         self.bridge = bridge
-        self.formattingState = bridge.currentFormattingState(at: currentSelection)
+        self.formattingState = bridge.currentFormattingState(at: bridge.lastKnownSelection)
     }
     
     public func updateSelection(_ newRange: NSRange) {
         self.currentSelection = newRange
+        bridge.updateLastKnownSelection(newRange)
         bridge.selectionDidChange(to: newRange)
         refreshFormattingState()
     }
     
     public func refreshFormattingState() {
-        let newState = bridge.currentFormattingState(at: currentSelection)
+        let sel = bridge.lastKnownSelection
+        let newState = bridge.currentFormattingState(at: sel)
         if formattingState != newState {
             print("🎨 PUBLISHING STATE: bold=\(newState.isBold) italic=\(newState.isItalic) block=\(newState.blockType)")
             formattingState = newState
@@ -313,23 +318,26 @@ public final class EditorBridgeState: ObservableObject {
     }
     
     public func toggleBold() {
-        bridge.toggleInlineMark(type: "bold", in: currentSelection)
-        if currentSelection.length > 0 {
+        let sel = bridge.lastKnownSelection
+        bridge.toggleInlineMark(type: "bold", in: sel)
+        if sel.length > 0 {
             onInPlaceFormatUpdate?()
         }
         refreshFormattingState()
     }
     
     public func toggleItalic() {
-        bridge.toggleInlineMark(type: "italic", in: currentSelection)
-        if currentSelection.length > 0 {
+        let sel = bridge.lastKnownSelection
+        bridge.toggleInlineMark(type: "italic", in: sel)
+        if sel.length > 0 {
             onInPlaceFormatUpdate?()
         }
         refreshFormattingState()
     }
     
     public func toggleBlockType(_ type: EditorBlockType) {
-        bridge.toggleBlockType(type, at: currentSelection.location)
+        let sel = bridge.lastKnownSelection
+        bridge.toggleBlockType(type, at: sel.location)
         onInPlaceFormatUpdate?()
         refreshFormattingState()
     }

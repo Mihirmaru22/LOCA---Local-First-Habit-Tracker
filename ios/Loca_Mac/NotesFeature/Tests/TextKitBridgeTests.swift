@@ -488,5 +488,36 @@ struct TextKitBridgeTests {
         // Sticky marks must be cleared
         #expect(bridge.getStickyMarks().isEmpty)
     }
+    
+    @Test func testStickyArmingSurvivesFocusReturnSelectionEvent() {
+        let noteID = NoteID()
+        let blockID = UUID()
+        
+        var doc = CRDTDoc(id: noteID, deviceID: "test-device")
+        doc.addBlock(CRDTBlock(id: blockID, type: "paragraph", text: CRDTText(string: "Hello", deviceID: "test-device")))
+        
+        let bridge = TextKitCRDTBridge(doc: doc, deviceID: "test-device")
+        let state = EditorBridgeState(bridge: bridge)
+        
+        // Cursor at index 5
+        state.updateSelection(NSRange(location: 5, length: 0))
+        
+        // Click Italic button -> arms sticky italic
+        state.toggleItalic()
+        #expect(bridge.getStickyMarks().contains("italic"))
+        
+        // Immediate focus-return selection event (within 0.25s)
+        bridge.selectionDidChange(to: NSRange(location: 5, length: 0))
+        #expect(bridge.getStickyMarks().contains("italic"))
+        
+        // Type " World"
+        bridge.insertText(" World", at: 5)
+        
+        let targetBlock = bridge.block(for: blockID)
+        #expect(targetBlock?.text.string == "Hello World")
+        #expect(targetBlock?.marks.first?.type == "italic")
+        #expect(targetBlock?.marks.first?.startIndex == 5)
+        #expect(targetBlock?.marks.first?.endIndex == 11)
+    }
 }
 #endif

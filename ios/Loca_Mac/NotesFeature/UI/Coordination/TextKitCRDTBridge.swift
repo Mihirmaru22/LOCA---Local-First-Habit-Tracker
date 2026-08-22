@@ -60,23 +60,34 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
     // Cached map of block ID to its global NSRange in the rendered attributed string
     public private(set) var blockRanges: [UUID: NSRange] = [:]
     
+    // Single source of truth for cursor / selection position
+    public private(set) var lastKnownSelection: NSRange = NSRange(location: 0, length: 0)
+    
     // Sticky marks for empty selection typing with consecutive progression detection
     private var stickyMarks: Set<String> = []
     private var lastInsertionLocation: Int = -1
     private var lastInsertionTime: Date = Date.distantPast
+    private var stickyArmTime: Date = Date.distantPast
     
     public init(doc: CRDTDoc, deviceID: String = "local-device") {
         self.doc = doc
         self.deviceID = deviceID
     }
     
-    // MARK: - Sticky Marks
+    // MARK: - Selection & Sticky Marks Tracking
+    
+    public func updateLastKnownSelection(_ range: NSRange) {
+        lock.lock()
+        defer { lock.unlock() }
+        self.lastKnownSelection = range
+    }
     
     public func setStickyMarks(_ marks: Set<String>) {
         lock.lock()
         defer { lock.unlock() }
         self.stickyMarks = marks
-        self.lastInsertionLocation = -1
+        self.lastInsertionLocation = lastKnownSelection.location
+        self.stickyArmTime = Date()
         print("🔧 STICKY MARKS SET: \(marks)")
     }
     
@@ -96,9 +107,10 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
     public func selectionDidChange(to range: NSRange) {
         lock.lock()
         defer { lock.unlock() }
+        self.lastKnownSelection = range
         
-        // Only clear sticky marks if cursor moved away from consecutive typing progression
-        if range.location != lastInsertionLocation {
+        // Only clear sticky marks if cursor moved away AND not within focus-return window (0.25s)
+        if range.location != lastInsertionLocation && Date().timeIntervalSince(stickyArmTime) > 0.25 {
             if !stickyMarks.isEmpty {
                 print("🔧 CLEARING STICKY MARKS (cursor moved to \(range.location), expected \(lastInsertionLocation))")
                 stickyMarks.removeAll()
@@ -288,6 +300,7 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
     }
     
     public func toggleInlineMark(type: String, in globalRange: NSRange) {
+        print("🔧 TOOLBAR SELECTION: loc=\(globalRange.location) len=\(globalRange.length)")
         print("🔧 TOGGLE MARK: \(type) range=\(globalRange)")
         lock.lock()
         defer { lock.unlock() }
@@ -307,6 +320,7 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
                 stickyMarks.insert(type)
             }
             lastInsertionLocation = globalRange.location
+            stickyArmTime = Date()
             print("🔧 STICKY MARKS NOW: \(stickyMarks)")
         }
     }
@@ -372,6 +386,7 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
     
     /// Converts current block to the requested block type, or reverts to .paragraph if already active.
     public func toggleBlockType(_ targetType: EditorBlockType, at globalLocation: Int) {
+        print("🔧 TOOLBAR SELECTION: loc=\(globalLocation)")
         print("🔧 TOGGLE BLOCK: \(targetType) at \(globalLocation)")
         lock.lock()
         defer { lock.unlock() }
