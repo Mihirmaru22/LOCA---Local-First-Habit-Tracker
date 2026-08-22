@@ -1007,13 +1007,15 @@ public final class LocaAppKitTextView: NSTextView {
     
     // MARK: - Native Vector Checklist Drawing (Apple Notes Retina Standard)
     
-    public override func drawBackground(forGlyphRange glyphsToShow: NSRange, at origin: NSPoint) {
-        super.drawBackground(forGlyphRange: glyphsToShow, at: origin)
+    public override func drawBackground(in rect: NSRect) {
+        super.drawBackground(in: rect)
         
-        guard let layoutManager = self.layoutManager, let textStorage = self.textStorage else { return }
+        guard let layoutManager = self.layoutManager, let textContainer = self.textContainer, let textStorage = self.textStorage else { return }
         let string = textStorage.string as NSString
+        let origin = self.textContainerOrigin
         
-        var charRange = layoutManager.characterRange(forGlyphRange: glyphsToShow, actualGlyphRange: nil)
+        let glyphRange = layoutManager.glyphRange(forBoundingRect: rect, in: textContainer)
+        var charRange = layoutManager.characterRange(forGlyphRange: glyphRange, actualGlyphRange: nil)
         charRange = string.paragraphRange(for: charRange)
         
         var paraLoc = charRange.location
