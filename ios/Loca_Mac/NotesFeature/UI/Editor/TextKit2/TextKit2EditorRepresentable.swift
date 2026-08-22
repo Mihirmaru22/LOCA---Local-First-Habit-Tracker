@@ -1,7 +1,22 @@
 import SwiftUI
 import AppKit
 
-/// SwiftUI Representable wrapping AppKit NSTextView backed by TextKit 2 and wired to TextKitCRDTBridge.
+/// Subclassed NSTextView supporting interactive checkbox gutter clicks and TextKit 2 integration.
+public final class NoteCanvasTextView: NSTextView {
+    
+    public var onGutterClicked: ((NSPoint) -> Bool)?
+    
+    public override func mouseDown(with event: NSEvent) {
+        let point = convert(event.locationInWindow, from: nil)
+        if let handler = onGutterClicked, handler(point) {
+            // Handled by gutter click (e.g. checkbox toggled)
+            return
+        }
+        super.mouseDown(with: event)
+    }
+}
+
+/// SwiftUI Representable wrapping AppKit NoteCanvasTextView backed by TextKit 2 and wired to TextKitCRDTBridge.
 public struct TextKit2EditorRepresentable: NSViewRepresentable {
     
     @ObservedObject public var state: EditorBridgeState
@@ -32,7 +47,7 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         textContainer.lineFragmentPadding = 0
         textLayoutManager.textContainer = textContainer
         
-        let textView = NSTextView(frame: .zero, textContainer: textContainer)
+        let textView = NoteCanvasTextView(frame: .zero, textContainer: textContainer)
         textView.delegate = context.coordinator
         textView.isRichText = true
         textView.allowsUndo = true
@@ -41,6 +56,30 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         textView.drawsBackground = false
         textView.font = NSFont.systemFont(ofSize: 14)
         textView.textContainerInset = NSSize(width: 24, height: 16)
+        
+        // Gutter Click Handler
+        textView.onGutterClicked = { [weak textView, weak textContentStorage] clickPoint in
+            guard let tv = textView, let storage = textContentStorage else { return false }
+            
+            // Check if click X is in left gutter margin (< 30pt)
+            let relativeX = clickPoint.x - tv.textContainerOrigin.x
+            guard relativeX >= 0 && relativeX < 30 else { return false }
+            
+            // Find character index at this Y coordinate
+            let charIndex = tv.characterIndexForInsertion(at: clickPoint)
+            guard let target = self.state.bridge.resolveLocation(charIndex),
+                  target.block.type == "checklistItem" else {
+                return false
+            }
+            
+            // Toggle checklist state
+            self.state.bridge.toggleChecklist(blockID: target.block.id)
+            let updatedAttributed = self.state.bridge.renderAttributedString()
+            storage.attributedString = updatedAttributed
+            
+            self.onKeystroke(self.state.bridge.doc)
+            return true
+        }
         
         // Initial render
         let initialAttributed = state.bridge.renderAttributedString()
@@ -84,7 +123,7 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
     
     public final class Coordinator: NSObject, NSTextViewDelegate {
         var parent: TextKit2EditorRepresentable
-        weak var textView: NSTextView?
+        weak var textView: NoteCanvasTextView?
         weak var textContentStorage: NSTextContentStorage?
         
         init(_ parent: TextKit2EditorRepresentable) {
@@ -110,7 +149,7 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
                 parent.state.bridge.insertText(replacement, at: affectedCharRange.location)
             }
             
-            // Re-render attributed string to maintain typography
+            // Re-render attributed string to maintain typography & inline marks
             if let storage = textContentStorage {
                 let updatedAttributed = parent.state.bridge.renderAttributedString()
                 storage.attributedString = updatedAttributed

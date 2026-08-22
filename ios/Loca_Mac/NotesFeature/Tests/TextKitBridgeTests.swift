@@ -91,4 +91,105 @@ struct TextKitBridgeTests {
         bridge.toggleChecklist(at: 5)
         #expect(bridge.doc.blocks.first?.attributes["isChecked"] == "true")
     }
+    
+    // MARK: - Fix 1 Tests: Gutter Click Interactive Toggling
+    
+    @Test func testGutterClickTogglesChecklist() {
+        let noteID = NoteID()
+        let blockID = UUID()
+        
+        var doc = CRDTDoc(id: noteID, deviceID: "test-device")
+        let item = CRDTBlock(id: blockID, type: "checklistItem", text: CRDTText(string: "Review Architecture", deviceID: "test-device"), attributes: ["isChecked": "false"])
+        doc.addBlock(item)
+        
+        let bridge = TextKitCRDTBridge(doc: doc, deviceID: "test-device")
+        
+        // Target block resolved at location 0
+        let target = bridge.resolveLocation(0)
+        #expect(target?.block.type == "checklistItem")
+        
+        // Gutter click toggles checklist state
+        bridge.toggleChecklist(blockID: blockID)
+        #expect(bridge.block(for: blockID)?.attributes["isChecked"] == "true")
+        
+        // Click again toggles off
+        bridge.toggleChecklist(blockID: blockID)
+        #expect(bridge.block(for: blockID)?.attributes["isChecked"] == "false")
+    }
+    
+    @Test func testGutterClickIgnoresParagraphs() {
+        let noteID = NoteID()
+        let blockID = UUID()
+        
+        var doc = CRDTDoc(id: noteID, deviceID: "test-device")
+        let paragraph = CRDTBlock(id: blockID, type: "paragraph", text: CRDTText(string: "Regular text", deviceID: "test-device"))
+        doc.addBlock(paragraph)
+        
+        let bridge = TextKitCRDTBridge(doc: doc, deviceID: "test-device")
+        let target = bridge.resolveLocation(0)
+        
+        // Assert block is not checklistItem
+        #expect(target?.block.type == "paragraph")
+        #expect(target?.block.attributes["isChecked"] == nil)
+    }
+    
+    // MARK: - Fix 2 Tests: Inline Formatting Spans
+    
+    @Test func testInlineBoldMarkGeneration() {
+        let noteID = NoteID()
+        let blockID = UUID()
+        
+        var doc = CRDTDoc(id: noteID, deviceID: "test-device")
+        let paragraph = CRDTBlock(id: blockID, type: "paragraph", text: CRDTText(string: "I ate an apple today", deviceID: "test-device"))
+        doc.addBlock(paragraph)
+        
+        let bridge = TextKitCRDTBridge(doc: doc, deviceID: "test-device")
+        
+        // Select "apple" (range location: 9, length: 5)
+        bridge.applyInlineMark(type: "bold", in: NSRange(location: 9, length: 5))
+        
+        let targetBlock = bridge.block(for: blockID)
+        #expect(targetBlock?.marks.count == 1)
+        #expect(targetBlock?.marks.first?.type == "bold")
+        #expect(targetBlock?.marks.first?.startIndex == 9)
+        #expect(targetBlock?.marks.first?.endIndex == 14)
+    }
+    
+    @Test func testInlineMarkRendering() {
+        let noteID = NoteID()
+        let blockID = UUID()
+        
+        var doc = CRDTDoc(id: noteID, deviceID: "test-device")
+        var paragraph = CRDTBlock(id: blockID, type: "paragraph", text: CRDTText(string: "ItalicText NormalText", deviceID: "test-device"))
+        paragraph.applyMark(type: "italic", startIndex: 0, endIndex: 10)
+        doc.addBlock(paragraph)
+        
+        let bridge = TextKitCRDTBridge(doc: doc, deviceID: "test-device")
+        let attributed = bridge.renderAttributedString()
+        
+        #expect(attributed.string == "ItalicText NormalText")
+        #expect(bridge.block(for: blockID)?.marks.first?.type == "italic")
+    }
+    
+    @Test func testTypingInsideMarkInheritsFormat() {
+        let noteID = NoteID()
+        let blockID = UUID()
+        
+        var doc = CRDTDoc(id: noteID, deviceID: "test-device")
+        var paragraph = CRDTBlock(id: blockID, type: "paragraph", text: CRDTText(string: "Swift Concurrency", deviceID: "test-device"))
+        // Mark "Swift" as bold (0...5)
+        paragraph.applyMark(type: "bold", startIndex: 0, endIndex: 5)
+        doc.addBlock(paragraph)
+        
+        let bridge = TextKitCRDTBridge(doc: doc, deviceID: "test-device")
+        
+        // Type "UI" at index 5 (inside bold mark)
+        bridge.insertText("UI", at: 5)
+        
+        let targetBlock = bridge.block(for: blockID)
+        #expect(targetBlock?.text.string == "SwiftUI Concurrency")
+        // Bold mark expands from 0...5 to 0...7
+        #expect(targetBlock?.marks.first?.startIndex == 0)
+        #expect(targetBlock?.marks.first?.endIndex == 7)
+    }
 }

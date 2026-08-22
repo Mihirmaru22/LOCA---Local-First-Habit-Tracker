@@ -89,6 +89,11 @@ public struct NotesCanvasView: View {
                     
                     // Formatting Toolbar (Floating Top Right)
                     NotesFormattingToolbar(
+                        onApplyInlineMark: { type in
+                            state.bridge.applyInlineMark(type: type, in: currentCursorSelection)
+                            handleLocalKeystroke(state.bridge.doc)
+                            state.needsRemoteRefresh = true
+                        },
                         onSetBlockType: { type, attrs in
                             state.bridge.setBlockType(type, at: currentCursorSelection.location, attributes: attrs)
                             handleLocalKeystroke(state.bridge.doc)

@@ -1,7 +1,7 @@
 import Foundation
 import AppKit
 
-/// Bidirectional bridging engine translating TextKit 2 layout offsets to granular CRDT operations.
+/// Bidirectional bridging engine translating TextKit 2 layout offsets and mouse events to granular CRDT operations.
 public final class TextKitCRDTBridge: @unchecked Sendable {
     
     public var doc: CRDTDoc
@@ -22,26 +22,13 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
     public func resolveLocation(_ globalIndex: Int) -> (block: CRDTBlock, blockIndex: Int, relativeIndex: Int)? {
         lock.lock()
         defer { lock.unlock() }
-        
-        let activeBlocks = doc.blocks.filter { !$0.isDeleted }
-        guard !activeBlocks.isEmpty else { return nil }
-        
-        var runningOffset = 0
-        for (idx, block) in activeBlocks.enumerated() {
-            let blockLen = block.text.string.count
-            // If location is within block or at end of this block (before newline)
-            if globalIndex >= runningOffset && globalIndex <= runningOffset + blockLen {
-                let relative = globalIndex - runningOffset
-                return (block, idx, relative)
-            }
-            runningOffset += blockLen + 1 // +1 for trailing newline
-        }
-        
-        // Fallback: Return last active block
-        if let last = activeBlocks.last {
-            return (last, activeBlocks.count - 1, last.text.string.count)
-        }
-        return nil
+        return resolveLocationInternal(globalIndex)
+    }
+    
+    public func block(for blockID: UUID) -> CRDTBlock? {
+        lock.lock()
+        defer { lock.unlock() }
+        return doc.blocks.first(where: { $0.id == blockID && !$0.isDeleted })
     }
     
     // MARK: - Keystroke to CRDT Translation
@@ -52,12 +39,14 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
         defer { lock.unlock() }
         
         guard let target = resolveLocationInternal(globalLocation) else {
-            // Document has no active blocks: add initial block
             let newBlock = CRDTBlock(id: UUID(), type: "paragraph", text: CRDTText(string: text, deviceID: deviceID))
             doc.addBlock(newBlock)
             return
         }
         
+        if let idx = doc.blocks.firstIndex(where: { $0.id == target.block.id }) {
+            doc.blocks[idx].adjustMarksForInsertion(at: target.relativeIndex, length: text.count)
+        }
         doc.insertText(text, at: target.relativeIndex, in: target.block.id)
     }
     
@@ -69,9 +58,11 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
         guard let target = resolveLocationInternal(globalLocation) else { return }
         
         if target.relativeIndex == 0 && target.blockIndex > 0 && length == 1 {
-            // Backspace at start of block -> Merge with preceding block
             mergeBlockWithPreceding(targetBlockIndex: target.blockIndex)
         } else {
+            if let idx = doc.blocks.firstIndex(where: { $0.id == target.block.id }) {
+                doc.blocks[idx].adjustMarksForDeletion(at: target.relativeIndex, length: length)
+            }
             doc.deleteText(at: target.relativeIndex, length: length, in: target.block.id)
         }
     }
@@ -87,12 +78,13 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
         let currentString = target.block.text.string
         let textAfter = String(currentString.dropFirst(target.relativeIndex))
         
-        // Truncate current block
         if target.relativeIndex < currentString.count {
+            if let idx = doc.blocks.firstIndex(where: { $0.id == target.block.id }) {
+                doc.blocks[idx].adjustMarksForDeletion(at: target.relativeIndex, length: currentString.count - target.relativeIndex)
+            }
             doc.deleteText(at: target.relativeIndex, length: currentString.count - target.relativeIndex, in: target.block.id)
         }
         
-        // Insert new block after current block
         let newBlockID = UUID()
         let newType = (target.block.type == "checklistItem") ? "checklistItem" : "paragraph"
         let newAttributes = (target.block.type == "checklistItem") ? ["isChecked": "false"] : [:]
@@ -109,7 +101,6 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
         return newBlockID
     }
     
-    /// Merges the block at `targetBlockIndex` into the preceding block.
     private func mergeBlockWithPreceding(targetBlockIndex: Int) {
         let active = doc.blocks.filter { !$0.isDeleted }
         guard targetBlockIndex > 0, targetBlockIndex < active.count else { return }
@@ -119,14 +110,51 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
         
         let currentText = currentBlock.text.string
         if !currentText.isEmpty {
+            let offset = prevBlock.text.string.count
+            if let prevIdx = doc.blocks.firstIndex(where: { $0.id == prevBlock.id }) {
+                for mark in currentBlock.marks {
+                    doc.blocks[prevIdx].marks.append(
+                        CRDTTextMark(
+                            type: mark.type,
+                            startIndex: mark.startIndex + offset,
+                            endIndex: mark.endIndex + offset
+                        )
+                    )
+                }
+            }
             doc.insertText(currentText, at: prevBlock.text.string.count, in: prevBlock.id)
         }
         
-        // Remove current block
         doc.removeBlock(blockID: currentBlock.id)
     }
     
-    /// Converts the enclosing block type at global location.
+    // MARK: - Formatting & Inline Marks
+    
+    public func applyInlineMark(type: String, in globalRange: NSRange) {
+        lock.lock()
+        defer { lock.unlock() }
+        
+        let activeBlocks = doc.blocks.filter { !$0.isDeleted }
+        var runningOffset = 0
+        
+        for block in activeBlocks {
+            let blockLen = block.text.string.count
+            let blockRange = NSRange(location: runningOffset, length: blockLen)
+            
+            let intersection = NSIntersectionRange(globalRange, blockRange)
+            if intersection.length > 0 {
+                let startRel = intersection.location - runningOffset
+                let endRel = startRel + intersection.length
+                
+                if let idx = doc.blocks.firstIndex(where: { $0.id == block.id }) {
+                    doc.blocks[idx].applyMark(type: type, startIndex: startRel, endIndex: endRel)
+                    _ = doc.vectorClock.increment(for: deviceID)
+                }
+            }
+            runningOffset += blockLen + 1
+        }
+    }
+    
     public func setBlockType(_ type: String, at globalLocation: Int, attributes: [String: String] = [:]) {
         lock.lock()
         defer { lock.unlock() }
@@ -142,7 +170,6 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
         }
     }
     
-    /// Toggles the checklist state for the enclosing block at global location.
     public func toggleChecklist(at globalLocation: Int) {
         lock.lock()
         defer { lock.unlock() }
@@ -151,7 +178,13 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
         doc.toggleChecklist(blockID: target.block.id)
     }
     
-    // MARK: - Attributed String Generation & Range Tracking
+    public func toggleChecklist(blockID: UUID) {
+        lock.lock()
+        defer { lock.unlock() }
+        doc.toggleChecklist(blockID: blockID)
+    }
+    
+    // MARK: - Attributed String Generation & Inline Mark Rendering
     
     public func renderAttributedString() -> NSAttributedString {
         lock.lock()
@@ -171,13 +204,33 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
             let blockAttrs = TextKit2BlockAttributes.attributes(for: block.type, attributes: block.attributes)
             let blockText = block.text.string
             
-            let attributedBlock = NSAttributedString(string: blockText, attributes: blockAttrs)
-            result.append(attributedBlock)
+            let mutableBlock = NSMutableAttributedString(string: blockText, attributes: blockAttrs)
+            
+            // Apply inline marks (Bold / Italic)
+            for mark in block.marks {
+                let clampedStart = max(0, min(mark.startIndex, blockText.count))
+                let clampedEnd = max(clampedStart, min(mark.endIndex, blockText.count))
+                let markRange = NSRange(location: clampedStart, length: clampedEnd - clampedStart)
+                
+                if markRange.length > 0 {
+                    if mark.type == "bold" {
+                        let baseFont = (blockAttrs[.font] as? NSFont) ?? NSFont.systemFont(ofSize: 14)
+                        let boldFont = NSFontManager.shared.convert(baseFont, toHaveTrait: .boldFontMask)
+                        mutableBlock.addAttribute(.font, value: boldFont, range: markRange)
+                    } else if mark.type == "italic" {
+                        let baseFont = (blockAttrs[.font] as? NSFont) ?? NSFont.systemFont(ofSize: 14)
+                        let italicFont = NSFontManager.shared.convert(baseFont, toHaveTrait: .italicFontMask)
+                        mutableBlock.addAttribute(.font, value: italicFont, range: markRange)
+                    }
+                }
+            }
+            
+            result.append(mutableBlock)
             
             let endLocation = result.length
             blockRanges[block.id] = NSRange(location: startLocation, length: endLocation - startLocation)
             
-            // Append trailing newline between blocks (except last)
+            // Trailing newline between blocks
             if index < activeBlocks.count - 1 {
                 result.append(NSAttributedString(string: "\n", attributes: blockAttrs))
             }
@@ -186,7 +239,6 @@ public final class TextKitCRDTBridge: @unchecked Sendable {
         return result
     }
     
-    // Internal helper without lock
     private func resolveLocationInternal(_ globalIndex: Int) -> (block: CRDTBlock, blockIndex: Int, relativeIndex: Int)? {
         let activeBlocks = doc.blocks.filter { !$0.isDeleted }
         guard !activeBlocks.isEmpty else { return nil }

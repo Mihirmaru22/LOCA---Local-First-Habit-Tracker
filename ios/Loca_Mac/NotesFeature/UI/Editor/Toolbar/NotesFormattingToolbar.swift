@@ -1,21 +1,45 @@
 import SwiftUI
 
-/// Floating or pinned rich-text formatting bar for block conversion and text styling.
+/// Floating or pinned rich-text formatting bar for inline styling and block conversion.
 public struct NotesFormattingToolbar: View {
     
+    public let onApplyInlineMark: (String) -> Void
     public let onSetBlockType: (String, [String: String]) -> Void
     public let onToggleChecklist: () -> Void
     
     public init(
+        onApplyInlineMark: @escaping (String) -> Void,
         onSetBlockType: @escaping (String, [String: String]) -> Void,
         onToggleChecklist: @escaping () -> Void
     ) {
+        self.onApplyInlineMark = onApplyInlineMark
         self.onSetBlockType = onSetBlockType
         self.onToggleChecklist = onToggleChecklist
     }
     
     public var body: some View {
         HStack(spacing: 4) {
+            // Inline marks group
+            Button {
+                onApplyInlineMark("bold")
+            } label: {
+                Text("B").bold()
+            }
+            .buttonStyle(ToolbarIconButtonStyle())
+            .help("Bold (⌘B)")
+            
+            Button {
+                onApplyInlineMark("italic")
+            } label: {
+                Text("I").italic()
+            }
+            .buttonStyle(ToolbarIconButtonStyle())
+            .help("Italic (⌘I)")
+            
+            Divider()
+                .frame(height: 14)
+                .padding(.horizontal, 2)
+            
             // Headings group
             Button("H1") {
                 onSetBlockType("heading", ["level": "1"])
