@@ -625,6 +625,34 @@ public final class LocaAppKitTextView: NSTextView {
         Haptics.impact(.light)
     }
     
+    // MARK: - Smart Paste (Auto-Imports Markdown - [ ] / - [x] Checklists)
+    
+    public override func paste(_ sender: Any?) {
+        let pboard = NSPasteboard.general
+        
+        // Auto-detect and import raw markdown checklist text
+        if let plainText = pboard.string(forType: .string),
+           (plainText.contains("- [ ] ") || plainText.contains("- [x] ") || plainText.contains("- [X] ") || plainText.hasPrefix("[] ") || plainText.hasPrefix("[ ] ")) {
+            
+            let selectedRange = self.selectedRange()
+            let attributedPaste = RichTextTypography.convertMarkdownToAttributedString(markdown: plainText, preset: currentPreset)
+            
+            self.undoManager?.beginUndoGrouping()
+            if let textStorage = self.textStorage {
+                textStorage.beginEditing()
+                textStorage.replaceCharacters(in: selectedRange, with: attributedPaste)
+                textStorage.endEditing()
+                self.setSelectedRange(NSRange(location: selectedRange.location + attributedPaste.length, length: 0))
+            }
+            self.undoManager?.endUndoGrouping()
+            self.didChangeText()
+            return
+        }
+        
+        // Default AppKit paste (preserves internal rich text RTFD attributes and handles plain text without bleed)
+        super.paste(sender)
+    }
+    
     // MARK: - Smart Markdown Trigger on Type (e.g. '# ', '- ', '1. ', '[] ')
     
     public override func shouldChangeText(in affectedCharRange: NSRange, replacementString: String?) -> Bool {
