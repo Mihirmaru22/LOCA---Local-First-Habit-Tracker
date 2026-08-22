@@ -22,12 +22,13 @@ public struct NotesCanvasView: View {
     @State private var currentCursorSelection: NSRange = NSRange(location: 0, length: 0)
     @State private var editorState: EditorBridgeState? = nil
     
-    public init(engine: NotesEngine = .inMemory()) {
+    public init(engine: NotesEngine = NotesEngine.shared) {
         self.engine = engine
     }
     
     public var body: some View {
-        NavigationSplitView {
+        HStack(spacing: 0) {
+            // Column 1: Navigator (Left)
             NotesNavigatorView(
                 searchText: $searchText,
                 selectedFolderID: $selectedFolderID,
@@ -40,9 +41,16 @@ public struct NotesCanvasView: View {
                 onCreateFolder: createFolder,
                 onDeleteFolder: deleteFolder
             )
-            .navigationSplitViewColumnWidth(min: 240, ideal: 280, max: 360)
-        } detail: {
+            .frame(minWidth: 240, idealWidth: 280, maxWidth: 360)
+            
+            // 1px Machined Boundary Divider
+            Rectangle()
+                .fill(Color(nsColor: .separatorColor).opacity(0.3))
+                .frame(width: 1)
+            
+            // Column 2: Editor Canvas (Right)
             editorColumn
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .task {
             await reloadFolders()
@@ -225,6 +233,14 @@ public struct NotesCanvasView: View {
             limit: nil
         )
         
+        // Initial fetch
+        if let initialList = try? await engine.fetchNotes(matching: query) {
+            self.notes = initialList
+            if selectedNoteID == nil, let first = initialList.first {
+                self.selectedNoteID = first.id
+            }
+        }
+        
         for await list in engine.observeNotes(matching: query) {
             self.notes = list
             if selectedNoteID == nil, let first = list.first {
@@ -239,6 +255,17 @@ public struct NotesCanvasView: View {
             return
         }
         
+        // Immediate synchronous fetch for instant transition
+        if let initialNote = try? await engine.fetchNote(id: noteID) {
+            self.activeNoteTitle = initialNote.title
+            self.activeNoteIsPinned = initialNote.isPinned
+            self.activeNoteFolderID = initialNote.folderID
+            
+            let doc = CRDTTranslator.crdtDoc(from: initialNote)
+            let bridge = TextKitCRDTBridge(doc: doc)
+            self.editorState = EditorBridgeState(bridge: bridge)
+        }
+        
         for await note in engine.observeNote(id: noteID) {
             guard let note = note else { continue }
             self.activeNoteTitle = note.title
@@ -246,7 +273,7 @@ public struct NotesCanvasView: View {
             self.activeNoteFolderID = note.folderID
             
             let doc = CRDTTranslator.crdtDoc(from: note)
-            if let existingState = self.editorState {
+            if let existingState = self.editorState, existingState.bridge.doc.id == doc.id {
                 existingState.updateDocFromRemote(doc)
             } else {
                 let bridge = TextKitCRDTBridge(doc: doc)

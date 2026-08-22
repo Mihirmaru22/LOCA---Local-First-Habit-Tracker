@@ -3,12 +3,24 @@ import Combine
 import SwiftUI
 import AppKit
 
-/// Subclassed NSTextView supporting interactive checkbox gutter clicks and TextKit 2 integration.
+/// Subclassed NSTextView supporting interactive checkbox gutter clicks, first responder handling, and TextKit 2 integration.
 public final class NoteCanvasTextView: NSTextView {
     
     public var onGutterClicked: ((NSPoint) -> Bool)?
     
+    public override var acceptsFirstResponder: Bool { true }
+    public override var canBecomeKeyView: Bool { true }
+    
+    public override func becomeFirstResponder() -> Bool {
+        return super.becomeFirstResponder()
+    }
+    
     public override func mouseDown(with event: NSEvent) {
+        // Ensure textview claims first responder status on click
+        if window?.firstResponder != self {
+            window?.makeFirstResponder(self)
+        }
+        
         let point = convert(event.locationInWindow, from: nil)
         if let handler = onGutterClicked, handler(point) {
             // Handled by gutter click (e.g. checkbox toggled)
@@ -47,10 +59,13 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         let textContainer = NSTextContainer()
         textContainer.widthTracksTextView = true
         textContainer.lineFragmentPadding = 0
+        textContainer.containerSize = NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude)
         textLayoutManager.textContainer = textContainer
         
         let textView = NoteCanvasTextView(frame: .zero, textContainer: textContainer)
         textView.delegate = context.coordinator
+        textView.isEditable = true
+        textView.isSelectable = true
         textView.isRichText = true
         textView.allowsUndo = true
         textView.isAutomaticQuoteSubstitutionEnabled = false
@@ -58,6 +73,9 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         textView.drawsBackground = false
         textView.font = NSFont.systemFont(ofSize: 14)
         textView.textContainerInset = NSSize(width: 24, height: 16)
+        textView.autoresizingMask = [.width, .height]
+        textView.isVerticallyResizable = true
+        textView.isHorizontallyResizable = false
         
         // Gutter Click Handler
         textView.onGutterClicked = { [weak textView, weak textContentStorage] clickPoint in
@@ -90,6 +108,8 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
         let scrollView = NSScrollView()
         scrollView.drawsBackground = false
         scrollView.hasVerticalScroller = true
+        scrollView.hasHorizontalScroller = false
+        scrollView.autohidesScrollers = true
         scrollView.documentView = textView
         
         context.coordinator.textView = textView
@@ -103,7 +123,9 @@ public struct TextKit2EditorRepresentable: NSViewRepresentable {
               let textContentStorage = context.coordinator.textContentStorage else { return }
         
         if state.needsRemoteRefresh {
-            state.needsRemoteRefresh = false
+            DispatchQueue.main.async {
+                self.state.needsRemoteRefresh = false
+            }
             
             let oldLength = textContentStorage.attributedString?.length ?? 0
             let currentSelection = textView.selectedRange()

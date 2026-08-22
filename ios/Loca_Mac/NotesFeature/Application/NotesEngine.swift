@@ -162,4 +162,12 @@ public final class NotesEngine: ObservableObject {
         let repo = InMemoryNotesRepository()
         return NotesEngine(repository: repo)
     }
+    
+    public static let shared: NotesEngine = {
+        do {
+            return try localDefault()
+        } catch {
+            return inMemory()
+        }
+    }()
 }
