@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import SwiftUI
 
 // MARK: - NoteParagraphStyle (Pure Apple Notes Hierarchy)
 
